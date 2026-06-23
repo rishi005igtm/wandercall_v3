@@ -61,7 +61,13 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   // Trigger interactive coming-soon toast for future nested pages
   const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
-    if (item.href !== "/profile" && item.href !== "/profile/feed") {
+    if (
+      item.href !== "/profile" &&
+      item.href !== "/profile/feed" &&
+      item.href !== "/profile/memories" &&
+      item.href !== "/profile/wishlist" &&
+      item.href !== "/profile/bookings"
+    ) {
       e.preventDefault();
       setToastMessage(`${item.name} module will unlock in the next phase!`);
       setTimeout(() => setToastMessage(null), 3000);
