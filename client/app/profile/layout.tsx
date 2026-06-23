@@ -61,7 +61,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   // Trigger interactive coming-soon toast for future nested pages
   const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
-    if (item.href !== "/profile") {
+    if (item.href !== "/profile" && item.href !== "/profile/feed") {
       e.preventDefault();
       setToastMessage(`${item.name} module will unlock in the next phase!`);
       setTimeout(() => setToastMessage(null), 3000);
@@ -320,6 +320,21 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* 5. FIXED FLOATING BACK BUTTON */}
+      <div className="fixed bottom-20 left-4 md:bottom-6 md:left-[96px] lg:left-[296px] z-50">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            router.back();
+          }}
+          className="p-3.5 rounded-full bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white shadow-2xl backdrop-blur-xl transition-all hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center group"
+          aria-label="Go Back"
+        >
+          <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+        </button>
+      </div>
     </div>
   );
 }
