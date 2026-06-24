@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -19,11 +19,13 @@ import {
   Bell,
   Sparkles,
   ArrowRight,
-  ArrowLeft
+  ArrowLeft,
+  Home
 } from "lucide-react";
 
 // Sidebar Links
 const navItems = [
+  { name: "Home", icon: Home, href: "/" },
   { name: "Profile", icon: User, href: "/profile" },
   { name: "Feed", icon: Compass, href: "/profile/feed" },
   { name: "Memories", icon: ImageIcon, href: "/profile/memories" },
@@ -48,19 +50,21 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [mobileMenuPage, setMobileMenuPage] = useState(0);
 
-  // Group 1 items: Feed, Memories, Wishlist, Bookings
-  const group1Names = ["Feed", "Memories", "Wishlist", "Bookings"];
-  const group1 = group1Names.map(name => navItems.find(item => item.name === name)!).filter(Boolean);
-
-  // Group 2 items: Quests, Communities, Campfires, Friends
-  const group2Names = ["Quests", "Communities", "Campfires", "Friends"];
-  const group2 = group2Names.map(name => navItems.find(item => item.name === name)!).filter(Boolean);
-
-  const activeGroup = mobileMenuPage === 0 ? group1 : group2;
+  // Generate active mobile group dynamically using modulo logic (exactly 4 menu items)
+  const activeGroup = useMemo(() => {
+    const start = (mobileMenuPage * 4) % 10;
+    const items = [];
+    for (let i = 0; i < 4; i++) {
+      const idx = (start + i) % 10;
+      items.push(navItems[idx]);
+    }
+    return items;
+  }, [mobileMenuPage]);
 
   // Trigger interactive coming-soon toast for future nested pages
   const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
     if (
+      item.href !== "/" &&
       item.href !== "/profile" &&
       item.href !== "/profile/feed" &&
       item.href !== "/profile/memories" &&
@@ -69,7 +73,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       item.href !== "/profile/quests" &&
       item.href !== "/profile/community" &&
       item.href !== "/profile/campfires" &&
-      item.href !== "/profile/friends"
+      item.href !== "/profile/friends" &&
+      item.href !== "/profile/settings"
     ) {
       e.preventDefault();
       setToastMessage(`${item.name} module will unlock in the next phase!`);
@@ -194,17 +199,14 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
             </h2>
           </div>
           <div className="flex items-center gap-3">
-            {/* Mobile-only Settings Button */}
-            <button
-              onClick={() => {
-                setToastMessage("Settings module will unlock in the next phase!");
-                setTimeout(() => setToastMessage(null), 3000);
-              }}
+            {/* Mobile-only Settings Link */}
+            <Link
+              href="/profile/settings"
               className="flex md:hidden h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0"
               aria-label="Settings"
             >
               <Settings className="h-4 w-4" />
-            </button>
+            </Link>
 
             {/* Notifications Button */}
             <button
@@ -295,7 +297,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
             >
               <button
                 onClick={() => {
-                  setMobileMenuPage(prev => (prev === 0 ? 1 : 0));
+                  setMobileMenuPage(prev => (prev + 1) % 5);
                 }}
                 className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] text-zinc-400 hover:text-white"
                 aria-label="Next Menu"
@@ -327,20 +329,6 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         )}
       </AnimatePresence>
 
-      {/* 5. FIXED FLOATING BACK BUTTON */}
-      <div className="fixed bottom-20 left-4 md:bottom-6 md:left-[96px] lg:left-[296px] z-50">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            router.back();
-          }}
-          className="p-3.5 rounded-full bg-zinc-950/80 hover:bg-zinc-900 border border-white/10 text-zinc-300 hover:text-white shadow-2xl backdrop-blur-xl transition-all hover:scale-110 active:scale-95 cursor-pointer flex items-center justify-center group"
-          aria-label="Go Back"
-        >
-          <ArrowLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
-        </button>
-      </div>
     </div>
   );
 }

@@ -110,6 +110,19 @@ export default function QuestsPage() {
     setTimeout(() => setToastMsg(null), 3000);
   };
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const id = window.location.hash.substring(1);
+      const element = document.getElementById(id);
+      if (element) {
+        const timer = setTimeout(() => {
+          element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 150);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
   // Mock Data States
   const currentXP = 3240;
   const nextLevelXP = 4000;
@@ -855,7 +868,7 @@ export default function QuestsPage() {
       </section>
 
       {/* 4. ACTIVE QUESTS ROADMAP */}
-      <section className="bg-white/[0.01] border border-white/5 p-4 md:p-6 rounded-2xl flex flex-col gap-4 text-left shadow-md w-full shrink-0">
+      <section id="active-quests-timeline" className="bg-white/[0.01] border border-white/5 p-4 md:p-6 rounded-2xl flex flex-col gap-4 text-left shadow-md w-full shrink-0">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, easeOut } from "framer-motion";
+import { useRouter } from "next/navigation";
+import { motion, easeOut, AnimatePresence } from "framer-motion";
 import { 
   Award, 
   BrainCircuit, 
@@ -21,6 +22,7 @@ import {
   BookOpen, 
   Check, 
   Star, 
+  ChevronLeft,
   ChevronRight, 
   TrendingUp, 
   ArrowRight,
@@ -205,7 +207,42 @@ const itemVariants = {
 };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [activeDnaTab, setActiveDnaTab] = useState<number | null>(null);
+  const [showToast, setShowToast] = useState<string | null>(null);
+  const [journeyIndex, setJourneyIndex] = useState(0);
+
+  const triggerToast = (msg: string) => {
+    setShowToast(msg);
+    setTimeout(() => setShowToast(null), 3000);
+  };
+
+  const handleShareProfile = async () => {
+    const profileUrl = window.location.origin + "/profile/rishi005";
+    const shareData = {
+      title: "Wandercall Explorer Passport",
+      text: "Check out Rishiraj's explorer passport profile on Wandercall!",
+      url: profileUrl,
+    };
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share(shareData);
+        triggerToast("Profile shared successfully!");
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          triggerToast("Failed to share profile.");
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(profileUrl);
+        triggerToast("Profile link copied to clipboard: " + profileUrl);
+      } catch (err) {
+        triggerToast("Failed to copy link to clipboard.");
+      }
+    }
+  };
 
   // Radar Chart axis calculations
   const cx = 150;
@@ -282,10 +319,17 @@ export default function ProfilePage() {
 
           {/* Social / Profile Actions */}
           <div className="flex items-center justify-center lg:justify-start gap-2.5 w-full lg:w-auto">
-            <button className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none">
+            <button 
+              onClick={() => router.push("/profile/settings")}
+              className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none"
+            >
               Edit Profile
             </button>
-            <button className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0" aria-label="Share profile">
+            <button 
+              onClick={handleShareProfile}
+              className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0" 
+              aria-label="Share profile"
+            >
               <Share2 className="h-4 w-4" />
             </button>
           </div>
@@ -481,14 +525,40 @@ export default function ProfilePage() {
         
         {/* Timeline Path (8 Columns) */}
         <div className="lg:col-span-8 bg-white/[0.01] border border-white/5 p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-xl text-left">
-          <div>
-            <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-1">Adventure Journey</h2>
-            <p className="text-xs text-zinc-400 font-medium leading-relaxed">Your chronological vertical passport trail detailing trips completed, medals unlocked, and milestones.</p>
+          <div className="flex justify-between items-start md:items-center">
+            <div>
+              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-1">Journey</h2>
+              <p className="text-xs text-zinc-400 font-medium leading-relaxed">Your chronological vertical passport trail detailing trips completed, medals unlocked, and milestones.</p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0 ml-4">
+              <button
+                onClick={() => setJourneyIndex(prev => Math.max(0, prev - 1))}
+                disabled={journeyIndex === 0}
+                className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Previous items"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setJourneyIndex(prev => Math.min(Math.ceil(timelineJourney.length / 3) - 1, prev + 1))}
+                disabled={journeyIndex >= Math.ceil(timelineJourney.length / 3) - 1}
+                className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Next items"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {/* Timeline Stack */}
-          <div className="relative pl-6 sm:pl-8 border-l border-white/5 space-y-8 mt-4 py-2">
-            {timelineJourney.map((node, i) => {
+          <motion.div 
+            key={journeyIndex}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="relative pl-6 sm:pl-8 border-l border-white/5 space-y-8 mt-4 py-2"
+          >
+            {timelineJourney.slice(journeyIndex * 3, (journeyIndex + 3)).map((node, i) => {
               // Color selection based on node type
               const isAdventure = node.type === "adventure";
               const isCampfire = node.type === "campfire";
@@ -528,7 +598,7 @@ export default function ProfilePage() {
                 </div>
               );
             })}
-          </div>
+          </motion.div>
         </div>
 
         {/* Current Quests Dashboard (4 Columns) */}
@@ -562,7 +632,10 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          <button className="w-full h-11 rounded-xl bg-gradient-to-r from-brand-indigo/10 to-brand-purple/10 border border-brand-purple/20 text-brand-purple font-bold text-xs uppercase tracking-wider hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md">
+          <button 
+            onClick={() => router.push("/profile/quests#active-quests-timeline")}
+            className="w-full h-11 rounded-xl bg-gradient-to-r from-brand-indigo/10 to-brand-purple/10 border border-brand-purple/20 text-brand-purple font-bold text-xs uppercase tracking-wider hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md"
+          >
             View All Active Quests <ChevronRight className="h-4 w-4" />
           </button>
         </div>
@@ -575,7 +648,10 @@ export default function ProfilePage() {
             <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-1">Memory Book</h2>
             <p className="text-xs text-zinc-400 font-medium leading-relaxed">Photographs and experience journals locked in your adventure passport.</p>
           </div>
-          <button className="h-9 px-4 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer">
+          <button 
+            onClick={() => router.push("/profile/memories")}
+            className="h-9 px-4 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
+          >
             <Camera className="h-3.5 w-3.5" /> Add Memories
           </button>
         </div>
@@ -857,6 +933,25 @@ export default function ProfilePage() {
 
         </div>
       </motion.section>
+
+      {/* Profile Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-24 md:bottom-8 right-6 z-50 glass-panel border-brand-cyan/20 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 bg-zinc-950/90 backdrop-blur-xl"
+          >
+            <div className="h-6 w-6 rounded-lg bg-brand-cyan/15 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan">
+              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+            </div>
+            <p className="text-xs font-semibold text-zinc-300">
+              {showToast}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </motion.div>
   );
