@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "lenis/dist/lenis.css";
 
 :root {
   --background: #0B0B0B;
@@ -45,7 +46,6 @@
 html, body {
   background-color: var(--background);
   color: var(--foreground);
-  overflow-x: hidden;
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;     /* Firefox */
 }
@@ -126,5 +126,63 @@ html, body {
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Card shine and glow effects */
+.shine-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.shine-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -150%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.13) 50%,
+    transparent
+  );
+  transform: skewX(-25deg);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.shine-card:hover::after {
+  left: 150%;
+  transition: left 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shine-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  border-color: rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Gradient glow on hover based on card's theme */
+.shine-card-indigo:hover {
+  box-shadow: 0 20px 40px -15px rgba(79, 70, 229, 0.25), 0 0 30px -10px rgba(79, 70, 229, 0.15);
+}
+.shine-card-purple:hover {
+  box-shadow: 0 20px 40px -15px rgba(139, 92, 246, 0.25), 0 0 30px -10px rgba(139, 92, 246, 0.15);
+}
+.shine-card-cyan:hover {
+  box-shadow: 0 20px 40px -15px rgba(6, 182, 212, 0.25), 0 0 30px -10px rgba(6, 182, 212, 0.15);
+}
+.shine-card-emerald:hover {
+  box-shadow: 0 20px 40px -15px rgba(16, 185, 129, 0.25), 0 0 30px -10px rgba(16, 185, 129, 0.15);
+}
+.shine-card-rose:hover {
+  box-shadow: 0 20px 40px -15px rgba(244, 63, 94, 0.25), 0 0 30px -10px rgba(244, 63, 94, 0.15);
+}
+.shine-card-fuchsia:hover {
+  box-shadow: 0 20px 40px -15px rgba(217, 70, 239, 0.25), 0 0 30px -10px rgba(217, 70, 239, 0.15);
+}
+.shine-card-blue:hover {
+  box-shadow: 0 20px 40px -15px rgba(59, 130, 246, 0.25), 0 0 30px -10px rgba(59, 130, 246, 0.15);
 }
 

@@ -68,7 +68,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       item.href !== "/profile/wishlist" &&
       item.href !== "/profile/bookings" &&
       item.href !== "/profile/quests" &&
-      item.href !== "/profile/community"
+      item.href !== "/profile/community" &&
+      item.href !== "/profile/campfires"
     ) {
       e.preventDefault();
       setToastMessage(`${item.name} module will unlock in the next phase!`);

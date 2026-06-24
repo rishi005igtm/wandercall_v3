@@ -779,22 +779,22 @@ export default function CommunitiesPage() {
 
   // Seeded coordinate calculations for organic scatter network around center user
   const explorerNodesWithCoords = useMemo(() => {
-    const W = 900;
-    const H = 300;
-    const centerX = 450;
-    const centerY = 150;
-    const centerR = 40; // User node radius (80px size)
-    const minSpacing = 28; // Standard spacing to guarantee visual gaps
-    const padding = 25;
+    const W = 1000;
+    const H = 380;
+    const centerX = 500;
+    const centerY = 190;
+    const centerR = 50; // User node radius (100px size)
+    const minSpacing = 36; // Increased spacing for larger nodes
+    const padding = 30;
 
     // Filter nodes for tablet to maintain space
     const baseNodes = isTablet ? companionOrbitNodes.slice(0, 10) : companionOrbitNodes;
     const placedNodes: { node: CompanionOrbitNode; x: number; y: number; r: number }[] = [];
 
     baseNodes.forEach((node, index) => {
-      // Minimal enterprise sizing (radius 13px to 22px, i.e., diameter 26px to 44px)
-      const desktopRadius = 13 + (node.compatibility - 70) * (9 / 30);
-      const r = isMobile ? desktopRadius * 0.8 : desktopRadius;
+      // Larger circle sizes (radius 18px to 30px, i.e., diameter 36px to 60px)
+      const desktopRadius = 18 + (node.compatibility - 70) * (12 / 30);
+      const r = isMobile ? desktopRadius * 0.85 : desktopRadius;
 
       let x = 0;
       let y = 0;
@@ -815,7 +815,7 @@ export default function CommunitiesPage() {
         const minX = isLeft ? padding + r : centerX + centerR + minSpacing;
         const maxX = isLeft ? centerX - centerR - minSpacing : W - padding - r;
         const minY = padding + r;
-        const maxY = H - padding - r - 12; // Extra bottom margin for name labels
+        const maxY = H - padding - r - 15; // Extra bottom margin for name labels
 
         const cx = Math.round((minX + randX * (maxX - minX || 1)) * 10) / 10;
         const cy = Math.round((minY + randY * (maxY - minY || 1)) * 10) / 10;
@@ -843,7 +843,7 @@ export default function CommunitiesPage() {
       // Safe golden-spiral/arc fallback positions strictly respecting left/right boundaries
       if (!placed) {
         const groupIndex = Math.floor(index / 2);
-        const radius = centerR + r + 25 + (groupIndex * 12);
+        const radius = centerR + r + 30 + (groupIndex * 15);
         const angleOffset = (groupIndex * 0.7) - 1.2; // Spread in clean visual arcs
         const angle = isLeft ? Math.PI + angleOffset : angleOffset;
         x = Math.round((centerX + radius * Math.cos(angle)) * 10) / 10;
@@ -1522,14 +1522,14 @@ export default function CommunitiesPage() {
             onKeyDown={handleKeyDown}
             aria-label="Explorer constellation layout. Use arrow keys to navigate between nodes."
           >
-            {/* Scroll/Swipe Support on mobile viewports */}
-            <div className="w-full overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing relative select-none">
-              <div className="min-w-[900px] md:min-w-0 w-full relative">
-                <svg viewBox="0 0 900 300" className="w-full h-auto z-10 overflow-visible select-none">
+            {/* Scroll/Swipe Support on all viewports */}
+            <div className="w-full overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing relative select-none" data-lenis-prevent>
+              <div className="min-w-[1000px] w-full relative">
+                <svg viewBox="0 0 1000 380" className="w-full h-auto z-10 overflow-visible select-none">
                   {/* Seeded background constellation stars */}
                   {Array.from({ length: 30 }).map((_, idx) => {
-                    const x = Math.round((seededRandom(idx * 7 + 10) * 860 + 20) * 10) / 10;
-                    const y = Math.round((seededRandom(idx * 13 + 5) * 260 + 20) * 10) / 10;
+                    const x = Math.round((seededRandom(idx * 7 + 10) * 960 + 20) * 10) / 10;
+                    const y = Math.round((seededRandom(idx * 13 + 5) * 340 + 20) * 10) / 10;
                     const size = Math.round((0.5 + seededRandom(idx * 3 + 2) * 1.5) * 10) / 10;
                     const opacity = Math.round((0.1 + seededRandom(idx * 17 + 8) * 0.3) * 10) / 10;
                     return (
@@ -1580,8 +1580,8 @@ export default function CommunitiesPage() {
                     return (
                       <line
                         key={`center-link-${target.node.id}`}
-                        x1={450}
-                        y1={150}
+                        x1={500}
+                        y1={190}
                         x2={target.x}
                         y2={target.y}
                         className="stroke-white/[0.03] stroke-[1] pointer-events-none"
@@ -1591,10 +1591,10 @@ export default function CommunitiesPage() {
 
                   {/* Vertical separator wire line */}
                   <line
-                    x1={450}
+                    x1={500}
                     y1={0}
-                    x2={450}
-                    y2={300}
+                    x2={500}
+                    y2={380}
                     stroke="white"
                     strokeOpacity={0.25}
                     strokeWidth={1}
@@ -1602,26 +1602,26 @@ export default function CommunitiesPage() {
                     className="pointer-events-none"
                   />
 
-                  {/* Fixed Center User Node (80px size) */}
-                  <g transform="translate(450, 150)">
+                  {/* Fixed Center User Node (100px size) */}
+                  <g transform="translate(500, 190)">
                     {/* Backlight halo glow */}
                     <circle
                       cx={0}
                       cy={0}
-                      r={52}
+                      r={65}
                       fill="url(#cluster-glow)"
                       className="text-brand-purple pointer-events-none opacity-40 animate-pulse"
                     />
                     <circle
                       cx={0}
                       cy={0}
-                      r={40}
+                      r={50}
                       className="fill-zinc-950 stroke-brand-purple/40 stroke-[2px] shadow-2xl"
                     />
                     <text
                       x={0}
                       y={-3}
-                      className="text-white fill-current text-[10px] font-black pointer-events-none select-none text-center uppercase tracking-wider"
+                      className="text-white fill-current text-[11px] font-black pointer-events-none select-none text-center uppercase tracking-wider"
                       textAnchor="middle"
                     >
                       Rishiraj
@@ -1629,7 +1629,7 @@ export default function CommunitiesPage() {
                     <text
                       x={0}
                       y={10}
-                      className="fill-brand-purple text-[7px] font-black font-mono pointer-events-none select-none text-center tracking-widest uppercase"
+                      className="fill-brand-purple text-[8px] font-black font-mono pointer-events-none select-none text-center tracking-widest uppercase"
                       textAnchor="middle"
                     >
                       YOU
@@ -1711,8 +1711,8 @@ export default function CommunitiesPage() {
                         {/* Render inner avatar emoji */}
                         <text
                           x={0}
-                          y={4}
-                          className="text-xs pointer-events-none select-none font-bold text-center"
+                          y={5}
+                          className="text-sm pointer-events-none select-none font-bold text-center"
                           textAnchor="middle"
                         >
                           {item.node.avatar}
@@ -1721,9 +1721,9 @@ export default function CommunitiesPage() {
                         {/* Name and Match percentage label under the node */}
                         <text
                           x={0}
-                          y={item.r + 11}
+                          y={item.r + 14}
                           fill="#ffffff"
-                          className="font-bold text-[8px] tracking-wider fill-zinc-300 drop-shadow-md select-none pointer-events-none text-center"
+                          className="font-bold text-[9px] tracking-wider fill-zinc-300 drop-shadow-md select-none pointer-events-none text-center"
                           textAnchor="middle"
                         >
                           {item.node.name.split(" ")[0]} ({item.node.compatibility}%)
