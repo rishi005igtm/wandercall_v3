@@ -4,18 +4,17 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Globe, 
-  Compass, 
-  Image as ImageIcon, 
-  Heart, 
-  Calendar, 
-  Award, 
-  Users, 
-  Radio, 
-  User, 
+import {
+  Compass,
+  Image as ImageIcon,
+  Heart,
+  Calendar,
+  Award,
+  Users,
+  Radio,
+  User,
   UserPlus,
-  Settings, 
+  Settings,
   LogOut,
   Bell,
   Sparkles,
@@ -69,7 +68,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       item.href !== "/profile/bookings" &&
       item.href !== "/profile/quests" &&
       item.href !== "/profile/community" &&
-      item.href !== "/profile/campfires"
+      item.href !== "/profile/campfires" &&
+      item.href !== "/profile/friends"
     ) {
       e.preventDefault();
       setToastMessage(`${item.name} module will unlock in the next phase!`);
@@ -77,24 +77,24 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     }
   };
 
+  const isChatRoute = pathname?.includes('/profile/friends/chat:');
+
+  if (isChatRoute) {
+    return (
+      <div className="min-h-screen bg-brand-bg text-white relative">
+        {children}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-brand-bg text-white font-sans flex flex-col md:flex-row relative overflow-x-hidden">
-      
+
       {/* 1. FIXED LEFT SIDEBAR: Expanded on Desktop, Collapsed to icon-only on Tablet, Hidden on Mobile */}
       <aside className="hidden md:flex fixed top-0 left-0 bottom-0 h-screen z-40 bg-zinc-950/40 border-r border-white/5 backdrop-blur-md flex-col justify-between p-4 lg:p-6 transition-all duration-300 w-[80px] lg:w-[280px] overflow-y-auto no-scrollbar overscroll-y-contain">
-        
+
         {/* Top: Branding logo and user details */}
         <div className="flex flex-col gap-8 w-full">
-          {/* Logo element */}
-          <Link href="/" className="flex items-center gap-3 self-center lg:self-start px-2">
-            <div className="relative h-8 w-8 flex items-center justify-center rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple shrink-0">
-              <Globe className="h-5 w-5 text-white" />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple blur-md opacity-40" />
-            </div>
-            <span className="hidden lg:inline text-lg font-bold tracking-tight text-white">
-              Wandercall
-            </span>
-          </Link>
 
           {/* User passport profile avatar block */}
           <div className="flex flex-col lg:flex-row items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-2xl w-full">
@@ -113,7 +113,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
               <span className="text-[10px] text-zinc-400 font-mono truncate">Level 12 Explorer</span>
             </div>
           </div>
-          
+
           {/* XP Progress Bar (Desktop only) */}
           <div className="hidden lg:flex flex-col gap-1.5 px-1">
             <div className="flex justify-between items-center text-[9px] font-mono text-zinc-500">
@@ -136,11 +136,10 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                   key={item.name}
                   href={item.href}
                   onClick={(e) => handleNavClick(e, item)}
-                  className={`relative flex items-center justify-center lg:justify-start gap-3.5 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer group ${
-                    isActive 
-                      ? "text-white" 
+                  className={`relative flex items-center justify-center lg:justify-start gap-3.5 px-3 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer group ${isActive
+                      ? "text-white"
                       : "text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.02]"
-                  }`}
+                    }`}
                 >
                   {/* Active Indicator Pill */}
                   {isActive && (
@@ -154,9 +153,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                     <span className="absolute left-0 top-1/3 bottom-1/3 w-1 rounded-r-md bg-brand-cyan" />
                   )}
 
-                  <Icon className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-105 z-10 ${
-                    isActive ? "text-brand-cyan" : "text-zinc-500 group-hover:text-zinc-300"
-                  }`} />
+                  <Icon className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-105 z-10 ${isActive ? "text-brand-cyan" : "text-zinc-500 group-hover:text-zinc-300"
+                    }`} />
                   <span className="hidden lg:inline truncate z-10">{item.name}</span>
                 </Link>
               );
@@ -180,18 +178,18 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       <main className="flex-1 md:pl-[80px] lg:pl-[280px] min-h-screen flex flex-col pb-20 md:pb-0">
         <header className="h-16 w-full border-b border-white/5 px-4 md:px-12 flex items-center justify-between z-30 bg-zinc-950/10 backdrop-blur-md">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               type="button"
               onClick={(e) => {
                 e.preventDefault();
                 router.back();
               }}
-              className="p-2 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
+              className="h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
               aria-label="Go Back"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400">
+            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center">
               Explorer Dashboard
             </h2>
           </div>
@@ -202,23 +200,23 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                 setToastMessage("Settings module will unlock in the next phase!");
                 setTimeout(() => setToastMessage(null), 3000);
               }}
-              className="flex md:hidden p-2 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
+              className="flex md:hidden h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0"
               aria-label="Settings"
             >
               <Settings className="h-4 w-4" />
             </button>
 
             {/* Notifications Button */}
-            <button 
+            <button
               onClick={() => {
                 setToastMessage("Notifications will be configurable in Next Phase!");
                 setTimeout(() => setToastMessage(null), 3000);
               }}
-              className="p-2 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer relative"
+              className="flex h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0 relative"
               aria-label="Notifications"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-brand-cyan" />
+              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-brand-cyan" />
             </button>
           </div>
         </header>
@@ -239,13 +237,13 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
             exit="exit"
             variants={{
               initial: { opacity: 0, y: 10 },
-              animate: { 
-                opacity: 1, 
+              animate: {
+                opacity: 1,
                 y: 0,
-                transition: { 
+                transition: {
                   staggerChildren: 0.04,
                   delayChildren: 0.02
-                } 
+                }
               },
               exit: { opacity: 0, y: -10, transition: { duration: 0.12 } }
             }}
@@ -268,9 +266,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                   <Link
                     href={item.href}
                     onClick={(e) => handleNavClick(e, item)}
-                    className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] ${
-                      isActive ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
-                    }`}
+                    className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] ${isActive ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
+                      }`}
                     aria-label={item.name}
                   >
                     {isActive && (
