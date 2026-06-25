@@ -1075,7 +1075,7 @@ export default function ExplorerFeedPage() {
                     <div 
                       key={idx} 
                       onClick={() => {
-                        setModalImages(post.images);
+                        setModalImages(post.images ?? []);
                         setActiveImageIndex(idx);
                         setIsModalOpen(true);
                       }}
@@ -1187,7 +1187,7 @@ export default function ExplorerFeedPage() {
               {post.singleImage && (
                 <div 
                   onClick={() => {
-                    setModalImages([post.singleImage]);
+                     setModalImages([post.singleImage!]);
                     setActiveImageIndex(0);
                     setIsModalOpen(true);
                   }}
@@ -1284,7 +1284,7 @@ export default function ExplorerFeedPage() {
               {post.communityBanner && (
                 <div 
                   onClick={() => {
-                    setModalImages([post.communityBanner]);
+                     setModalImages([post.communityBanner!]);
                     setActiveImageIndex(0);
                     setIsModalOpen(true);
                   }}
