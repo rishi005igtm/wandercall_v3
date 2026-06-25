@@ -1306,8 +1306,8 @@ export default function QuestsPage() {
 
                   <button
                     onClick={() => {
-                      navigator.clipboard.writeText(`http://localhost:3000/profile/memories`);
-                      triggerToast("Memory shared!");
+                      navigator.clipboard.writeText(`http://localhost:3000/profile/feed`);
+                      triggerToast("Experience shared!");
                     }}
                     className="p-1 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                     title="Share story logs"

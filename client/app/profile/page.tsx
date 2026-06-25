@@ -24,14 +24,15 @@ import {
   Star, 
   ChevronLeft,
   ChevronRight, 
-  TrendingUp, 
+  Bookmark, 
   ArrowRight,
   Sparkles,
   Map,
   Shield,
   ThumbsUp,
   Share2,
-  UserPlus
+  UserPlus,
+  TrendingUp
 } from "lucide-react";
 
 // --- MOCK PROFILE DATA ---
@@ -107,30 +108,58 @@ const timelineJourney = [
 ];
 
 // Memory collage images/journals
-const memories = [
+const initialMemories = [
   { 
+    id: 1,
     title: "Netrani Scuba Diving", 
     text: "Swam alongside sea turtles and barracudas at 18m depth. Under the ocean, everything is quiet and magic.", 
     tag: "Underwater",
-    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop" 
+    location: "Netrani Island, Murdeshwar",
+    image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop",
+    likes: 124,
+    comments: 28,
+    views: "1.2k",
+    liked: false,
+    saved: false
   },
   { 
+    id: 2,
     title: "Sunset Over Coorg Hills", 
     text: "After 4 hours of steep climbs under the rain, the clouds parted to reveal this endless sea of green valley.", 
     tag: "Mountain Trek",
-    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop" 
+    location: "Coorg, Karnataka",
+    image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
+    likes: 98,
+    comments: 14,
+    views: "890",
+    liked: false,
+    saved: true
   },
   { 
+    id: 3,
     title: "Cozy Camping Gokarna", 
     text: "Fireside stories, cold beer, sound of crashing waves, and sleeping under a canvas roof. Real life is outside.", 
     tag: "Coastal Camp",
-    image: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop" 
+    location: "Gokarna, Karnataka",
+    image: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop",
+    likes: 156,
+    comments: 32,
+    views: "2.1k",
+    liked: false,
+    saved: false
   },
   { 
+    id: 4,
     title: "Old Bangalore Food Trail", 
     text: "Explored 7 heritage food outlets in Malleshwaram. The ghee roast dose and filter coffee were legendary.", 
     tag: "Culinary Trail",
-    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=600&auto=format&fit=crop" 
+    location: "Malleshwaram, Bangalore",
+    image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=600&auto=format&fit=crop",
+    likes: 210,
+    comments: 45,
+    views: "3.4k",
+    liked: false,
+    saved: false
   }
 ];
 
@@ -211,6 +240,40 @@ export default function ProfilePage() {
   const [activeDnaTab, setActiveDnaTab] = useState<number | null>(null);
   const [showToast, setShowToast] = useState<string | null>(null);
   const [journeyIndex, setJourneyIndex] = useState(0);
+  const [memoryIndex, setMemoryIndex] = useState(0);
+  const [memoriesList, setMemoriesList] = useState(initialMemories);
+
+  const handleLikeMemory = (id: number) => {
+    setMemoriesList(prev => prev.map(item => {
+      if (item.id === id) {
+        const isLiked = item.liked;
+        return {
+          ...item,
+          liked: !isLiked,
+          likes: isLiked ? item.likes - 1 : item.likes + 1
+        };
+      }
+      return item;
+    }));
+  };
+
+  const handleSaveMemory = (id: number) => {
+    setMemoriesList(prev => prev.map(item => {
+      if (item.id === id) {
+        const isSaved = item.saved;
+        if (!isSaved) {
+          triggerToast("Memory saved to bookmarks!");
+        } else {
+          triggerToast("Memory removed from bookmarks!");
+        }
+        return {
+          ...item,
+          saved: !isSaved
+        };
+      }
+      return item;
+    }));
+  };
 
   const triggerToast = (msg: string) => {
     setShowToast(msg);
@@ -648,31 +711,100 @@ export default function ProfilePage() {
             <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-1">Memory Book</h2>
             <p className="text-xs text-zinc-400 font-medium leading-relaxed">Photographs and experience journals locked in your adventure passport.</p>
           </div>
-          <button 
-            onClick={() => router.push("/profile/memories")}
-            className="h-9 px-4 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
-          >
-            <Camera className="h-3.5 w-3.5" /> Add Memories
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setMemoryIndex(prev => Math.max(0, prev - 1))}
+                disabled={memoryIndex === 0}
+                className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Previous memories"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setMemoryIndex(prev => Math.min(Math.ceil(memoriesList.length / 2) - 1, prev + 1))}
+                disabled={memoryIndex >= Math.ceil(memoriesList.length / 2) - 1}
+                className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+                aria-label="Next memories"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            
+            <button 
+              onClick={() => router.push("/profile/feed")}
+              className="h-9 px-4 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
+            >
+              <Camera className="h-3.5 w-3.5" /> Add Experience
+            </button>
+          </div>
         </div>
 
-        {/* Columns Masonry layout - Increased card width by reducing column count */}
-        <div className="columns-1 md:columns-2 gap-6 space-y-6">
-          {memories.map((memory, i) => (
-            <div key={i} className="break-inside-avoid bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex flex-col gap-4 hover:border-white/10 hover:scale-[1.01] transition-all duration-200 group">
+        {/* Paginated grid layout - showing 2 memories at a time with smooth transition */}
+        <motion.div 
+          key={memoryIndex}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {memoriesList.slice(memoryIndex * 2, (memoryIndex * 2) + 2).map((memory) => (
+            <div key={memory.id} className="bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex flex-col gap-4 hover:border-white/10 hover:scale-[1.01] transition-all duration-200 group">
               <div className="w-full h-48 md:h-64 rounded-xl overflow-hidden relative shadow-inner">
                 <img src={memory.image} alt={memory.title} className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500" />
                 <span className="absolute top-2 left-2 text-[8px] font-bold uppercase tracking-wider bg-zinc-950/80 border border-white/10 px-2 py-0.5 rounded-full text-brand-cyan">
                   {memory.tag}
                 </span>
               </div>
-              <div className="text-left flex flex-col gap-2">
-                <h3 className="text-base font-black text-white">{memory.title}</h3>
-                <p className="text-xs md:text-sm text-zinc-400 leading-relaxed font-medium">{memory.text}</p>
+              
+              <div className="text-left flex flex-col gap-3">
+                <div>
+                  <h3 className="text-base font-black text-white">{memory.title}</h3>
+                  <p className="text-xs md:text-sm text-zinc-400 leading-relaxed font-medium mt-1">{memory.text}</p>
+                </div>
+                
+                {/* Location */}
+                <div className="flex flex-wrap items-center gap-3 mt-1 text-[11px] font-semibold text-zinc-400 border-b border-white/5 pb-3">
+                  <span className="flex items-center gap-1">
+                    <MapPin className="h-3.5 w-3.5 text-brand-purple" />
+                    {memory.location}
+                  </span>
+                </div>
+
+                {/* Social Actions row */}
+                <div className="flex items-center justify-between text-xs text-zinc-400 font-bold mt-1">
+                  <div className="flex items-center gap-4">
+                    {/* Like button */}
+                    <button 
+                      onClick={() => handleLikeMemory(memory.id)}
+                      className={`flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group ${memory.liked ? "text-rose-500" : ""}`}
+                    >
+                      <Heart className={`h-4 w-4 transition-transform group-hover:scale-110 ${memory.liked ? "fill-rose-500 stroke-rose-500" : ""}`} />
+                      <span>{memory.likes}</span>
+                    </button>
+                    {/* Comment button */}
+                    <button 
+                      onClick={() => triggerToast(`Comments section coming soon for: ${memory.title}`)}
+                      className="flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer group"
+                    >
+                      <MessageSquare className="h-4 w-4 group-hover:scale-110" />
+                      <span>{memory.comments}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    {/* Views counter */}
+                    <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-mono">
+                      <Globe className="h-3.5 w-3.5 text-zinc-600" />
+                      {memory.views} views
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       </motion.section>
 
       {/* SECTION 5: BADGES & ACHIEVEMENTS & SECTION 7: UPCOMING EVENTS */}

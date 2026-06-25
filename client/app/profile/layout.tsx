@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Compass,
-  Image as ImageIcon,
   Heart,
   Calendar,
   Award,
@@ -28,7 +27,6 @@ const navItems = [
   { name: "Home", icon: Home, href: "/" },
   { name: "Profile", icon: User, href: "/profile" },
   { name: "Feed", icon: Compass, href: "/profile/feed" },
-  { name: "Memories", icon: ImageIcon, href: "/profile/memories" },
   { name: "Wishlist", icon: Heart, href: "/profile/wishlist" },
   { name: "Bookings", icon: Calendar, href: "/profile/bookings" },
   { name: "Quests", icon: Award, href: "/profile/quests" },
@@ -52,10 +50,10 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   // Generate active mobile group dynamically using modulo logic (exactly 4 menu items)
   const activeGroup = useMemo(() => {
-    const start = (mobileMenuPage * 4) % 10;
+    const start = (mobileMenuPage * 4) % 9;
     const items = [];
     for (let i = 0; i < 4; i++) {
-      const idx = (start + i) % 10;
+      const idx = (start + i) % 9;
       items.push(navItems[idx]);
     }
     return items;
@@ -67,7 +65,6 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       item.href !== "/" &&
       item.href !== "/profile" &&
       item.href !== "/profile/feed" &&
-      item.href !== "/profile/memories" &&
       item.href !== "/profile/wishlist" &&
       item.href !== "/profile/bookings" &&
       item.href !== "/profile/quests" &&
@@ -297,7 +294,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
             >
               <button
                 onClick={() => {
-                  setMobileMenuPage(prev => (prev + 1) % 5);
+                  setMobileMenuPage(prev => (prev + 1) % 9);
                 }}
                 className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] text-zinc-400 hover:text-white"
                 aria-label="Next Menu"
