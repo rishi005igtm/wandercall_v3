@@ -81,6 +81,14 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   const isChatRoute = pathname?.includes('/profile/friends/chat:');
   const isCampfireActiveRoute = pathname?.startsWith('/profile/campfires/') && pathname !== '/profile/campfires' && pathname !== '/profile/campfires/';
+  
+  const staticSubPaths = ['feed', 'wishlist', 'bookings', 'quests', 'community', 'campfires', 'friends', 'settings'];
+  const isDynamicProfileRoute = pathname?.startsWith('/profile/') && 
+    !staticSubPaths.some(sub => pathname === `/profile/${sub}` || pathname.startsWith(`/profile/${sub}/`)) && 
+    pathname !== '/profile' && 
+    pathname !== '/profile/';
+
+  const shouldShowBottomNav = !isCampfireActiveRoute && !isDynamicProfileRoute;
 
   if (isChatRoute) {
     return (
@@ -178,7 +186,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* 2. SCROLLABLE RIGHT CONTENT AREA */}
-      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] min-h-screen flex flex-col ${isCampfireActiveRoute ? "pb-0" : "pb-20"} md:pb-0`}>
+      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] min-h-screen flex flex-col ${(!shouldShowBottomNav) ? "pb-0" : "pb-20"} md:pb-0`}>
         <header className="h-16 w-full border-b border-white/5 px-4 md:px-12 flex items-center justify-between z-30 bg-zinc-950/10 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
@@ -228,7 +236,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       </main>
 
       {/* 3. MOBILE FLOATING BOTTOM NAVIGATION: Visually clean mobile bar with paginated menus and loop next button */}
-      {!isCampfireActiveRoute && (
+      {shouldShowBottomNav && (
         <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-zinc-950/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-2xl h-14 flex items-center justify-between px-2 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div

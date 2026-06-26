@@ -881,7 +881,11 @@ function getIcebreakers(friend: Companion) {
 // Component Implementation
 // ==========================================
 
-export default function FriendsPage() {
+interface FriendsPageProps {
+  activeChatId?: string;
+}
+
+export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const companionListRef = useNestedScroll();
   const chatStreamRef = useNestedScroll();
   const pendingViewRef = useNestedScroll();
@@ -932,7 +936,19 @@ export default function FriendsPage() {
     "all" | "favorites" | "partners" | "online" | "pending" | "blocked" | "suggested" | "recent"
   >("all");
 
-  const [activeFriendId, setActiveFriendId] = useState<string>("f-1");
+  const initialFriendId = useMemo(() => {
+    if (!activeChatId) return null;
+    const decoded = decodeURIComponent(activeChatId);
+    const normalized = decoded.replace(/\s+/g, "-").replace(/_/g, "-");
+    const cleanId = normalized.startsWith("chat:") ? normalized.substring(5) : normalized;
+    return COMPANIONS.some(c => c.id === cleanId) ? cleanId : null;
+  }, [activeChatId]);
+
+  const [activeFriendId, setActiveFriendId] = useState<string | null>(initialFriendId);
+
+  useEffect(() => {
+    setActiveFriendId(initialFriendId);
+  }, [initialFriendId]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeMobileView, setActiveMobileView] = useState<"rail" | "chat" | "inspector">("rail");
 
@@ -985,8 +1001,11 @@ export default function FriendsPage() {
 
   // Find active selected friend profile
   const activeFriend = useMemo(() => {
-    return companions.find(f => f.id === activeFriendId) || companions[0];
+    if (!activeFriendId) return null;
+    return companions.find(f => f.id === activeFriendId) || null;
   }, [companions, activeFriendId]);
+
+  const currentChatId = activeFriendId || "";
 
   // Constellation nodes calculations
   // Sizes represent friendship strength/mutual experience. Proximity represents compatibility.
@@ -1067,7 +1086,7 @@ export default function FriendsPage() {
 
   // Actions
   const handleSendMessage = () => {
-    if (!chatInput.trim()) return;
+    if (!currentChatId || !chatInput.trim()) return;
     const newMsg = {
       id: `m-custom-${Date.now()}`,
       sender: "me",
@@ -1078,12 +1097,13 @@ export default function FriendsPage() {
 
     setChatMessages(prev => ({
       ...prev,
-      [activeFriendId]: [...(prev[activeFriendId] || []), newMsg]
+      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
     }));
     setChatInput("");
   };
 
   const handleSendExperience = () => {
+    if (!currentChatId) return;
     const newMsg = {
       id: `m-exp-${Date.now()}`,
       sender: "me",
@@ -1099,11 +1119,12 @@ export default function FriendsPage() {
     };
     setChatMessages(prev => ({
       ...prev,
-      [activeFriendId]: [...(prev[activeFriendId] || []), newMsg]
+      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
     }));
   };
 
   const handleSendPlan = () => {
+    if (!currentChatId || !activeFriend) return;
     const newMsg = {
       id: `m-plan-${Date.now()}`,
       sender: "me",
@@ -1119,11 +1140,12 @@ export default function FriendsPage() {
     };
     setChatMessages(prev => ({
       ...prev,
-      [activeFriendId]: [...(prev[activeFriendId] || []), newMsg]
+      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
     }));
   };
 
   const handleSendCampfireInvite = (campfire: any) => {
+    if (!currentChatId) return;
     const newMsg = {
       id: `m-invite-${Date.now()}`,
       sender: "me",
@@ -1139,7 +1161,7 @@ export default function FriendsPage() {
     };
     setChatMessages(prev => ({
       ...prev,
-      [activeFriendId]: [...(prev[activeFriendId] || []), newMsg]
+      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
     }));
     setShowInviteModal(false);
   };
@@ -1199,7 +1221,7 @@ export default function FriendsPage() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 pb-24 text-white flex flex-col gap-6 select-none font-sans overflow-x-hidden">
+    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 lg:pb-6 pb-24 text-white flex flex-col gap-6 select-none font-sans overflow-x-hidden">
 
       {/* 1. FRIENDS COMMAND CENTER (STATUS RIBBON) - Hidden on desktop sizes */}
       <div className="md:hidden glass-panel rounded-2xl p-4 border border-white/5 shadow-md flex items-center justify-between gap-4 w-full shrink-0 flex-wrap sm:flex-nowrap">
@@ -1288,15 +1310,11 @@ export default function FriendsPage() {
       </div>
 
       {/* 3. FRIENDS WORKSPACE (OPERATIONAL CONTAINER) */}
-      <div className="w-full flex flex-col gap-4 min-h-[500px]">
+      <div className="w-full flex flex-col gap-4 lg:min-h-[570px] min-h-[500px]">
 
         {/* Right Side: Active Workspace */}
         <main className="flex-1 min-w-0 flex flex-col">
-          <div className={`glass-panel rounded-3xl p-5 border border-white/5 flex flex-col justify-between overflow-hidden ${
-            selectedCategory === "pending"
-              ? "h-auto lg:min-h-[500px] min-h-[650px]"
-              : "lg:h-[500px] h-[650px]"
-          }`}>
+          <div className="glass-panel rounded-3xl p-5 border border-white/5 flex flex-col justify-between overflow-hidden lg:h-[570px] h-[650px]">
 
             {/* VIEW A: CHAT WORKSPACE & CONVERSATION */}
             {(["all", "favorites", "partners", "online", "recent"].includes(selectedCategory)) && (
@@ -1315,12 +1333,7 @@ export default function FriendsPage() {
                         <div
                           key={friend.id}
                           onClick={() => {
-                            if (isMobile) {
-                              router.push(`/profile/friends/chat:${friend.id}`);
-                            } else {
-                              setActiveFriendId(friend.id);
-                              setActiveMobileView("chat");
-                            }
+                            router.push(`/profile/friends/chat:${friend.id}`);
                           }}
                           className={`flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer border transition-all scale-100 hover:scale-[1.01] ${isSelected
                               ? "bg-white/[0.03] border-brand-cyan/20 shadow-md"
@@ -1347,21 +1360,76 @@ export default function FriendsPage() {
                 <div className={`flex-1 flex flex-col justify-between min-h-[380px] lg:border-r lg:border-white/5 lg:pr-4 min-w-0 relative ${activeMobileView === "chat" ? "flex" : activeMobileView === "inspector" ? "hidden lg:flex" : "hidden lg:flex"
                   }`}>
 
-                  {/* Chat Header */}
-                  <div className="flex items-center justify-between pb-3 border-b border-white/5">
+                  {!activeFriend ? (
+                    <div className="flex-grow flex flex-col items-center justify-center text-center p-8 select-none h-full relative">
+                      <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-2xl animate-pulse" />
+                        
+                        {/* Interactive-looking Compass & Chat SVG */}
+                        <svg className="w-36 h-36 relative z-10 text-brand-cyan" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.1" strokeDasharray="6 4" className="animate-[spin_60s_linear_infinite]" />
+                          <circle cx="100" cy="100" r="55" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.25" strokeDasharray="12 8" className="animate-[spin_30s_linear_infinite_reverse]" />
+                          <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1" strokeOpacity="0.15" />
+                          <path d="M100 65V135M65 100H135" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+                          
+                          {/* Chat Bubbles */}
+                          <g className="animate-[bounce_4s_ease-in-out_infinite]">
+                            <rect x="65" y="70" width="50" height="32" rx="10" fill="#09090b" stroke="currentColor" strokeWidth="2" />
+                            <path d="M75 102L70 108L78 108L75 102Z" fill="currentColor" />
+                            <circle cx="82" cy="86" r="2" fill="currentColor" />
+                            <circle cx="90" cy="86" r="2" fill="currentColor" />
+                            <circle cx="98" cy="86" r="2" fill="currentColor" />
+                          </g>
+                          
+                          <g className="animate-[bounce_4s_ease-in-out_infinite_2s]">
+                            <rect x="95" y="98" width="45" height="28" rx="8" fill="#09090b" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.7" />
+                            <path d="M130 126L134 131L128 131L130 126Z" fill="currentColor" fillOpacity="0.7" />
+                          </g>
+                        </svg>
+                      </div>
+
+                      <h3 className="text-sm font-black tracking-wider uppercase text-zinc-200 mt-4 flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-brand-cyan animate-pulse" />
+                        Select a Companion
+                      </h3>
+                      <p className="text-[10px] text-zinc-400 max-w-[320px] leading-relaxed mt-2">
+                        Click on any companion from the list on the left to start chatting and plan your adventures.
+                      </p>
+                      
+                      {/* Interactive guidance arrow pointing left */}
+                      <div className="mt-6 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-brand-cyan/60 animate-pulse">
+                        <ChevronLeft className="h-3.5 w-3.5 animate-[translateX_1.5s_infinite]" />
+                        <span>Choose a friend to chat</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Chat Header */}
+                      <div className="flex items-center justify-between pb-3 border-b border-white/5">
                     <div className="flex items-center gap-3 min-w-0">
-                      {/* Mobile back button */}
+                      {/* Back button */}
                       <button
-                        onClick={() => setActiveMobileView("rail")}
-                        className="lg:hidden p-1 rounded-lg border border-white/10 text-zinc-400 hover:text-white"
+                        onClick={() => {
+                          if (isMobile) {
+                            setActiveMobileView("rail");
+                          } else {
+                            router.push("/profile/friends");
+                          }
+                        }}
+                        className="p-1 rounded-lg border border-white/10 text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0 cursor-pointer hover:bg-white/5"
+                        title="Go Back"
                       >
-                        <X className="h-4 w-4" />
+                        <ChevronLeft className="h-4 w-4" />
                       </button>
                       <div className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
                         <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-10 w-10 text-[13px]" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-xs font-black text-white truncate flex items-center gap-1.5">
+                        <h3 
+                          onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
+                          className="text-xs font-black text-white hover:text-brand-cyan transition-colors cursor-pointer truncate flex items-center gap-1.5"
+                        >
                           {activeFriend.name}
                           <span className={`text-[8px] px-1.5 py-0.2 rounded font-bold uppercase ${getDnaBadgeStyle(activeFriend.sharedDNA)}`}>
                             {activeFriend.sharedDNA}
@@ -1404,9 +1472,9 @@ export default function FriendsPage() {
                     ref={chatStreamRef}
                     className="flex-1 py-4 overflow-y-auto custom-scrollbar pr-2 pb-20"
                   >
-                    {(chatMessages[activeFriendId] || []).length > 0 ? (
+                    {(chatMessages[currentChatId] || []).length > 0 ? (
                       <div className="space-y-3">
-                        {(chatMessages[activeFriendId] || []).map((msg) => {
+                        {(chatMessages[currentChatId] || []).map((msg: any) => {
                           const isMe = msg.sender === "me";
 
                           return (
@@ -1703,12 +1771,26 @@ export default function FriendsPage() {
                       </div>
                     </div>
                   )}
-                </div>
+                </>
+              )}
+            </div>
 
                 {/* 3. Sub-right Friend Inspector / Insights (Visible on mobile in inspector view) */}
                 <div className={`w-full lg:w-[260px] shrink-0 flex flex-col justify-between min-h-[380px] min-w-0 ${activeMobileView === "inspector" ? "flex" : "hidden lg:flex"
                   }`}>
-                  <div className="flex flex-col gap-4 text-left">
+                  {!activeFriend ? (
+                    <div className="flex flex-col items-center justify-center text-center p-6 border border-white/5 bg-white/[0.01] rounded-3xl h-full min-h-[380px] select-none">
+                      <div className="relative h-16 w-16 bg-white/[0.02] border border-white/5 rounded-full flex items-center justify-center text-zinc-500 mb-3">
+                        <Compass className="h-6 w-6 text-zinc-500" />
+                        <div className="absolute inset-0 rounded-full border border-dashed border-zinc-700 animate-[spin_20s_linear_infinite]" />
+                      </div>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Profile Insights</h4>
+                      <p className="text-[9px] text-zinc-500 max-w-[180px] leading-relaxed mt-1">
+                        Companion statistics, compatibility metrics, and passport details will populate once a friend is selected.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-4 text-left">
                     <div className="pb-2 border-b border-white/5 flex items-center justify-between">
                       <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Explorer Profile</span>
                       <button
@@ -1728,9 +1810,12 @@ export default function FriendsPage() {
                         <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
                           <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-12 w-12 text-[15px]" />
                         </div>
-                        <div>
-                          <h4 className="text-xs font-bold text-white">{activeFriend.name}</h4>
-                          <span className="text-[9px] text-zinc-500">{activeFriend.username}</span>
+                        <div 
+                          onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
+                          className="cursor-pointer group/name"
+                        >
+                          <h4 className="text-xs font-bold text-white group-hover/name:text-brand-cyan transition-colors">{activeFriend.name}</h4>
+                          <span className="text-[9px] text-zinc-500 group-hover/name:text-brand-cyan/85 transition-colors">{activeFriend.username}</span>
                         </div>
                       </div>
                       <p className="text-[10px] text-zinc-400 leading-normal">{activeFriend.bio}</p>
@@ -1821,6 +1906,7 @@ export default function FriendsPage() {
                       </button>
                     </div>
                   </div>
+                  )}
                 </div>
 
               </div>
@@ -1835,7 +1921,7 @@ export default function FriendsPage() {
               const totalOutgoingPages = Math.ceil(outgoingRequests.length / ITEMS_PER_PAGE);
 
               return (
-                <div ref={pendingViewRef} className="space-y-6 flex-1 w-full text-left overflow-visible">
+                <div ref={pendingViewRef} className="space-y-6 flex-1 w-full text-left overflow-y-auto no-scrollbar">
 
                   {/* Incoming Requests */}
                   <div className="space-y-3">
@@ -2107,7 +2193,7 @@ export default function FriendsPage() {
               </div>
 
               <p className="text-[10px] text-zinc-400 mb-4 leading-normal shrink-0 text-left">
-                Select an active campfire to invite <strong className="text-zinc-200">{activeFriend.name}</strong>. They will receive an interactive card in the chat to join directly.
+                Select an active campfire to invite <strong className="text-zinc-200">{activeFriend?.name || ""}</strong>. They will receive an interactive card in the chat to join directly.
               </p>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar" data-lenis-prevent>

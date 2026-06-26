@@ -641,6 +641,39 @@ const getCardStyle = (id: string) => {
   return CARD_GRADIENTS[sum % CARD_GRADIENTS.length];
 };
 
+const getProfileUsername = (name: string): string => {
+  const normalized = name.trim().toLowerCase();
+  if (normalized === "you" || normalized === "rishiraj" || normalized === "rishi005") {
+    return "";
+  }
+  const mappings: { [key: string]: string } = {
+    "sara khan": "sara_k",
+    "arjun mehta": "arjun_m",
+    "divya kapoor": "divya_k",
+    "milind soman": "milind_s",
+    "ananya rao": "ananya_r",
+    "rohit kumar": "rohit_k",
+    "zoe chen": "zoe_c",
+    "kabir singh": "kabir_s",
+    "priya sharma": "priya_s",
+    "vikram malhotra": "vikram_m",
+    "aisha patel": "aisha_p",
+    "rohan joshi": "rohan_j",
+    "neha gupta": "neha_g",
+    "dev adams": "dev_a",
+    "tara sen": "tara_s",
+  };
+  if (mappings[normalized]) {
+    return mappings[normalized];
+  }
+  for (const [key, val] of Object.entries(mappings)) {
+    if (normalized.includes(key) || key.includes(normalized)) {
+      return val;
+    }
+  }
+  return normalized.replace(/\s+/g, "_");
+};
+
 export default function CampfiresPage() {
   const router = useRouter();
   // ==========================================
@@ -2703,7 +2736,7 @@ export default function CampfiresPage() {
       {/* Zoomed Avatar Modal */}
       <AnimatePresence>
         {zoomedAvatar && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm select-none">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm select-none animate-none">
             <div className="absolute inset-0 cursor-zoom-out" onClick={() => setZoomedAvatar(null)} />
             
             <motion.div
@@ -2714,7 +2747,7 @@ export default function CampfiresPage() {
             >
               <button
                 onClick={() => setZoomedAvatar(null)}
-                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer animate-none"
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2725,9 +2758,23 @@ export default function CampfiresPage() {
                 className="h-48 w-48 text-5xl shadow-2xl border-2 border-white/15"
               />
 
-              <div className="text-center">
+              <div className="text-center w-full">
                 <h4 className="text-sm font-black text-white">{zoomedAvatar.name}</h4>
                 <p className="text-[10px] text-zinc-400 mt-1">Campfire Participant Photo</p>
+                <button
+                  onClick={() => {
+                    setZoomedAvatar(null);
+                    const usernameSlug = getProfileUsername(zoomedAvatar.name);
+                    if (usernameSlug) {
+                      router.push(`/profile/${usernameSlug}`);
+                    } else {
+                      router.push("/profile");
+                    }
+                  }}
+                  className="mt-4 w-full py-2.5 px-4 rounded-xl bg-brand-cyan hover:bg-brand-cyan/90 text-zinc-950 hover:text-zinc-950 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-md select-none flex items-center justify-center gap-1.5 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Visit Profile
+                </button>
               </div>
             </motion.div>
           </div>

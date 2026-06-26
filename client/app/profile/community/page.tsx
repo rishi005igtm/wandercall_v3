@@ -1860,12 +1860,22 @@ export default function CommunitiesPage() {
                         transform={`translate(${item.x}, ${item.y})`}
                         style={{ opacity, transition: "opacity 0.4s ease" }}
                         className="cursor-pointer outline-none"
-                        onClick={() => setSelectedExplorer(item.node)}
+                        onClick={() => {
+                          if (selectedExplorer?.id === item.node.id) {
+                            router.push(`/profile/${item.node.username.replace(/^@/, "")}`);
+                          } else {
+                            setSelectedExplorer(item.node);
+                          }
+                        }}
                         tabIndex={0}
                         onKeyDown={(e) => {
                           if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
-                            setSelectedExplorer(item.node);
+                            if (selectedExplorer?.id === item.node.id) {
+                              router.push(`/profile/${item.node.username.replace(/^@/, "")}`);
+                            } else {
+                              setSelectedExplorer(item.node);
+                            }
                           }
                         }}
                         aria-label={`${item.node.name}, ${item.node.compatibility}% compatibility match.`}
@@ -1975,11 +1985,14 @@ export default function CommunitiesPage() {
                   className="flex flex-col gap-4 h-full"
                 >
                   <div className="flex justify-between items-start gap-4">
-                    <div className="flex flex-col min-w-0">
+                    <div 
+                      onClick={() => router.push(`/profile/${selectedExplorer.username.replace(/^@/, "")}`)}
+                      className="flex flex-col min-w-0 cursor-pointer group/inspector-header"
+                    >
                       <span className="text-[8px] font-black uppercase tracking-widest text-brand-cyan">
                         {selectedExplorer.sharedDNA} Subclass
                       </span>
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider mt-1.5 truncate flex items-center gap-2">
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider mt-1.5 truncate flex items-center gap-2 group-hover/inspector-header:text-brand-cyan transition-colors">
                         {!failedExplorerAvatars[selectedExplorer.id] && selectedExplorer.avatar?.startsWith("http") ? (
                           <img
                             src={selectedExplorer.avatar}
@@ -1999,7 +2012,7 @@ export default function CommunitiesPage() {
                         )}
                         <span>{selectedExplorer.name}</span>
                       </h3>
-                      <span className="text-[9px] text-zinc-500 font-mono">
+                      <span className="text-[9px] text-zinc-500 font-mono mt-0.5 group-hover/inspector-header:text-brand-cyan/70 transition-colors">
                         @{selectedExplorer.username}
                       </span>
                     </div>

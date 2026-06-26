@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import FriendsPage from "../page";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -449,7 +450,9 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
   const { chatId } = React.use(params);
 
   // Clean parameter (extract the userId from e.g. 'chat:f-1')
-  const userId = chatId.startsWith("chat:") ? chatId.substring(5) : chatId;
+  const decodedChatId = decodeURIComponent(chatId);
+  const normalizedChatId = decodedChatId.replace(/\s+/g, "-").replace(/_/g, "-");
+  const userId = normalizedChatId.startsWith("chat:") ? normalizedChatId.substring(5) : normalizedChatId;
 
   const router = useRouter();
 
@@ -579,7 +582,15 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-brand-bg text-white relative overflow-hidden">
+    <>
+      {/* Desktop view rendering the main FriendsPage with the chatId */}
+      <div className="hidden lg:block h-screen w-screen overflow-hidden">
+        <FriendsPage activeChatId={chatId} />
+      </div>
+
+      {/* Mobile view rendering the immersive phone-only full screen chat */}
+      <div className="block lg:hidden h-full w-full">
+        <div className="flex flex-col h-screen w-screen bg-brand-bg text-white relative overflow-hidden">
 
       {/* 1. HEADER SECTION */}
       <header className="h-16 w-full border-b border-white/5 px-4 flex items-center justify-between bg-zinc-950/20 backdrop-blur-md shrink-0">
@@ -594,11 +605,14 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95 animate-none shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
             <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-8 w-8 text-[11px]" />
           </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-black text-white truncate flex items-center gap-1.5">
+          <div 
+            onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
+            className="min-w-0 cursor-pointer group/name"
+          >
+            <h3 className="text-sm font-black text-white truncate flex items-center gap-1.5 group-hover/name:text-brand-cyan transition-colors">
               {activeFriend.name}
             </h3>
-            <p className="text-[9px] text-zinc-500 truncate">{activeFriend.username}</p>
+            <p className="text-[9px] text-zinc-500 truncate group-hover/name:text-brand-cyan/80 transition-colors">{activeFriend.username}</p>
           </div>
         </div>
 
@@ -868,9 +882,12 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                 <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
                   <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-12 w-12 text-[15px]" />
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white">{activeFriend.name}</h4>
-                  <span className="text-[9px] text-zinc-500">{activeFriend.username}</span>
+                <div 
+                  onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
+                  className="cursor-pointer group/name"
+                >
+                  <h4 className="text-xs font-bold text-white group-hover/name:text-brand-cyan transition-colors">{activeFriend.name}</h4>
+                  <span className="text-[9px] text-zinc-500 group-hover/name:text-brand-cyan/85 transition-colors">{activeFriend.username}</span>
                 </div>
               </div>
               <p className="text-[10px] text-zinc-400 leading-normal">{activeFriend.bio}</p>
@@ -1046,6 +1063,8 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         )}
       </AnimatePresence>
 
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
