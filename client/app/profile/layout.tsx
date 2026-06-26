@@ -80,6 +80,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   };
 
   const isChatRoute = pathname?.includes('/profile/friends/chat:');
+  const isCampfireActiveRoute = pathname?.startsWith('/profile/campfires/') && pathname !== '/profile/campfires' && pathname !== '/profile/campfires/';
 
   if (isChatRoute) {
     return (
@@ -131,7 +132,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
           <nav className="flex flex-col gap-1 w-full mt-4">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href || (item.href === "/profile/community" && pathname?.startsWith("/profile/community"));
 
               return (
                 <Link
@@ -177,7 +178,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* 2. SCROLLABLE RIGHT CONTENT AREA */}
-      <main className="flex-1 md:pl-[80px] lg:pl-[280px] min-h-screen flex flex-col pb-20 md:pb-0">
+      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] min-h-screen flex flex-col ${isCampfireActiveRoute ? "pb-0" : "pb-20"} md:pb-0`}>
         <header className="h-16 w-full border-b border-white/5 px-4 md:px-12 flex items-center justify-between z-30 bg-zinc-950/10 backdrop-blur-md">
           <div className="flex items-center gap-3">
             <button
@@ -227,85 +228,87 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       </main>
 
       {/* 3. MOBILE FLOATING BOTTOM NAVIGATION: Visually clean mobile bar with paginated menus and loop next button */}
-      <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-zinc-950/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-2xl h-14 flex items-center justify-between px-2 overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={mobileMenuPage}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={{
-              initial: { opacity: 0, y: 10 },
-              animate: {
-                opacity: 1,
-                y: 0,
-                transition: {
-                  staggerChildren: 0.04,
-                  delayChildren: 0.02
-                }
-              },
-              exit: { opacity: 0, y: -10, transition: { duration: 0.12 } }
-            }}
-            className="flex w-full items-center justify-around h-full"
-          >
-            {activeGroup.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-
-              return (
-                <motion.div
-                  key={item.name}
-                  variants={{
-                    initial: { scale: 0.85, opacity: 0 },
-                    animate: { scale: 1, opacity: 1 },
-                    exit: { scale: 0.85, opacity: 0 }
-                  }}
-                  className="flex-1 flex justify-center"
-                >
-                  <Link
-                    href={item.href}
-                    onClick={(e) => handleNavClick(e, item)}
-                    className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] ${isActive ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
-                      }`}
-                    aria-label={item.name}
-                  >
-                    {isActive && (
-                      <motion.div
-                        layoutId="mobile-nav-pill"
-                        className="absolute inset-0 bg-white/5 border border-white/5 rounded-xl z-0"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                    <Icon className="h-4.5 w-4.5 z-10" />
-                    <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10 truncate max-w-full">{item.name}</span>
-                  </Link>
-                </motion.div>
-              );
-            })}
-
-            {/* Next Button Loop */}
+      {!isCampfireActiveRoute && (
+        <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-zinc-950/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-2xl h-14 flex items-center justify-between px-2 overflow-hidden">
+          <AnimatePresence mode="wait">
             <motion.div
+              key={mobileMenuPage}
+              initial="initial"
+              animate="animate"
+              exit="exit"
               variants={{
-                initial: { scale: 0.85, opacity: 0 },
-                animate: { scale: 1, opacity: 1 },
-                exit: { scale: 0.85, opacity: 0 }
+                initial: { opacity: 0, y: 10 },
+                animate: {
+                  opacity: 1,
+                  y: 0,
+                  transition: {
+                    staggerChildren: 0.04,
+                    delayChildren: 0.02
+                  }
+                },
+                exit: { opacity: 0, y: -10, transition: { duration: 0.12 } }
               }}
-              className="flex-1 flex justify-center"
+              className="flex w-full items-center justify-around h-full"
             >
-              <button
-                onClick={() => {
-                  setMobileMenuPage(prev => (prev + 1) % 9);
+              {activeGroup.map((item) => {
+                const Icon = item.icon;
+                const isActive = pathname === item.href || (item.href === "/profile/community" && pathname?.startsWith("/profile/community"));
+
+                return (
+                  <motion.div
+                    key={item.name}
+                    variants={{
+                      initial: { scale: 0.85, opacity: 0 },
+                      animate: { scale: 1, opacity: 1 },
+                      exit: { scale: 0.85, opacity: 0 }
+                    }}
+                    className="flex-1 flex justify-center"
+                  >
+                    <Link
+                      href={item.href}
+                      onClick={(e) => handleNavClick(e, item)}
+                      className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] ${isActive ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
+                        }`}
+                      aria-label={item.name}
+                    >
+                      {isActive && (
+                        <motion.div
+                          layoutId="mobile-nav-pill"
+                          className="absolute inset-0 bg-white/5 border border-white/5 rounded-xl z-0"
+                          transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                        />
+                      )}
+                      <Icon className="h-4.5 w-4.5 z-10" />
+                      <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10 truncate max-w-full">{item.name}</span>
+                    </Link>
+                  </motion.div>
+                );
+              })}
+
+              {/* Next Button Loop */}
+              <motion.div
+                variants={{
+                  initial: { scale: 0.85, opacity: 0 },
+                  animate: { scale: 1, opacity: 1 },
+                  exit: { scale: 0.85, opacity: 0 }
                 }}
-                className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] text-zinc-400 hover:text-white"
-                aria-label="Next Menu"
+                className="flex-1 flex justify-center"
               >
-                <ArrowRight className="h-4.5 w-4.5 z-10 text-brand-purple group-hover:translate-x-0.5 transition-transform" />
-                <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10 text-brand-purple">Next</span>
-              </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuPage(prev => (prev + 1) % 9);
+                  }}
+                  className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] text-zinc-400 hover:text-white"
+                  aria-label="Next Menu"
+                >
+                  <ArrowRight className="h-4.5 w-4.5 z-10 text-brand-purple group-hover:translate-x-0.5 transition-transform" />
+                  <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10 text-brand-purple">Next</span>
+                </button>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        </AnimatePresence>
-      </div>
+          </AnimatePresence>
+        </div>
+      )}
 
       {/* 4. TOAST NOTIFICATION FOR COMING SOON MODULES */}
       <AnimatePresence>

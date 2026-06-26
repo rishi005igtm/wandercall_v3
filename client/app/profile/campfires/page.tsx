@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
@@ -40,7 +41,9 @@ import {
   Eye,
   BookOpen,
   Trash2,
-  ShieldAlert
+  ShieldAlert,
+  Copy,
+  Check
 } from "lucide-react";
 
 // ==========================================
@@ -194,7 +197,7 @@ const INITIAL_CAMPFIRES: CampfireRoom[] = [
     category: "Travel",
     mood: "Storytelling",
     isPrivate: true,
-    password: "travelsecrets",
+    password: "123456",
     duration: "15m",
     x: 390,
     y: 290,
@@ -245,7 +248,7 @@ const INITIAL_CAMPFIRES: CampfireRoom[] = [
     category: "Adventure",
     mood: "Storytelling",
     isPrivate: true,
-    password: "survive",
+    password: "987654",
     duration: "2h 5m",
     x: 690,
     y: 250,
@@ -542,7 +545,7 @@ const INITIAL_HOSTED_ROOMS: CampfireRoom[] = [
     category: "Travel",
     mood: "Adventure",
     isPrivate: true,
-    password: "spiti",
+    password: "555555",
     duration: "2h 0m",
     x: 300,
     y: 300,
@@ -579,6 +582,57 @@ const CARD_GRADIENTS = [
   }
 ];
 
+interface CompanionAvatarProps {
+  avatar: string;
+  name: string;
+  className?: string;
+}
+
+function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: CompanionAvatarProps) {
+  const [hasError, setHasError] = useState(false);
+
+  const isUrl = avatar && (avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("/"));
+
+  const getHashColor = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      "bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/30",
+      "bg-brand-purple/20 text-brand-purple border border-brand-purple/30",
+      "bg-brand-emerald/20 text-brand-emerald border border-brand-emerald/30",
+      "bg-brand-amber/20 text-brand-amber border border-brand-amber/30",
+      "bg-brand-indigo/20 text-brand-indigo border border-brand-indigo/30"
+    ];
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
+
+  if (isUrl && !hasError) {
+    return (
+      <img
+        src={avatar}
+        alt={name}
+        onError={() => setHasError(true)}
+        className={`${className} rounded-full object-cover shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${className} rounded-full flex items-center justify-center font-bold shrink-0 select-none ${getHashColor(
+        name
+      )}`}
+    >
+      {initials}
+    </div>
+  );
+}
+
 const getCardStyle = (id: string) => {
   let sum = 0;
   for (let i = 0; i < id.length; i++) {
@@ -588,6 +642,7 @@ const getCardStyle = (id: string) => {
 };
 
 export default function CampfiresPage() {
+  const router = useRouter();
   // ==========================================
   // States
   // ==========================================
@@ -602,10 +657,77 @@ export default function CampfiresPage() {
   const [passcodeError, setPasscodeError] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
 
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [remindedEvents, setRemindedEvents] = useState<Record<string, boolean>>({});
+  const inputRef = useRef<HTMLInputElement>(null);
+  const myWorkspaceRef = useRef<HTMLDivElement>(null);
+  const [pressedKey, setPressedKey] = useState<string | null>(null);
+
+  const triggerToast = (msg: string) => {
+    setToastMsg(msg);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const handleCopyId = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    setCopiedId(id);
+    triggerToast(`Campfire ID "${id}" copied to clipboard!`);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const getRoomSlug = (room: CampfireRoom) => {
+    const cleanTitle = room.title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+    return `${room.id}--${cleanTitle}`;
+  };
+
+  const handleRemindMe = (eventId: string, title: string) => {
+    const isAlreadyReminded = remindedEvents[eventId];
+    if (isAlreadyReminded) {
+      setRemindedEvents(prev => ({ ...prev, [eventId]: false }));
+      triggerToast(`Cancelled reminder for "${title}"`);
+    } else {
+      setRemindedEvents(prev => ({ ...prev, [eventId]: true }));
+      triggerToast(`Reminder set! You will be notified when "${title}" starts.`);
+    }
+  };
+
+  useEffect(() => {
+    if (joiningRoom) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [joiningRoom]);
+
   // Dashboard Workspace sub-states (hosted, joined, saved, blocked)
   const [myCampfiresTab, setMyCampfiresTab] = useState<"hosted" | "joined" | "saved" | "blocked">("joined");
   const [workspacePage, setWorkspacePage] = useState(1);
   const [hostedRooms, setHostedRooms] = useState<CampfireRoom[]>(INITIAL_HOSTED_ROOMS);
+  const [zoomedAvatar, setZoomedAvatar] = useState<{ url: string; name: string } | null>(null);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("wandercall_hosted_campfires");
+      if (stored) {
+        try {
+          setHostedRooms(JSON.parse(stored));
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+  }, []);
+
+  const saveHostedRooms = (rooms: CampfireRoom[]) => {
+    setHostedRooms(rooms);
+    localStorage.setItem("wandercall_hosted_campfires", JSON.stringify(rooms));
+  };
 
   // Featured Events Active Slide Index (Mobile Only)
   const [activeEventIndex, setActiveEventIndex] = useState(0);
@@ -706,33 +828,25 @@ export default function CampfiresPage() {
 
   // Initialize room participants when joining
   const handleJoinRoom = (room: CampfireRoom) => {
-    if (room.isPrivate && !joinedRoomId) {
+    if (room.isPrivate) {
       setJoiningRoom(room);
       setPasscodeInput("");
       setPasscodeError(false);
       return;
     }
 
-    setJoinedRoomId(room.id);
-    setSpeakersList(room.speakers);
-    setListenersList(room.listeners);
-    setIsMuted(true);
-    setHasRaisedHand(false);
-    setChatMessages([
-      { id: "msg-init", sender: "Campfire Keeper", avatar: "/globe", text: `Welcome to "${room.title}"! Gather round the fire and respect the circle.`, time: "Just now" }
-    ]);
+    router.push(`/profile/campfires/${getRoomSlug(room)}`);
   };
 
   const handlePasswordSubmit = () => {
     if (joiningRoom && passcodeInput === joiningRoom.password) {
-      setJoinedRoomId(joiningRoom.id);
-      setSpeakersList(joiningRoom.speakers);
-      setListenersList(joiningRoom.listeners);
-      setIsMuted(true);
-      setHasRaisedHand(false);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`authorized_campfire_${joiningRoom.id}`, "true");
+      }
       setJoiningRoom(null);
       setPasscodeInput("");
       setPasscodeError(false);
+      router.push(`/profile/campfires/${getRoomSlug(joiningRoom)}`);
     } else {
       setPasscodeError(true);
       setPasscodeInput("");
@@ -802,28 +916,30 @@ export default function CampfiresPage() {
       coverUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80"
     };
 
-    setHostedRooms(prev => [createdRoom, ...prev]);
+    const updatedHosted = [createdRoom, ...hostedRooms];
+    saveHostedRooms(updatedHosted);
     setShowCreateModal(false);
-    // Join instantly
-    setJoinedRoomId(newId);
-    setSpeakersList(createdRoom.speakers);
-    setListenersList([]);
-    setIsMuted(false); // starts speaking as host
-    setHasRaisedHand(false);
-    setChatMessages([
-      { id: "msg-init", sender: "Campfire Keeper", avatar: "/globe", text: `Your campfire "${newTitle}" has been lit! Invite friends.`, time: "Just now" }
-    ]);
+
+    if (createdRoom.isPrivate) {
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(`authorized_campfire_${createdRoom.id}`, "true");
+      }
+    }
 
     // reset fields
     setNewTitle("");
     setNewDescription("");
     setNewPassword("");
     setNewVisibility("public");
+
+    // Redirect to nested page
+    router.push(`/profile/campfires/${getRoomSlug(createdRoom)}`);
   };
 
   // Delete Hosted Room
   const handleDeleteHosted = (id: string) => {
-    setHostedRooms(prev => prev.filter(r => r.id !== id));
+    const updated = hostedRooms.filter(r => r.id !== id);
+    saveHostedRooms(updated);
   };
 
   // Discovery Filtered Campfires
@@ -1069,12 +1185,18 @@ export default function CampfiresPage() {
                         {activeSpeakersMap["host"] && (
                           <div className="absolute -inset-2 rounded-full bg-brand-cyan/20 border border-brand-cyan/40 animate-ping" />
                         )}
-                        <img
-                          src={activeRoom.hostAvatar}
-                          alt={activeRoom.hostName}
-                          className={`h-16 w-16 rounded-full border-2 ${activeSpeakersMap["host"] ? "border-brand-cyan shadow-[0_0_15px_rgba(6,182,212,0.6)]" : "border-brand-purple"
-                            } object-cover`}
-                        />
+                        <div
+                          onClick={() => setZoomedAvatar({ url: activeRoom.hostAvatar, name: activeRoom.hostName })}
+                          className={`h-16 w-16 rounded-full border-2 cursor-pointer hover:scale-105 active:scale-95 shrink-0 overflow-hidden select-none ${
+                            activeSpeakersMap["host"] ? "border-brand-cyan shadow-[0_0_15px_rgba(6,182,212,0.6)]" : "border-brand-purple"
+                          }`}
+                        >
+                          <CompanionAvatar
+                            avatar={activeRoom.hostAvatar}
+                            name={activeRoom.hostName}
+                            className="h-full w-full text-2xl"
+                          />
+                        </div>
                         <div className="absolute -bottom-1 -right-1 bg-brand-purple text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded border border-zinc-950">
                           Host
                         </div>
@@ -1112,12 +1234,18 @@ export default function CampfiresPage() {
                             {isSpeaking && (
                               <div className="absolute -inset-1.5 rounded-full bg-brand-cyan/25 border border-brand-cyan/30 animate-pulse" />
                             )}
-                            <img
-                              src={speaker.avatar}
-                              alt={speaker.name}
-                              className={`h-12 w-12 rounded-full border-2 ${isSpeaking ? "border-brand-cyan shadow-[0_0_10px_rgba(6,182,212,0.4)]" : "border-white/20"
-                                } object-cover`}
-                            />
+                            <div
+                              onClick={() => setZoomedAvatar({ url: speaker.avatar, name: speaker.name })}
+                              className={`h-12 w-12 rounded-full border-2 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden shrink-0 select-none ${
+                                isSpeaking ? "border-brand-cyan shadow-[0_0_10px_rgba(6,182,212,0.4)]" : "border-white/20"
+                              }`}
+                            >
+                              <CompanionAvatar
+                                avatar={speaker.avatar}
+                                name={speaker.name}
+                                className="h-full w-full text-lg"
+                              />
+                            </div>
                             {isSpeaking && (
                               <div className="absolute -bottom-1 -right-1 bg-brand-cyan text-white p-0.5 rounded-full">
                                 <Volume2 className="h-3 w-3 animate-bounce" />
@@ -1146,12 +1274,18 @@ export default function CampfiresPage() {
                         {activeSpeakersMap["user"] && (
                           <div className="absolute -inset-1.5 rounded-full bg-brand-cyan/25 border border-brand-cyan/30 animate-pulse" />
                         )}
-                        <img
-                          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
-                          alt="You"
-                          className={`h-12 w-12 rounded-full border-2 ${!isMuted ? "border-brand-cyan shadow-[0_0_10px_rgba(6,182,212,0.4)]" : "border-white/10"
-                            } object-cover`}
-                        />
+                        <div
+                          onClick={() => setZoomedAvatar({ url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80", name: "You" })}
+                          className={`h-12 w-12 rounded-full border-2 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden shrink-0 select-none ${
+                            !isMuted ? "border-brand-cyan shadow-[0_0_10px_rgba(6,182,212,0.4)]" : "border-white/10"
+                          }`}
+                        >
+                          <CompanionAvatar
+                            avatar="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
+                            name="You"
+                            className="h-full w-full text-lg"
+                          />
+                        </div>
                         <div className="absolute -bottom-1 -right-1 bg-zinc-950/80 p-0.5 rounded-full border border-white/10">
                           {isMuted ? (
                             <MicOff className="h-3 w-3 text-rose-400" />
@@ -1188,11 +1322,16 @@ export default function CampfiresPage() {
                       >
                         <div className="flex flex-col items-center">
                           <div className="relative">
-                            <img
-                              src={listener.avatar}
-                              alt={listener.name}
-                              className="h-9 w-9 rounded-full border border-white/5 opacity-70 hover:opacity-100 transition-opacity object-cover"
-                            />
+                            <div
+                              onClick={() => setZoomedAvatar({ url: listener.avatar, name: listener.name })}
+                              className="h-9 w-9 rounded-full border border-white/5 opacity-70 hover:opacity-100 transition-opacity cursor-pointer hover:scale-105 active:scale-95 overflow-hidden shrink-0 select-none"
+                            >
+                              <CompanionAvatar
+                                avatar={listener.avatar}
+                                name={listener.name}
+                                className="h-full w-full text-sm"
+                              />
+                            </div>
                             {listener.hasHandRaised && (
                               <div className="absolute -top-1 -right-1 bg-brand-amber text-[8px] p-0.5 rounded-full font-bold">
                                 ✋
@@ -1327,11 +1466,16 @@ export default function CampfiresPage() {
                         </div>
                       ) : (
                         <>
-                          <img
-                            src={msg.avatar}
-                            alt={msg.sender}
-                            className="h-8 w-8 rounded-full border border-white/10 shrink-0 object-cover"
-                          />
+                          <div
+                            onClick={() => setZoomedAvatar({ url: msg.avatar, name: msg.sender })}
+                            className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                          >
+                            <CompanionAvatar
+                              avatar={msg.avatar}
+                              name={msg.sender}
+                              className="h-full w-full text-xs"
+                            />
+                          </div>
                           <div className="space-y-1 flex-1">
                             <div className="flex items-center justify-between">
                               <span className="font-bold text-zinc-200">{msg.sender}</span>
@@ -1396,12 +1540,24 @@ export default function CampfiresPage() {
               </div>
 
               {/* Host CTA */}
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-brand-indigo to-brand-purple text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-brand-indigo/20 transition-all cursor-pointer self-start md:self-auto shrink-0"
-              >
-                <Plus className="h-4 w-4" /> Light a Campfire
-              </button>
+              <div className="flex items-center gap-3 self-start md:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMyCampfiresTab("hosted");
+                    myWorkspaceRef.current?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:border-white/20 transition-all cursor-pointer"
+                >
+                  <Radio className="h-4 w-4 text-brand-cyan animate-pulse" /> My Campfires
+                </button>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="flex items-center gap-2 bg-gradient-to-r from-brand-indigo to-brand-purple text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-brand-indigo/20 transition-all cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" /> Light a Campfire
+                </button>
+              </div>
             </div>
 
             {/* SECTION 1: CAMPFIRE COMMAND CENTER (Unified strip) */}
@@ -1535,11 +1691,16 @@ export default function CampfiresPage() {
 
                     <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
                       <div className="flex items-center gap-2">
-                        <img
-                          src={FEATURED_EVENTS[activeEventIndex].hostAvatar}
-                          alt={FEATURED_EVENTS[activeEventIndex].hostName}
-                          className="h-8 w-8 rounded-full border border-white/10 object-cover"
-                        />
+                        <div
+                          onClick={() => setZoomedAvatar({ url: FEATURED_EVENTS[activeEventIndex].hostAvatar, name: FEATURED_EVENTS[activeEventIndex].hostName })}
+                          className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                        >
+                          <CompanionAvatar
+                            avatar={FEATURED_EVENTS[activeEventIndex].hostAvatar}
+                            name={FEATURED_EVENTS[activeEventIndex].hostName}
+                            className="h-full w-full text-xs"
+                          />
+                        </div>
                         <div>
                           <p className="text-[8px] text-zinc-500">Host</p>
                           <p className="text-[10px] font-bold text-white">{FEATURED_EVENTS[activeEventIndex].hostName}</p>
@@ -1547,10 +1708,15 @@ export default function CampfiresPage() {
                       </div>
 
                       <button
-                        onClick={() => alert("You will be notified when this event starts!")}
-                        className="bg-white/5 hover:bg-white/15 text-white border border-white/10 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        onClick={() => handleRemindMe(FEATURED_EVENTS[activeEventIndex].id, FEATURED_EVENTS[activeEventIndex].title)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center border ${
+                          remindedEvents[FEATURED_EVENTS[activeEventIndex].id]
+                            ? "bg-brand-cyan/15 hover:bg-brand-cyan/20 text-brand-cyan border-brand-cyan/35"
+                            : "bg-white/5 hover:bg-white/15 text-white border-white/10"
+                        }`}
                       >
-                        Remind Me
+                        {remindedEvents[FEATURED_EVENTS[activeEventIndex].id] && <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                        {remindedEvents[FEATURED_EVENTS[activeEventIndex].id] ? "Reminded" : "Remind Me"}
                       </button>
                     </div>
                   </motion.div>
@@ -1584,11 +1750,16 @@ export default function CampfiresPage() {
 
                     <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
                       <div className="flex items-center gap-2">
-                        <img
-                          src={event.hostAvatar}
-                          alt={event.hostName}
-                          className="h-8 w-8 rounded-full border border-white/10 object-cover"
-                        />
+                        <div
+                          onClick={() => setZoomedAvatar({ url: event.hostAvatar, name: event.hostName })}
+                          className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                        >
+                          <CompanionAvatar
+                            avatar={event.hostAvatar}
+                            name={event.hostName}
+                            className="h-full w-full text-xs"
+                          />
+                        </div>
                         <div>
                           <p className="text-[8px] text-zinc-500">Host</p>
                           <p className="text-[10px] font-bold text-white">{event.hostName}</p>
@@ -1596,10 +1767,15 @@ export default function CampfiresPage() {
                       </div>
 
                       <button
-                        onClick={() => alert("You will be notified when this event starts!")}
-                        className="bg-white/5 hover:bg-white/15 text-white border border-white/10 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                        onClick={() => handleRemindMe(event.id, event.title)}
+                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center border ${
+                          remindedEvents[event.id]
+                            ? "bg-brand-cyan/15 hover:bg-brand-cyan/20 text-brand-cyan border-brand-cyan/35"
+                            : "bg-white/5 hover:bg-white/15 text-white border-white/10"
+                        }`}
                       >
-                        Remind Me
+                        {remindedEvents[event.id] && <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                        {remindedEvents[event.id] ? "Reminded" : "Remind Me"}
                       </button>
                     </div>
                   </div>
@@ -1669,9 +1845,26 @@ export default function CampfiresPage() {
                       <div className="space-y-4">
                         {/* Header */}
                         <div className="flex items-center justify-between">
-                          <span className="text-[9px] uppercase font-bold tracking-widest text-brand-cyan bg-brand-cyan/15 px-2 py-0.5 rounded-full">
-                            {room.category}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] uppercase font-bold tracking-widest text-brand-cyan bg-brand-cyan/15 px-2 py-0.5 rounded-full">
+                              {room.category}
+                            </span>
+                            <span className={`text-[8px] uppercase tracking-wider font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5 border ${
+                              room.isPrivate
+                                ? "bg-rose-500/10 text-rose-450 border-rose-500/20"
+                                : "bg-emerald-500/10 text-emerald-450 border-emerald-500/20"
+                            }`}>
+                              {room.isPrivate ? (
+                                <>
+                                  <Lock className="h-2 w-2" /> Private
+                                </>
+                              ) : (
+                                <>
+                                  <Unlock className="h-2 w-2" /> Public
+                                </>
+                              )}
+                            </span>
+                          </div>
                           <span className="text-[10px] text-zinc-500 flex items-center gap-1">
                             <Clock className="h-3 w-3 text-brand-purple" /> {room.duration}
                           </span>
@@ -1685,6 +1878,26 @@ export default function CampfiresPage() {
                           <p className="text-xs text-zinc-400 line-clamp-2">
                             {room.description}
                           </p>
+                        </div>
+
+                        {/* Copyable ID Tag */}
+                        <div className="flex items-center justify-between gap-2 text-[10px] text-zinc-400 font-mono bg-zinc-950/40 border border-white/5 hover:border-white/10 px-3 py-1.5 rounded-xl transition-all">
+                          <div className="flex items-center gap-1 text-zinc-500">
+                            <span>ID:</span>
+                            <span className="font-bold text-zinc-300 select-all">{room.id}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => handleCopyId(e, room.id)}
+                            className="p-1 rounded bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                            title="Copy Campfire ID"
+                          >
+                            {copiedId === room.id ? (
+                              <Check className="h-3 w-3 text-brand-emerald" />
+                            ) : (
+                              <Copy className="h-3 w-3 text-zinc-400" />
+                            )}
+                          </button>
                         </div>
 
                         {/* Gathered Users */}
@@ -1701,11 +1914,19 @@ export default function CampfiresPage() {
                       {/* Footer Actions */}
                       <div className="mt-5 flex items-center justify-between pt-4 border-t border-white/5">
                         <div className="flex items-center gap-2">
-                          <img
-                            src={room.hostAvatar}
-                            alt={room.hostName}
-                            className="h-8 w-8 rounded-full border border-white/10 object-cover"
-                          />
+                          <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setZoomedAvatar({ url: room.hostAvatar, name: room.hostName });
+                            }}
+                            className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                          >
+                            <CompanionAvatar
+                              avatar={room.hostAvatar}
+                              name={room.hostName}
+                              className="h-full w-full text-xs"
+                            />
+                          </div>
                           <div>
                             <p className="text-[8px] text-zinc-500">Host</p>
                             <p className="text-[10px] font-bold text-white">{room.hostName}</p>
@@ -1736,7 +1957,7 @@ export default function CampfiresPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
 
               {/* SECTION 8: MY CAMPFIRES WORKSPACE (Redesigned 2-panel Layout with Pagination) */}
-              <div className="glass-panel rounded-3xl p-5 border border-white/5 flex flex-col justify-between min-h-[410px]">
+              <div ref={myWorkspaceRef} className="glass-panel rounded-3xl p-5 border border-white/5 flex flex-col justify-between min-h-[410px]">
                 <div className="space-y-4 flex-1 flex flex-col">
 
                   {/* Title & Subtitle */}
@@ -1879,8 +2100,8 @@ export default function CampfiresPage() {
                                           <button
                                             onClick={() => {
                                               const updated = hostedRooms.map(r => r.id === item.id ? { ...r, status: "Live" as const } : r);
-                                              setHostedRooms(updated);
-                                              alert("Started live session!");
+                                              saveHostedRooms(updated);
+                                              triggerToast(`Started live session for "${item.title}"!`);
                                             }}
                                             className="workspace-action-btn bg-brand-purple/20 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
                                           >
@@ -1907,7 +2128,12 @@ export default function CampfiresPage() {
                                       className="bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-white/10 p-3 rounded-2xl flex items-center justify-between gap-4 transition-all group scale-100 hover:scale-[1.01]"
                                     >
                                       <div className="flex items-center gap-3 min-w-0">
-                                        <img src={item.avatar} className="h-9 w-9 rounded-full border border-white/10 shrink-0 object-cover" alt="" />
+                                        <div
+                                          onClick={() => setZoomedAvatar({ url: item.avatar, name: item.hostName })}
+                                          className="h-9 w-9 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                                        >
+                                          <CompanionAvatar avatar={item.avatar} name={item.hostName} className="h-full w-full text-xs" />
+                                        </div>
                                         <div className="min-w-0">
                                           <h4 className="text-xs font-bold text-zinc-200 truncate">{item.title}</h4>
                                           <p className="text-[9px] text-zinc-500 mt-0.5">{item.date} • Host: {item.hostName}</p>
@@ -1918,7 +2144,7 @@ export default function CampfiresPage() {
                                         onClick={() => {
                                           const found = campfires.find(c => c.hostName === item.hostName);
                                           if (found) handleJoinRoom(found);
-                                          else alert("Quick connecting to historical room orbit...");
+                                          else triggerToast("Quick connecting to historical room orbit...");
                                         }}
                                         className="workspace-action-btn bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shrink-0"
                                       >
@@ -1944,7 +2170,7 @@ export default function CampfiresPage() {
                                       </div>
 
                                       <button
-                                        onClick={() => alert(`Room slot is saved. You will receive notification warnings at start time.`)}
+                                        onClick={() => triggerToast(`Room slot "${item.title}" is saved. You will receive notification warnings at start time.`)}
                                         className="workspace-action-btn bg-brand-purple/20 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shrink-0"
                                       >
                                         Reminder
@@ -1959,7 +2185,12 @@ export default function CampfiresPage() {
                                       className="bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 hover:border-white/10 p-3 rounded-2xl flex items-center justify-between gap-4 transition-all group scale-100 hover:scale-[1.01]"
                                     >
                                       <div className="flex items-center gap-3 min-w-0">
-                                        <img src={item.avatar} className="h-9 w-9 rounded-full border border-white/10 shrink-0 object-cover" alt="" />
+                                        <div
+                                          onClick={() => setZoomedAvatar({ url: item.avatar, name: item.name })}
+                                          className="h-9 w-9 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                                        >
+                                          <CompanionAvatar avatar={item.avatar} name={item.name} className="h-full w-full text-xs" />
+                                        </div>
                                         <div className="min-w-0">
                                           <h4 className="text-xs font-bold text-zinc-200 truncate">{item.name}</h4>
                                           <p className="text-[9px] text-zinc-500 mt-0.5">{item.blockedAt} • Reason: {item.reason}</p>
@@ -1968,7 +2199,7 @@ export default function CampfiresPage() {
 
                                       <button
                                         onClick={() => {
-                                          alert(`${item.name} has been unblocked from your voice rooms.`);
+                                          triggerToast(`${item.name} has been unblocked from your voice rooms.`);
                                         }}
                                         className="workspace-action-btn bg-rose-500/20 hover:bg-rose-500 text-rose-400 hover:text-white border border-rose-500/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shrink-0"
                                       >
@@ -2063,7 +2294,7 @@ export default function CampfiresPage() {
                             </p>
                           </div>
                           <button
-                            onClick={() => alert(`Playing replay: ${rep.title}`)}
+                            onClick={() => triggerToast(`Playing replay: ${rep.title}...`)}
                             className="h-7 w-7 rounded-full bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 flex items-center justify-center transition-colors cursor-pointer shrink-0"
                             title="Play Replay"
                           >
@@ -2080,7 +2311,7 @@ export default function CampfiresPage() {
 
                 <div className="pt-4 border-t border-white/5 mt-4">
                   <button
-                    onClick={() => alert("Replays repository coming soon.")}
+                    onClick={() => triggerToast("Replays repository coming soon.")}
                     className="w-full text-center text-[10px] font-bold text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   >
                     Browse All Replays
@@ -2239,9 +2470,15 @@ export default function CampfiresPage() {
                       <input
                         type="password"
                         required
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Enter password..."
+                        onChange={(e) => {
+                          const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+                          setNewPassword(val);
+                        }}
+                        placeholder="Enter 6-digit numeric passcode..."
                         className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-purple/50"
                       />
                     </div>
@@ -2296,9 +2533,36 @@ export default function CampfiresPage() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="relative z-10 w-full max-w-sm bg-zinc-950 border border-white/10 rounded-3xl p-6 shadow-2xl text-center space-y-6"
+              className="relative z-10 w-full max-w-sm bg-zinc-950 border border-white/10 rounded-3xl p-6 shadow-2xl text-center space-y-6 outline-none"
+              onClick={() => inputRef.current?.focus()}
+              tabIndex={-1}
             >
-              <div className="space-y-2">
+              {/* Hidden text input to support system keypads & physical keyboards */}
+              <input
+                ref={inputRef}
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={passcodeInput}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
+                  setPasscodeInput(val);
+                }}
+                onKeyDown={(e) => {
+                  setPressedKey(e.key);
+                  if (e.key === "Enter" && passcodeInput.length === 6) {
+                    handlePasswordSubmit();
+                  }
+                }}
+                onKeyUp={() => {
+                  setPressedKey(null);
+                }}
+                className="absolute inset-0 opacity-0 cursor-default w-full h-full z-0"
+                style={{ caretColor: "transparent" }}
+              />
+
+              <div className="space-y-2 relative z-10">
                 <div className="h-12 w-12 bg-brand-purple/20 border border-brand-purple/35 text-brand-purple rounded-2xl flex items-center justify-center mx-auto">
                   <Lock className="h-5 w-5 animate-pulse" />
                 </div>
@@ -2309,7 +2573,7 @@ export default function CampfiresPage() {
               </div>
 
               {/* Passcode indicators (dots) */}
-              <div className="flex justify-center gap-3">
+              <div className="flex justify-center gap-3 relative z-10">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div
                     key={i}
@@ -2322,7 +2586,7 @@ export default function CampfiresPage() {
               </div>
 
               {/* Error indicator */}
-              <div className="h-4">
+              <div className="h-4 relative z-10">
                 <AnimatePresence>
                   {passcodeError && (
                     <motion.p
@@ -2338,48 +2602,72 @@ export default function CampfiresPage() {
               </div>
 
               {/* Virtual Keypad (Very Premium!) */}
-              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto">
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
-                  <button
-                    key={num}
-                    onClick={() => {
-                      if (passcodeInput.length < 6) setPasscodeInput(p => p + num);
-                    }}
-                    className="h-12 w-12 rounded-full bg-white/5 border border-white/5 text-sm font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer mx-auto"
-                  >
-                    {num}
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-2 max-w-[240px] mx-auto relative z-10">
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => {
+                  const isHighlighted = pressedKey === String(num);
+                  return (
+                    <button
+                      key={num}
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => {
+                        if (passcodeInput.length < 6) setPasscodeInput(p => p + num);
+                        inputRef.current?.focus();
+                      }}
+                      className={`h-12 w-12 rounded-full bg-white/5 border text-sm font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer mx-auto relative z-10 ${
+                        isHighlighted ? "border-brand-purple shadow-[0_0_10px_rgba(139,92,246,0.6)]" : "border-white/5"
+                      }`}
+                    >
+                      {num}
+                    </button>
+                  );
+                })}
 
                 {/* Clear */}
                 <button
-                  onClick={() => setPasscodeInput("")}
-                  className="h-12 w-12 rounded-full text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-300 transition-colors flex items-center justify-center cursor-pointer mx-auto"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setPasscodeInput("");
+                    inputRef.current?.focus();
+                  }}
+                  className={`h-12 w-12 rounded-full border text-[10px] uppercase font-bold text-zinc-500 hover:text-zinc-300 transition-all flex items-center justify-center cursor-pointer mx-auto relative z-10 ${
+                    (pressedKey === "Backspace" || pressedKey === "Delete") ? "border-brand-purple shadow-[0_0_10px_rgba(139,92,246,0.6)] text-white bg-white/5" : "border-transparent"
+                  }`}
                 >
                   Clear
                 </button>
 
                 {/* 0 */}
                 <button
+                  key={0}
+                  onMouseDown={(e) => e.preventDefault()}
                   onClick={() => {
                     if (passcodeInput.length < 6) setPasscodeInput(p => p + "0");
+                    inputRef.current?.focus();
                   }}
-                  className="h-12 w-12 rounded-full bg-white/5 border border-white/5 text-sm font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer mx-auto"
+                  className={`h-12 w-12 rounded-full bg-white/5 border text-sm font-bold text-white hover:bg-white/10 active:scale-95 transition-all flex items-center justify-center cursor-pointer mx-auto relative z-10 ${
+                    pressedKey === "0" ? "border-brand-purple shadow-[0_0_10px_rgba(139,92,246,0.6)]" : "border-white/5"
+                  }`}
                 >
                   0
                 </button>
 
                 {/* Enter */}
                 <button
-                  onClick={handlePasswordSubmit}
-                  className="h-12 w-12 rounded-full text-[10px] uppercase font-bold text-brand-purple hover:text-brand-purple/80 transition-colors flex items-center justify-center cursor-pointer mx-auto"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    handlePasswordSubmit();
+                    inputRef.current?.focus();
+                  }}
+                  className={`h-12 w-12 rounded-full border text-[10px] uppercase font-bold text-brand-purple hover:text-brand-purple/80 transition-all flex items-center justify-center cursor-pointer mx-auto relative z-10 ${
+                    pressedKey === "Enter" ? "border-brand-purple shadow-[0_0_10px_rgba(139,92,246,0.6)] bg-brand-purple/10" : "border-transparent"
+                  }`}
                 >
                   Enter
                 </button>
               </div>
 
               {/* Cancel Button */}
-              <div className="pt-2">
+              <div className="pt-2 relative z-10">
                 <button
                   onClick={() => setJoiningRoom(null)}
                   className="text-[11px] font-bold text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
@@ -2388,6 +2676,59 @@ export default function CampfiresPage() {
                 </button>
               </div>
 
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Alert Notification popup */}
+      <AnimatePresence>
+        {toastMsg && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-24 right-6 z-50 bg-zinc-950 border border-brand-purple/20 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
+          >
+            <div className="h-6 w-6 rounded-lg bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-brand-purple">
+              <Sparkles className="h-3.5 w-3.5 animate-spin-slow" />
+            </div>
+            <p className="text-xs font-semibold text-zinc-300">
+              {toastMsg}
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Zoomed Avatar Modal */}
+      <AnimatePresence>
+        {zoomedAvatar && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm select-none">
+            <div className="absolute inset-0 cursor-zoom-out" onClick={() => setZoomedAvatar(null)} />
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative z-10 flex flex-col items-center gap-4 bg-zinc-900/90 border border-white/10 p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl backdrop-blur-lg"
+            >
+              <button
+                onClick={() => setZoomedAvatar(null)}
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer animate-none"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <CompanionAvatar
+                avatar={zoomedAvatar.url}
+                name={zoomedAvatar.name}
+                className="h-48 w-48 text-5xl shadow-2xl border-2 border-white/15"
+              />
+
+              <div className="text-center">
+                <h4 className="text-sm font-black text-white">{zoomedAvatar.name}</h4>
+                <p className="text-[10px] text-zinc-400 mt-1">Campfire Participant Photo</p>
+              </div>
             </motion.div>
           </div>
         )}

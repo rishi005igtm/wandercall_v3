@@ -47,6 +47,8 @@ interface Experience {
   collections: string[];
   seasonClosure: boolean;
   tags: string[];
+  slots: number;
+  description: string;
 }
 
 // Initial Mock Wishlist Experiences with rich tags
@@ -66,7 +68,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop",
     collections: ["Travel", "Adventure"],
     seasonClosure: true,
-    tags: ["Adventure", "Weekend", "Trending", "Nature", "Camping"]
+    tags: ["Adventure", "Weekend", "Trending", "Nature", "Camping"],
+    slots: 8,
+    description: "Trek along the scenic beaches and cliffs of Gokarna with camping under the stars."
   },
   {
     id: "exp-2",
@@ -83,7 +87,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop",
     collections: ["Adventure"],
     seasonClosure: true,
-    tags: ["Adventure", "Water Sports", "Deep Sea", "Weekend"]
+    tags: ["Adventure", "Water Sports", "Deep Sea", "Weekend"],
+    slots: 5,
+    description: "Experience thrilling deep sea diving at Netrani Island and witness vibrant marine life."
   },
   {
     id: "exp-3",
@@ -100,7 +106,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
     collections: ["Travel", "Adventure"],
     seasonClosure: false,
-    tags: ["Travel", "Adventure", "Nature", "Weekend"]
+    tags: ["Travel", "Adventure", "Nature", "Weekend"],
+    slots: 15,
+    description: "Walk through lush green coffee plantations and enjoy the serene mist of Coorg."
   },
   {
     id: "exp-4",
@@ -117,7 +125,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=600&auto=format&fit=crop",
     collections: ["Food"],
     seasonClosure: false,
-    tags: ["Food", "Cultural", "Trending", "Local"]
+    tags: ["Food", "Cultural", "Trending", "Local"],
+    slots: 20,
+    description: "Savor the iconic traditional dishes and delicious heritage filter coffee of Old Bangalore."
   },
   {
     id: "exp-5",
@@ -134,7 +144,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?q=80&w=600&auto=format&fit=crop",
     collections: ["Adventure"],
     seasonClosure: false,
-    tags: ["Adventure", "Heights", "Trending", "Air Sports"]
+    tags: ["Adventure", "Heights", "Trending", "Air Sports"],
+    slots: 4,
+    description: "Fly high with tandem paragliding and enjoy stunning views of the Himalayan valleys."
   },
   {
     id: "exp-6",
@@ -151,7 +163,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=600&auto=format&fit=crop",
     collections: ["Travel", "Adventure"],
     seasonClosure: true,
-    tags: ["Travel", "Adventure", "Nature", "Snow Trek"]
+    tags: ["Travel", "Adventure", "Nature", "Snow Trek"],
+    slots: 6,
+    description: "A challenging snow trek to the majestic base camp surrounded by towering peaks."
   },
   {
     id: "exp-7",
@@ -168,7 +182,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=600&auto=format&fit=crop",
     collections: ["Travel", "Nightlife"],
     seasonClosure: false,
-    tags: ["Travel", "Nightlife", "Water Sports", "Kayaking"]
+    tags: ["Travel", "Nightlife", "Water Sports", "Kayaking"],
+    slots: 12,
+    description: "Enjoy peaceful sunset kayaking in Mulki waters and magical night bioluminescence."
   },
   {
     id: "exp-8",
@@ -185,7 +201,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?q=80&w=600&auto=format&fit=crop",
     collections: ["Photography", "Nightlife"],
     seasonClosure: true,
-    tags: ["Photography", "Nightlife", "Nature", "Astronomy"]
+    tags: ["Photography", "Nightlife", "Nature", "Astronomy"],
+    slots: 10,
+    description: "Camp under the star-studded night skies of Spiti Valley for amazing astrophotography."
   },
   {
     id: "exp-9",
@@ -202,7 +220,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1600100397608-f010e423b971?q=80&w=600&auto=format&fit=crop",
     collections: ["Learning", "Travel"],
     seasonClosure: false,
-    tags: ["Travel", "Learning", "Cycling", "Heritage"]
+    tags: ["Travel", "Learning", "Cycling", "Heritage"],
+    slots: 18,
+    description: "Cycle through the historic ruins and stunning boulder landscapes of ancient Hampi."
   },
   {
     id: "exp-10",
@@ -219,7 +239,9 @@ const initialExperiences: Experience[] = [
     image: "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?q=80&w=600&auto=format&fit=crop",
     collections: ["Roadtrips", "Adventure"],
     seasonClosure: false,
-    tags: ["Adventure", "Roadtrips", "Off Road", "Weekend"]
+    tags: ["Adventure", "Roadtrips", "Off Road", "Weekend"],
+    slots: 7,
+    description: "An adventurous off-road jeep drive through the wild and rugged Western Ghats trail."
   }
 ];
 
@@ -251,6 +273,7 @@ export default function WishlistPage() {
   const [visibleCount, setVisibleCount] = useState<number>(8);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const loaderRef = useRef<HTMLDivElement>(null);
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Toast Notification System
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -263,6 +286,15 @@ export default function WishlistPage() {
   const triggerToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => setToastMsg(null), 3000);
+  };
+
+  const toggleCardExpand = (id: string) => {
+    setExpandedCards(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   // Close menus on click outside
@@ -726,28 +758,7 @@ export default function WishlistPage() {
                       >
                         ⏱ {exp.duration}
                       </span>
-                      <span
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '2px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          backdropFilter: 'blur(8px)',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '9px',
-                          fontWeight: '600',
-                          color: '#e4e4e7',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
-                          maxWidth: '80px',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.5)'
-                        }}
-                      >
-                        📍 {exp.location.split(',')[0]}
-                      </span>
+
                       <span
                         style={{
                           display: 'flex',
@@ -820,8 +831,8 @@ export default function WishlistPage() {
                         <MapPin className="h-3 w-3 text-brand-cyan shrink-0" />
                         <span>{exp.location}</span>
                       </div>
-
-                      {/* Difficulty, Availability & Closures badges */}
+                      
+                      {/* Difficulty & Slots badges */}
                       <div className="flex items-center gap-1.5 mt-2">
                         <span className={`text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${exp.difficulty === "Easy"
                             ? "bg-brand-emerald/10 border-brand-emerald/20 text-brand-emerald"
@@ -831,30 +842,35 @@ export default function WishlistPage() {
                           }`}>
                           {exp.difficulty}
                         </span>
-                        <span className="text-[7.5px] font-extrabold uppercase tracking-widest px-2 py-1 rounded-md bg-white/5 border border-white/5 text-zinc-400">
-                          {exp.availability}
+                        <span className="text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan">
+                          ⚡ {exp.slots} slots left
                         </span>
-                        {isClosing && (
-                          <span className="text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center gap-0.5 animate-pulse">
-                            <AlertTriangle className="h-2.5 w-2.5" /> CLOSE SOON
-                          </span>
-                        )}
                       </div>
                     </div>
 
-                    {/* Tags block (Max 3 visible + collapsed label) */}
-                    <div className="flex items-center gap-1.5 mt-1.5 flex-wrap shrink-0">
-                      {exp.tags.slice(0, 3).map((tag, idx) => (
-                        <span key={idx} className="text-[7.5px] font-extrabold uppercase tracking-widest text-zinc-500 bg-white/[0.01] border border-white/5 px-2 py-1 rounded-md">
-                          {tag}
-                        </span>
-                      ))}
-                      {exp.tags.length > 3 && (
-                        <span className="text-[7.5px] font-extrabold uppercase tracking-widest text-zinc-600 px-1">
-                          +{exp.tags.length - 3} More
-                        </span>
-                      )}
-                    </div>
+                    {/* Experience Short Description & More Button */}
+                    <p className="text-[10px] text-zinc-400 font-medium leading-normal mt-1.5 text-left flex-1">
+                      {(() => {
+                        const words = exp.description.split(' ');
+                        const isExpanded = expandedCards.has(exp.id);
+                        const displayText = isExpanded || words.length <= 20
+                          ? exp.description
+                          : words.slice(0, 20).join(' ') + '...';
+                        return (
+                          <>
+                            {displayText}{" "}
+                            {words.length > 20 && (
+                              <button
+                                onClick={() => toggleCardExpand(exp.id)}
+                                className="text-brand-cyan hover:underline font-bold inline-block cursor-pointer ml-1"
+                              >
+                                {isExpanded ? 'Show Less' : 'Show More'}
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </p>
 
                     {/* CTA Area (Direct buttons only) */}
                     <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-auto shrink-0">

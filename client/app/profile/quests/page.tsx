@@ -5,11 +5,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Award,
   Flame,
-  Zap,
   Target,
   Trophy,
   Compass,
-  Map,
   Users,
   ChevronRight,
   Sparkles,
@@ -17,9 +15,7 @@ import {
   Layers,
   Lock,
   CheckCircle2,
-  TrendingUp,
   Brain,
-  HelpCircle,
   Share2,
   Image as ImageIcon,
   Star,
@@ -27,16 +23,6 @@ import {
 } from "lucide-react";
 
 // Mock Data
-interface QuestNode {
-  id: string;
-  name: string;
-  type: "Completed" | "In Progress" | "Available" | "Locked" | "Legendary" | "Special Event";
-  description: string;
-  requirements: string;
-  reward: string;
-  xp: number;
-}
-
 interface ActiveQuest {
   id: string;
   name: string;
@@ -100,7 +86,6 @@ interface QuestStory {
 
 export default function QuestsPage() {
   const [activeQuestTab, setActiveQuestTab] = useState<"Daily" | "Weekly" | "Monthly" | "Special" | "Community">("Daily");
-  const [selectedJourneyNode, setSelectedJourneyNode] = useState<QuestNode | null>(null);
   const [activeRegionId, setActiveRegionId] = useState<string | null>("region-1");
   const [leaderboardTab, setLeaderboardTab] = useState<"Friends" | "Local" | "Global">("Friends");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -134,63 +119,6 @@ export default function QuestsPage() {
   const angleRad = (angle * Math.PI) / 180;
   const particleX = 120 + 104 * Math.cos(angleRad);
   const particleY = 120 + 104 * Math.sin(angleRad);
-
-  const journeyNodes: QuestNode[] = [
-    {
-      id: "j-1",
-      name: "First Steps into Gokarna",
-      type: "Completed",
-      description: "Complete a basic beach trek in Gokarna and register your first checkpoint.",
-      requirements: "Register for Gokarna Cliff Trek experience.",
-      reward: "Gokarna Explorer Badge & Scout Title",
-      xp: 150
-    },
-    {
-      id: "j-2",
-      name: "Trekking Cohort Builder",
-      type: "Completed",
-      description: "Book an experience along with at least two verified explorer friends.",
-      requirements: "Register a team booking containing 3 total companions.",
-      reward: "Socializer Emblem",
-      xp: 250
-    },
-    {
-      id: "j-3",
-      name: "Netrani Scuba Ascent",
-      type: "In Progress",
-      description: "Dive beyond 15 meters at Netrani Island and log marine life observations.",
-      requirements: "Attend Netrani Scuba diving and scan base QR code.",
-      reward: "Oceanic Explorer Title & Undersea Avatar Frame",
-      xp: 400
-    },
-    {
-      id: "j-4",
-      name: "Coorg Mist Boss Quest",
-      type: "Available",
-      description: "Defeat the Coorg coffee estate trek time challenge. Log 12,000 steps inside the estate layout.",
-      requirements: "Complete Coorg Estate Trek in under 6 hours.",
-      reward: "Coorg Sentinel Medallion & Coffee Estate Host VIP Access",
-      xp: 600
-    },
-    {
-      id: "j-5",
-      name: "Paragliding Thermal Master",
-      type: "Locked",
-      description: "Conduct paragliding flight at Bir Billing for more than 45 minutes in a single run.",
-      requirements: "Achieve paragliding flight with active altitude trackers.",
-      reward: "Skyrunner Wings Accessory",
-      xp: 800
-    },
-    {
-      id: "j-6",
-      name: "Himalayan Base Camp Legendary Quest",
-      type: "Legendary",
-      description: "Reach the summit ridge at Sankri and host a live campfire voice room from altitude.",
-      requirements: "Summit Sankri Ridge and stream a 15-minute voice session to the network.",
-      reward: "Legendary Pioneer Badge & Verified Golden Ribbon",
-      xp: 1500
-    }
-  ];
 
   const activeQuests: ActiveQuest[] = [
     // Dailies
@@ -636,233 +564,6 @@ export default function QuestsPage() {
               <span className="text-xs text-zinc-500 font-bold uppercase tracking-wider">Monthly Progress</span>
               <span className="text-xl font-black text-brand-purple mt-1">82% Rate</span>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. QUEST JOURNEY (VERTICAL MAP PATH) */}
-      <section className="bg-white/[0.01] border border-white/5 p-4 md:p-6 rounded-2xl flex flex-col gap-4 text-left shadow-md w-full shrink-0">
-        <div>
-          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
-            <Map className="h-4 w-4 text-brand-cyan" /> Adventure Path
-          </h2>
-          <p className="text-[10px] text-zinc-500 font-medium mt-0.5">
-            Select unlocked nodes to preview coordinates, requirements, and quest rewards.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 w-full">
-
-          {/* Vertical Path nodes connector panel */}
-          <div className="bg-zinc-950/40 border border-white/5 rounded-2xl p-6 flex flex-col relative overflow-hidden min-h-[400px] w-full">
-
-            {/* The SVG Line path in background */}
-            <div className="absolute top-12 bottom-12 left-[46px] w-0.5 bg-zinc-900 z-0">
-              {/* Highlighting completed progress in line */}
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: "55%" }}
-                transition={{ duration: 1.5, ease: "easeInOut" }}
-                className="w-full bg-gradient-to-b from-brand-cyan to-brand-purple"
-              />
-            </div>
-
-            {/* List of nodes */}
-            <div className="flex flex-col gap-6 w-full z-10 relative">
-              {journeyNodes.map((node, index) => {
-                const isCompleted = node.type === "Completed";
-                const isInProgress = node.type === "In Progress";
-                const isAvailable = node.type === "Available";
-                const isLocked = node.type === "Locked";
-                const isLegendary = node.type === "Legendary";
-
-                const styles = (() => {
-                  switch (node.type) {
-                    case "Completed":
-                      return {
-                        badge: "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan",
-                        ring: "border-brand-cyan bg-brand-cyan/10 text-brand-cyan shadow-[0_0_10px_rgba(6,182,212,0.2)]"
-                      };
-                    case "In Progress":
-                      return {
-                        badge: "bg-brand-purple/10 border-brand-purple/25 text-brand-purple animate-pulse",
-                        ring: "border-brand-purple bg-brand-purple/20 text-brand-purple shadow-[0_0_15px_rgba(139,92,246,0.3)]"
-                      };
-                    case "Available":
-                      return {
-                        badge: "bg-zinc-800/30 border-white/5 text-zinc-400",
-                        ring: "border-white/20 bg-zinc-900 text-zinc-200 hover:border-brand-cyan transition-colors"
-                      };
-                    case "Legendary":
-                      return {
-                        badge: "bg-brand-amber/10 border-brand-amber/20 text-brand-amber",
-                        ring: "border-brand-amber bg-brand-amber/10 text-brand-amber shadow-[0_0_12px_rgba(245,158,11,0.2)]"
-                      };
-                    case "Locked":
-                    default:
-                      return {
-                        badge: "bg-zinc-900 border-white/5 text-zinc-600",
-                        ring: "border-zinc-800 bg-zinc-950 text-zinc-600"
-                      };
-                  }
-                })();
-
-                return (
-                  <div key={node.id} className="flex items-center gap-4 w-full cursor-pointer group">
-
-                    {/* Circle Node Icon */}
-                    <button
-                      onClick={() => setSelectedJourneyNode(node)}
-                      className={`h-11 w-11 rounded-full border-2 flex items-center justify-center shrink-0 z-10 transition-all active:scale-95 cursor-pointer ${styles.ring}`}
-                    >
-                      {isCompleted ? (
-                        <CheckCircle2 className="h-5 w-5" />
-                      ) : isLocked ? (
-                        <Lock className="h-4.5 w-4.5" />
-                      ) : isLegendary ? (
-                        <Trophy className="h-5 w-5 animate-bounce" />
-                      ) : (
-                        <Zap className="h-5 w-5" />
-                      )}
-                    </button>
-
-                    {/* Brief node title preview card */}
-                    <button
-                      onClick={() => setSelectedJourneyNode(node)}
-                      className={`flex-1 flex items-center justify-between gap-4 p-4 rounded-xl border text-left transition-all duration-200 cursor-pointer min-w-0 ${
-                        selectedJourneyNode?.id === node.id
-                          ? "bg-white/[0.06] border-white/20 shadow-lg shadow-black/20"
-                          : "bg-white/[0.01] border-white/5 hover:border-white/10 hover:bg-white/[0.03]"
-                      }`}
-                    >
-                      <div className="flex flex-col gap-1.5 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border w-fit ${styles.badge}`}>
-                            {node.type}
-                          </span>
-                          <span className="text-[9px] font-bold text-brand-cyan tracking-wider font-mono">
-                            +{node.xp} XP
-                          </span>
-                        </div>
-                        <h3 className={`text-xs font-black uppercase tracking-wider truncate min-w-0 ${
-                          isInProgress ? "text-brand-purple" : "text-white"
-                        }`}>
-                          {node.name}
-                        </h3>
-                        <p className="text-[9px] text-zinc-500 font-medium truncate">
-                          {node.reward}
-                        </p>
-                      </div>
-
-                      <ChevronRight className="h-4 w-4 text-zinc-500 shrink-0 group-hover:translate-x-0.5 transition-transform" />
-                    </button>
-
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Node detail side inspector panel */}
-          <div className="w-full bg-zinc-950/40 border border-white/5 p-6 rounded-2xl flex flex-col justify-between text-left relative min-h-[300px]">
-            {selectedJourneyNode ? (
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={selectedJourneyNode.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  className="flex flex-col gap-4 h-full"
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex flex-col">
-                      <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border w-fit ${selectedJourneyNode.type === "Completed"
-                        ? "bg-brand-cyan/15 border-brand-cyan/30 text-brand-cyan"
-                        : selectedJourneyNode.type === "In Progress"
-                          ? "bg-brand-purple/15 border-brand-purple/30 text-brand-purple animate-pulse"
-                          : "bg-zinc-800 border-white/5 text-zinc-400"
-                        }`}>
-                        {selectedJourneyNode.type}
-                      </span>
-                      <h3 className="text-xs font-black text-white uppercase tracking-wider mt-2">
-                        {selectedJourneyNode.name}
-                      </h3>
-                    </div>
-                    <span className="text-xs font-mono font-black text-brand-cyan">+{selectedJourneyNode.xp} XP</span>
-                  </div>
-
-                  <div className="flex flex-col gap-3 border-t border-b border-white/5 py-3">
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Objectives</span>
-                      <p className="text-[10px] text-zinc-300 font-semibold mt-1 leading-relaxed">
-                        {selectedJourneyNode.description}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-col">
-                      <span className="text-[8px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Requirements</span>
-                      <p className="text-[9px] text-zinc-400 font-semibold mt-1">
-                        {selectedJourneyNode.requirements}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col justify-end mt-auto gap-3">
-                    <div className="flex flex-col bg-white/[0.02] border border-white/5 p-2 rounded-xl">
-                      <span className="text-[7.5px] font-mono font-bold text-zinc-500 uppercase tracking-wider">Rewards Unlockable</span>
-                      <span className="text-[9.5px] font-black text-brand-amber flex items-center gap-1.5 mt-0.5">
-                        <Trophy className="h-3.5 w-3.5 shrink-0" /> {selectedJourneyNode.reward}
-                      </span>
-                    </div>
-
-                    {selectedJourneyNode.type === "Available" && (
-                      <button
-                        onClick={() => {
-                          triggerToast(`Quest activated: ${selectedJourneyNode.name}`);
-                          setSelectedJourneyNode({ ...selectedJourneyNode, type: "In Progress" });
-                        }}
-                        className="w-full h-9 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-[9px] font-black uppercase tracking-wider hover:brightness-110 active:scale-98 transition-all cursor-pointer flex items-center justify-center gap-1"
-                      >
-                        <Zap className="h-3.5 w-3.5 fill-white text-white" />
-                        <span>Begin Quest</span>
-                      </button>
-                    )}
-
-                    {selectedJourneyNode.type === "Completed" && (
-                      <div className="h-9 w-full border border-brand-cyan/20 bg-brand-cyan/5 text-brand-cyan font-black text-[9px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-1">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        <span>Quest Completed</span>
-                      </div>
-                    )}
-
-                    {selectedJourneyNode.type === "In Progress" && (
-                      <button
-                        onClick={() => triggerToast(`Checkpoints sync completed. Logged coordinates.`)}
-                        className="w-full h-9 rounded-xl bg-transparent border border-white/10 hover:bg-white/5 text-zinc-300 hover:text-white text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1"
-                      >
-                        <Activity className="h-3.5 w-3.5 text-zinc-400" />
-                        <span>Sync Quest Progress</span>
-                      </button>
-                    )}
-
-                    {selectedJourneyNode.type === "Locked" && (
-                      <div className="h-9 w-full border border-white/5 bg-zinc-900/50 text-zinc-500 font-bold text-[9px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-1 cursor-not-allowed">
-                        <Lock className="h-3.5 w-3.5" />
-                        <span>Pre-requisite level locked</span>
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              </AnimatePresence>
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center p-6 my-auto">
-                <Target className="h-8 w-8 text-zinc-700 mb-2" />
-                <h4 className="text-[10px] font-black uppercase text-zinc-500 tracking-wider">No Node Selected</h4>
-                <p className="text-[9px] text-zinc-500 mt-1">
-                  Select a milestone node on the map path to inspect coordinates and start quests.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </section>

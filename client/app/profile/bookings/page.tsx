@@ -317,9 +317,7 @@ export default function BookingsPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("All");
 
-  // Filters dropdown
-  const [categoryFilter, setCategoryFilter] = useState<string>("All");
-  const [sortOption, setSortOption] = useState<string>("Upcoming First");
+  // Filter dropdown
   const [activeCardMenuId, setActiveCardMenuId] = useState<string | null>(null);
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
@@ -368,12 +366,7 @@ export default function BookingsPage() {
       );
     }
 
-    // 2. Category / Category Filter (Simulation using location filter)
-    if (categoryFilter !== "All") {
-      list = list.filter(b => b.location.toLowerCase().includes(categoryFilter.toLowerCase()));
-    }
-
-    // 3. Status Tabs Filters
+    // 2. Status Tabs Filters
     if (activeTab !== "All") {
       if (activeTab === "Upcoming") {
         list = list.filter(b => b.status === "Upcoming" || b.status === "Confirmed");
@@ -398,29 +391,8 @@ export default function BookingsPage() {
       }
     }
 
-    // 4. Sort Options
-    if (sortOption === "Upcoming First") {
-      list.sort((a, b) => {
-        // Sort Upcoming, Confirmed first, then chronological
-        const aRel = getRelativeDateType(a.date).daysRemaining;
-        const bRel = getRelativeDateType(b.date).daysRemaining;
-        return aRel - bRel;
-      });
-    } else if (sortOption === "Newest") {
-      // Sort newest booked first by mock numerical ID ordering
-      list.sort((a, b) => b.id.localeCompare(a.id));
-    } else if (sortOption === "Oldest") {
-      list.sort((a, b) => a.id.localeCompare(b.id));
-    } else if (sortOption === "Recently Booked") {
-      // Emulate recently booked sorting
-      list.sort((a, b) => b.bookingId.localeCompare(a.bookingId));
-    } else if (sortOption === "AI Recommended") {
-      // Sort compatibility Score High to Low
-      list.sort((a, b) => b.compatibilityScore - a.compatibilityScore);
-    }
-
     return list;
-  }, [bookings, searchQuery, activeTab, categoryFilter, sortOption]);
+  }, [bookings, searchQuery, activeTab]);
 
   // Statistics calculation
   const stats = useMemo(() => {
@@ -522,36 +494,6 @@ export default function BookingsPage() {
                 className="w-full bg-zinc-950/60 border border-white/5 rounded-lg pl-9 pr-3 py-2 text-xs outline-none text-zinc-300 placeholder-zinc-500 focus:border-white/10 transition-colors"
               />
             </div>
-
-            {/* Filter Dropdown */}
-            <select
-              value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setVisibleCount(8);
-              }}
-              className="bg-zinc-950/60 border border-white/5 rounded-lg px-3 py-2 text-xs text-zinc-300 font-bold outline-none cursor-pointer hover:border-white/10 transition-colors w-full sm:w-[130px]"
-            >
-              <option value="All">All Locations</option>
-              <option value="Karnataka">Karnataka</option>
-              <option value="Himachal">Himachal Pradesh</option>
-              <option value="Uttarakhand">Uttarakhand</option>
-            </select>
-
-            {/* Sort Dropdown */}
-            <select
-              value={sortOption}
-              onChange={(e) => {
-                setSortOption(e.target.value);
-                setVisibleCount(8);
-              }}
-              className="bg-zinc-950/60 border border-white/5 rounded-lg px-3 py-2 text-xs text-zinc-300 font-bold outline-none cursor-pointer hover:border-white/10 transition-colors w-full sm:w-[160px]"
-            >
-              <option value="Upcoming First">Sort: Upcoming First</option>
-              <option value="Newest">Sort: Booked Newest</option>
-              <option value="Oldest">Sort: Booked Oldest</option>
-              <option value="AI Recommended">Sort: AI Recommended</option>
-            </select>
 
             {/* Export Tickets Button */}
             <button
@@ -914,7 +856,6 @@ export default function BookingsPage() {
               <button
                 onClick={() => {
                   setActiveTab("All");
-                  setCategoryFilter("All");
                   setSearchQuery("");
                   setVisibleCount(8);
                 }}

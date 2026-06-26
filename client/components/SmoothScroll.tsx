@@ -19,6 +19,48 @@ function SmoothScrollChild({ children }: SmoothScrollProps) {
     }
   }, [pathname, lenis]);
 
+  // Global prevention of Lenis hijacking scroll on any overflow-y-auto/scroll elements
+  useEffect(() => {
+    if (!lenis) return;
+
+    const handleScrollAttempt = (e: WheelEvent | TouchEvent) => {
+      let el = e.target as Node | null;
+      while (el && el !== document.documentElement && el !== document.body) {
+        if (el.nodeType === Node.ELEMENT_NODE) {
+          const element = el as HTMLElement;
+          const style = window.getComputedStyle(element);
+          const overflowY = style.overflowY || '';
+          const overflowX = style.overflowX || '';
+          const hasOverflowY = overflowY === 'auto' || overflowY === 'scroll';
+          const hasOverflowX = overflowX === 'auto' || overflowX === 'scroll';
+
+          if (hasOverflowY || hasOverflowX) {
+            const isScrollableY = hasOverflowY && element.scrollHeight > element.clientHeight;
+            const isScrollableX = hasOverflowX && element.scrollWidth > element.clientWidth;
+
+            if (isScrollableY || isScrollableX) {
+              if (!element.hasAttribute('data-lenis-prevent')) {
+                element.setAttribute('data-lenis-prevent', 'true');
+              }
+              break;
+            }
+          }
+        }
+        el = el.parentNode;
+      }
+    };
+
+    window.addEventListener('wheel', handleScrollAttempt, { capture: true, passive: true });
+    window.addEventListener('touchstart', handleScrollAttempt, { capture: true, passive: true });
+    window.addEventListener('touchmove', handleScrollAttempt, { capture: true, passive: true });
+
+    return () => {
+      window.removeEventListener('wheel', handleScrollAttempt, { capture: true });
+      window.removeEventListener('touchstart', handleScrollAttempt, { capture: true });
+      window.removeEventListener('touchmove', handleScrollAttempt, { capture: true });
+    };
+  }, [lenis]);
+
   // Prevent scroll when page is locked (e.g. modals, dialogs set overflow: hidden on body or html)
   useEffect(() => {
     if (!lenis) return;

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   Phone,
@@ -15,10 +16,110 @@ import {
   MapPin,
   Heart,
   Flag,
-  ShieldAlert
+  ShieldAlert,
+  Play,
+  Pause
 } from "lucide-react";
 
 // Mock Companion Data definition matching friends/page.tsx
+interface CompanionProps {
+  id: string;
+}
+
+interface CompanionAvatarProps {
+  avatar: string;
+  name: string;
+  className?: string;
+}
+
+function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: CompanionAvatarProps) {
+  const [hasError, setHasError] = useState(false);
+
+  const isUrl = avatar && (avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("/"));
+
+  const getHashColor = (str: string) => {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      "bg-brand-cyan/20 text-brand-cyan border border-brand-cyan/30",
+      "bg-brand-purple/20 text-brand-purple border border-brand-purple/30",
+      "bg-brand-emerald/20 text-brand-emerald border border-brand-emerald/30",
+      "bg-brand-amber/20 text-brand-amber border border-brand-amber/30",
+      "bg-brand-indigo/20 text-brand-indigo border border-brand-indigo/30"
+    ];
+    const index = Math.abs(hash) % colors.length;
+    return colors[index];
+  };
+
+  const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
+
+  if (isUrl && !hasError) {
+    return (
+      <img
+        src={avatar}
+        alt={name}
+        onError={() => setHasError(true)}
+        className={`${className} rounded-full object-cover shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${className} rounded-full flex items-center justify-center font-bold shrink-0 select-none ${getHashColor(
+        name
+      )}`}
+    >
+      {initials}
+    </div>
+  );
+}
+
+const DEFAULT_CAMPFIRES = [
+  {
+    id: "camp-himalayas",
+    title: "Under the Himalayan Stars",
+    hostName: "Tenzing N.",
+    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+    category: "Adventure",
+    isPrivate: false
+  },
+  {
+    id: "camp-penang",
+    title: "Street Food Secrets of Penang",
+    hostName: "Mei Ling",
+    hostAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+    category: "Food",
+    isPrivate: false
+  },
+  {
+    id: "camp-backpacking",
+    title: "Solo Backpacking Europe 101",
+    hostName: "Lucas Green",
+    hostAvatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80",
+    category: "Travel",
+    isPrivate: true
+  },
+  {
+    id: "hosted-1",
+    title: "Alpine Winter Gear Choices",
+    hostName: "You",
+    hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+    category: "Adventure",
+    isPrivate: false
+  },
+  {
+    id: "hosted-2",
+    title: "Vlog Sound Design Masterclass",
+    hostName: "You",
+    hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+    category: "Storytelling",
+    isPrivate: false
+  }
+];
+
 interface Companion {
   id: string;
   name: string;
@@ -42,7 +143,7 @@ const COMPANIONS: Companion[] = [
     id: "f-1",
     name: "Arjun Mehta",
     username: "@arjun_m",
-    avatar: "🏔️",
+    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-DzH0exY99acBDKcM1JGE3YVTVHhVzcli8vXt767EGw&s=10",
     status: "Exploring",
     compatibility: 92,
     sharedDNA: "Explorer",
@@ -59,7 +160,7 @@ const COMPANIONS: Companion[] = [
     id: "f-2",
     name: "Sara Khan",
     username: "@sara_k",
-    avatar: "📸",
+    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuST_QatrLMk5Y25ul_v3F1YiZNrY6uhzoesaNlFDpcQ&s=10",
     status: "Available",
     compatibility: 88,
     sharedDNA: "Creative",
@@ -76,7 +177,7 @@ const COMPANIONS: Companion[] = [
     id: "f-3",
     name: "Divya Kapoor",
     username: "@divya_k",
-    avatar: "🖋️",
+    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMzvvUdpjqx6ylJAT_O5M_ABUSZubCY2xvq751JO1KbQ&s=10",
     status: "In Campfire",
     compatibility: 76,
     sharedDNA: "Storyteller",
@@ -93,7 +194,7 @@ const COMPANIONS: Companion[] = [
     id: "f-4",
     name: "Karan Johar",
     username: "@karan_j",
-    avatar: "🎒",
+    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTuaoqdshtIm4OxOC37taudV1TInXJ7FlAMnNQz6jwpg&s=10",
     status: "Hosting",
     compatibility: 84,
     sharedDNA: "Learner",
@@ -110,7 +211,7 @@ const COMPANIONS: Companion[] = [
     id: "f-5",
     name: "Neha Nair",
     username: "@neha_n",
-    avatar: "⛺",
+    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHc7L-dIuWttEj87TqAJQk479PTDuRCZ32sIFSsqJCPw&s=10",
     status: "Busy",
     compatibility: 72,
     sharedDNA: "Explorer",
@@ -127,7 +228,7 @@ const COMPANIONS: Companion[] = [
     id: "f-6",
     name: "Rohan Das",
     username: "@rohan_d",
-    avatar: "🌊",
+    avatar: "https://invalid-avatar-url.com/rohan.jpg",
     status: "Offline",
     compatibility: 68,
     sharedDNA: "Creative",
@@ -222,6 +323,128 @@ function getIcebreakers(friend: Companion) {
   ];
 }
 
+function AudioMessagePlayer({ duration }: { duration: string }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  // Parse duration "0:42" to 42 seconds
+  const totalSeconds = React.useMemo(() => {
+    const parts = duration.split(":");
+    const minutes = parseInt(parts[0] || "0", 10);
+    const seconds = parseInt(parts[1] || "0", 10);
+    return minutes * 60 + seconds || 10;
+  }, [duration]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentTime((prev) => {
+          const next = prev + 0.1;
+          if (next >= totalSeconds) {
+            setIsPlaying(false);
+            setProgress(100);
+            return totalSeconds;
+          }
+          setProgress((next / totalSeconds) * 100);
+          return next;
+        });
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, totalSeconds]);
+
+  const handlePlayToggle = () => {
+    if (currentTime >= totalSeconds) {
+      setCurrentTime(0);
+      setProgress(0);
+    }
+    setIsPlaying(!isPlaying);
+  };
+
+  const formatTime = (time: number) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  return (
+    <div className="bg-white/5 border border-white/5 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 w-60">
+      <button
+        onClick={handlePlayToggle}
+        className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-all ${
+          isPlaying
+            ? "bg-rose-500/10 text-rose-450 border border-rose-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+            : "bg-brand-cyan text-zinc-950 shadow-md shadow-brand-cyan/10"
+        }`}
+      >
+        {isPlaying ? (
+          <Pause className="h-3.5 w-3.5 fill-current" />
+        ) : (
+          <Play className="h-3.5 w-3.5 fill-current" />
+        )}
+      </button>
+
+      <div className="flex-1 h-6 relative flex items-center overflow-hidden select-none">
+        {isPlaying ? (
+          <>
+            {/* Background Wave - Unplayed (Zinc-800) */}
+            <svg
+              viewBox="0 0 300 24"
+              className="absolute left-0 w-[300px] h-full text-zinc-800 pointer-events-none"
+            >
+              <path
+                d="M 0 12 Q 10 2, 20 12 T 40 12 T 60 12 T 80 12 T 100 12 T 120 12 T 140 12 T 160 12 T 180 12 T 200 12 T 220 12 T 240 12 T 260 12 T 280 12 T 300 12 T 320 12 T 340 12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                className="animate-snake-wave"
+              />
+            </svg>
+
+            {/* Foreground Wave - Played (Cyan) */}
+            <div
+              className="absolute left-0 h-full overflow-hidden pointer-events-none"
+              style={{ width: `${progress}%` }}
+            >
+              <svg
+                viewBox="0 0 300 24"
+                className="w-[300px] h-full text-brand-cyan"
+              >
+                <path
+                  d="M 0 12 Q 10 2, 20 12 T 40 12 T 60 12 T 80 12 T 100 12 T 120 12 T 140 12 T 160 12 T 180 12 T 200 12 T 220 12 T 240 12 T 260 12 T 280 12 T 300 12 T 320 12 T 340 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  className="animate-snake-wave"
+                />
+              </svg>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Background Flat Line - Unplayed */}
+            <div className="absolute left-0 right-0 h-0.5 bg-zinc-800 rounded-full" />
+            
+            {/* Foreground Flat Line - Played */}
+            <div
+              className="absolute left-0 h-0.5 bg-brand-cyan rounded-full"
+              style={{ width: `${progress}%` }}
+            />
+          </>
+        )}
+      </div>
+
+      <span className="text-[9px] font-mono text-zinc-500 shrink-0 select-none">
+        {isPlaying ? formatTime(currentTime) : duration}
+      </span>
+    </div>
+  );
+}
+
 export default function MobileChatPage({ params }: { params: React.Usable<{ chatId: string }> }) {
   const { chatId } = React.use(params);
 
@@ -234,6 +457,36 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
   const [messages, setMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [showInspector, setShowInspector] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [campfireList, setCampfireList] = useState<any[]>(DEFAULT_CAMPFIRES);
+  const [zoomedAvatar, setZoomedAvatar] = useState<{ url: string; name: string } | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("wandercall_hosted_campfires");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setCampfireList(prev => {
+              const ids = new Set(prev.map(c => c.id));
+              const filteredParsed = parsed.map(c => ({
+                id: c.id,
+                title: c.title,
+                hostName: c.hostName || "You",
+                hostAvatar: c.hostAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+                category: c.category || "Adventure",
+                isPrivate: c.isPrivate || false
+              })).filter(c => !ids.has(c.id));
+              return [...prev, ...filteredParsed];
+            });
+          }
+        } catch (e) {
+          console.error("Error parsing wandercall_hosted_campfires", e);
+        }
+      }
+    }
+  }, []);
 
   const chatStreamRef = useRef<HTMLDivElement>(null);
 
@@ -307,6 +560,24 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
     setMessages(prev => [...prev, newMsg]);
   };
 
+  const handleSendCampfireInvite = (campfire: any) => {
+    const newMsg = {
+      id: `m-invite-${Date.now()}`,
+      sender: "me",
+      type: "campfire_invite",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      metadata: {
+        id: campfire.id,
+        title: campfire.title,
+        hostName: campfire.hostName,
+        hostAvatar: campfire.hostAvatar,
+        category: campfire.category
+      }
+    };
+    setMessages(prev => [...prev, newMsg]);
+    setShowInviteModal(false);
+  };
+
   return (
     <div className="flex flex-col h-screen w-screen bg-brand-bg text-white relative overflow-hidden">
 
@@ -320,6 +591,9 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           >
             <X className="h-4 w-4" />
           </button>
+          <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95 animate-none shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
+            <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-8 w-8 text-[11px]" />
+          </div>
           <div className="min-w-0">
             <h3 className="text-sm font-black text-white truncate flex items-center gap-1.5">
               {activeFriend.name}
@@ -337,7 +611,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
             <Phone className="h-4 w-4" />
           </button>
           <button
-            onClick={() => alert(`Inviting ${activeFriend.name} to a campfire lobby...`)}
+            onClick={() => setShowInviteModal(true)}
             className="p-2 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold transition-all cursor-pointer flex items-center gap-1"
             title="Invite to Campfire"
           >
@@ -379,24 +653,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   )}
 
                   {msg.type === "audio" && (
-                    <div className="bg-white/5 border border-white/5 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 w-60">
-                      <button
-                        onClick={() => alert("Playing audio note...")}
-                        className="h-8 w-8 rounded-full bg-brand-cyan text-zinc-950 flex items-center justify-center shrink-0 cursor-pointer"
-                      >
-                        <Compass className="h-4 w-4 fill-zinc-950" />
-                      </button>
-                      <div className="flex-1 flex items-center gap-1">
-                        {msg.metadata.waves.map((h: number, i: number) => (
-                          <span
-                            key={i}
-                            className="h-3 bg-zinc-650 flex-1 rounded-full"
-                            style={{ height: `${h * 0.4}px` }}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-[9px] font-mono text-zinc-500 shrink-0">{msg.metadata.duration}</span>
-                    </div>
+                    <AudioMessagePlayer duration={msg.metadata.duration} />
                   )}
 
                   {msg.type === "experience" && (
@@ -530,7 +787,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">
                 Suggested Icebreakers (Click to fill)
               </span>
-              {getIcebreakers(activeFriend).map((prompt, idx) => (
+              {getIcebreakers(activeFriend).slice(0, 1).map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => setChatInput(prompt)}
@@ -608,7 +865,9 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                 {activeFriend.compatibility}% match
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-3xl">{activeFriend.avatar}</span>
+                <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95 shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
+                  <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-12 w-12 text-[15px]" />
+                </div>
                 <div>
                   <h4 className="text-xs font-bold text-white">{activeFriend.name}</h4>
                   <span className="text-[9px] text-zinc-500">{activeFriend.username}</span>
@@ -672,7 +931,6 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               </button>
               <button
                 onClick={() => {
-                  alert(activeFriend.isFavorite ? "Removed from Favorites" : "Added to Favorites");
                   setActiveFriend(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : null);
                   setShowInspector(false);
                 }}
@@ -693,6 +951,100 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           </div>
         </div>
       )}
+
+      {/* Campfire Invite Modal */}
+      {showInviteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none">
+          <div className="absolute inset-0 cursor-default" onClick={() => setShowInviteModal(false)} />
+          
+          <div className="glass-panel border border-white/10 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-950/95 overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="absolute inset-0 bg-white/[0.01] pointer-events-none" />
+            
+            <div className="flex items-center justify-between pb-4 border-b border-white/5 mb-4 shrink-0">
+              <div className="flex items-center gap-2">
+                <Flame className="h-5 w-5 text-brand-cyan animate-pulse" />
+                <h3 className="text-sm font-black text-white uppercase tracking-wider">Invite to Campfire</h3>
+              </div>
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="p-1.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <p className="text-[10px] text-zinc-400 mb-4 leading-normal shrink-0 text-left">
+              Select an active campfire to invite <strong className="text-zinc-200">{activeFriend.name}</strong>. They will receive an interactive card in the chat to join directly.
+            </p>
+
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar" data-lenis-prevent>
+              {campfireList.length > 0 ? (
+                campfireList.map((campfire) => (
+                  <div
+                    key={campfire.id}
+                    className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-white/10 hover:bg-white/[0.02] transition-all"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <CompanionAvatar avatar={campfire.hostAvatar} name={campfire.hostName} className="h-9 w-9 text-xs" />
+                      <div className="min-w-0 text-left">
+                        <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan/20 border border-brand-cyan/20 text-brand-cyan px-1.5 py-0.2 rounded font-black shrink-0">
+                          {campfire.category}
+                        </span>
+                        <h4 className="text-xs font-bold text-white truncate mt-1">{campfire.title}</h4>
+                        <p className="text-[8px] text-zinc-500 truncate mt-0.5">Host: {campfire.hostName}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleSendCampfireInvite(campfire)}
+                      className="px-3 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 font-extrabold text-[10px] rounded-xl transition-all cursor-pointer shrink-0 shadow-md shadow-brand-cyan/10 flex items-center gap-1"
+                    >
+                      Send Invite
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-zinc-500 text-xs border border-dashed border-white/10 rounded-2xl">
+                  No campfires active. Start one in the campfire directory!
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Zoomed Avatar Modal */}
+      <AnimatePresence>
+        {zoomedAvatar && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm select-none">
+            <div className="absolute inset-0 cursor-zoom-out" onClick={() => setZoomedAvatar(null)} />
+            
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="relative z-10 flex flex-col items-center gap-4 bg-zinc-900/90 border border-white/10 p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl backdrop-blur-lg"
+            >
+              <button
+                onClick={() => setZoomedAvatar(null)}
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer animate-none"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <CompanionAvatar
+                avatar={zoomedAvatar.url}
+                name={zoomedAvatar.name}
+                className="h-48 w-48 text-5xl shadow-2xl border-2 border-white/15"
+              />
+
+              <div className="text-center">
+                <h4 className="text-sm font-black text-white">{zoomedAvatar.name}</h4>
+                <p className="text-[10px] text-zinc-400 mt-1">Explorer Passport Photo</p>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
     </div>
   );

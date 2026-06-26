@@ -1,7 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useRouter } from "next/navigation";
 import {
   Users,
   Compass,
@@ -319,11 +320,166 @@ const seededRandom = (seed: number) => {
 };
 
 export default function CommunitiesPage() {
+  const router = useRouter();
   const [hoveredDockItem, setHoveredDockItem] = useState<JoinedCommunity | null>(null);
   const [hoveredDockIndex, setHoveredDockIndex] = useState<number | null>(null);
+  const [hoveredDockRow, setHoveredDockRow] = useState<"created" | "joined" | null>(null);
   const [selectedExplorer, setSelectedExplorer] = useState<CompanionOrbitNode | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [customCommunities, setCustomCommunities] = useState<JoinedCommunity[]>([]);
+  const [failedExplorerAvatars, setFailedExplorerAvatars] = useState<Record<string, boolean>>({});
+  const [isDragging, setIsDragging] = useState(false);
+
+  const getDnaColor = (dna: string) => {
+    if (dna === "Explorer") return "rgba(6, 182, 212, 0.4)";
+    if (dna === "Creative") return "rgba(16, 185, 129, 0.4)";
+    return "rgba(139, 92, 246, 0.4)";
+  };
+
+  // Drag-to-scroll handlers for organic constellation network
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isDownRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrollContainerRef.current) return;
+    isDownRef.current = true;
+    setIsDragging(true);
+    startXRef.current = e.pageX - scrollContainerRef.current.offsetLeft;
+    scrollLeftRef.current = scrollContainerRef.current.scrollLeft;
+  };
+
+  const handleMouseLeave = () => {
+    isDownRef.current = false;
+    setIsDragging(false);
+  };
+
+  const handleMouseUp = () => {
+    isDownRef.current = false;
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDownRef.current || !scrollContainerRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - scrollContainerRef.current.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    scrollContainerRef.current.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("wandercall_custom_communities");
+      if (stored) {
+        try {
+          setCustomCommunities(JSON.parse(stored));
+        } catch (e) {
+          console.error("Failed to parse custom communities", e);
+        }
+      }
+    }
+  }, []);
+
+  const joinedCommunities: JoinedCommunity[] = [
+    {
+      id: "jc-1",
+      name: "Mountain Explorers",
+      avatar: "🏔️",
+      banner: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=300&auto=format&fit=crop",
+      members: 1420,
+      liveStatus: "Campfire Active",
+      unreadCount: 4,
+      energyScore: "Legendary",
+      recentActivity: "Rohit started a campfire voice room 10m ago",
+      upcomingEvent: "Kudremukh Trek (This Weekend)"
+    },
+    {
+      id: "jc-2",
+      name: "Scuba & Marine Cohort",
+      avatar: "🤿",
+      banner: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=300&auto=format&fit=crop",
+      members: 840,
+      liveStatus: "Event Live",
+      unreadCount: 2,
+      energyScore: "Thriving",
+      recentActivity: "3 members completed Netrani Deep Dive challenge",
+      upcomingEvent: "Netrani Reef Clean-up (Tomorrow)"
+    },
+    {
+      id: "jc-3",
+      name: "Heritage Food Crawlers",
+      avatar: "🍛",
+      banner: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=300&auto=format&fit=crop",
+      members: 2150,
+      liveStatus: "Active Now",
+      unreadCount: 0,
+      energyScore: "Legendary",
+      recentActivity: "Reviewing filter coffee locations in Malleshwaram",
+      upcomingEvent: "Old Bangalore Breakfast Walk (Today)"
+    },
+    {
+      id: "jc-4",
+      name: "Creative Writers & Guides",
+      avatar: "🖋️",
+      banner: "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=300&auto=format&fit=crop",
+      members: 620,
+      liveStatus: "Idle",
+      unreadCount: 0,
+      energyScore: "Active",
+      recentActivity: "Siddharth shared Gokarna Sunset Memory log",
+      upcomingEvent: "Photography Journal Workshop (Next Week)"
+    },
+    {
+      id: "jc-5",
+      name: "Himalayan Basecamp Tribes",
+      avatar: "⛺",
+      banner: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=300&auto=format&fit=crop",
+      members: 980,
+      liveStatus: "Campfire Active",
+      unreadCount: 7,
+      energyScore: "Legendary",
+      recentActivity: "Campfire session live from altitude 12,000 ft",
+      upcomingEvent: "Sankri Ridge Night Camp (This Weekend)"
+    }
+  ];
+
+  const allDockCommunities = useMemo(() => {
+    return [...joinedCommunities, ...customCommunities];
+  }, [customCommunities]);
+
+  const allGalaxyNodes = useMemo(() => {
+    const customNodes: CommunityNode[] = customCommunities.map(c => ({
+      id: c.id,
+      name: c.name,
+      avatar: c.avatar,
+      category: (c as any).category || "Adventure",
+      members: c.members,
+      activeEvents: c.liveStatus === "Campfire Active" ? 1 : 0,
+      friendsInside: (c as any).invitedFriends ? (c as any).invitedFriends.length : 0,
+      description: (c as any).description || "",
+      energyScore: 75
+    }));
+    return [...ALL_COMMUNITIES, ...customNodes];
+  }, [customCommunities]);
+
+  const getCommunityWallpaper = (node: CommunityNode) => {
+    if (node.avatar && (node.avatar.startsWith("http") || node.avatar.startsWith("data:"))) {
+      return node.avatar;
+    }
+    const defaultCategoryWallpapers: Record<string, string> = {
+      "Adventure": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=150&auto=format&fit=crop",
+      "Food": "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=150&auto=format&fit=crop",
+      "Photography": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?q=80&w=150&auto=format&fit=crop",
+      "Storytelling": "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=150&auto=format&fit=crop",
+      "Travel": "https://images.unsplash.com/photo-1488646953014-85cb44e25828?q=80&w=150&auto=format&fit=crop",
+      "Fitness": "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?q=80&w=150&auto=format&fit=crop",
+      "Learning": "https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=150&auto=format&fit=crop",
+      "Nightlife": "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=150&auto=format&fit=crop"
+    };
+    return defaultCategoryWallpapers[node.category] || "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=150&auto=format&fit=crop";
+  };
 
   // Responsive design viewport tracking hooks
   const [viewportWidth, setViewportWidth] = useState(1200);
@@ -493,76 +649,12 @@ export default function CommunitiesPage() {
     reputationPoints: 1420
   };
 
-  const joinedCommunities: JoinedCommunity[] = [
-    {
-      id: "jc-1",
-      name: "Mountain Explorers",
-      avatar: "🏔️",
-      banner: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=300&auto=format&fit=crop",
-      members: 1420,
-      liveStatus: "Campfire Active",
-      unreadCount: 4,
-      energyScore: "Legendary",
-      recentActivity: "Rohit started a campfire voice room 10m ago",
-      upcomingEvent: "Kudremukh Trek (This Weekend)"
-    },
-    {
-      id: "jc-2",
-      name: "Scuba & Marine Cohort",
-      avatar: "🤿",
-      banner: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=300&auto=format&fit=crop",
-      members: 840,
-      liveStatus: "Event Live",
-      unreadCount: 2,
-      energyScore: "Thriving",
-      recentActivity: "3 members completed Netrani Deep Dive challenge",
-      upcomingEvent: "Netrani Reef Clean-up (Tomorrow)"
-    },
-    {
-      id: "jc-3",
-      name: "Heritage Food Crawlers",
-      avatar: "🍛",
-      banner: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=300&auto=format&fit=crop",
-      members: 2150,
-      liveStatus: "Active Now",
-      unreadCount: 0,
-      energyScore: "Legendary",
-      recentActivity: "Reviewing filter coffee locations in Malleshwaram",
-      upcomingEvent: "Old Bangalore Breakfast Walk (Today)"
-    },
-    {
-      id: "jc-4",
-      name: "Creative Writers & Guides",
-      avatar: "🖋️",
-      banner: "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=300&auto=format&fit=crop",
-      members: 620,
-      liveStatus: "Idle",
-      unreadCount: 0,
-      energyScore: "Active",
-      recentActivity: "Siddharth shared Gokarna Sunset Memory log",
-      upcomingEvent: "Photography Journal Workshop (Next Week)"
-    },
-    {
-      id: "jc-5",
-      name: "Himalayan Basecamp Tribes",
-      avatar: "⛺",
-      banner: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=300&auto=format&fit=crop",
-      members: 980,
-      liveStatus: "Campfire Active",
-      unreadCount: 7,
-      energyScore: "Legendary",
-      recentActivity: "Campfire session live from altitude 12,000 ft",
-      upcomingEvent: "Sankri Ridge Night Camp (This Weekend)"
-    }
-  ];
-
-
   const companionOrbitNodes: CompanionOrbitNode[] = [
     {
       id: "orb-1",
       name: "Sara Khan",
       username: "sara_k",
-      avatar: "🏔️",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBvq26wOg0Zi4H-gLYQKJsHN1IhEoteb3j2cn9u__ifA&s=10",
       compatibility: 96,
       sharedDNA: "Explorer",
       mutualExperiences: 5,
@@ -576,7 +668,7 @@ export default function CommunitiesPage() {
       id: "orb-2",
       name: "Arjun Mehta",
       username: "arjun_m",
-      avatar: "🚴",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvZFutcVD1y3r8oyib405OisAEFWrUg8V4jLXEQbaIcw&s=10",
       compatibility: 89,
       sharedDNA: "Explorer",
       mutualExperiences: 3,
@@ -590,7 +682,7 @@ export default function CommunitiesPage() {
       id: "orb-3",
       name: "Divya Kapoor",
       username: "divya_k",
-      avatar: "📸",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx2MPl0cP4JCKyDUZalUI22n5kjPSKM6BUfWmpLaIeeA&s=10",
       compatibility: 84,
       sharedDNA: "Creative",
       mutualExperiences: 4,
@@ -604,7 +696,7 @@ export default function CommunitiesPage() {
       id: "orb-4",
       name: "Milind Soman",
       username: "milind_s",
-      avatar: "🏃",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8lVIJXtpBDkAYOUPk4jxPhvb9kUDMT7Py9zc_QL9CKg&s=10",
       compatibility: 92,
       sharedDNA: "Explorer",
       mutualExperiences: 6,
@@ -618,7 +710,7 @@ export default function CommunitiesPage() {
       id: "orb-5",
       name: "Ananya Rao",
       username: "ananya_r",
-      avatar: "🍛",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQkhRGeb01nDVu6PoETV5jzYL75nO9mxPlbihWzbk-2A&s=10",
       compatibility: 78,
       sharedDNA: "Socializer",
       mutualExperiences: 2,
@@ -632,7 +724,7 @@ export default function CommunitiesPage() {
       id: "orb-6",
       name: "Rohit Kumar",
       username: "rohit_k",
-      avatar: "🤿",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBvq26wOg0Zi4H-gLYQKJsHN1IhEoteb3j2cn9u__ifA&s=10",
       compatibility: 95,
       sharedDNA: "Explorer",
       mutualExperiences: 8,
@@ -646,7 +738,7 @@ export default function CommunitiesPage() {
       id: "orb-7",
       name: "Zoe Chen",
       username: "zoe_c",
-      avatar: "🎸",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvZFutcVD1y3r8oyib405OisAEFWrUg8V4jLXEQbaIcw&s=10",
       compatibility: 73,
       sharedDNA: "Socializer",
       mutualExperiences: 3,
@@ -660,7 +752,7 @@ export default function CommunitiesPage() {
       id: "orb-8",
       name: "Kabir Singh",
       username: "kabir_s",
-      avatar: "🪨",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx2MPl0cP4JCKyDUZalUI22n5kjPSKM6BUfWmpLaIeeA&s=10",
       compatibility: 81,
       sharedDNA: "Creative",
       mutualExperiences: 4,
@@ -674,7 +766,7 @@ export default function CommunitiesPage() {
       id: "orb-9",
       name: "Priya Sharma",
       username: "priya_s",
-      avatar: "⛺",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8lVIJXtpBDkAYOUPk4jxPhvb9kUDMT7Py9zc_QL9CKg&s=10",
       compatibility: 87,
       sharedDNA: "Explorer",
       mutualExperiences: 4,
@@ -688,7 +780,7 @@ export default function CommunitiesPage() {
       id: "orb-10",
       name: "Vikram Malhotra",
       username: "vikram_m",
-      avatar: "✈️",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQkhRGeb01nDVu6PoETV5jzYL75nO9mxPlbihWzbk-2A&s=10",
       compatibility: 76,
       sharedDNA: "Socializer",
       mutualExperiences: 3,
@@ -702,7 +794,7 @@ export default function CommunitiesPage() {
       id: "orb-11",
       name: "Aisha Patel",
       username: "aisha_p",
-      avatar: "🎨",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBvq26wOg0Zi4H-gLYQKJsHN1IhEoteb3j2cn9u__ifA&s=10",
       compatibility: 83,
       sharedDNA: "Creative",
       mutualExperiences: 4,
@@ -716,7 +808,7 @@ export default function CommunitiesPage() {
       id: "orb-12",
       name: "Rohan Joshi",
       username: "rohan_j",
-      avatar: "🛹",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvZFutcVD1y3r8oyib405OisAEFWrUg8V4jLXEQbaIcw&s=10",
       compatibility: 79,
       sharedDNA: "Explorer",
       mutualExperiences: 2,
@@ -730,7 +822,7 @@ export default function CommunitiesPage() {
       id: "orb-13",
       name: "Neha Gupta",
       username: "neha_g",
-      avatar: "🍜",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx2MPl0cP4JCKyDUZalUI22n5kjPSKM6BUfWmpLaIeeA&s=10",
       compatibility: 85,
       sharedDNA: "Socializer",
       mutualExperiences: 5,
@@ -744,7 +836,7 @@ export default function CommunitiesPage() {
       id: "orb-14",
       name: "Dev Adams",
       username: "dev_a",
-      avatar: "🎒",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8lVIJXtpBDkAYOUPk4jxPhvb9kUDMT7Py9zc_QL9CKg&s=10",
       compatibility: 91,
       sharedDNA: "Explorer",
       mutualExperiences: 7,
@@ -758,7 +850,7 @@ export default function CommunitiesPage() {
       id: "orb-15",
       name: "Tara Sen",
       username: "tara_s",
-      avatar: "🌌",
+      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQkhRGeb01nDVu6PoETV5jzYL75nO9mxPlbihWzbk-2A&s=10",
       compatibility: 88,
       sharedDNA: "Creative",
       mutualExperiences: 5,
@@ -908,7 +1000,7 @@ export default function CommunitiesPage() {
           <div className="flex items-center gap-4 justify-around md:justify-end bg-zinc-950/40 border border-white/5 p-3 rounded-2xl font-mono">
             <div className="flex flex-col text-center px-2">
               <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Joined</span>
-              <span className="text-sm font-black text-white mt-0.5">{commandCenterStats.joinedCount} Groups</span>
+              <span className="text-sm font-black text-white mt-0.5">{allDockCommunities.length} Groups</span>
             </div>
             <div className="h-8 w-px bg-white/5" />
             <div className="flex flex-col text-center px-2">
@@ -930,81 +1022,162 @@ export default function CommunitiesPage() {
       </section>
 
       {/* SECTION 2: MY COMMUNITIES DOCK */}
-      <section className="bg-white/[0.01] border border-white/5 p-4 rounded-2xl flex flex-col gap-4 w-full relative shadow-md">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-          <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
-            <Compass className="h-4 w-4 text-brand-cyan" /> My Communities Dock
-          </h2>
-          <span className="text-[9px] font-mono text-zinc-500">
-            {isMobile ? "Swipe horizontally to explore" : "Horizontal scroll or hover for preview"}
-          </span>
+      <section className="bg-white/[0.01] border border-white/5 p-4 rounded-2xl flex flex-col gap-5 w-full relative shadow-md">
+        
+        {/* Track 1: My Created Coordinates */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <h3 className="text-xs font-black uppercase tracking-widest text-brand-purple flex items-center gap-1.5">
+              <Plus className="h-3.5 w-3.5 text-brand-purple" /> My Created Coordinates ({customCommunities.length})
+            </h3>
+            <span className="text-[8px] font-mono text-zinc-500">
+              Coordinates you established and manage
+            </span>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
+            {customCommunities.map((item, index) => {
+              const isActive = item.liveStatus === "Campfire Active" || item.liveStatus === "Event Live" || item.liveStatus === "Active Now";
+              return (
+                <div
+                  key={item.id}
+                  className="relative shrink-0 cursor-pointer"
+                  onMouseEnter={() => {
+                    setHoveredDockItem(item);
+                    setHoveredDockIndex(index);
+                    setHoveredDockRow("created");
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredDockItem(null);
+                    setHoveredDockIndex(null);
+                    setHoveredDockRow(null);
+                  }}
+                  onClick={() => triggerToast(`Navigating to ${item.name} board...`)}
+                >
+                  {/* Radiation waves (subtle & small) */}
+                  {isActive && (
+                    <>
+                      <motion.div
+                        className="absolute inset-0 rounded-xl border border-brand-purple/40 pointer-events-none z-0"
+                        initial={{ opacity: 0.5, scale: 1 }}
+                        animate={{ opacity: 0, scale: 1.15 }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeOut" }}
+                      />
+                      <motion.div
+                        className="absolute inset-0 rounded-xl border border-brand-indigo/35 pointer-events-none z-0"
+                        initial={{ opacity: 0.4, scale: 1 }}
+                        animate={{ opacity: 0, scale: 1.25 }}
+                        transition={{ repeat: Infinity, duration: 2, delay: 0.7, ease: "easeOut" }}
+                      />
+                    </>
+                  )}
+
+                  {/* Avatar block (no container scale, inner scale only) */}
+                  <div className="h-12 w-12 rounded-xl bg-zinc-950 border border-brand-purple/20 hover:border-brand-purple flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(139,92,246,0.05)] relative z-10 overflow-hidden group">
+                    {item.banner || item.avatar.startsWith("http") || item.avatar.startsWith("data:") ? (
+                      <img
+                        src={item.banner || item.avatar}
+                        alt={item.name}
+                        className="absolute inset-0 object-cover w-full h-full z-0 group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="z-10 group-hover:scale-115 transition-transform duration-300 inline-block select-none">{item.avatar}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Create community button in dock */}
+            <button
+              onClick={() => router.push("/profile/community/create")}
+              className="h-12 w-12 rounded-xl bg-brand-purple/5 border border-brand-purple/20 border-dashed hover:border-brand-purple hover:bg-brand-purple/10 flex items-center justify-center text-brand-purple transition-all shrink-0 cursor-pointer group"
+              aria-label="Create Community"
+            >
+              <Plus className="h-5 w-5 group-hover:scale-110 transition-transform duration-300" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
-          {joinedCommunities.map((item, index) => (
-            <div
-              key={item.id}
-              className="relative shrink-0 cursor-pointer"
-              onMouseEnter={() => {
-                setHoveredDockItem(item);
-                setHoveredDockIndex(index);
-              }}
-              onMouseLeave={() => {
-                setHoveredDockItem(null);
-                setHoveredDockIndex(null);
-              }}
-              onClick={() => triggerToast(`Navigating to ${item.name} board...`)}
-            >
-              {/* Avatar block */}
-              <div className="h-16 w-16 rounded-2xl bg-zinc-950 border border-white/10 hover:border-brand-cyan flex items-center justify-center text-3xl transition-all hover:scale-105 active:scale-95 shadow-md relative overflow-hidden group">
-                {/* Banner preview on hover inside */}
+        {/* Horizontal Divider */}
+        <div className="h-px bg-white/5 w-full" />
+
+        {/* Track 2: Saved Communities of Others */}
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+            <h3 className="text-xs font-black uppercase tracking-widest text-brand-cyan flex items-center gap-1.5">
+              <Compass className="h-3.5 w-3.5 text-brand-cyan" /> Saved Communities ({joinedCommunities.length})
+            </h3>
+            <span className="text-[8px] font-mono text-zinc-500">
+              Communities you joined and explore
+            </span>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
+            {joinedCommunities.map((item, index) => {
+              const isActive = item.liveStatus === "Campfire Active" || item.liveStatus === "Event Live" || item.liveStatus === "Active Now";
+              return (
                 <div
-                  className="absolute inset-0 bg-cover bg-center opacity-0 group-hover:opacity-40 transition-opacity duration-300"
-                  style={{ backgroundImage: `url(${item.banner})` }}
-                />
-                <span className="z-10">{item.avatar}</span>
-
-                {/* Unread Counter Badge */}
-                {item.unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-brand-purple text-[9px] font-black flex items-center justify-center border-2 border-zinc-950 animate-pulse text-white">
-                    {item.unreadCount}
-                  </span>
-                )}
-
-                {/* Pulse active indicator */}
-                {item.liveStatus === "Campfire Active" && (
-                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-brand-amber border-2 border-zinc-950 flex items-center justify-center">
-                    <Volume2 className="h-2 w-2 text-white animate-pulse" />
-                  </span>
-                )}
-                {item.liveStatus === "Event Live" && (
-                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-brand-cyan border-2 border-zinc-950 animate-ping" />
-                )}
-              </div>
-            </div>
-          ))}
-
-          {/* Create community button in dock */}
-          <button
-            onClick={() => triggerToast("Initializing Group Creator Panel...")}
-            className="h-16 w-16 rounded-2xl bg-white/[0.02] border border-white/5 border-dashed hover:border-brand-purple hover:bg-brand-purple/5 flex items-center justify-center text-zinc-500 hover:text-brand-purple transition-all hover:scale-105 active:scale-95 shrink-0 cursor-pointer"
-            aria-label="Create Community"
-          >
-            <Plus className="h-6 w-6" />
-          </button>
+                  key={item.id}
+                  className="relative shrink-0 cursor-pointer"
+                  onMouseEnter={() => {
+                    setHoveredDockItem(item);
+                    setHoveredDockIndex(index);
+                    setHoveredDockRow("joined");
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredDockItem(null);
+                    setHoveredDockIndex(null);
+                    setHoveredDockRow(null);
+                  }}
+                  onClick={() => triggerToast(`Navigating to ${item.name} board...`)}
+                >
+                  {/* Avatar block (no container scale, inner scale only, with active border highlight pulse animation) */}
+                  <motion.div
+                    animate={isActive ? {
+                      borderColor: ["rgba(34, 211, 238, 0.4)", "rgba(59, 130, 246, 0.9)", "rgba(34, 211, 238, 0.4)"],
+                      boxShadow: [
+                        "0 0 4px rgba(34, 211, 238, 0.15)",
+                        "0 0 12px rgba(59, 130, 246, 0.45)",
+                        "0 0 4px rgba(34, 211, 238, 0.15)"
+                      ]
+                    } : {}}
+                    transition={isActive ? {
+                      repeat: Infinity,
+                      duration: 2.2,
+                      ease: "easeInOut"
+                    } : {}}
+                    className={`h-12 w-12 rounded-xl bg-zinc-950 border flex items-center justify-center text-2xl shadow-md relative z-10 overflow-hidden group ${
+                      isActive ? "" : "border-white/10 hover:border-brand-cyan"
+                    }`}
+                  >
+                    {item.banner || item.avatar.startsWith("http") || item.avatar.startsWith("data:") ? (
+                      <img
+                        src={item.banner || item.avatar}
+                        alt={item.name}
+                        className="absolute inset-0 object-cover w-full h-full z-0 group-hover:scale-110 transition-transform duration-300"
+                      />
+                    ) : (
+                      <span className="z-10 group-hover:scale-115 transition-transform duration-300 inline-block select-none">{item.avatar}</span>
+                    )}
+                  </motion.div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Hover Tooltip Overlay card relative to section */}
         <AnimatePresence>
-          {hoveredDockItem && hoveredDockIndex !== null && (
+          {hoveredDockItem && hoveredDockIndex !== null && hoveredDockRow !== null && (
             <motion.div
               initial={{ opacity: 0, y: -10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -5, scale: 0.95 }}
               className="absolute z-50 w-[240px] bg-zinc-950 border border-white/10 p-3.5 rounded-xl shadow-2xl backdrop-blur-xl pointer-events-none"
               style={{
-                top: "140px",
-                left: `${Math.max(16, hoveredDockIndex * 80 + 16)}px`
+                top: hoveredDockRow === "created" ? "105px" : "230px",
+                left: `${Math.max(16, hoveredDockIndex * 64 + 16)}px`
               }}
             >
               <div className="flex flex-col gap-2">
@@ -1085,10 +1258,13 @@ export default function CommunitiesPage() {
                         />
                       </div>
 
-                      <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto no-scrollbar">
+                      <div 
+                        data-lenis-prevent
+                        className="flex flex-col gap-1 max-h-[220px] overflow-y-auto no-scrollbar"
+                      >
                         {CLUSTER_METADATA.filter(c => c.name.toLowerCase().includes(filterSearch.toLowerCase())).map(item => {
                           const isSelected = selectedClusters.includes(item.id);
-                          const communityCount = ALL_COMMUNITIES.filter(c => c.category === item.category).length;
+                          const communityCount = allGalaxyNodes.filter(c => c.category === item.category).length;
 
                           return (
                             <button
@@ -1219,7 +1395,7 @@ export default function CommunitiesPage() {
                       if (!clusterMeta) return null;
 
                       // Retrieve all nodes for this category
-                      const allNodes = ALL_COMMUNITIES.filter(n => n.category === clusterMeta.category);
+                      const allNodes = allGalaxyNodes.filter(n => n.category === clusterMeta.category);
 
                       // Calculate cluster energy score average
                       const avgEnergy = Math.round(
@@ -1355,6 +1531,13 @@ export default function CommunitiesPage() {
                                   style={{ color: clusterMeta.glow }}
                                 />
 
+                                {/* Clip path for circular image */}
+                                <defs>
+                                  <clipPath id={`clip-node-${node.id}`}>
+                                    <circle cx={0} cy={0} r={nodeR} />
+                                  </clipPath>
+                                </defs>
+
                                 {/* Interactive star circle */}
                                 <circle
                                   cx={0}
@@ -1362,17 +1545,24 @@ export default function CommunitiesPage() {
                                   r={nodeR}
                                   className={`${clusterMeta.color} stroke-[1.5px] ${isSelected ? "stroke-white" : "stroke-white/10"
                                     } group-hover:scale-115 transition-transform duration-300`}
+                                  style={{ transformOrigin: "0px 0px" }}
                                 />
 
-                                {/* Avatar Emoji */}
-                                <text
-                                  x={0}
-                                  y={emojiY}
-                                  className={`${emojiSize} pointer-events-none select-none font-bold`}
-                                  textAnchor="middle"
+                                {/* Circular Wallpaper Image instead of emoji */}
+                                <g 
+                                  clipPath={`url(#clip-node-${node.id})`} 
+                                  className="group-hover:scale-115 transition-transform duration-300 pointer-events-none"
+                                  style={{ transformOrigin: "0px 0px" }}
                                 >
-                                  {node.avatar}
-                                </text>
+                                  <image
+                                    href={getCommunityWallpaper(node)}
+                                    x={-nodeR}
+                                    y={-nodeR}
+                                    width={nodeR * 2}
+                                    height={nodeR * 2}
+                                    preserveAspectRatio="xMidYMid slice"
+                                  />
+                                </g>
 
                                 {/* Abbreviated static index label */}
                                 <text
@@ -1461,7 +1651,7 @@ export default function CommunitiesPage() {
                 .map(cid => {
                   const meta = CLUSTER_METADATA.find(c => c.id === cid);
                   if (!meta) return null;
-                  const comps = ALL_COMMUNITIES.filter(c => c.category === meta.category);
+                  const comps = allGalaxyNodes.filter(c => c.category === meta.category);
                   const avgEnergy = Math.round(comps.reduce((sum, n) => sum + n.energyScore, 0) / (comps.length || 1));
                   const energyLevel = avgEnergy < 35 ? "Low" : avgEnergy < 65 ? "Medium" : avgEnergy < 85 ? "High" : "Legendary";
 
@@ -1523,7 +1713,18 @@ export default function CommunitiesPage() {
             aria-label="Explorer constellation layout. Use arrow keys to navigate between nodes."
           >
             {/* Scroll/Swipe Support on all viewports */}
-            <div className="w-full overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing relative select-none" data-lenis-prevent>
+            <div 
+              ref={scrollContainerRef}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeave}
+              onMouseUp={handleMouseUp}
+              onMouseMove={handleMouseMove}
+              onDragStart={(e) => e.preventDefault()}
+              className={`w-full overflow-x-auto no-scrollbar relative select-none ${
+                isDragging ? "cursor-grabbing" : "cursor-grab"
+              }`}
+              data-lenis-prevent
+            >
               <div className="min-w-[1000px] w-full relative">
                 <svg viewBox="0 0 1000 380" className="w-full h-auto z-10 overflow-visible select-none">
                   {/* Seeded background constellation stars */}
@@ -1699,24 +1900,50 @@ export default function CommunitiesPage() {
                           className="transition-all duration-300"
                         />
 
-                        {/* Base node circle */}
+                        {/* Clip path for circular image */}
+                        <defs>
+                          <clipPath id={`clip-explorer-${item.node.id}`}>
+                            <circle cx={0} cy={0} r={item.r} />
+                          </clipPath>
+                        </defs>
+
+                        {/* Base node circle with dynamic fallback bg color if image fails to load */}
                         <circle
                           cx={0}
                           cy={0}
                           r={item.r}
-                          className="fill-zinc-950 stroke-white/10 hover:stroke-white/30 transition-all duration-300 shadow-xl"
+                          fill={(!failedExplorerAvatars[item.node.id] && item.node.avatar?.startsWith("http")) ? "#09090b" : getDnaColor(item.node.sharedDNA).replace("0.4", "0.2")}
+                          className="stroke-white/10 hover:stroke-white/30 transition-all duration-300 shadow-xl"
                           strokeWidth={1}
                         />
 
-                        {/* Render inner avatar emoji */}
-                        <text
-                          x={0}
-                          y={5}
-                          className="text-sm pointer-events-none select-none font-bold text-center"
-                          textAnchor="middle"
-                        >
-                          {item.node.avatar}
-                        </text>
+                        {/* Render inner avatar image or fallback letter */}
+                        {!failedExplorerAvatars[item.node.id] && item.node.avatar?.startsWith("http") ? (
+                          <g clipPath={`url(#clip-explorer-${item.node.id})`}>
+                            <image
+                              href={item.node.avatar}
+                              x={-item.r}
+                              y={-item.r}
+                              width={item.r * 2}
+                              height={item.r * 2}
+                              preserveAspectRatio="xMidYMid slice"
+                              className="pointer-events-none select-none"
+                              onError={() => {
+                                setFailedExplorerAvatars(prev => ({ ...prev, [item.node.id]: true }));
+                              }}
+                            />
+                          </g>
+                        ) : (
+                          <text
+                            x={0}
+                            y={isMobile ? 5 : 4}
+                            fill="#ffffff"
+                            className="font-bold text-[10px] select-none pointer-events-none text-center uppercase font-mono"
+                            textAnchor="middle"
+                          >
+                            {item.node.username ? item.node.username.replace(/^@/, "").charAt(0).toUpperCase() : item.node.name.charAt(0).toUpperCase()}
+                          </text>
+                        )}
 
                         {/* Name and Match percentage label under the node */}
                         <text
@@ -1752,8 +1979,25 @@ export default function CommunitiesPage() {
                       <span className="text-[8px] font-black uppercase tracking-widest text-brand-cyan">
                         {selectedExplorer.sharedDNA} Subclass
                       </span>
-                      <h3 className="text-sm font-black text-white uppercase tracking-wider mt-1.5 truncate">
-                        {selectedExplorer.avatar} {selectedExplorer.name}
+                      <h3 className="text-sm font-black text-white uppercase tracking-wider mt-1.5 truncate flex items-center gap-2">
+                        {!failedExplorerAvatars[selectedExplorer.id] && selectedExplorer.avatar?.startsWith("http") ? (
+                          <img
+                            src={selectedExplorer.avatar}
+                            alt=""
+                            className="h-5 w-5 rounded-full object-cover shrink-0 border border-white/10"
+                            onError={() => {
+                              setFailedExplorerAvatars(prev => ({ ...prev, [selectedExplorer.id]: true }));
+                            }}
+                          />
+                        ) : (
+                          <div
+                            className="h-5 w-5 rounded-full flex items-center justify-center shrink-0 border border-white/10 text-[9px] font-black text-white font-mono"
+                            style={{ backgroundColor: getDnaColor(selectedExplorer.sharedDNA) }}
+                          >
+                            {selectedExplorer.username ? selectedExplorer.username.replace(/^@/, "").charAt(0).toUpperCase() : selectedExplorer.name.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span>{selectedExplorer.name}</span>
                       </h3>
                       <span className="text-[9px] text-zinc-500 font-mono">
                         @{selectedExplorer.username}
