@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
 import {
   Compass,
   MapPin,
@@ -21,6 +23,7 @@ import {
   Check,
   ArrowRight,
   TrendingUp,
+  User,
   UserPlus,
   CheckCircle2,
   Volleyball,
@@ -55,6 +58,8 @@ interface Comment {
   avatar: string;
   text: string;
   time: string;
+  likes?: number;
+  likedByMe?: boolean;
 }
 
 interface FeedPost {
@@ -156,8 +161,8 @@ const initialFeedPosts: FeedPost[] = [
     likes: 84,
     commentsCount: 12,
     comments: [
-      { id: "c1", user: "Rishiraj", avatar: "R", text: "Stunning shots! Did you camp on Paradise beach directly?", time: "1h ago" },
-      { id: "c2", user: "Neha Sharma", avatar: "N", text: "Added this to my wishlist immediately.", time: "45m ago" }
+      { id: "c1", user: "Rishiraj", avatar: "R", text: "Stunning shots! Did you camp on Paradise beach directly?", time: "1h ago", likes: 3, likedByMe: false },
+      { id: "c2", user: "Neha Sharma", avatar: "N", text: "Added this to my wishlist immediately.", time: "45m ago", likes: 1, likedByMe: false }
     ],
     hasLiked: false,
     hasSaved: true
@@ -208,7 +213,7 @@ const initialFeedPosts: FeedPost[] = [
     likes: 142,
     commentsCount: 5,
     comments: [
-      { id: "c3", user: "Arjun Mehta", avatar: "A", text: "Kudremukh is magical in the rains. Count me in!", time: "4h ago" }
+      { id: "c3", user: "Arjun Mehta", avatar: "A", text: "Kudremukh is magical in the rains. Count me in!", time: "4h ago", likes: 4, likedByMe: false }
     ],
     hasLiked: true,
     hasSaved: true
@@ -650,6 +655,19 @@ const DescriptionText = ({ text, isItalic = false, borderClass = "" }: { text: s
 };
 
 export default function ExplorerFeedPage() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  const executeAuthAction = (actionName: string, actionCallback: () => void) => {
+    if (!isLoggedIn) {
+      setPendingAction(actionName);
+      setShowLoginModal(true);
+    } else {
+      actionCallback();
+    }
+  };
+
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>(initialFeedPosts);
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSort, setActiveSort] = useState("Trending");
@@ -758,6 +776,7 @@ export default function ExplorerFeedPage() {
   // Comments toggles
   const [expandedCommentsId, setExpandedCommentsId] = useState<string | null>(null);
   const [commentInput, setCommentInput] = useState("");
+  const [activeCommentPost, setActiveCommentPost] = useState<FeedPost | null>(null);
 
   // Confetti / Celebration states
   const [celebrationOverlay, setCelebrationOverlay] = useState(false);
@@ -814,12 +833,6 @@ export default function ExplorerFeedPage() {
     return result;
   }, [feedPosts, activeFilter, activeSort]);
 
-  // AI Summary stats
-  const aiRecapSummary = {
-    adventures: 42,
-    badges: 18,
-    campfires: 6
-  };
 
   // Handle post creation
   const handleCreatePost = (e: React.FormEvent) => {
@@ -900,31 +913,35 @@ export default function ExplorerFeedPage() {
 
   // Toggle Like
   const handleLike = (postId: string) => {
-    setFeedPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        const hasLiked = !post.hasLiked;
-        return {
-          ...post,
-          hasLiked,
-          likes: hasLiked ? post.likes + 1 : post.likes - 1
-        };
-      }
-      return post;
-    }));
+    executeAuthAction("like posts", () => {
+      setFeedPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          const hasLiked = !post.hasLiked;
+          return {
+            ...post,
+            hasLiked,
+            likes: hasLiked ? post.likes + 1 : post.likes - 1
+          };
+        }
+        return post;
+      }));
+    });
   };
 
   // Toggle Save
   const handleSave = (postId: string) => {
-    setFeedPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        const hasSaved = !post.hasSaved;
-        if (hasSaved) {
-          triggerToast("Added to experience wishlist!");
+    executeAuthAction("bookmark posts", () => {
+      setFeedPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          const hasSaved = !post.hasSaved;
+          if (hasSaved) {
+            triggerToast("Added to experience wishlist!");
+          }
+          return { ...post, hasSaved };
         }
-        return { ...post, hasSaved };
-      }
-      return post;
-    }));
+        return post;
+      }));
+    });
   };
 
   // Trigger celebration particle overlay
@@ -940,25 +957,64 @@ export default function ExplorerFeedPage() {
   const handleAddComment = (postId: string) => {
     if (!commentInput.trim()) return;
 
-    setFeedPosts(prev => prev.map(post => {
-      if (post.id === postId) {
-        const newComment = {
-          id: `comment-${Date.now()}`,
-          user: "Rishiraj",
-          avatar: "R",
-          text: commentInput,
-          time: "Just now"
-        };
-        return {
-          ...post,
-          commentsCount: post.commentsCount + 1,
-          comments: [...post.comments, newComment]
-        };
-      }
-      return post;
-    }));
+    executeAuthAction("write comments", () => {
+      setFeedPosts(prev => prev.map(post => {
+        if (post.id === postId) {
+          const newComment = {
+            id: `comment-${Date.now()}`,
+            user: "Rishiraj",
+            avatar: "R",
+            text: commentInput,
+            time: "Just now",
+            likes: 0,
+            likedByMe: false
+          };
+          const updated = {
+            ...post,
+            commentsCount: post.commentsCount + 1,
+            comments: [newComment, ...post.comments]
+          };
+          if (activeCommentPost?.id === post.id) {
+            setActiveCommentPost(updated);
+          }
+          return updated;
+        }
+        return post;
+      }));
 
-    setCommentInput("");
+      setCommentInput("");
+    });
+  };
+
+  const handleLikeComment = (postId: string, commentId: string) => {
+    executeAuthAction("like comments", () => {
+      setFeedPosts(prev => {
+        return prev.map(p => {
+          if (p.id === postId) {
+            const updatedComments = (p.comments || []).map(c => {
+              if (c.id === commentId) {
+                const alreadyLiked = c.likedByMe;
+                return {
+                  ...c,
+                  likedByMe: !alreadyLiked,
+                  likes: alreadyLiked ? Math.max(0, (c.likes || 0) - 1) : (c.likes || 0) + 1
+                };
+              }
+              return c;
+            });
+            const updated = {
+              ...p,
+              comments: updatedComments
+            };
+            if (activeCommentPost?.id === p.id) {
+              setActiveCommentPost(updated);
+            }
+            return updated;
+          }
+          return p;
+        });
+      });
+    });
   };
 
   // Infinite Scroll Simulated Loading
@@ -993,6 +1049,17 @@ export default function ExplorerFeedPage() {
     const isRishiraj = post.user.name === "Rishiraj";
     const isHostOrAdmin = post.user.name === "Rishiraj" || post.user.name === "Wandercall Quests" || post.user.name === "Wandercall Community";
 
+    // Define type-specific classes for cards to apply custom glow hover styles
+    const typeClasses = {
+      experience: "shine-card-cyan",
+      quest: "shine-card-purple",
+      memory: "shine-card-purple",
+      campfire: "shine-card-purple",
+      community: "shine-card-emerald",
+      achievement: "shine-card-indigo",
+      recap: "shine-card-indigo"
+    }[post.type] || "";
+
     return (
       <motion.div
         key={post.id}
@@ -1000,10 +1067,10 @@ export default function ExplorerFeedPage() {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className={`bg-white/[0.01] border p-4 md:p-6 rounded-3xl flex flex-col gap-4 text-left shadow-lg hover:border-white/10 transition-all duration-300 relative overflow-hidden group w-full ${
+        className={`glass-panel border p-4 md:p-6 rounded-3xl flex flex-col gap-4 text-left shadow-lg transition-all duration-300 relative overflow-hidden group w-full shine-card ${typeClasses} ${
           isRishiraj 
-            ? "border-amber-500/20 shadow-amber-500/[0.01] bg-gradient-to-tr from-amber-500/[0.01] via-transparent to-rose-500/[0.01]" 
-            : "border-white/5"
+            ? "border-amber-500/20 shadow-amber-500/[0.01] bg-gradient-to-tr from-amber-500/[0.02] via-transparent to-rose-500/[0.01] hover:border-amber-500/35 hover:shadow-amber-500/5" 
+            : "border-white/5 hover:border-white/10"
         }`}
       >
 
@@ -1387,7 +1454,7 @@ export default function ExplorerFeedPage() {
           </button>
 
           <button
-            onClick={() => setExpandedCommentsId(expandedCommentsId === post.id ? null : post.id)}
+            onClick={() => setActiveCommentPost(post)}
             className="flex items-center gap-2 cursor-pointer hover:text-zinc-300 transition-colors"
             aria-label="Toggle comments"
           >
@@ -1456,10 +1523,14 @@ export default function ExplorerFeedPage() {
   };
 
   return (
-    <div className="w-full px-3 md:px-12 py-4 md:py-8 max-w-none relative flex flex-col gap-6 overflow-y-visible">
+    <div className="flex flex-col min-h-screen bg-brand-bg text-white overflow-x-hidden font-sans">
+      <Navbar />
 
-      {/* HEADER PANEL */}
-      <div className="bg-white/[0.01] border border-white/5 p-4 rounded-3xl flex flex-col gap-4 text-left shadow-lg w-full">
+      <main className="flex-1 w-full flex flex-col items-center pt-28 pb-16">
+        <div className="w-full max-w-[1440px] px-3 md:px-12 py-4 md:py-8 relative flex flex-col gap-6 overflow-y-visible">
+
+          {/* HEADER PANEL */}
+      <div className="glass-panel p-4 rounded-3xl flex flex-col gap-4 text-left shadow-lg w-full max-w-4xl mx-auto">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
             <Compass className="h-6 w-6 text-brand-cyan animate-pulse" />
@@ -1489,14 +1560,16 @@ export default function ExplorerFeedPage() {
 
           <button
             onClick={() => {
-              const nextState = !isCreatePostOpen;
-              setIsCreatePostOpen(nextState);
-              if (nextState) {
-                setTimeout(() => {
-                  const el = document.getElementById("create-post-card");
-                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }, 150);
-              }
+              executeAuthAction("create posts", () => {
+                const nextState = !isCreatePostOpen;
+                setIsCreatePostOpen(nextState);
+                if (nextState) {
+                  setTimeout(() => {
+                    const el = document.getElementById("create-post-card");
+                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }, 150);
+                }
+              });
             }}
             className="h-8 px-3 rounded-lg bg-gradient-to-r from-brand-indigo to-brand-purple text-[10px] font-bold uppercase tracking-wider text-white hover:brightness-110 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-indigo/10 shrink-0"
           >
@@ -1529,19 +1602,7 @@ export default function ExplorerFeedPage() {
         </div>
       </div>
 
-      {/* AI FEED INSIGHTS CARD */}
-      <div className="bg-gradient-to-r from-brand-indigo/5 to-brand-purple/5 border border-brand-purple/10 p-4 rounded-3xl flex items-center gap-4 text-left shadow-lg relative overflow-hidden group w-full">
-        <div className="h-10 w-10 rounded-2xl bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-brand-purple shrink-0">
-          <Sparkles className="h-5 w-5 animate-pulse" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-brand-purple">AI Summary Recap</span>
-          <p className="text-xs text-zinc-300 font-semibold leading-relaxed mt-0.5">
-            Today your network completed <span className="text-brand-cyan font-black">{aiRecapSummary.adventures}</span> adventures, unlocked <span className="text-brand-amber font-black">{aiRecapSummary.badges}</span> badges, and completed 6 key milestones.
-          </p>
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/[0.01] to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-out" />
-      </div>
+
 
       {/* CREATE POST CARD CONTAINER */}
       <AnimatePresence>
@@ -2095,6 +2156,166 @@ export default function ExplorerFeedPage() {
         )}
       </AnimatePresence>
 
+      {/* Feed Comment Modal Popup */}
+      <AnimatePresence>
+        {activeCommentPost && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm select-none">
+            <div className="absolute inset-0 cursor-default" onClick={() => setActiveCommentPost(null)} />
+            
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="glass-panel border border-white/10 rounded-3xl p-6 max-w-lg w-full relative z-10 shadow-2xl overflow-hidden flex flex-col max-h-[85vh] text-left"
+              style={{ backgroundColor: '#09090b' }}
+            >
+              <button
+                onClick={() => setActiveCommentPost(null)}
+                className="absolute top-3 right-3 p-1.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer z-10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar" data-lenis-prevent>
+                
+                {/* Post details inside modal */}
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple p-0.5 shrink-0">
+                    <div className="h-full w-full rounded-full bg-zinc-900 flex items-center justify-center font-black text-xs text-white">
+                      {activeCommentPost.user.avatar}
+                    </div>
+                  </div>
+                  <div className="flex flex-col text-left">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-xs font-black text-white">{activeCommentPost.user.name}</span>
+                      <span className="text-[9px] font-mono font-bold text-zinc-500 bg-white/5 px-1.5 py-0.5 rounded-md">Lv.{activeCommentPost.user.level}</span>
+                    </div>
+                    <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider mt-0.5">{activeCommentPost.timestamp}</span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mt-2">
+                  <h3 className="text-xs font-black text-white uppercase tracking-wider leading-none">
+                    {activeCommentPost.type === "experience" ? activeCommentPost.experienceName : activeCommentPost.type === "quest" ? activeCommentPost.questName : activeCommentPost.type === "memory" ? activeCommentPost.memoryTitle : "Feed Post"}
+                  </h3>
+                  <p className="text-[10.5px] text-zinc-300 leading-relaxed font-medium">
+                    {activeCommentPost.type === "experience" ? activeCommentPost.storyText : activeCommentPost.type === "memory" ? activeCommentPost.memoryText : activeCommentPost.type === "quest" ? `Quest completion reward: ${activeCommentPost.reward}` : activeCommentPost.discussionHighlight || "Community post update."}
+                  </p>
+                </div>
+
+                {/* Comment area */}
+                <div className="space-y-3 pt-3 border-t border-white/5">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Post Comments ({activeCommentPost.comments?.length || 0})</h4>
+                  
+                  <div className="space-y-2">
+                    {activeCommentPost.comments?.map(comm => (
+                      <div key={comm.id} className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl text-[10px] text-left flex justify-between items-start gap-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-zinc-200">{comm.user}</span>
+                            <span className="text-[8px] text-zinc-500 font-mono">{comm.time}</span>
+                          </div>
+                          <p className="text-zinc-400 leading-relaxed mt-1 break-words">{comm.text}</p>
+                        </div>
+                        <button
+                          onClick={() => handleLikeComment(activeCommentPost.id, comm.id)}
+                          className="flex items-center gap-1 text-[8.5px] font-bold font-mono text-zinc-500 hover:text-rose-500 transition-colors p-1 rounded-lg hover:bg-white/5 shrink-0 cursor-pointer"
+                        >
+                          <Heart className={`h-3.5 w-3.5 ${comm.likedByMe ? "text-rose-500 fill-rose-500" : "text-zinc-500"}`} />
+                          <span>{comm.likes || 0}</span>
+                        </button>
+                      </div>
+                    ))}
+                    {(!activeCommentPost.comments || activeCommentPost.comments.length === 0) && (
+                      <p className="text-[9px] text-zinc-500 font-mono py-2">No comments published. Write yours below!</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Sticky comment input field */}
+              <div className="pt-3 border-t border-white/5 mt-3 shrink-0 bg-zinc-950/20">
+                <div className="flex gap-2 bg-zinc-900 border border-white/5 p-1 rounded-xl items-center">
+                  <input
+                    type="text"
+                    placeholder="Share your thoughts..."
+                    value={commentInput}
+                    onChange={(e) => setCommentInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddComment(activeCommentPost.id)}
+                    className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full px-2 font-semibold"
+                  />
+                  <button
+                    onClick={() => handleAddComment(activeCommentPost.id)}
+                    className="px-3.5 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 text-[9px] font-black rounded-lg transition-all shrink-0 cursor-pointer"
+                  >
+                    Post
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+        </div>
+      </main>
+
+      {/* GUEST MODE INTERACTION / LOGIN REQUIRED MODAL */}
+      <AnimatePresence>
+        {showLoginModal && (
+          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <div className="absolute inset-0 cursor-default" onClick={() => setShowLoginModal(false)} />
+            
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              transition={{ type: "spring", stiffness: 350, damping: 25 }}
+              className="glass-panel border-white/10 rounded-3xl p-6 md:p-8 max-w-sm w-full relative z-10 shadow-2xl overflow-hidden flex flex-col items-center justify-center text-center"
+              style={{ backgroundColor: '#09090b' }}
+            >
+              <div className="h-12 w-12 rounded-2xl bg-gradient-to-tr from-brand-indigo to-brand-purple p-0.5 shadow-lg flex items-center justify-center mb-4">
+                <div className="h-full w-full rounded-2xl bg-zinc-900 flex items-center justify-center text-white border border-white/5">
+                  <User className="h-6 w-6 text-brand-cyan" />
+                </div>
+              </div>
+
+              <h3 className="text-base font-black text-white uppercase tracking-wider">Authentication Required</h3>
+              <p className="text-xs text-zinc-400 font-semibold mt-2 leading-relaxed">
+                You need to be logged in to {pendingAction || "interact with this post"}. Join Wandercall to track your adventures and unlock quests!
+              </p>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 mt-6 w-full">
+                <button
+                  onClick={() => setShowLoginModal(false)}
+                  className="h-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 text-[10px] font-bold uppercase tracking-wider flex items-center justify-center transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <Link
+                  href="/login"
+                  className="h-10 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white text-[10px] font-bold uppercase tracking-wider flex items-center justify-center hover:brightness-110 active:scale-98 transition-all cursor-pointer shadow-lg shadow-brand-indigo/15"
+                >
+                  Log In
+                </Link>
+              </div>
+
+              {/* Quick bypass button for testing */}
+              <button
+                onClick={() => {
+                  setIsLoggedIn(true);
+                  setShowLoginModal(false);
+                  triggerToast("Logged in as Rishiraj (explorer mode activated)");
+                }}
+                className="mt-4 text-[9px] font-mono font-bold text-zinc-500 hover:text-brand-cyan transition-colors"
+              >
+                [Bypass: Simulate Log In]
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

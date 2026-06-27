@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { Users, Heart, MessageCircle, Share2, Compass, Award } from "lucide-react";
 
 interface StoryPost {
@@ -178,10 +179,10 @@ export default function CommunityStories() {
 
       {/* Show More Button */}
       <div className="flex justify-center mt-12">
-        <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
+        <Link href="/feed" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
           <Compass className="h-4 w-4 text-brand-cyan animate-pulse" />
           View More Journals
-        </button>
+        </Link>
       </div>
     </section>
   );

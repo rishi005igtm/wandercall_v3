@@ -26,7 +26,6 @@ import {
 const navItems = [
   { name: "Home", icon: Home, href: "/" },
   { name: "Profile", icon: User, href: "/profile" },
-  { name: "Feed", icon: Compass, href: "/profile/feed" },
   { name: "Wishlist", icon: Heart, href: "/profile/wishlist" },
   { name: "Bookings", icon: Calendar, href: "/profile/bookings" },
   { name: "Quests", icon: Award, href: "/profile/quests" },
@@ -50,10 +49,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   // Generate active mobile group dynamically using modulo logic (exactly 4 menu items)
   const activeGroup = useMemo(() => {
-    const start = (mobileMenuPage * 4) % 9;
+    const len = navItems.length;
+    const start = (mobileMenuPage * 4) % len;
     const items = [];
     for (let i = 0; i < 4; i++) {
-      const idx = (start + i) % 9;
+      const idx = (start + i) % len;
       items.push(navItems[idx]);
     }
     return items;
@@ -64,7 +64,6 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     if (
       item.href !== "/" &&
       item.href !== "/profile" &&
-      item.href !== "/profile/feed" &&
       item.href !== "/profile/wishlist" &&
       item.href !== "/profile/bookings" &&
       item.href !== "/profile/quests" &&
@@ -82,7 +81,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const isChatRoute = pathname?.includes('/profile/friends/chat:');
   const isCampfireActiveRoute = pathname?.startsWith('/profile/campfires/') && pathname !== '/profile/campfires' && pathname !== '/profile/campfires/';
   
-  const staticSubPaths = ['feed', 'wishlist', 'bookings', 'quests', 'community', 'campfires', 'friends', 'settings'];
+  const staticSubPaths = ['wishlist', 'bookings', 'quests', 'community', 'campfires', 'friends', 'settings'];
   const isDynamicProfileRoute = pathname?.startsWith('/profile/') && 
     !staticSubPaths.some(sub => pathname === `/profile/${sub}` || pathname.startsWith(`/profile/${sub}/`)) && 
     pathname !== '/profile' && 

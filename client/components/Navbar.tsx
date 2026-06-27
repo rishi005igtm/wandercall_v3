@@ -2,10 +2,22 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Compass, Calendar, Users, Radio, Award, MessageSquare, Search, Menu, X, Globe, User } from "lucide-react";
+import { Compass, Calendar, Users, Radio, Award, MessageSquare, Search, Menu, X, Globe, User, ArrowLeft, SlidersHorizontal } from "lucide-react";
 
-export default function Navbar() {
+export default function Navbar({ 
+  showBackButton, 
+  backHref,
+  showFilterButton,
+  onFilterToggle
+}: { 
+  showBackButton?: boolean; 
+  backHref?: string;
+  showFilterButton?: boolean;
+  onFilterToggle?: () => void;
+} = {}) {
+  const router = useRouter();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -37,14 +49,27 @@ export default function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const pathname = usePathname();
+
   const navLinks = [
     { name: "Explore", icon: Compass, href: "#explore" },
     { name: "Experiences", icon: Calendar, href: "#experiences" },
-    { name: "Community", icon: Users, href: "#community" },
+    { name: "Feed", icon: Compass, href: "/feed" },
     { name: "Campfires", icon: Radio, href: "#campfires" },
-    { name: "Quests", icon: Award, href: "#quests" },
+    { name: "Quests", icon: Award, href: "/login" },
     { name: "AI Assistant", icon: MessageSquare, href: "#ai-assistant" }
   ];
+
+  const getHref = (target: string, name: string) => {
+    if (name === "Experiences") {
+      if (pathname === "/") {
+        return "#experiences";
+      }
+      return "/experiences";
+    }
+    if (target.startsWith("/")) return target;
+    return pathname === "/" ? target : `/${target}`;
+  };
 
   return (
     <>
@@ -66,29 +91,46 @@ export default function Navbar() {
       >
         <div className="mx-auto max-w-[1440px] flex items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative h-8 w-8 flex items-center justify-center rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple">
-              <Globe className="h-5 w-5 text-white animate-pulse" />
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-white font-sans bg-clip-text">
-              Wandercall
-            </span>
-          </Link>
+          <div className="flex items-center gap-2">
+            {showBackButton && (
+              <button 
+                onClick={() => {
+                  if (backHref) {
+                    router.push(backHref);
+                  } else {
+                    router.back();
+                  }
+                }}
+                className="lg:hidden p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Go back"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
+            )}
+            <Link href="/" className="flex items-center gap-2 group">
+              <div className="relative h-8 w-8 flex items-center justify-center rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple">
+                <Globe className="h-5 w-5 text-white animate-pulse" />
+                <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-white font-sans bg-clip-text">
+                Wandercall
+              </span>
+            </Link>
+          </div>
 
           {/* Desktop Navigation Links */}
           <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => {
               const Icon = link.icon;
               return (
-                <a
+                <Link
                   key={link.name}
-                  href={link.href}
+                  href={getHref(link.href, link.name)}
                   className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200"
                 >
                   <Icon className="h-4 w-4" />
                   {link.name}
-                </a>
+                </Link>
               );
             })}
           </div>
@@ -98,7 +140,7 @@ export default function Navbar() {
             {/* Search Toggle */}
             <button 
               onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
+              className={`p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors ${showBackButton ? "hidden lg:inline-flex" : ""}`}
               aria-label="Search"
             >
               <Search className="h-5 w-5" />
@@ -128,14 +170,24 @@ export default function Navbar() {
               Login
             </Link>
 
-            {/* Mobile Menu Toggle */}
-            <button
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
-              aria-label="Open menu"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
+            {/* Mobile Menu Toggle or Filter Button */}
+            {showFilterButton ? (
+              <button
+                onClick={onFilterToggle}
+                className="lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Filter"
+              >
+                <SlidersHorizontal className="h-5 w-5" />
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsMobileMenuOpen(true)}
+                className={`lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors ${showBackButton ? "hidden" : ""}`}
+                aria-label="Open menu"
+              >
+                <Menu className="h-6 w-6" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -169,82 +221,84 @@ export default function Navbar() {
       </motion.nav>
 
       {/* Premium Side Panel Mobile Navigation */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="fixed inset-0 bg-black z-50 backdrop-blur-sm"
-            />
+      {!showFilterButton && (
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <>
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.6 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="fixed inset-0 bg-black z-50 backdrop-blur-sm"
+              />
 
-            {/* Panel */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-brand-bg/95 backdrop-blur-xl border-l border-white/5 p-8 z-50 flex flex-col justify-between shadow-2xl shadow-black/80"
-            >
-              <div>
-                <div className="flex items-center justify-between mb-12">
-                  <span className="text-lg font-bold text-white bg-gradient-to-r from-brand-cyan to-brand-purple bg-clip-text text-transparent">
-                    Wandercall
-                  </span>
-                  <button
+              {/* Panel */}
+              <motion.div
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-brand-bg/95 backdrop-blur-xl border-l border-white/5 p-8 z-50 flex flex-col justify-between shadow-2xl shadow-black/80"
+              >
+                <div>
+                  <div className="flex items-center justify-between mb-12">
+                    <span className="text-lg font-bold text-white bg-gradient-to-r from-brand-cyan to-brand-purple bg-clip-text text-transparent">
+                      Wandercall
+                    </span>
+                    <button
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
+                    >
+                      <X className="h-6 w-6" />
+                    </button>
+                  </div>
+
+                  {/* Mobile Navigation Links */}
+                  <div className="flex flex-col gap-4">
+                    {navLinks.map((link, index) => {
+                      const Icon = link.icon;
+                      return (
+                        <Link key={link.name} href={getHref(link.href, link.name)} passHref legacyBehavior>
+                          <motion.a
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 text-base font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
+                          >
+                            <Icon className="h-5 w-5 text-brand-indigo" />
+                            {link.name}
+                          </motion.a>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Mobile Actions */}
+                <div className="flex flex-col gap-4 pt-8 border-t border-white/5">
+                  <a 
+                    href="#host"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
+                    className="text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
                   >
-                    <X className="h-6 w-6" />
-                  </button>
+                    Become Host
+                  </a>
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center justify-center py-4 rounded-xl font-bold bg-gradient-to-r from-brand-indigo to-brand-purple text-white shadow-lg text-sm uppercase tracking-wider hover:brightness-110 active:scale-[0.98] transition-all"
+                  >
+                    Login
+                  </Link>
                 </div>
-
-                {/* Mobile Navigation Links */}
-                <div className="flex flex-col gap-4">
-                  {navLinks.map((link, index) => {
-                    const Icon = link.icon;
-                    return (
-                      <motion.a
-                        key={link.name}
-                        href={link.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.05 }}
-                        className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 text-base font-semibold text-zinc-300 hover:text-white transition-all"
-                      >
-                        <Icon className="h-5 w-5 text-brand-indigo" />
-                        {link.name}
-                      </motion.a>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Mobile Actions */}
-              <div className="flex flex-col gap-4 pt-8 border-t border-white/5">
-                <a 
-                  href="#host"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
-                >
-                  Become Host
-                </a>
-                <Link
-                  href="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center justify-center py-4 rounded-xl font-bold bg-gradient-to-r from-brand-indigo to-brand-purple text-white shadow-lg text-sm uppercase tracking-wider hover:brightness-110 active:scale-[0.98] transition-all"
-                >
-                  Login
-                </Link>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+      )}
     </>
   );
 }

@@ -733,7 +733,7 @@ export default function ProfilePage() {
             </div>
             
             <button 
-              onClick={() => router.push("/profile/feed")}
+              onClick={() => router.push("/feed")}
               className="h-9 px-4 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all cursor-pointer"
             >
               <Camera className="h-3.5 w-3.5" /> Add Experience

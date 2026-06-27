@@ -38,7 +38,7 @@ function SmoothScrollChild({ children }: SmoothScrollProps) {
             const isScrollableY = hasOverflowY && element.scrollHeight > element.clientHeight;
             const isScrollableX = hasOverflowX && element.scrollWidth > element.clientWidth;
 
-            if (isScrollableY || isScrollableX) {
+            if (isScrollableY) {
               if (!element.hasAttribute('data-lenis-prevent')) {
                 element.setAttribute('data-lenis-prevent', 'true');
               }
@@ -146,6 +146,13 @@ function SmoothScrollChild({ children }: SmoothScrollProps) {
 }
 
 export default function SmoothScroll({ children }: SmoothScrollProps) {
+  const pathname = usePathname();
+  const isHomePage = pathname === '/';
+
+  if (!isHomePage) {
+    return <>{children}</>;
+  }
+
   return (
     <ReactLenis
       root

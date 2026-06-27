@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Calendar,
@@ -313,6 +314,7 @@ const getRelativeDateType = (dateStr: string): { isToday: boolean; isThisWeek: b
 };
 
 export default function BookingsPage() {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>(initialBookings);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("All");
@@ -848,7 +850,7 @@ export default function BookingsPage() {
             </p>
             <div className="flex items-center gap-2.5 mt-4 w-full justify-center">
               <button
-                onClick={() => triggerToast("Navigating to Discover Feed...")}
+                onClick={() => router.push("/feed")}
                 className="h-8 px-4 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-[9px] font-black uppercase tracking-wider text-white hover:brightness-110 transition-all cursor-pointer"
               >
                 Discover Adventures
