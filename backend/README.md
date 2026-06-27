@@ -1,98 +1,159 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Wandercall Enterprise Backend Architecture Master Blueprint
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Welcome to the **Wandercall** enterprise backend application repository. Wandercall is an ultra-scale travel and experience platform combining social networking, live voice rooms, experience marketplaces, real-time chat, automated booking, e-commerce, and AI recommendation engines designed to serve millions of daily active users (DAU) and concurrent connections.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This repository implements a **Domain-Driven Design (DDD)** based **Modular Monolith** architecture designed for seamless evolution into **Distributed Microservices**.
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🎯 Architectural Philosophy & Core Principles
 
-## Project setup
+### 1. Domain-Driven Design (DDD) Bounded Contexts
+Wandercall is strictly organized around business domains rather than technical layer boundaries. Each domain module inside `src/modules/` acts as an autonomous **Bounded Context** containing its own ubiquitously named ubiquitous language, domain models, contracts, and interfaces.
 
-```bash
-$ npm install
+### 2. Modular Monolith Evolving into Microservices
+To maintain rapid development velocity and single-repository governance without sacrificing enterprise scalability, Wandercall is built today as a unified NestJS runtime. However, **every domain module is strictly isolated**. Module implementations are strictly private, preventing cross-domain coupling. When a domain module hits scale thresholds (e.g., `booking` or `chat`), it can be extracted into an independent microservice deployment target (e.g., `booking-service`) within minutes without modifying internal code structures.
+
+### 3. Stateless Application & Scalability
+- **Stateless Services**: All application instances are fully stateless. Session states, WebSocket connection registries, and temporal workflows live in distributed data stores (Redis, Kafka).
+- **Concurrency & Resilience**: Horizontal pod autoscaling (HPA) is supported out-of-the-box. Pods can be spun up or destroyed dynamically based on telemetry metrics.
+
+---
+
+## 📁 Repository Directory Structure
+
+```
+backend/
+├── docs/                      # Architectural documentation & API specifications
+│   ├── api/                   # OpenAPI / AsyncAPI contracts
+│   ├── architecture/          # Architecture Decision Records (ADRs)
+│   └── diagrams/              # Sequence diagrams & C4 architecture models
+├── scripts/                   # Utility CLI and operational scripts
+│   ├── cli/                   # Developer CLI tools
+│   ├── migrations/            # Database migration scripts
+│   └── seeders/               # Domain data seeders
+├── test/                      # Testing architecture & infrastructure
+│   ├── e2e/                   # End-to-end user flow test suites
+│   ├── factories/             # Entity/DTO test object generators
+│   ├── fixtures/              # Test data fixtures
+│   ├── integration/           # Cross-module integration tests
+│   ├── mocks/                 # Service & provider mocks
+│   └── unit/                  # Isolated domain unit tests
+└── src/
+    ├── main.ts                # Application bootstrap entry point
+    ├── app.module.ts          # Root orchestration module
+    ├── config/                # Strongly-typed environment configurations
+    ├── core/                  # Engine bootstrap, global guards & interceptors
+    ├── common/                # Cross-cutting enterprise technical base classes
+    ├── shared/                # Application-wide domain primitives & types
+    ├── events/                # Cross-domain system integration events
+    ├── libs/                  # Third-party driver abstraction wrappers
+    ├── health/                # System health, readiness & liveness probes
+    └── modules/               # Domain Bounded Contexts (19 Enterprise Modules)
 ```
 
-## Compile and run the project
+---
 
-```bash
-# development
-$ npm run start
+## 🏛️ System Layers & Communication Rules
 
-# watch mode
-$ npm run start:dev
+| Layer | Location | Purpose & Responsibility | Access / Dependency Rules |
+| :--- | :--- | :--- | :--- |
+| **Config** | `src/config/` | Strongly-typed configuration schemas for infrastructure engines. | Pure functions/schemas. No module dependency. |
+| **Core** | `src/core/` | Global application bootstrap, framework plugins, global filters, and interceptors. | Imports `config`, `common`, `libs`. Root-level access. |
+| **Common** | `src/common/` | Reusable technical primitives (Base Entities, Standard API Responses, Exception Filters). | Zero business logic. Dependent only on framework abstractions. |
+| **Shared** | `src/shared/` | Shared domain primitives (Global enums, cross-domain interfaces, validation schemas). | Pure domain contracts. Imported by domain modules. |
+| **Events** | `src/events/` | Integrated domain event definitions for asynchronous event bus communication. | Published and subscribed across modules via event interfaces. |
+| **Libs** | `src/libs/` | Standardized wrappers around external infrastructure drivers (Cache, SMS, S3, Kafka). | Encapsulated wrappers. Consumed by modules via interfaces. |
+| **Modules** | `src/modules/` | Autonomous domain business contexts containing actual features and workflows. | Strict encapsulation. Cross-module imports prohibited except via public module interfaces/events. |
 
-# production mode
-$ npm run start:prod
+---
+
+## 🧱 Standard Internal Module Anatomy
+
+Every module in `src/modules/<module-name>` MUST follow this strict 13-folder standardized hierarchy. No business code lives outside this hierarchy.
+
+```
+src/modules/<module-name>/
+├── config/         # Module-specific environment & runtime parameters
+├── constants/      # Module-specific constants & error codes
+├── controllers/    # Transport adapters (HTTP endpoints, WebSockets, gRPC, Event Consumers)
+├── dto/            # Data Transfer Objects for ingress/egress validation
+├── entities/       # Domain Models, Aggregates, and Persistence Entities
+├── events/         # Internal module domain events published upon state changes
+├── exceptions/     # Custom domain-specific business exceptions
+├── interfaces/     # Internal contracts & repository interface definitions
+├── repositories/   # Persistence access implementation (TypeORM / Prisma / Custom)
+├── services/       # Domain Services executing core business rules & orchestrations
+├── types/          # Module-specific internal TypeScript types
+├── utils/          # Pure helper utilities exclusive to this domain
+└── validators/     # Custom validation logic and business rule guard checkers
 ```
 
-## Run tests
+---
 
-```bash
-# unit tests
-$ npm run test
+## 🌐 Enterprise Domain Modules (19 Bounded Contexts)
 
-# e2e tests
-$ npm run test:e2e
+1. **`auth`**: Authentication workflows, JWT token lifecycle management, OAuth2 integrations, multi-factor authentication (MFA).
+2. **`user`**: User profiles, preferences, traveler passports, account verification, KYC compliance.
+3. **`experience`**: Experience catalogs, host activity listings, itineraries, dynamic pricing, geo-spatial indexing.
+4. **`booking`**: Multi-state reservation state machines, calendar locks, availability management, booking holds.
+5. **`payment`**: Escrow holds, multi-split marketplace payouts via Cashfree, refund processing, currency conversion.
+6. **`provider`**: Merchant/Host onboarding dashboards, earnings telemetry, payout configuration, service schedules.
+7. **`community`**: Travel clubs, community forums, local meetup groups, moderation governance.
+8. **`feed`**: High-throughput personalized activity feeds, dynamic timeline ranking algorithms, social activity streams.
+9. **`memory`**: Travel journals, user moments, photo/video highlights, story collections.
+10. **`friend`**: Social graph management, connection requests, follower lists, contact discovery integrations.
+11. **`wishlist`**: Bucket list curation, saved travel collections, collaborative group trip planning.
+12. **`quest`**: Gamification engine, travel achievement badges, reward point engines, leaderboard challenges.
+13. **`chat`**: Low-latency direct and group messaging, channel management, persistent media attachments via Socket.IO.
+14. **`voice`**: Real-time live audio rooms, host stages, interactive listener spaces powered by LiveKit integrations.
+15. **`notification`**: Multi-channel notification dispatch engine (Web Push, Mobile Push, SMS, Email, In-App).
+16. **`review`**: Verified buyer reviews, multi-criterion ratings, automated sentiment analysis, anti-fraud evaluation.
+17. **`analytics`**: High-volume telemetry ingress, user interaction metrics, conversion tracking, data warehousing pipelines.
+18. **`search`**: Sub-second full-text search, multi-facet filtering (Meilisearch), and AI vector similarity search (Qdrant).
+19. **`admin`**: System-wide operations, audit logging, content moderation queues, user platform overrides.
 
-# test coverage
-$ npm run test:cov
-```
+---
 
-## Deployment
+## 🚫 Architectural Boundary Rules & Dependency Mandates
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+To ensure clean architecture and prevent technical debt:
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+1. **Database Isolation**: No module may directly query or access another module's database tables or persistence entities. Database joins across domain boundaries are strictly forbidden.
+2. **Synchronous Communication**: Modules must communicate synchronously ONLY via exported Domain Service interfaces registered in NestJS module exports. Direct instantiation or importing internal controllers/repositories of another module is prohibited.
+3. **Asynchronous Communication**: Cross-domain side effects (e.g., `booking` triggering `notification` or updating `analytics`) MUST occur asynchronously via Domain Events (`src/events/`) published to Kafka/EventBus.
+4. **Zero Circular Dependencies**: Modules must maintain acyclic dependencies. Standard nest CLI linting enforces dependency trees.
+5. **Public API Contracts**: Each module must define a clear `index.ts` public interface file. Internal helper utilities, DTOs, and repositories must remain encapsulated within the domain.
 
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
+---
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## 🚀 Microservice Migration Strategy
 
-## Resources
+When a domain module needs to scale independently:
 
-Check out a few resources that may come in handy when working with NestJS:
+1. **Container Decoupling**: Copy `src/modules/<target-module>` into an isolated NestJS container service (e.g., `services/booking-service`).
+2. **Transport Swapping**: Update the exported interface from internal NestJS dependency injection to gRPC / Kafka message handlers. Because controllers and transport layers are segregated in `controllers/`, business logic in `services/` and persistence in `repositories/` remain 100% unchanged!
+3. **Database Migration**: Move the domain's database tables to a dedicated database instance/schema without impacting other services.
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+---
 
-## Support
+## 📐 Coding Standards & Naming Conventions
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+### File & Directory Naming
+- **Directories**: `kebab-case` (e.g., `user-passport`, `experience-catalog`)
+- **Files**: `kebab-case` with explicit type suffix (e.g., `create-booking.dto.ts`, `booking.service.ts`)
 
-## Stay in touch
+### Code Artifact Naming
+- **Classes**: `PascalCase` matching file role (e.g., `BookingService`, `CreateBookingDto`, `PaymentCompletedEvent`)
+- **Interfaces**: `PascalCase` prefixed with `I` (e.g., `IBookingRepository`, `IUserContext`)
+- **Enums**: `PascalCase` with uppercase property keys (e.g., `BookingStatus.PENDING`)
+- **Constants**: `SNAKE_CASE_UPPERCASE` (e.g., `MAX_RESERVATION_HOLDS_PER_USER`)
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+---
 
-## License
+## ⚡ Performance & Resilience Architecture
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+1. **Stateless Operations**: Session caches, socket maps, and temporal tokens are stored in Redis clusters to enable frictionless multi-region horizontal autoscaling.
+2. **Multi-Tier Caching Strategy**: L1 in-memory LRU caching for microsecond metadata lookups combined with L2 distributed Redis caching for heavy query results.
+3. **CQRS & Event Sourcing Readiness**: Command pipelines (writes/updates) are isolated from Query pipelines (reads). Search indexing pipelines stream out-of-band updates to Meilisearch and Qdrant via Kafka event consumers.
+4. **Resilient Third-Party Integrations**: All third-party library wrappers in `src/libs/` implement circuit breakers, retries with exponential backoff, and fallback degrade paths.
