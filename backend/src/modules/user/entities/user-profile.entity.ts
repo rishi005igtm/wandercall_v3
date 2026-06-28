@@ -32,6 +32,39 @@ export class UserProfileEntity {
   @Column({ default: false })
   isPrivate: boolean;
 
+  @Column({ nullable: true })
+  profileUrl?: string;
+
+  @Column({ nullable: true })
+  coverImageUrl?: string;
+
+  @Column({ nullable: true })
+  phoneCoordinate?: string;
+
+  @Column({ default: 1 })
+  level: number;
+
+  @Column({ default: 1000 })
+  xpCurrent: number;
+
+  @Column({ default: 2000 })
+  xpNext: number;
+
+  @Column({ default: 0 })
+  reputationScore: number;
+
+  @Column({ default: 0 })
+  adventuresCompleted: number;
+
+  @Column({ default: 0 })
+  communitiesJoined: number;
+
+  @Column({ default: 0 })
+  campfiresHosted: number;
+
+  @Column({ type: 'json', nullable: true })
+  dnaBadges?: any;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -9,7 +9,12 @@ import { AuthRepository } from '../../auth/repositories/auth.repository';
 import { AccountStatus } from '../../auth/enums/account-status.enum';
 import { CompleteProfileRequestDto } from '../dto/complete-profile-request.dto';
 import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
+import { UpdateProfileRequestDto } from '../dto/update-profile-request.dto';
+import { UserSettingsDto } from '../dto/user-settings-dto';
+import { UserPlanDto } from '../dto/user-plan-dto';
 import { UserProfileEntity } from '../entities/user-profile.entity';
+import { UserSettingsEntity } from '../entities/user-settings.entity';
+import { UserPlanEntity } from '../entities/user-plan.entity';
 import { UserRepository } from '../repositories/user.repository';
 
 @Injectable()
@@ -54,6 +59,76 @@ export class UserService {
     return availableList.length > 0 ? availableList : [`${clean}_${Date.now().toString().slice(-4)}`];
   }
 
+  private async ensureDefaultSettings(userId: string): Promise<UserSettingsEntity> {
+    let settings = await this.userRepository.findSettingsByUserId(userId);
+    if (!settings) {
+      settings = new UserSettingsEntity({
+        id: randomUUID(),
+        userId,
+        is2faEnabled: false,
+        privacyMatrix: {
+          profile: 'public',
+          friends: 'public',
+          communities: 'public',
+          campfires: 'friends',
+        },
+        notifications: {
+          bookings: true,
+          communities: true,
+          campfires: false,
+          friends: true,
+          messages: true,
+          quests: true,
+          experiences: false,
+          promotions: false,
+          system: true,
+        },
+        travelRadius: 150,
+        budgetRange: 250,
+        difficulty: 'Medium',
+        selectedTags: [
+          'Adventure',
+          'Food',
+          'Learning',
+          'Nightlife',
+          'Photography',
+          'Storytelling',
+          'Fitness',
+          'Travel',
+          'Water Activities',
+        ],
+        connectedNetworks: {
+          google: { connected: false },
+          discord: { connected: false },
+          instagram: { connected: false },
+          x: { connected: false },
+        },
+      });
+      await this.userRepository.saveSettings(settings);
+      this.logger.log(`Automatically provisioned default user settings for userId ${userId}`);
+    }
+    return settings;
+  }
+
+  private async ensureDefaultPlan(userId: string): Promise<UserPlanEntity> {
+    let plan = await this.userRepository.findPlanByUserId(userId);
+    if (!plan) {
+      plan = new UserPlanEntity({
+        id: randomUUID(),
+        userId,
+        selectedTier: 'free',
+        billingCycle: 'monthly',
+        price: 0,
+        status: 'INACTIVE',
+        nextBillDate: undefined,
+        paymentCard: null,
+      });
+      await this.userRepository.savePlan(plan);
+      this.logger.log(`Automatically provisioned default user plan for userId ${userId}`);
+    }
+    return plan;
+  }
+
   async completeProfile(dto: CompleteProfileRequestDto): Promise<UserProfileResponseDto> {
     const authUser = await this.authRepository.findById(dto.userId);
     if (!authUser) {
@@ -67,49 +142,149 @@ export class UserService {
       throw new ConflictException('Username is already taken. Please choose another username.');
     }
 
+    const displayName = authUser.email ? authUser.email.split('@')[0] : 'Explorer';
+    const cleanUsername = dto.username.toLowerCase();
+    const generatedProfileUrl = `https://wandercall.io/${cleanUsername}`;
+
     const profile = new UserProfileEntity({
       id: existingProfile ? existingProfile.id : randomUUID(),
       userId: dto.userId,
-      username: dto.username.toLowerCase(),
-      displayName: authUser.email.split('@')[0],
-      avatarUrl: dto.avatarUrl || undefined,
-      bio: dto.bio || undefined,
-      locationFormatted: dto.locationFormatted || undefined,
-      locationLat: dto.locationLat || undefined,
-      locationLon: dto.locationLon || undefined,
+      username: cleanUsername,
+      displayName: existingProfile?.displayName || displayName,
+      avatarUrl: dto.avatarUrl || existingProfile?.avatarUrl || undefined,
+      bio: dto.bio || existingProfile?.bio || undefined,
+      locationFormatted: dto.locationFormatted || existingProfile?.locationFormatted || undefined,
+      locationLat: dto.locationLat || existingProfile?.locationLat || undefined,
+      locationLon: dto.locationLon || existingProfile?.locationLon || undefined,
       isPrivate: false,
+      profileUrl: existingProfile?.profileUrl || generatedProfileUrl,
+      coverImageUrl: existingProfile?.coverImageUrl || undefined,
+      phoneCoordinate: existingProfile?.phoneCoordinate || undefined,
+      level: existingProfile ? existingProfile.level : 1,
+      xpCurrent: existingProfile ? existingProfile.xpCurrent : 1000,
+      xpNext: existingProfile ? existingProfile.xpNext : 2000,
+      reputationScore: existingProfile ? existingProfile.reputationScore : 0,
+      adventuresCompleted: existingProfile ? existingProfile.adventuresCompleted : 0,
+      communitiesJoined: existingProfile ? existingProfile.communitiesJoined : 0,
+      campfiresHosted: existingProfile ? existingProfile.campfiresHosted : 0,
+      dnaBadges: existingProfile ? existingProfile.dnaBadges : null,
       createdAt: existingProfile ? existingProfile.createdAt : new Date(),
       updatedAt: new Date(),
     });
 
     await this.userRepository.saveProfile(profile);
 
-    // Staged Onboarding Phase 3: Transition account status to ACTIVE
+    await this.ensureDefaultSettings(dto.userId);
+    await this.ensureDefaultPlan(dto.userId);
+
     await this.authRepository.updateStatus(dto.userId, AccountStatus.ACTIVE);
     this.logger.log(`Profile setup complete for user ${dto.userId} (@${profile.username}). Account status transitioned to ACTIVE!`);
 
-    return {
-      userId: profile.userId,
-      username: profile.username,
-      displayName: profile.displayName,
-      avatarUrl: profile.avatarUrl,
-      bio: profile.bio,
-      locationFormatted: profile.locationFormatted,
-      locationLat: profile.locationLat,
-      locationLon: profile.locationLon,
-      isPrivate: profile.isPrivate,
-      accountStatus: AccountStatus.ACTIVE,
-      createdAt: profile.createdAt,
-    };
+    return this.mapProfileToDto(profile, AccountStatus.ACTIVE);
   }
 
   async getProfileByUserId(userId: string): Promise<UserProfileResponseDto> {
-    const profile = await this.userRepository.findByUserId(userId);
-    if (!profile) {
-      throw new NotFoundException('User profile not found.');
-    }
+    let profile = await this.userRepository.findByUserId(userId);
     const authUser = await this.authRepository.findById(userId);
 
+    if (!profile) {
+      if (!authUser) {
+        throw new NotFoundException('User profile not found.');
+      }
+      const defaultUsername = authUser.email.split('@')[0].toLowerCase();
+      profile = new UserProfileEntity({
+        id: randomUUID(),
+        userId,
+        username: defaultUsername,
+        displayName: authUser.email.split('@')[0],
+        profileUrl: `https://wandercall.io/${defaultUsername}`,
+        phoneCoordinate: undefined,
+        level: 1,
+        xpCurrent: 1000,
+        xpNext: 2000,
+        reputationScore: 0,
+        adventuresCompleted: 0,
+        communitiesJoined: 0,
+        campfiresHosted: 0,
+        dnaBadges: null,
+        isPrivate: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+      await this.userRepository.saveProfile(profile);
+    }
+
+    await this.ensureDefaultSettings(userId);
+    await this.ensureDefaultPlan(userId);
+
+    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileRequestDto): Promise<UserProfileResponseDto> {
+    const profile = await this.userRepository.findByUserId(userId);
+    if (!profile) {
+      throw new NotFoundException('Profile not found for user');
+    }
+
+    if (dto.displayName !== undefined) profile.displayName = dto.displayName;
+    if (dto.bio !== undefined) profile.bio = dto.bio;
+    if (dto.avatarUrl !== undefined) profile.avatarUrl = dto.avatarUrl;
+    if (dto.locationFormatted !== undefined) profile.locationFormatted = dto.locationFormatted;
+    if (dto.profileUrl !== undefined) profile.profileUrl = dto.profileUrl;
+    if (dto.phoneCoordinate !== undefined) profile.phoneCoordinate = dto.phoneCoordinate;
+
+    profile.updatedAt = new Date();
+    await this.userRepository.saveProfile(profile);
+
+    const authUser = await this.authRepository.findById(userId);
+    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+  }
+
+  async getSettings(userId: string): Promise<UserSettingsDto> {
+    const settings = await this.ensureDefaultSettings(userId);
+    return {
+      userId: settings.userId,
+      is2faEnabled: settings.is2faEnabled,
+      privacyMatrix: settings.privacyMatrix,
+      notifications: settings.notifications,
+      travelRadius: settings.travelRadius,
+      budgetRange: settings.budgetRange,
+      difficulty: settings.difficulty,
+      selectedTags: settings.selectedTags,
+      connectedNetworks: settings.connectedNetworks,
+    };
+  }
+
+  async updateSettings(userId: string, partial: Partial<UserSettingsDto>): Promise<UserSettingsDto> {
+    const settings = await this.ensureDefaultSettings(userId);
+    Object.assign(settings, partial);
+    settings.updatedAt = new Date();
+    await this.userRepository.saveSettings(settings);
+    return this.getSettings(userId);
+  }
+
+  async getPlan(userId: string): Promise<UserPlanDto> {
+    const plan = await this.ensureDefaultPlan(userId);
+    return {
+      userId: plan.userId,
+      selectedTier: plan.selectedTier,
+      billingCycle: plan.billingCycle,
+      price: plan.price,
+      status: plan.status,
+      nextBillDate: plan.nextBillDate,
+      paymentCard: plan.paymentCard,
+    };
+  }
+
+  async updatePlan(userId: string, partial: Partial<UserPlanDto>): Promise<UserPlanDto> {
+    const plan = await this.ensureDefaultPlan(userId);
+    Object.assign(plan, partial);
+    plan.updatedAt = new Date();
+    await this.userRepository.savePlan(plan);
+    return this.getPlan(userId);
+  }
+
+  private mapProfileToDto(profile: UserProfileEntity, accountStatus: string): UserProfileResponseDto {
     return {
       userId: profile.userId,
       username: profile.username,
@@ -120,7 +295,18 @@ export class UserService {
       locationLat: profile.locationLat,
       locationLon: profile.locationLon,
       isPrivate: profile.isPrivate,
-      accountStatus: authUser ? authUser.accountStatus : AccountStatus.ACTIVE,
+      profileUrl: profile.profileUrl || `https://wandercall.io/${profile.username}`,
+      coverImageUrl: profile.coverImageUrl,
+      phoneCoordinate: profile.phoneCoordinate,
+      level: profile.level ?? 1,
+      xpCurrent: profile.xpCurrent ?? 1000,
+      xpNext: profile.xpNext ?? 2000,
+      reputationScore: profile.reputationScore ?? 0,
+      adventuresCompleted: profile.adventuresCompleted ?? 0,
+      communitiesJoined: profile.communitiesJoined ?? 0,
+      campfiresHosted: profile.campfiresHosted ?? 0,
+      dnaBadges: profile.dnaBadges,
+      accountStatus,
       createdAt: profile.createdAt,
     };
   }

@@ -31,9 +31,12 @@ import {
   Shield,
   ThumbsUp,
   Share2,
+  TrendingUp,
   UserPlus,
-  TrendingUp
 } from "lucide-react";
+import { useAppSelector } from "@/lib/store/store";
+import { useUserProfileQuery } from "@/hooks/api/useUserQueries";
+
 
 // --- MOCK PROFILE DATA ---
 const profileData = {
@@ -237,6 +240,25 @@ const itemVariants = {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const authUserId = useAppSelector((state) => state.auth.userId);
+  const { data: userProfile } = useUserProfileQuery(authUserId);
+
+  const activeProfile = {
+    name: userProfile?.displayName || profileData.name,
+    username: userProfile?.username ? `@${userProfile.username}` : profileData.username,
+    location: userProfile?.locationFormatted || "Location pending",
+    joined: userProfile?.createdAt ? `Joined ${new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : profileData.joined,
+    bio: userProfile?.bio || "No bio added yet.",
+    reputation: userProfile?.reputationScore ?? 0,
+    level: userProfile?.level ?? 1,
+    xp: { current: userProfile?.xpCurrent ?? 1000, next: userProfile?.xpNext ?? 2000 },
+    stats: [
+      { label: "Adventures Completed", value: userProfile?.adventuresCompleted ?? 0, color: "text-brand-cyan" },
+      { label: "Communities Joined", value: userProfile?.communitiesJoined ?? 0, color: "text-brand-purple" },
+      { label: "Campfires Hosted", value: userProfile?.campfiresHosted ?? 0, color: "text-brand-amber" },
+    ]
+  };
+
   const [activeDnaTab, setActiveDnaTab] = useState<number | null>(null);
   const [showToast, setShowToast] = useState<string | null>(null);
   const [journeyIndex, setJourneyIndex] = useState(0);
@@ -368,14 +390,14 @@ export default function ProfilePage() {
             </div>
             <div className="text-center lg:text-left w-full lg:w-auto">
               <div className="flex items-center justify-center lg:justify-start gap-2">
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{profileData.name}</h1>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{activeProfile.name}</h1>
                 <span className="h-5 w-5 bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan rounded-full flex items-center justify-center text-[10px] font-bold"><Check className="h-3 w-3" /></span>
               </div>
-              <p className="text-sm font-mono text-zinc-400 mt-0.5">{profileData.username}</p>
+              <p className="text-sm font-mono text-zinc-400 mt-0.5">{activeProfile.username}</p>
               <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-3 text-xs text-zinc-400 font-semibold">
-                <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-brand-cyan" /> {profileData.location}</span>
+                <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-brand-cyan" /> {activeProfile.location}</span>
                 <span className="h-1 w-1 rounded-full bg-white/10 hidden sm:inline" />
-                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-brand-purple" /> Explorer since {profileData.joined}</span>
+                <span className="flex items-center gap-1.5"><Calendar className="h-3.5 w-3.5 text-brand-purple" /> {activeProfile.joined}</span>
               </div>
             </div>
           </div>
@@ -401,7 +423,7 @@ export default function ProfilePage() {
         {/* Bio block */}
         <div className="mt-6 px-3 md:px-8 text-center lg:text-left max-w-2xl mx-auto lg:mx-0">
           <p className="text-sm md:text-base text-zinc-300 font-medium leading-relaxed">
-            {profileData.bio}
+            {activeProfile.bio}
           </p>
         </div>
 
@@ -414,16 +436,16 @@ export default function ProfilePage() {
             <div className="relative h-16 w-16 flex items-center justify-center">
               <svg className="h-full w-full rotate-[-90deg]">
                 <circle cx="32" cy="32" r="28" className="stroke-white/5 stroke-3 fill-transparent" />
-                <circle cx="32" cy="32" r="28" className="stroke-brand-cyan stroke-3 fill-transparent transition-all duration-1000" strokeDasharray={175} strokeDashoffset={175 - (175 * profileData.reputation) / 1000} strokeLinecap="round" />
+                <circle cx="32" cy="32" r="28" className="stroke-brand-cyan stroke-3 fill-transparent transition-all duration-1000" strokeDasharray={175} strokeDashoffset={175 - (175 * activeProfile.reputation) / 1000} strokeLinecap="round" />
               </svg>
-              <span className="absolute text-[13px] font-mono font-black text-white">{profileData.reputation}</span>
+              <span className="absolute text-[13px] font-mono font-black text-white">{activeProfile.reputation}</span>
             </div>
             <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-2">Reputation Score</p>
             <p className="text-[8px] text-brand-cyan font-bold tracking-wider uppercase mt-0.5">Top 4% Global</p>
           </div>
 
           {/* Metric Stats Cards */}
-          {profileData.stats.map((stat, i) => (
+          {activeProfile.stats.map((stat, i) => (
             <div key={i} className="bg-white/[0.02] border border-white/5 p-4 rounded-2xl flex flex-col justify-center text-left shadow-lg">
               <span className={`text-2xl md:text-3xl font-black font-mono ${stat.color}`}>{stat.value}</span>
               <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-1">{stat.label}</span>

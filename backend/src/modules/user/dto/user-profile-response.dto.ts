@@ -8,6 +8,17 @@ export class UserProfileResponseDto {
   locationLat?: number;
   locationLon?: number;
   isPrivate: boolean;
+  profileUrl?: string;
+  coverImageUrl?: string;
+  phoneCoordinate?: string;
+  level: number;
+  xpCurrent: number;
+  xpNext: number;
+  reputationScore: number;
+  adventuresCompleted: number;
+  communitiesJoined: number;
+  campfiresHosted: number;
+  dnaBadges?: any;
   accountStatus: string;
   createdAt: Date;
 }

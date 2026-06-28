@@ -2,11 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppConfigModule } from './config';
+import { DatabaseInitializerService } from './core/providers/database-initializer.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { UserAuthEntity } from './modules/auth/entities/user-auth.entity';
 import { UserSessionEntity } from './modules/auth/entities/user-session.entity';
 import { UserProfileEntity } from './modules/user/entities/user-profile.entity';
+import { UserSettingsEntity } from './modules/user/entities/user-settings.entity';
+import { UserPlanEntity } from './modules/user/entities/user-plan.entity';
 
 @Module({
   imports: [
@@ -23,8 +26,8 @@ import { UserProfileEntity } from './modules/user/entities/user-profile.entity';
           username: configService.get<string>('database.username', 'postgres'),
           password: configService.get<string>('database.password', 'anmol162004'),
           database: configService.get<string>('database.name', 'postgres'),
-          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity],
-          synchronize: true, // Auto-create tables on startup in dev
+          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity, UserSettingsEntity, UserPlanEntity],
+          synchronize: false, // Disabled for runtime API operations; handled safely once on startup via DatabaseInitializerService
           autoLoadEntities: true,
         };
 
@@ -41,6 +44,6 @@ import { UserProfileEntity } from './modules/user/entities/user-profile.entity';
     UserModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [DatabaseInitializerService],
 })
 export class AppModule {}

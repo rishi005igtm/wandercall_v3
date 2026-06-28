@@ -5,6 +5,8 @@ export const QUERY_KEYS = {
   USER: {
     CURRENT: ['user', 'current'] as const,
     PROFILE: (userId: string) => ['user', 'profile', userId] as const,
+    SETTINGS: (userId: string) => ['user', 'settings', userId] as const,
+    PLAN: (userId: string) => ['user', 'plan', userId] as const,
     USERNAME_CHECK: (username: string) => ['user', 'username', 'check', username] as const,
     USERNAME_SUGGESTIONS: (name: string) => ['user', 'username', 'suggestions', name] as const,
   },
