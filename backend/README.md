@@ -157,3 +157,188 @@ When a domain module needs to scale independently:
 2. **Multi-Tier Caching Strategy**: L1 in-memory LRU caching for microsecond metadata lookups combined with L2 distributed Redis caching for heavy query results.
 3. **CQRS & Event Sourcing Readiness**: Command pipelines (writes/updates) are isolated from Query pipelines (reads). Search indexing pipelines stream out-of-band updates to Meilisearch and Qdrant via Kafka event consumers.
 4. **Resilient Third-Party Integrations**: All third-party library wrappers in `src/libs/` implement circuit breakers, retries with exponential backoff, and fallback degrade paths.
+
+---
+
+## ⚙️ Enterprise Environment Configuration Architecture
+
+The Wandercall backend enforces a centralized, strictly validated, dependency-injection friendly configuration layer. Configuration is treated as application-level infrastructure, isolated completely from source code.
+
+### 📁 Environment File Strategy & Root Placement
+
+All environment configuration files reside exclusively at the root of the `backend/` project directory:
+
+```
+wandercall_v3/
+└── backend/
+    ├── .env                    ← Primary development configuration
+    ├── .env.local              ← Local developer overrides (GITIGNORED)
+    ├── .env.example            ← Master onboarding template with placeholders
+    ├── .env.production         ← Production template for cloud secret managers
+    ├── src/
+    │   └── config/             ← Centralized Configuration Layer
+    └── ...
+```
+
+#### Purpose of Each File:
+- **`.env`**: Default development configuration values for local development and sandbox environments.
+- **`.env.local`**: Personal developer overrides (e.g., custom local database passwords, individual API keys). **Never committed and gitignored.**
+- **`.env.example`**: Comprehensive onboarding documentation detailing every required application environment variable with dummy/placeholder values. Contains **zero secrets**.
+- **`.env.production`**: Production infrastructure variable mapping template. In production, actual credentials originate dynamically from cloud secret management services.
+
+---
+
+### 🎯 Configuration Philosophy & Dependency Flow
+
+Direct access to `process.env` outside `src/config/` is strictly prohibited across the codebase. 
+
+#### Dependency Flow:
+```
+[ Transport Layer / Controller ]
+              ↓
+    [ Application Service ]
+              ↓
+  [ Strongly-Typed Config Layer ]
+              ↓
+  [ Environment Variables (.env) ]
+```
+
+#### Why Centralized Configuration?
+1. **Single Source of Truth**: Eliminates scattered, ad-hoc `process.env` calls across controller and service files.
+2. **Type Safety & Intellisense**: Provides autocompletion and type safety for every configuration property.
+3. **Immutability**: Config objects are frozen during startup, preventing runtime modifications.
+4. **Decoupling**: Business logic services receive strongly-typed configuration interfaces via dependency injection, making unit testing and mocking trivial.
+
+---
+
+### 🛡️ Fail-Fast Startup Validation
+
+The application incorporates a strict fail-fast validation engine (`src/config/env.validation.ts`) powered by `class-validator` and `class-transformer`. 
+
+Upon execution of `NestFactory.create(AppModule)`:
+1. Environment variables are loaded from `.env.local` and `.env`.
+2. Variables are parsed and validated against the `EnvironmentVariables` class schema.
+3. **Boot-up Halt**: If any required variable is missing, invalid, or of an unexpected data type, the application immediately terminates startup with explicit, actionable validation logs, preventing runtime crashes or corrupted states.
+
+---
+
+### 🔒 Security Rules & Production Secret Management
+
+1. **Zero Secrets in Source Control**: Never commit real API keys, passwords, or tokens to Git repositories.
+2. **Local Overrides Isolation**: Local modifications belong strictly in `.env.local`.
+3. **Production Cloud Secrets Integration**: In staging and production environments (ECS / K8s / AWS), `.env` files are not used for credentials. Secrets are managed dynamically using **AWS Secrets Manager** or **AWS Systems Manager (SSM) Parameter Store**. Container environment variables are populated directly into container runtimes via IAM roles or injected securely during pod initialization.
+
+---
+
+### ➕ Guide: How to Add a New Environment Variable
+
+To introduce a new configuration variable (e.g., `THIRD_PARTY_API_KEY`):
+
+1. **Update Root Templates**: Add the key with default local values to `backend/.env`, placeholder values to `backend/.env.example`, and cloud mapping tags to `backend/.env.production`.
+2. **Extend Validation Schema**: Update `src/config/env.validation.ts` by adding the property decorated with appropriate validation constraints (`@IsString()`, `@IsNotEmpty()`, etc.).
+3. **Register Domain Namespace**: Add the variable getter to the appropriate domain configuration file under `src/config/<domain>/<domain>.config.ts` (or create a new domain under `src/config/`).
+4. **Inject into Service**: Inject the configuration token or service into your domain service via NestJS Dependency Injection:
+   ```typescript
+   constructor(
+     @Inject(appConfig.KEY)
+     private readonly appConfiguration: ConfigType<typeof appConfig>,
+   ) {}
+   ```
+
+---
+
+### 🔄 Microservices Reusability Strategy
+
+When domain modules (such as `booking`, `payment`, or `notification`) are extracted from this modular monolith into independent microservices (e.g., `booking-service`):
+- The entire `src/config/` module package can be copied directly or published to an internal npm package repository without architectural redesign.
+- Microservices inherit identical validation rules, injection patterns, and environment loading semantics out-of-the-box.
+
+---
+
+## 🔐 Enterprise Authentication & Onboarding Architecture
+
+The Wandercall authentication architecture operates as an enterprise-grade, staged onboarding system engineered for ultra-scale multi-device applications (Web, iOS, Android) and modular microservice extraction.
+
+### 🔄 Staged Onboarding Lifecycle & Frontend Workflow Alignment
+
+Authentication follows a multi-phase SaaS onboarding model where accounts are strictly segregated from active platform privileges until profile setup is complete.
+
+```
+[ Landing ] ──> [ /signup ] ──> [ Create Account / Google OAuth ] 
+                                          │
+                                          ▼
+                             [ State: PROFILE_INCOMPLETE ]
+                                          │
+                                          ▼
+                                [ /signup/complete ]
+                                          │
+                                          ▼
+                                [ Complete Profile ]
+                                          │
+                                          ▼
+                                [ State: ACTIVE ] ──> [ Home / Profile ]
+```
+
+#### Onboarding Phases:
+1. **Phase 1 (Account Creation)**: User registers via Email/Password (`/api/v1/auth/register`) or Google OAuth (`/api/v1/auth/google`). Backend persists credentials, creates a multi-device session, generates JWT tokens, and initializes account status as `PROFILE_INCOMPLETE`.
+2. **Phase 2 (Profile Customization)**: Frontend redirects user to `/signup/complete`. User selects/uploads profile picture, sets unique username, specifies current location (Geoapify), and fills bio.
+3. **Phase 3 (Activation)**: Profile service processes submission (`/api/v1/users/profile/complete`), persists profile metadata, and transitions account state to `ACTIVE`. User gains full platform access.
+
+---
+
+### 🏛️ Decoupled Module & Service Responsibilities
+
+To maintain clean architecture and prevent monolithic coupling, authentication and profile responsibilities are strictly segregated into autonomous domain modules:
+
+| Domain Module | Responsibility | Service Methods / Endpoints | Prohibited Logic |
+| :--- | :--- | :--- | :--- |
+| **`AuthModule`** (`src/modules/auth/`) | Credentials, OAuth verification, session tokens, password hashing, account lifecycle states. | `/auth/register`<br>`/auth/login`<br>`/auth/google`<br>`/auth/refresh`<br>`/auth/logout` | No profile metadata, no bios, no location queries, no friend/community logic. |
+| **`UserModule`** (`src/modules/user/`) | User profiles, username availability, avatars, Geoapify location formatting, bio, privacy settings. | `/users/profile/complete`<br>`/users/username/check`<br>`/users/username/suggestions`<br>`/users/profile/:userId` | No password hashing, no raw token generation, no direct session manipulation. |
+
+---
+
+### 🏷️ Enterprise Account Lifecycle States
+
+Every user account transitions through explicit, immutable lifecycle states:
+
+```
+[ PENDING ] ──> [ EMAIL_VERIFIED ] ──> [ PROFILE_INCOMPLETE ] ──> [ ACTIVE ]
+                                                                      │
+                                                ┌─────────────────────┴─────────────────────┐
+                                                ▼                                           ▼
+                                          [ SUSPENDED ]                               [ DELETED ]
+```
+
+- **`PENDING`**: Account registered, awaiting primary email verification token.
+- **`EMAIL_VERIFIED`**: Email confirmed via link/OTP.
+- **`PROFILE_INCOMPLETE`**: Authentication established; awaiting profile setup (Username, Avatar, Bio, Location).
+- **`ACTIVE`**: Fully onboarded explorer with unrestricted access to bookings, campfires, and quests.
+- **`SUSPENDED`**: Temporarily restricted due to security telemetry or moderation triggers.
+- **`BLOCKED`**: Permanently revoked access.
+- **`DELETED`**: Soft-deleted and anonymized for GDPR compliance.
+
+---
+
+### 🔑 Session Management & Multi-Device Architecture
+
+- **Token Lifecycle**: Short-lived access tokens (1 hour) paired with cryptographically secure, rotating refresh tokens (7 days).
+- **Multi-Device Tracking**: Each login creates an active record in `UserSessionEntity` storing `userId`, `refreshTokenHash`, `ipAddress`, and `deviceInfo`.
+- **Granular Revocation**: Supports logging out a single device (`/auth/logout`) or terminating all active global sessions across Web, iOS, and Android devices upon security events.
+
+---
+
+### 🛡️ Security Philosophy & Protection Layers
+
+1. **Password Hashing Policy**: All local passwords are salted and hashed using `bcrypt` with configurable cost factors retrieved from central configuration (`BCRYPT_SALT_ROUNDS`).
+2. **Rate Limiting & Brute-Force Protection**: Auth endpoints are guarded by IP-based sliding window rate limiters (`RATE_LIMIT_TTL`, `RATE_LIMIT_MAX`).
+3. **Timing Attack Mitigation**: Credential verification pathways use constant-time comparisons to prevent execution time side-channel analysis.
+4. **Opaque Error Messages**: Authentication failures return unified, non-enumerating messages (e.g., *"Invalid credentials provided"*) to prevent user enumeration attacks. Internal database exceptions are trapped and mapped cleanly.
+
+---
+
+### 🌐 Cross-Platform & Microservice Readiness
+
+- **Standardized Payloads**: Standard REST responses with Bearer tokens without browser-bound dependencies, guaranteeing zero-modification compatibility for Next.js, Android (Kotlin), and iOS (Swift).
+- **Database Architecture**: Configured out-of-the-box for local PostgreSQL (`DB_NAME=postgres`, `DB_PASSWORD=anmol162004`) with TypeORM/Prisma abstraction layers enabling zero-code-change migration to AWS RDS Aurora.
+
+

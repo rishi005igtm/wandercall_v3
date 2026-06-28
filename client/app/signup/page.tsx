@@ -5,26 +5,34 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { 
-  Globe, 
-  Eye, 
-  EyeOff, 
-  ShieldCheck, 
-  Lock, 
-  Mail, 
-  Sparkles, 
-  Award, 
-  Radio, 
-  CheckCircle2, 
-  Fingerprint, 
-  UserPlus, 
+import {
+  Globe,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Lock,
+  Mail,
+  Sparkles,
+  Award,
+  Radio,
+  CheckCircle2,
+  Fingerprint,
+  UserPlus,
   User,
   ShieldAlert,
   ArrowLeft
 } from "lucide-react";
+import { useSignupMutation, useGoogleAuthMutation, useVerifyEmailMutation } from "@/hooks/api/useAuthMutations";
+import { useAppSelector } from "@/lib/store/store";
+import { mapApiError } from "@/lib/utils/errorMapper";
+import { Loader2, KeyRound } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
+  const signupMutation = useSignupMutation();
+  const googleAuthMutation = useGoogleAuthMutation();
+  const verifyEmailMutation = useVerifyEmailMutation();
+  const authUserId = useAppSelector((state) => state.auth.userId);
 
   // Form states
   const [name, setName] = useState("");
@@ -32,9 +40,13 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [authSuccess, setAuthSuccess] = useState(false);
-  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; terms?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; terms?: string; api?: string }>({});
+
+  // 6-Digit OTP verification state
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
+  const otpInputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
 
   // Stats counting animation states
   const [explorers, setExplorers] = useState(0);
@@ -42,34 +54,22 @@ export default function SignupPage() {
   const [communities, setCommunities] = useState(0);
   const [memories, setMemories] = useState(0);
 
-  // Post-signup loader text sequence state
-  const [loaderStep, setLoaderStep] = useState(0);
-  const loaderTexts = [
-    "Creating adventure profile...",
-    "Aligning with local communities...",
-    "Securing data encryptors...",
-    "Unlocking explorer credentials..."
-  ];
-
   // Run stats count up animation on load
   useEffect(() => {
-    const duration = 1200; // 1.2 seconds animation
-    const steps = 50;
+    const duration = 1500;
+    const steps = 30;
     const stepTime = duration / steps;
     let step = 0;
 
     const timer = setInterval(() => {
       step++;
-      setExplorers(Math.floor((10000 / steps) * step));
-      setExperiences(Math.floor((500 / steps) * step));
-      setCommunities(Math.floor((200 / steps) * step));
-      setMemories(Math.floor((50000 / steps) * step));
+      const progress = step / steps;
+      setExplorers(Math.floor(10000 * progress));
+      setExperiences(Math.floor(500 * progress));
+      setCommunities(Math.floor(200 * progress));
+      setMemories(Math.floor(50000 * progress));
 
       if (step >= steps) {
-        setExplorers(10000);
-        setExperiences(500);
-        setCommunities(200);
-        setMemories(50000);
         clearInterval(timer);
       }
     }, stepTime);
@@ -77,30 +77,10 @@ export default function SignupPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Post-signup sequence timer
-  useEffect(() => {
-    if (!authSuccess) return;
-
-    const stepInterval = setInterval(() => {
-      setLoaderStep((prev) => {
-        if (prev < loaderTexts.length - 1) {
-          return prev + 1;
-        } else {
-          clearInterval(stepInterval);
-          // Redirect to home page
-          router.push("/");
-          return prev;
-        }
-      });
-    }, 200); // cycle texts quickly (approx 800ms total)
-
-    return () => clearInterval(stepInterval);
-  }, [authSuccess, router]);
-
   // Form submit handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { name?: string; email?: string; password?: string; terms?: string } = {};
+    const newErrors: typeof errors = {};
 
     // Validation
     if (!name.trim()) {
@@ -131,27 +111,78 @@ export default function SignupPage() {
     }
 
     setErrors({});
-    setIsSubmitting(true);
 
-    // Mock API Auth Call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setAuthSuccess(true);
-    }, 1500);
+    signupMutation.mutate(
+      {
+        name: name.trim(),
+        email: email.trim(),
+        password,
+        termsAccepted,
+      },
+      {
+        onSuccess: () => {
+          setShowVerifyModal(true);
+        },
+        onError: (err) => {
+          setErrors({ api: mapApiError(err) });
+        },
+      }
+    );
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    const cleanValue = value.replace(/[^0-9]/g, "").slice(-1);
+    const newOtp = [...otp];
+    newOtp[index] = cleanValue;
+    setOtp(newOtp);
+    setVerifyError(null);
+
+    if (cleanValue && index < 5) {
+      otpInputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      otpInputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  const handleVerifySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = otp.join("");
+    if (code.length < 6) {
+      setVerifyError("Please enter the complete 6-digit verification code");
+      return;
+    }
+
+    verifyEmailMutation.mutate(
+      { email: email.trim(), code },
+      {
+        onSuccess: () => {
+          setShowVerifyModal(false);
+          const userId = authUserId || signupMutation.data?.user?.id || "";
+          router.push(`/signup/complete?name=${encodeURIComponent(name.trim())}&email=${encodeURIComponent(email.trim())}&userId=${encodeURIComponent(userId)}`);
+        },
+        onError: (err) => {
+          setVerifyError(mapApiError(err));
+        },
+      }
+    );
   };
 
   return (
     <div className="h-[100dvh] w-full flex flex-col lg:flex-row bg-brand-bg text-white overflow-hidden font-sans relative select-none">
-      
+
       {/* Back Button (fixed, sits at top-left on mobile, top-left of form column on desktop) */}
-      <Link 
-        href="/" 
+      <Link
+        href="/"
         className="fixed top-6 left-6 lg:left-[55%] lg:ml-6 z-40 p-2.5 rounded-full glass-panel border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-lg"
         aria-label="Back to home"
       >
         <ArrowLeft className="h-4 w-4" />
       </Link>
-      
+
       {/* Background Cinematic Adventure Photo stretching across the page */}
       <div className="hidden sm:block absolute inset-0 z-0 pointer-events-none">
         <Image
@@ -187,7 +218,7 @@ export default function SignupPage() {
             Discover Experiences <br />
             <span className="text-gradient-brand">Worth Remembering</span>
           </h1>
-          
+
           <div className="space-y-2 text-sm text-zinc-400 font-medium mb-8">
             <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-brand-cyan" /> Book adventures.</p>
             <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-brand-purple" /> Join communities.</p>
@@ -254,8 +285,8 @@ export default function SignupPage() {
       </section>
 
       {/* RIGHT PANEL: Authentication Form Container */}
-      <section className="w-full lg:w-[45%] h-full overflow-y-auto flex flex-col items-center p-4 sm:p-8 md:p-12 z-10 relative">
-        
+      <section className="w-full lg:w-[45%] h-full overflow-y-auto flex flex-col items-center justify-center px-2 py-4 sm:p-8 md:p-12 z-10 relative">
+
         {/* Background glow field */}
         <div className="absolute top-[20%] right-[10%] w-72 h-72 rounded-full bg-brand-indigo/5 blur-[120px] pointer-events-none" />
 
@@ -264,7 +295,7 @@ export default function SignupPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="my-auto w-full max-w-[420px] glass-panel glass-glow-indigo phone-borderless p-6 sm:p-10 rounded-3xl flex flex-col gap-6 shadow-xl relative"
+          className="my-auto w-full max-w-[420px] glass-panel glass-glow-indigo phone-borderless px-4 py-6 sm:p-10 rounded-3xl flex flex-col gap-6 shadow-xl relative"
         >
           {/* Header */}
           <div className="text-left">
@@ -282,9 +313,18 @@ export default function SignupPage() {
 
           {/* OAuth Signup */}
           <div className="flex flex-col gap-3 w-full">
-            <button 
+            {errors.api && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-medium flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+                <span>{errors.api}</span>
+              </div>
+            )}
+
+            <button
               type="button"
-              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
+              onClick={() => googleAuthMutation.mutate({ idToken: "mock_google_id_token" })}
+              disabled={googleAuthMutation.isPending}
+              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
             >
               {/* Google Flat SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
@@ -295,7 +335,7 @@ export default function SignupPage() {
                   <path d="M12,6.05c1.32,0 2.5,0.45 3.44,1.35l2.58,-2.58C16.46,3.35 14.42,2.6 12,2.6C7.64,2.6 4.58,4.6 3.1,7.55L6.98,10.6C7.68,8.48 9.66,6.05 12,6.05z" fill="#EA4335" />
                 </g>
               </svg>
-              Sign up with Google
+              {googleAuthMutation.isPending ? "Connecting..." : "Sign up with Google"}
             </button>
           </div>
 
@@ -310,7 +350,7 @@ export default function SignupPage() {
 
           {/* Signup Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
-            
+
             {/* Full Name */}
             <div className="flex flex-col gap-1.5 w-full">
               <label htmlFor="name" className="text-[10px] font-bold text-zinc-500 uppercase tracking-wider">
@@ -324,9 +364,8 @@ export default function SignupPage() {
                   autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${
-                    errors.name ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
-                  }`}
+                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.name ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
+                    }`}
                 />
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
               </div>
@@ -351,9 +390,8 @@ export default function SignupPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${
-                    errors.email ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
-                  }`}
+                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.email ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
+                    }`}
                 />
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
               </div>
@@ -378,9 +416,8 @@ export default function SignupPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-10 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${
-                    errors.password ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
-                  }`}
+                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-10 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.password ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
+                    }`}
                 />
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 <button
@@ -427,22 +464,21 @@ export default function SignupPage() {
             {/* Sign Up Submit Button */}
             <button
               type="submit"
-              disabled={isSubmitting}
-              className={`w-full h-[52px] rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer ${
-                isSubmitting
+              disabled={signupMutation.isPending}
+              className={`w-full h-[52px] rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer ${signupMutation.isPending
                   ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5"
                   : "bg-gradient-to-r from-brand-indigo to-brand-purple hover:brightness-110 text-white shadow-lg shadow-brand-indigo/25 active:scale-[0.98]"
-              }`}
+                }`}
             >
-              {isSubmitting ? (
+              {signupMutation.isPending ? (
                 <>
-                  <div className="h-4 w-4 rounded-full border-2 border-zinc-500 border-t-white animate-spin" />
-                  Registering...
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <span>Creating Account...</span>
                 </>
               ) : (
                 <>
+                  <span>Create Account</span>
                   <UserPlus className="h-4 w-4" />
-                  Create Account
                 </>
               )}
             </button>
@@ -471,51 +507,85 @@ export default function SignupPage() {
         </motion.div>
       </section>
 
-      {/* POST SIGNUP ASSEMBLY EXPERIENCE OVERLAY */}
+      {/* SMART 6-DIGIT EMAIL VERIFICATION MODAL */}
       <AnimatePresence>
-        {authSuccess && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-brand-bg/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6"
-          >
-            {/* Spinning Loader */}
-            <div className="relative h-16 w-16 mb-8 flex items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-indigo to-brand-purple shadow-xl shadow-brand-indigo/20">
-              <Globe className="h-8 w-8 text-white animate-spin-slow" />
-              <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-brand-indigo to-brand-purple blur-md opacity-50" />
-            </div>
-
-            {/* Dynamic Status Loading Message */}
-            <motion.p
-              key={loaderStep}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="text-sm font-bold tracking-wider text-zinc-300 uppercase"
+        {showVerifyModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-md glass-panel glass-glow-indigo p-6 sm:p-8 rounded-3xl flex flex-col gap-6 shadow-2xl border border-white/15 relative text-left bg-[#0E131F]"
             >
-              {loaderTexts[loaderStep]}
-            </motion.p>
+              <div className="flex flex-col gap-2">
+                <div className="h-12 w-12 rounded-2xl bg-brand-purple/15 border border-brand-purple/30 flex items-center justify-center text-brand-purple mb-1">
+                  <KeyRound className="h-6 w-6" />
+                </div>
+                <h3 className="text-xl font-bold text-white tracking-tight">Verify your email</h3>
+                <p className="text-xs text-zinc-400 leading-relaxed">
+                  We sent a 6-digit security code to{" "}
+                  <span className="text-brand-cyan font-semibold">{email}</span>. Enter it below to activate your registration.
+                </p>
+              </div>
 
-            {/* Progress indicators dots */}
-            <div className="flex gap-1.5 mt-4">
-              {loaderTexts.map((_, i) => (
-                <div
-                  key={i}
-                  className={`h-1.5 w-1.5 rounded-full transition-all duration-300 ${
-                    i === loaderStep 
-                      ? "w-4 bg-brand-cyan" 
-                      : i < loaderStep 
-                        ? "bg-brand-emerald" 
-                        : "bg-white/10"
-                  }`}
-                />
-              ))}
-            </div>
-          </motion.div>
+              {verifyError && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-medium flex items-center gap-2">
+                  <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+                  <span>{verifyError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleVerifySubmit} className="flex flex-col gap-6">
+                {/* 6 Individual Numeric OTP Input Boxes */}
+                <div className="flex justify-between gap-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      ref={(el) => { otpInputsRef.current[index] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(index, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                      className="w-12 h-14 bg-white/5 border border-white/15 rounded-xl text-center font-mono text-xl font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-purple focus:border-brand-purple transition-all shadow-inner"
+                    />
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-3">
+                  <button
+                    type="submit"
+                    disabled={verifyEmailMutation.isPending || otp.join("").length < 6}
+                    className="w-full h-12 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-xs font-bold uppercase tracking-wider text-white shadow-lg shadow-brand-indigo/25 hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    {verifyEmailMutation.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Verifying Code...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Verify & Continue</span>
+                        <CheckCircle2 className="h-4 w-4" />
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => signupMutation.mutate({ name: name.trim(), email: email.trim(), password, termsAccepted })}
+                    className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors text-center cursor-pointer py-1"
+                  >
+                    Didn't receive code? <span className="text-brand-cyan hover:underline">Resend email</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
