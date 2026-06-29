@@ -246,6 +246,7 @@ export default function ProfilePage() {
   const activeProfile = {
     name: userProfile?.displayName || profileData.name,
     avatarUrl: userProfile?.avatarUrl,
+    bannerUrl: (userProfile as any)?.bannerUrl || (userProfile as any)?.coverUrl || null,
     username: userProfile?.username ? `@${userProfile.username}` : profileData.username,
     location: userProfile?.locationFormatted || "Location pending",
     joined: userProfile?.createdAt ? `Joined ${new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : profileData.joined,
@@ -304,10 +305,12 @@ export default function ProfilePage() {
   };
 
   const handleShareProfile = async () => {
-    const profileUrl = window.location.origin + "/profile/rishi005";
+    const rawUsername = userProfile?.username || "explorer";
+    const cleanUsername = rawUsername.replace(/^@/, '');
+    const profileUrl = `${window.location.origin}/profile/${cleanUsername}`;
     const shareData = {
       title: "Wandercall Explorer Passport",
-      text: "Check out Rishiraj's explorer passport profile on Wandercall!",
+      text: `Check out ${activeProfile.name}'s explorer passport profile on Wandercall!`,
       url: profileUrl,
     };
 
@@ -360,19 +363,44 @@ export default function ProfilePage() {
       
       {/* SECTION 1: PROFILE COVER & HERO CARD */}
       <motion.section variants={itemVariants} className="w-full relative flex flex-col">
-        {/* Cover Landscape */}
-        <div className="w-full h-[220px] md:h-[320px] rounded-3xl overflow-hidden relative border border-white/5 shadow-inner group/cover">
-          <img 
-            src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=1200&auto=format&fit=crop" 
-            alt="Scenic Snowy Mountains" 
-            className="w-full h-full object-cover opacity-60"
-          />
-          {/* Subtle overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent" />
+        {/* Cover Landscape or Stylish Default Pattern Banner */}
+        <div className="w-full h-[220px] md:h-[320px] rounded-3xl overflow-hidden relative border border-white/10 shadow-2xl group/cover flex items-center justify-center select-none bg-zinc-950">
+          {activeProfile.bannerUrl ? (
+            <img 
+              src={activeProfile.bannerUrl} 
+              alt={`${activeProfile.name} Banner`} 
+              className="w-full h-full object-cover opacity-80"
+            />
+          ) : (
+            <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
+              {/* Futuristic SVG Grid Pattern */}
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+              
+              {/* Vibrant Ambient Aurora Orbs */}
+              <div className="absolute -top-24 left-1/4 w-96 h-96 bg-brand-indigo/20 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+              <div className="absolute -bottom-24 right-1/4 w-96 h-96 bg-brand-purple/20 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-cyan/15 rounded-full blur-[80px] pointer-events-none" />
+
+              {/* Stylish Central Explorer Name Display */}
+              <div className="relative z-10 flex flex-col items-center gap-2 px-6 text-center -mt-6 md:-mt-8">
+                <div className="px-3.5 py-1 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md flex items-center gap-2 shadow-inner">
+                  <Sparkles className="h-3 w-3 text-brand-cyan animate-pulse" />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300 font-mono">Verified Explorer Passport</span>
+                </div>
+                
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-sm uppercase">
+                  {activeProfile.name}
+                </h2>
+              </div>
+            </div>
+          )}
+          
+          {/* Subtle overlay gradient at bottom for smooth blending */}
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/30 pointer-events-none" />
           
           {/* Top Right Camera Icon for Cover Edit */}
-          <button className="absolute top-4 right-4 p-2 rounded-full bg-zinc-950/70 border border-white/10 hover:bg-zinc-900 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-sm shadow-lg z-20 group" aria-label="Change cover photo">
-            <Camera className="h-3.5 w-3.5 group-hover:scale-110 transition-transform" />
+          <button className="absolute top-4 right-4 p-2.5 rounded-full bg-zinc-950/80 border border-white/10 hover:bg-zinc-900 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-md shadow-xl z-20 group" aria-label="Change cover photo">
+            <Camera className="h-4 w-4 group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
