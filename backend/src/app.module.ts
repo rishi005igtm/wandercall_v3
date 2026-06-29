@@ -5,6 +5,7 @@ import { AppConfigModule } from './config';
 import { DatabaseInitializerService } from './core/providers/database-initializer.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { StorageModule } from './modules/storage/storage.module';
 import { UserAuthEntity } from './modules/auth/entities/user-auth.entity';
 import { UserSessionEntity } from './modules/auth/entities/user-session.entity';
 import { UserProfileEntity } from './modules/user/entities/user-profile.entity';
@@ -42,6 +43,7 @@ import { UserPlanEntity } from './modules/user/entities/user-plan.entity';
     }),
     AuthModule,
     UserModule,
+    StorageModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],

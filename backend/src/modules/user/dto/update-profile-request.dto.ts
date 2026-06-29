@@ -15,6 +15,18 @@ export class UpdateProfileRequestDto {
 
   @IsOptional()
   @IsString()
+  avatarPublicId?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImageUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  coverImagePublicId?: string;
+
+  @IsOptional()
+  @IsString()
   locationFormatted?: string;
 
   @IsOptional()

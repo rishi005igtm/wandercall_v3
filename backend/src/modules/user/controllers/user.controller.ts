@@ -9,8 +9,11 @@ import {
   Post,
   Query,
   Req,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { Request } from 'express';
 import { CompleteProfileRequestDto } from '../dto/complete-profile-request.dto';
 import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
@@ -94,6 +97,26 @@ export class UserController {
   ): Promise<UserProfileResponseDto> {
     const targetId = req.user?.userId || userId;
     return this.userService.updateProfile(targetId, dto);
+  }
+
+  @Post('profile/avatar')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadMyAvatar(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserProfileResponseDto> {
+    return this.userService.uploadAvatar(req.user.userId, file);
+  }
+
+  @Post('profile/cover')
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadMyCoverImage(
+    @Req() req: any,
+    @UploadedFile() file: Express.Multer.File,
+  ): Promise<UserProfileResponseDto> {
+    return this.userService.uploadCoverImage(req.user.userId, file);
   }
 
   @Get('settings/:userId')

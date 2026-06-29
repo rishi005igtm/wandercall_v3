@@ -343,4 +343,133 @@ Every user account transitions through explicit, immutable lifecycle states:
 - **Standardized Payloads**: Standard REST responses with Bearer tokens without browser-bound dependencies, guaranteeing zero-modification compatibility for Next.js, Android (Kotlin), and iOS (Swift).
 - **Database Architecture**: Configured out-of-the-box for local PostgreSQL (`DB_NAME=postgres`, `DB_PASSWORD=anmol162004`) with TypeORM/Prisma abstraction layers enabling zero-code-change migration to AWS RDS Aurora.
 
+---
+
+## 📦 Centralized Media Storage Service Architecture
+
+The **Storage Service** (`src/modules/storage`) is Wandercall's enterprise media asset gateway. It decouples all business domain modules (`user`, `feed`, `community`, `experience`, `provider`) from underlying cloud providers (Cloudinary) and provides standardized media handling across Web, iOS, Android, and Desktop platforms.
+
+### 🏛️ Storage Service Architecture & Intent-Based Model
+
+```
+Client (Web / Mobile) ──> Gateway ──> Storage Controller ──> Storage Service ──> Validation Layer ──> Cloudinary Provider ──> Global CDN
+```
+
+No domain module interacts with Cloudinary directly. All media interactions pass through `StorageService` using explicit **Upload Intents**:
+- `PROFILE_AVATAR`: User profile avatars (Max 5MB, 1:1 face crop)
+- `PROFILE_BANNER`: User profile header banners (Max 10MB, 3:1 aspect ratio)
+- `COMMUNITY_BANNER`: Community header banners (Max 10MB)
+- `COMMUNITY_THUMBNAIL`: Community card thumbnails (Max 5MB)
+- `COMMUNITY_COVER`: Community detail covers (Max 10MB)
+- `FEED_IMAGE`: Feed post media attachments (Max 15MB)
+- `EXPERIENCE_IMAGE`: Experience gallery & cover photos (Max 15MB)
+- `PROVIDER_IMAGE`: Tour provider identity media (Max 10MB)
+- `DOCUMENT`: Verification PDFs / DOCX files (Max 20MB, future ready)
+- `CERTIFICATE`: Guide verification certificates (Max 15MB, future ready)
+
+---
+
+### 📁 Cloudinary Folder Organization Strategy
+
+Assets are organized systematically under a single root namespace:
+
+```
+wandercall/
+├── users/
+│   ├── avatars/
+│   └── banners/
+├── communities/
+│   ├── banners/
+│   ├── thumbnails/
+│   └── covers/
+├── feed/
+│   └── images/
+├── experiences/
+│   └── gallery/
+├── providers/
+├── documents/
+└── certificates/
+```
+
+### 🆔 Deterministic Public ID Strategy
+To enable seamless asset updates and prevent orphan file accumulation, public IDs are deterministically structured:
+- **Profile Avatar**: `wandercall/users/avatars/avatar_{userId}`
+- **Profile Banner**: `wandercall/users/banners/banner_{userId}`
+- **Community Banner**: `wandercall/communities/banners/banner_{communityId}`
+- **Feed Image**: `wandercall/feed/images/post_{postId}_{timestamp}`
+
+---
+
+### ⚙️ Cloudinary Configuration
+
+Environment variables in `.env` and `storageConfig`:
+```env
+STORAGE_DRIVER=cloudinary
+CLOUDINARY_CLOUD_NAME=drfndqoql
+CLOUDINARY_API_KEY=823945215118359
+CLOUDINARY_API_SECRET=ZsfDuNyV7hCAuPj_Q-fxbDiQvYk
+CLOUDINARY_URL=cloudinary://823945215118359:ZsfDuNyV7hCAuPj_Q-fxbDiQvYk@drfndqoql
+```
+
+---
+
+### 🛡️ Validation Rules & Security Model
+Every upload undergoes multi-stage server-side validation:
+1. **Authentication**: All endpoints protected by `JwtAuthGuard`. Anonymous uploads strictly rejected.
+2. **Buffer Integrity**: Checks against corrupted or empty file buffers (`file.buffer.length > 0`).
+3. **Strict Size Limits**: Enforces intent-specific maximum file size boundaries.
+4. **MIME Type Validation**: Validates file types (`image/jpeg`, `image/png`, `image/webp`, `application/pdf`).
+5. **Sanitized Public IDs**: Generates safe, clean public IDs derived from entity IDs.
+
+---
+
+### 🔄 Asset Lifecycle Workflows
+
+#### 1. Upload Flow
+`Client` ──> `POST /api/v1/storage/upload` (multipart/form-data with `file`, `intent`, `entityId`) ──> `StorageService.uploadFile()` ──> Validates & streams to Cloudinary ──> Returns `StorageAssetResponseDto`.
+
+#### 2. Replace Flow (Updating Profile Picture)
+`Client` ──> `POST /api/v1/storage/replace` (with `file`, `oldPublicId`, `intent`, `entityId`) ──> Uploads new asset to Cloudinary ──> Deletes previous asset specified by `oldPublicId` ──> Updates domain entity in database with new `avatarUrl` and `avatarPublicId` ──> Invalidates frontend cache.
+
+#### 3. Delete Flow
+`Client` ──> `DELETE /api/v1/storage/asset` (with `publicId`) ──> `CloudinaryProvider.deleteAsset()` ──> Clears database reference fields (`null`) ──> Invalidates cache.
+
+---
+
+### 🎨 Transformation Strategy & Optimization
+Cloudinary automatically applies real-time optimization and formatting parameters:
+- `quality: 'auto'` (Dynamic compression based on viewing device)
+- `fetch_format: 'auto'` (Delivers next-gen formats like WebP / AVIF automatically)
+- Transformation presets per intent (e.g., `gravity: 'face'` for avatars).
+
+---
+
+### 📄 API Contracts
+
+#### `POST /api/v1/storage/upload`
+**Form Data**: `file` (binary), `intent` (string), `entityId` (string)
+**Response**:
+```json
+{
+  "publicId": "wandercall/users/avatars/avatar_12345",
+  "secureUrl": "https://res.cloudinary.com/drfndqoql/image/upload/v1/wandercall/users/avatars/avatar_12345.jpg",
+  "resourceType": "image",
+  "width": 500,
+  "height": 500,
+  "format": "jpg",
+  "bytes": 45120,
+  "version": 1,
+  "folder": "wandercall/users/avatars",
+  "createdTimestamp": "2026-06-29T18:00:00.000Z"
+}
+```
+
+---
+
+### 🚀 Performance, Mobile & Future Readiness
+- **Zero Binary Storage in DB**: Stores paired reference URLs and Public IDs (`avatarUrl` + `avatarPublicId`).
+- **Mobile Ready**: REST endpoints accept standard `multipart/form-data`, ensuring 100% compatibility with React Native, Android (Kotlin), and iOS (Swift).
+- **Future Video & Document Ready**: Architecture designed with multi-resource support (`resourceType: 'image' | 'raw' | 'video' | 'auto'`). Adding video or audio stream processing will reuse the existing Storage Service pipeline without breaking domain modules.
+
+
 

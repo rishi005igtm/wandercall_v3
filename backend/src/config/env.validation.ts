@@ -179,6 +179,22 @@ export class EnvironmentVariables {
   @IsNotEmpty()
   STORAGE_CDN_URL: string;
 
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_CLOUD_NAME?: string;
+
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_API_SECRET?: string;
+
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_URL?: string;
+
   // --- Cache ---
   @IsInt()
   CACHE_TTL: number;

@@ -17,6 +17,8 @@ import { UserProfileEntity } from '../entities/user-profile.entity';
 import { UserSettingsEntity } from '../entities/user-settings.entity';
 import { UserPlanEntity } from '../entities/user-plan.entity';
 import { UserRepository } from '../repositories/user.repository';
+import { StorageService } from '../../storage/services/storage.service';
+import { UploadIntent } from '../../storage/enums/upload-intent.enum';
 
 @Injectable()
 export class UserService {
@@ -25,6 +27,7 @@ export class UserService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
+    private readonly storageService: StorageService,
   ) {}
 
   async checkUsernameAvailability(username: string): Promise<{ available: boolean; username: string }> {
@@ -234,9 +237,60 @@ export class UserService {
     if (dto.displayName !== undefined) profile.displayName = dto.displayName;
     if (dto.bio !== undefined) profile.bio = dto.bio;
     if (dto.avatarUrl !== undefined) profile.avatarUrl = dto.avatarUrl;
+    if (dto.avatarPublicId !== undefined) profile.avatarPublicId = dto.avatarPublicId;
+    if (dto.coverImageUrl !== undefined) profile.coverImageUrl = dto.coverImageUrl;
+    if (dto.coverImagePublicId !== undefined) profile.coverImagePublicId = dto.coverImagePublicId;
     if (dto.locationFormatted !== undefined) profile.locationFormatted = dto.locationFormatted;
     if (dto.phoneCoordinate !== undefined) profile.phoneCoordinate = dto.phoneCoordinate;
 
+    profile.updatedAt = new Date();
+    await this.userRepository.saveProfile(profile);
+
+    const authUser = await this.authRepository.findById(userId);
+    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+  }
+
+  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<UserProfileResponseDto> {
+    let profile = await this.userRepository.findByUserId(userId);
+    if (!profile) {
+      await this.getProfileByUserId(userId);
+      profile = (await this.userRepository.findByUserId(userId))!;
+    }
+
+    const oldPublicId = profile.avatarPublicId || '';
+    const metadata = await this.storageService.replaceFile(
+      file,
+      oldPublicId,
+      UploadIntent.PROFILE_AVATAR,
+      userId,
+    );
+
+    profile.avatarUrl = metadata.secureUrl;
+    profile.avatarPublicId = metadata.publicId;
+    profile.updatedAt = new Date();
+    await this.userRepository.saveProfile(profile);
+
+    const authUser = await this.authRepository.findById(userId);
+    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+  }
+
+  async uploadCoverImage(userId: string, file: Express.Multer.File): Promise<UserProfileResponseDto> {
+    let profile = await this.userRepository.findByUserId(userId);
+    if (!profile) {
+      await this.getProfileByUserId(userId);
+      profile = (await this.userRepository.findByUserId(userId))!;
+    }
+
+    const oldPublicId = profile.coverImagePublicId || '';
+    const metadata = await this.storageService.replaceFile(
+      file,
+      oldPublicId,
+      UploadIntent.PROFILE_BANNER,
+      userId,
+    );
+
+    profile.coverImageUrl = metadata.secureUrl;
+    profile.coverImagePublicId = metadata.publicId;
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
@@ -297,6 +351,7 @@ export class UserService {
       email: authUser?.email || '',
       isEmailVerified: authUser?.isEmailVerified ?? false,
       avatarUrl: profile.avatarUrl,
+      avatarPublicId: profile.avatarPublicId,
       bio: profile.bio,
       locationFormatted: profile.locationFormatted,
       locationLat: profile.locationLat,
@@ -304,6 +359,7 @@ export class UserService {
       isPrivate: profile.isPrivate,
       profileUrl: profile.profileUrl || `https://wandercall.io/${profile.username}`,
       coverImageUrl: profile.coverImageUrl,
+      coverImagePublicId: profile.coverImagePublicId,
       phoneCoordinate: profile.phoneCoordinate,
       level: profile.level ?? 1,
       xpCurrent: profile.xpCurrent ?? 1000,

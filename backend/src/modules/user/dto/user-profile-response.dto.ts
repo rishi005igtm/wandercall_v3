@@ -5,6 +5,7 @@ export class UserProfileResponseDto {
   email: string;
   isEmailVerified: boolean;
   avatarUrl?: string;
+  avatarPublicId?: string;
   bio?: string;
   locationFormatted?: string;
   locationLat?: number;
@@ -12,6 +13,7 @@ export class UserProfileResponseDto {
   isPrivate: boolean;
   profileUrl?: string;
   coverImageUrl?: string;
+  coverImagePublicId?: string;
   phoneCoordinate?: string;
   level: number;
   xpCurrent: number;

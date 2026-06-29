@@ -18,6 +18,7 @@ export interface UserProfileResponse {
   email?: string;
   isEmailVerified?: boolean;
   avatarUrl?: string;
+  avatarPublicId?: string;
   bio?: string;
   locationFormatted?: string;
   locationLat?: number;
@@ -25,6 +26,7 @@ export interface UserProfileResponse {
   isPrivate: boolean;
   profileUrl?: string;
   coverImageUrl?: string;
+  coverImagePublicId?: string;
   phoneCoordinate?: string;
   level: number;
   xpCurrent: number;
@@ -132,6 +134,24 @@ export const userService = {
 
   async updatePlan(userId: string, payload: Partial<UserPlanResponse>): Promise<UserPlanResponse> {
     const { data } = await httpClient.patch<UserPlanResponse>(`/users/plan/${userId}`, payload);
+    return data;
+  },
+
+  async uploadAvatar(file: File): Promise<UserProfileResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await httpClient.post<UserProfileResponse>('/users/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+
+  async uploadCoverImage(file: File): Promise<UserProfileResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await httpClient.post<UserProfileResponse>('/users/profile/cover', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
     return data;
   },
 };

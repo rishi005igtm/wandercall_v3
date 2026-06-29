@@ -77,3 +77,29 @@ export function useUsernameSuggestions(name: string, enabled: boolean = true) {
     staleTime: 300000,
   });
 }
+
+export function useUploadAvatarMutation(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => userService.uploadAvatar(file),
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.USER.PROFILE(data.userId), data);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.PROFILE(data.userId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.CURRENT });
+    },
+  });
+}
+
+export function useUploadCoverImageMutation(userId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (file: File) => userService.uploadCoverImage(file),
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.USER.PROFILE(data.userId), data);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.PROFILE(data.userId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.CURRENT });
+    },
+  });
+}

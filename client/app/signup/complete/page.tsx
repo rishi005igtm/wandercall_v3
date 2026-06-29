@@ -23,7 +23,7 @@ import {
   ShieldAlert
 } from "lucide-react";
 import { useGeoapifyAutocomplete, GeoapifyLocation } from "@/hooks/useGeoapifyAutocomplete";
-import { useCompleteProfileMutation } from "@/hooks/api/useUserMutations";
+import { useCompleteProfileMutation, useUploadAvatarMutation } from "@/hooks/api/useUserMutations";
 import { useAppSelector } from "@/lib/store/store";
 import { mapApiError } from "@/lib/utils/errorMapper";
 
@@ -35,8 +35,10 @@ function SignupCompleteContent() {
   const authUserId = authState.userId;
   const authName = authState.name;
 
-  const nameParam = searchParams.get("name") || authName || "Explorer";
   const userIdParam = searchParams.get("userId") || authUserId;
+  const uploadAvatarMutation = useUploadAvatarMutation(userIdParam);
+
+  const nameParam = searchParams.get("name") || authName || "Explorer";
 
   // Form States
   const [username, setUsername] = useState("");
@@ -173,13 +175,11 @@ function SignupCompleteContent() {
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        if (typeof reader.result === "string") {
-          setUploadedAvatarUrl(reader.result);
-        }
-      };
-      reader.readAsDataURL(file);
+      uploadAvatarMutation.mutate(file, {
+        onSuccess: (data) => {
+          setUploadedAvatarUrl(data.avatarUrl || null);
+        },
+      });
     }
   };
 
@@ -366,7 +366,11 @@ function SignupCompleteContent() {
               <div className="flex items-center gap-4">
                 {/* Avatar Display Container */}
                 <div className="relative h-16 w-16 rounded-full p-0.5 bg-gradient-to-tr from-brand-indigo to-brand-purple flex-shrink-0 shadow-lg flex items-center justify-center overflow-hidden">
-                  {uploadedAvatarUrl ? (
+                  {uploadAvatarMutation.isPending ? (
+                    <div className="h-full w-full rounded-full bg-zinc-900 flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-brand-purple" />
+                    </div>
+                  ) : uploadedAvatarUrl ? (
                     <Image
                       src={uploadedAvatarUrl}
                       alt="Uploaded profile avatar"
@@ -383,10 +387,10 @@ function SignupCompleteContent() {
 
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center gap-2">
-                    <label className="h-9 px-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-xs font-bold text-zinc-200 flex items-center gap-2 cursor-pointer transition-all active:scale-95">
+                    <label className={`h-9 px-3.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 text-xs font-bold text-zinc-200 flex items-center gap-2 cursor-pointer transition-all active:scale-95 ${uploadAvatarMutation.isPending ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''}`}>
                       <Camera className="h-3.5 w-3.5 text-brand-cyan" />
                       {uploadedAvatarUrl ? "Change Photo" : "Upload Photo"}
-                      <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" />
+                      <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploadAvatarMutation.isPending} className="hidden" />
                     </label>
 
                     {uploadedAvatarUrl && (

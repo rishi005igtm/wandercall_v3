@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, easeOut, AnimatePresence } from "framer-motion";
 import { 
@@ -18,6 +18,7 @@ import {
   Clock, 
   MapPin, 
   Camera, 
+  Loader2,
   MessageSquare, 
   BookOpen, 
   Check, 
@@ -36,6 +37,7 @@ import {
 } from "lucide-react";
 import { useAppSelector } from "@/lib/store/store";
 import { useUserProfileQuery } from "@/hooks/api/useUserQueries";
+import { useUploadAvatarMutation, useUploadCoverImageMutation } from "@/hooks/api/useUserMutations";
 
 
 // --- MOCK PROFILE DATA ---
@@ -243,10 +245,16 @@ export default function ProfilePage() {
   const authUserId = useAppSelector((state) => state.auth.userId);
   const { data: userProfile } = useUserProfileQuery(authUserId);
 
+  const uploadAvatarMutation = useUploadAvatarMutation(authUserId);
+  const uploadCoverMutation = useUploadCoverImageMutation(authUserId);
+
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
+
   const activeProfile = {
     name: userProfile?.displayName || profileData.name,
     avatarUrl: userProfile?.avatarUrl,
-    bannerUrl: (userProfile as any)?.bannerUrl || (userProfile as any)?.coverUrl || null,
+    bannerUrl: userProfile?.coverImageUrl || (userProfile as any)?.bannerUrl || null,
     username: userProfile?.username ? `@${userProfile.username}` : profileData.username,
     location: userProfile?.locationFormatted || "Location pending",
     joined: userProfile?.createdAt ? `Joined ${new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : profileData.joined,
@@ -259,6 +267,34 @@ export default function ProfilePage() {
       { label: "Communities Joined", value: userProfile?.communitiesJoined ?? 0, color: "text-brand-purple" },
       { label: "Campfires Hosted", value: userProfile?.campfiresHosted ?? 0, color: "text-brand-amber" },
     ]
+  };
+
+  const handleAvatarClick = () => {
+    avatarInputRef.current?.click();
+  };
+
+  const handleCoverClick = () => {
+    coverInputRef.current?.click();
+  };
+
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadAvatarMutation.mutate(file, {
+        onSuccess: () => triggerToast("Avatar updated successfully!"),
+        onError: () => triggerToast("Failed to upload avatar."),
+      });
+    }
+  };
+
+  const handleCoverFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadCoverMutation.mutate(file, {
+        onSuccess: () => triggerToast("Cover banner updated successfully!"),
+        onError: () => triggerToast("Failed to upload cover banner."),
+      });
+    }
   };
 
   const [activeDnaTab, setActiveDnaTab] = useState<number | null>(null);
@@ -399,8 +435,24 @@ export default function ProfilePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/30 pointer-events-none" />
           
           {/* Top Right Camera Icon for Cover Edit */}
-          <button className="absolute top-4 right-4 p-2.5 rounded-full bg-zinc-950/80 border border-white/10 hover:bg-zinc-900 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-md shadow-xl z-20 group" aria-label="Change cover photo">
-            <Camera className="h-4 w-4 group-hover:scale-110 transition-transform" />
+          <input 
+            type="file" 
+            ref={coverInputRef} 
+            accept="image/*" 
+            onChange={handleCoverFileChange} 
+            className="hidden" 
+          />
+          <button 
+            onClick={handleCoverClick} 
+            disabled={uploadCoverMutation.isPending}
+            className="absolute top-4 right-4 p-2.5 rounded-full bg-zinc-950/80 border border-white/10 hover:bg-zinc-900 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-md shadow-xl z-20 group disabled:opacity-50" 
+            aria-label="Change cover photo"
+          >
+            {uploadCoverMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin text-brand-cyan" />
+            ) : (
+              <Camera className="h-4 w-4 group-hover:scale-110 transition-transform" />
+            )}
           </button>
         </div>
 
@@ -417,8 +469,24 @@ export default function ProfilePage() {
                 )}
               </div>
               {/* Bottom Left Camera Icon for Avatar Edit */}
-              <button className="absolute bottom-0 left-0 p-2 rounded-full bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-sm shadow-lg z-20 group" aria-label="Change avatar photo">
-                <Camera className="h-3 w-3 group-hover:scale-110 transition-transform" />
+              <input 
+                type="file" 
+                ref={avatarInputRef} 
+                accept="image/*" 
+                onChange={handleAvatarFileChange} 
+                className="hidden" 
+              />
+              <button 
+                onClick={handleAvatarClick} 
+                disabled={uploadAvatarMutation.isPending}
+                className="absolute bottom-0 left-0 p-2 rounded-full bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-sm shadow-lg z-20 group disabled:opacity-50" 
+                aria-label="Change avatar photo"
+              >
+                {uploadAvatarMutation.isPending ? (
+                  <Loader2 className="h-3 w-3 animate-spin text-brand-purple" />
+                ) : (
+                  <Camera className="h-3 w-3 group-hover:scale-110 transition-transform" />
+                )}
               </button>
             </div>
             <div className="text-center lg:text-left w-full lg:w-auto">

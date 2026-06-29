@@ -240,9 +240,13 @@ export default function Navbar({
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                     className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900 border border-white/10 hover:border-brand-purple/40 transition-all cursor-pointer"
                   >
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center text-xs font-bold text-white shadow-md">
+                    <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center text-xs font-bold text-white shadow-md overflow-hidden">
                       {isAuthenticated ? (
-                        currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : "E"
+                        currentUser?.avatarUrl ? (
+                          <img src={currentUser.avatarUrl} alt={currentUser.displayName || "Avatar"} className="h-full w-full object-cover" />
+                        ) : (
+                          currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : "E"
+                        )
                       ) : (
                         <User className="h-4 w-4 text-white" />
                       )}

@@ -40,7 +40,7 @@ import {
 } from "lucide-react";
 import { useAppSelector } from "@/lib/store/store";
 import { useUserProfileQuery, useUserSettingsQuery, useUserPlanQuery } from "@/hooks/api/useUserQueries";
-import { useUpdateProfileMutation, useUpdateSettingsMutation, useUpdatePlanMutation } from "@/hooks/api/useUserMutations";
+import { useUpdateProfileMutation, useUpdateSettingsMutation, useUpdatePlanMutation, useUploadAvatarMutation } from "@/hooks/api/useUserMutations";
 import { useActiveSessionsQuery, useRevokeSessionMutation, useRevokeOtherSessionsMutation, useRevokeAllSessionsMutation } from "@/hooks/api/useAuthMutations";
 import { UserSession } from "@/lib/services/auth.service";
 
@@ -110,11 +110,24 @@ export default function SettingsPage() {
   const { data: activeSessionsList } = useActiveSessionsQuery(Boolean(authUserId));
 
   const updateProfileMutation = useUpdateProfileMutation(authUserId);
+  const uploadAvatarMutation = useUploadAvatarMutation(authUserId);
   const updateSettingsMutation = useUpdateSettingsMutation(authUserId);
   const updatePlanMutation = useUpdatePlanMutation(authUserId);
   const revokeSessionMutation = useRevokeSessionMutation();
   const revokeOtherSessionsMutation = useRevokeOtherSessionsMutation();
   const revokeAllSessionsMutation = useRevokeAllSessionsMutation();
+
+  const settingsAvatarInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSettingsAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      uploadAvatarMutation.mutate(file, {
+        onSuccess: () => triggerToast("Avatar updated successfully!"),
+        onError: () => triggerToast("Failed to upload avatar."),
+      });
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [searchQuery, setSearchQuery] = useState("");
@@ -489,8 +502,20 @@ export default function SettingsPage() {
                             <h4 className="text-xs font-extrabold text-white">{displayName}</h4>
                             <span className="text-[9px] text-brand-purple font-mono uppercase font-black">Explorer Level 1</span>
                           </div>
-                          <button onClick={() => triggerToast("Avatar upload feature ready.")} className="px-3 py-1.5 bg-brand-purple/10 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
-                            Upload
+                          <input 
+                            type="file" 
+                            ref={settingsAvatarInputRef} 
+                            accept="image/*" 
+                            onChange={handleSettingsAvatarChange} 
+                            className="hidden" 
+                          />
+                          <button 
+                            onClick={() => settingsAvatarInputRef.current?.click()} 
+                            disabled={uploadAvatarMutation.isPending}
+                            className="px-3 py-1.5 bg-brand-purple/10 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                          >
+                            {uploadAvatarMutation.isPending && <Loader2 className="h-3 w-3 animate-spin text-brand-purple hover:text-white" />}
+                            <span>Upload</span>
                           </button>
                         </div>
                         <p className="text-[9px] leading-relaxed text-zinc-400 font-bold uppercase tracking-wide">

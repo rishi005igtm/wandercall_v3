@@ -17,6 +17,9 @@ export class UserProfileEntity {
   @Column({ nullable: true })
   avatarUrl?: string;
 
+  @Column({ nullable: true })
+  avatarPublicId?: string;
+
   @Column({ nullable: true, type: 'text' })
   bio?: string;
 
@@ -37,6 +40,9 @@ export class UserProfileEntity {
 
   @Column({ nullable: true })
   coverImageUrl?: string;
+
+  @Column({ nullable: true })
+  coverImagePublicId?: string;
 
   @Column({ nullable: true })
   phoneCoordinate?: string;
