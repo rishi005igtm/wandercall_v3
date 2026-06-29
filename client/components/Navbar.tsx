@@ -24,6 +24,7 @@ import {
   Bookmark,
   Sparkles,
   ChevronDown,
+  LogIn,
 } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/store/store";
 import { clearAuthSession } from "@/lib/store/slices/authSlice";
@@ -210,34 +211,41 @@ export default function Navbar({
               </a>
             )}
 
-            {/* Dynamic Auth Section */}
-            {isAuthenticated ? (
-              <div className="flex items-center gap-3">
-                {/* Notification Bell */}
-                <button
-                  onClick={() => router.push("/profile/settings")}
-                  className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all cursor-pointer"
-                  aria-label="Notifications"
-                >
-                  <Bell className="h-4 w-4" />
-                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-brand-cyan animate-ping" />
-                  <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-brand-cyan" />
-                </button>
+            {/* Right Header Controls (Auth & Guest Dropdown) */}
+            <div className="flex items-center gap-3">
+                {isAuthenticated && (
+                  <>
+                    {/* Notification Bell */}
+                    <button
+                      onClick={() => router.push("/profile/settings")}
+                      className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all cursor-pointer"
+                      aria-label="Notifications"
+                    >
+                      <Bell className="h-4 w-4" />
+                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-brand-cyan animate-ping" />
+                      <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-brand-cyan" />
+                    </button>
 
-                {/* Explorer Level Badge */}
-                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-brand-purple/10 border border-brand-purple/20 rounded-full text-[10px] font-black uppercase tracking-wider text-brand-purple">
-                  <Sparkles className="h-3 w-3 animate-pulse" />
-                  <span>Level {currentUser?.level || 1}</span>
-                </div>
+                    {/* Explorer Level Badge */}
+                    <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-brand-purple/10 border border-brand-purple/20 rounded-full text-[10px] font-black uppercase tracking-wider text-brand-purple">
+                      <Sparkles className="h-3 w-3 animate-pulse" />
+                      <span>Level {currentUser?.level || 1}</span>
+                    </div>
+                  </>
+                )}
 
-                {/* Profile Avatar Dropdown */}
+                {/* Profile Avatar Dropdown for both Auth Users and Guests */}
                 <div className="relative" ref={dropdownRef}>
                   <button
                     onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                     className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900 border border-white/10 hover:border-brand-purple/40 transition-all cursor-pointer"
                   >
                     <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center text-xs font-bold text-white shadow-md">
-                      {currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : "E"}
+                      {isAuthenticated ? (
+                        currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : "E"
+                      ) : (
+                        <User className="h-4 w-4 text-white" />
+                      )}
                     </div>
                     <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
                   </button>
@@ -254,16 +262,34 @@ export default function Navbar({
                         {/* User Header */}
                         <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl mb-1">
                           <h4 className="text-xs font-black text-white truncate">
-                            {currentUser?.displayName || "Explorer"}
+                            {isAuthenticated ? (currentUser?.displayName || "Explorer") : "Guest Explorer"}
                           </h4>
                           <span className="text-[9px] font-mono text-brand-cyan block mt-0.5">
-                            @{currentUser?.username || "explorer"}
+                            {isAuthenticated ? `@${currentUser?.username || "explorer"}` : "@guest"}
                           </span>
                         </div>
 
                         {/* Menu Links */}
                         <Link
-                          href="/profile"
+                          href="/feed"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <Radio className="h-4 w-4 text-brand-indigo" />
+                          <span>Feed</span>
+                        </Link>
+
+                        <Link
+                          href="/experiences"
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <Calendar className="h-4 w-4 text-brand-cyan" />
+                          <span>Experiences</span>
+                        </Link>
+
+                        <Link
+                          href={isAuthenticated ? "/profile" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
                         >
@@ -272,16 +298,16 @@ export default function Navbar({
                         </Link>
 
                         <Link
-                          href="/profile/settings"
+                          href={isAuthenticated ? "/profile/settings" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
                         >
-                          <Bookmark className="h-4 w-4 text-brand-cyan" />
+                          <Bookmark className="h-4 w-4 text-amber-400" />
                           <span>Bookings & Trips</span>
                         </Link>
 
                         <Link
-                          href="/profile/settings"
+                          href={isAuthenticated ? "/profile/settings" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
                         >
@@ -290,7 +316,7 @@ export default function Navbar({
                         </Link>
 
                         <Link
-                          href="/profile/settings"
+                          href={isAuthenticated ? "/profile/settings" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
                         >
@@ -300,55 +326,39 @@ export default function Navbar({
 
                         <div className="h-px bg-white/5 my-1" />
 
-                        {/* Logout Button */}
-                        <button
-                          onClick={handleLogout}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all w-full text-left cursor-pointer"
-                        >
-                          <LogOut className="h-4 w-4 text-rose-500" />
-                          <span>Disconnect Node (Sign Out)</span>
-                        </button>
+                        {/* Action Button: Logout for Auth, Login for Guest */}
+                        {isAuthenticated ? (
+                          <button
+                            onClick={handleLogout}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all w-full text-left cursor-pointer"
+                          >
+                            <LogOut className="h-4 w-4 text-rose-500" />
+                            <span>Disconnect Node (Sign Out)</span>
+                          </button>
+                        ) : (
+                          <Link
+                            href="/login"
+                            onClick={() => setProfileMenuOpen(false)}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-brand-cyan hover:text-cyan-300 hover:bg-brand-cyan/10 transition-all w-full text-left cursor-pointer"
+                          >
+                            <LogIn className="h-4 w-4 text-brand-cyan" />
+                            <span>Login to Wandercall</span>
+                          </Link>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               </div>
-            ) : (
-              /* Guest Buttons */
-              <div className="flex items-center gap-2">
-                <Link
-                  href="/login"
-                  className="p-2 rounded-full border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all duration-200"
-                >
-                  <User className="h-4 w-4" />
-                </Link>
-                <Link
-                  href="/login"
-                  className="hidden md:inline-flex items-center justify-center px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-brand-indigo to-brand-purple hover:from-brand-indigo/90 hover:to-brand-purple/90 text-white shadow-lg shadow-brand-indigo/25 hover:shadow-brand-indigo/40 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200"
-                >
-                  Login
-                </Link>
-              </div>
-            )}
 
-            {/* Mobile Menu Toggle or Filter Button */}
-            {showFilterButton ? (
+            {/* Mobile Filter Button if active */}
+            {showFilterButton && (
               <button
                 onClick={onFilterToggle}
                 className="lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 aria-label="Filter"
               >
                 <SlidersHorizontal className="h-5 w-5" />
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsMobileMenuOpen(true)}
-                className={`lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors ${
-                  showBackButton ? "hidden" : ""
-                }`}
-                aria-label="Open menu"
-              >
-                <Menu className="h-6 w-6" />
               </button>
             )}
           </div>
@@ -382,99 +392,6 @@ export default function Navbar({
           )}
         </AnimatePresence>
       </motion.nav>
-
-      {/* Premium Side Panel Mobile Navigation */}
-      {!showFilterButton && (
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.6 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="fixed inset-0 bg-black z-50 backdrop-blur-sm"
-              />
-
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                className="fixed right-0 top-0 bottom-0 w-full max-w-sm bg-brand-bg/95 backdrop-blur-xl border-l border-white/5 p-8 z-50 flex flex-col justify-between shadow-2xl shadow-black/80"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-12">
-                    <span className="text-lg font-bold text-white bg-gradient-to-r from-brand-cyan to-brand-purple bg-clip-text text-transparent">
-                      Wandercall
-                    </span>
-                    <button
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors"
-                    >
-                      <X className="h-6 w-6" />
-                    </button>
-                  </div>
-
-                  <div className="flex flex-col gap-4">
-                    {navLinks.map((link, index) => {
-                      const Icon = link.icon;
-                      return (
-                        <motion.div
-                          key={link.name}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                        >
-                          <Link
-                            href={getHref(link.href, link.name)}
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 text-base font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
-                          >
-                            <Icon className="h-5 w-5 text-brand-indigo" />
-                            {link.name}
-                          </Link>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-4 pt-8 border-t border-white/5">
-                  {isAuthenticated ? (
-                    <button
-                      onClick={() => {
-                        setIsMobileMenuOpen(false);
-                        handleLogout();
-                      }}
-                      className="flex items-center justify-center py-4 rounded-xl font-bold bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm uppercase tracking-wider hover:bg-rose-500/20 transition-all cursor-pointer"
-                    >
-                      Sign Out Node
-                    </button>
-                  ) : (
-                    <>
-                      <a
-                        href="#host"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="text-center py-3 text-sm font-semibold text-zinc-400 hover:text-white transition-colors"
-                      >
-                        Become Host
-                      </a>
-                      <Link
-                        href="/login"
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className="flex items-center justify-center py-4 rounded-xl font-bold bg-gradient-to-r from-brand-indigo to-brand-purple text-white shadow-lg text-sm uppercase tracking-wider hover:brightness-110 active:scale-[0.98] transition-all"
-                      >
-                        Login
-                      </Link>
-                    </>
-                  )}
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
-      )}
     </>
   );
 }
