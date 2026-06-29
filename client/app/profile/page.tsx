@@ -245,6 +245,7 @@ export default function ProfilePage() {
 
   const activeProfile = {
     name: userProfile?.displayName || profileData.name,
+    avatarUrl: userProfile?.avatarUrl,
     username: userProfile?.username ? `@${userProfile.username}` : profileData.username,
     location: userProfile?.locationFormatted || "Location pending",
     joined: userProfile?.createdAt ? `Joined ${new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}` : profileData.joined,
@@ -380,8 +381,12 @@ export default function ProfilePage() {
           {/* Avatar & Identifiers */}
           <div className="flex flex-col lg:flex-row items-center lg:items-end gap-5 w-full lg:w-auto">
             <div className="h-28 w-28 md:h-36 md:w-36 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple p-1 border-4 border-zinc-950 shadow-2xl relative group/avatar">
-              <div className="h-full w-full rounded-full bg-zinc-900 flex items-center justify-center text-3xl md:text-4xl font-black text-white">
-                R
+              <div className="h-full w-full rounded-full bg-zinc-900 flex items-center justify-center text-3xl md:text-4xl font-black text-white overflow-hidden">
+                {activeProfile.avatarUrl ? (
+                  <img src={activeProfile.avatarUrl} alt={activeProfile.name} className="h-full w-full object-cover" />
+                ) : (
+                  activeProfile.name ? activeProfile.name.trim().charAt(0).toUpperCase() : "E"
+                )}
               </div>
               {/* Bottom Left Camera Icon for Avatar Edit */}
               <button className="absolute bottom-0 left-0 p-2 rounded-full bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-sm shadow-lg z-20 group" aria-label="Change avatar photo">

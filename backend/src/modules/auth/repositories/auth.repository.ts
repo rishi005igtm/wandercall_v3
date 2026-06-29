@@ -52,4 +52,11 @@ export class AuthRepository {
   async revokeAllUserSessions(userId: string): Promise<void> {
     await this.sessionRepo.update({ userId }, { isRevoked: true });
   }
+
+  async findActiveSessionsByUserId(userId: string): Promise<UserSessionEntity[]> {
+    return this.sessionRepo.find({
+      where: { userId, isRevoked: false },
+      order: { createdAt: 'DESC' },
+    });
+  }
 }

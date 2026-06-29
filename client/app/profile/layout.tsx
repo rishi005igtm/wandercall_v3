@@ -22,6 +22,9 @@ import {
   Home
 } from "lucide-react";
 
+import { useAppSelector } from "@/lib/store/store";
+import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
+
 // Sidebar Links
 const navItems = [
   { name: "Home", icon: Home, href: "/" },
@@ -46,6 +49,17 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [mobileMenuPage, setMobileMenuPage] = useState(0);
+
+  const authState = useAppSelector((state) => state.auth);
+  const { data: currentUser } = useCurrentUserQuery(authState.isAuthenticated);
+
+  const displayName = currentUser?.displayName || authState.name || "Explorer";
+  const avatarUrl = currentUser?.avatarUrl;
+  const initial = displayName.trim().charAt(0).toUpperCase() || "E";
+  const level = currentUser?.level || 1;
+  const xpCurrent = currentUser?.xpCurrent || 1000;
+  const xpNext = currentUser?.xpNext || 2000;
+  const xpPercentage = Math.min(Math.round((xpCurrent / xpNext) * 100), 100);
 
   // Generate active mobile group dynamically using modulo logic (exactly 4 menu items)
   const activeGroup = useMemo(() => {
@@ -109,29 +123,32 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
           {/* User passport profile avatar block */}
           <div className="flex flex-col lg:flex-row items-center gap-3 bg-white/[0.02] border border-white/5 p-3 rounded-2xl w-full">
             <div className="relative h-10 w-10 shrink-0">
-              {/* Profile image placeholder */}
-              <div className="h-full w-full rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center font-black text-sm text-white border border-white/10 shadow-md">
-                R
+              <div className="h-full w-full rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center font-black text-sm text-white border border-white/10 shadow-md overflow-hidden">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                ) : (
+                  initial
+                )}
               </div>
               <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-brand-emerald border-2 border-zinc-950 animate-pulse" />
             </div>
             <div className="hidden lg:flex flex-col text-left min-w-0">
               <span className="text-xs font-bold truncate flex items-center gap-1 text-white">
-                Rishiraj
+                {displayName}
                 <span className="h-3 w-3 text-brand-cyan"><Sparkles className="h-3 w-3 fill-brand-cyan/20" /></span>
               </span>
-              <span className="text-[10px] text-zinc-400 font-mono truncate">Level 12 Explorer</span>
+              <span className="text-[10px] text-zinc-400 font-mono truncate">Level {level} Explorer</span>
             </div>
           </div>
 
           {/* XP Progress Bar (Desktop only) */}
           <div className="hidden lg:flex flex-col gap-1.5 px-1">
-            <div className="flex justify-between items-center text-[9px] font-mono text-zinc-500">
-              <span>XP 3,240 / 4,000</span>
-              <span>81%</span>
+            <div className="flex justify-between items-center text-[9px] font-mono text-zinc-500 font-bold">
+              <span>XP {xpCurrent.toLocaleString()} / {xpNext.toLocaleString()}</span>
+              <span>{xpPercentage}%</span>
             </div>
             <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-brand-indigo to-brand-purple rounded-full w-[81%]" />
+              <div className="h-full bg-gradient-to-r from-brand-indigo to-brand-purple rounded-full transition-all duration-500" style={{ width: `${xpPercentage}%` }} />
             </div>
           </div>
 

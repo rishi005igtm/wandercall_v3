@@ -5,6 +5,7 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { AuthResponseDto, AuthUserDto } from '../dto/auth-response.dto';
@@ -26,6 +27,7 @@ export class AuthService implements IAuthService {
   constructor(
     private readonly authRepository: AuthRepository,
     private readonly mailService: MailService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async register(
@@ -42,7 +44,6 @@ export class AuthService implements IAuthService {
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
     const userId = randomUUID();
 
-    // Generate 6-digit verification code
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
@@ -50,7 +51,8 @@ export class AuthService implements IAuthService {
       id: userId,
       email: dto.email.toLowerCase(),
       passwordHash,
-      accountStatus: AccountStatus.PROFILE_INCOMPLETE, // Staged Onboarding Phase 1
+      displayName: dto.name,
+      accountStatus: AccountStatus.PROFILE_INCOMPLETE,
       isEmailVerified: false,
       verificationCode,
       verificationCodeExpiresAt,
@@ -61,7 +63,6 @@ export class AuthService implements IAuthService {
     await this.authRepository.create(newAuthUser);
     this.logger.log(`Account registered for ${dto.email} (ID: ${userId}), status set to PROFILE_INCOMPLETE`);
 
-    // Send verification email via Nodemailer
     await this.mailService.sendVerificationCode(dto.email, dto.name, verificationCode);
 
     return this.createSessionAndTokens(newAuthUser, dto.name, ipAddress, userAgent);
@@ -117,7 +118,8 @@ export class AuthService implements IAuthService {
       throw new UnauthorizedException('Your account has been restricted. Please contact support.');
     }
 
-    return this.createSessionAndTokens(user, user.email.split('@')[0], ipAddress, userAgent);
+    const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
+    return this.createSessionAndTokens(user, displayName, ipAddress, userAgent);
   }
 
   async googleAuth(
@@ -129,7 +131,6 @@ export class AuthService implements IAuthService {
       throw new BadRequestException('Google ID token is required');
     }
 
-    // Mock Google token payload parsing
     const googleId = `google_${randomUUID().slice(0, 8)}`;
     const email = `google_user_${randomUUID().slice(0, 5)}@gmail.com`;
     const name = 'Google Explorer';
@@ -140,7 +141,7 @@ export class AuthService implements IAuthService {
         id: randomUUID(),
         email: email.toLowerCase(),
         googleId,
-        accountStatus: AccountStatus.PROFILE_INCOMPLETE, // Google users also undergo staged onboarding
+        accountStatus: AccountStatus.PROFILE_INCOMPLETE,
         isEmailVerified: true,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -155,25 +156,70 @@ export class AuthService implements IAuthService {
     if (!dto.refreshToken) {
       throw new UnauthorizedException('Refresh token is missing');
     }
-    const userId = randomUUID();
-    const user = new UserAuthEntity({
-      id: userId,
-      email: 'refreshed@example.com',
-      accountStatus: AccountStatus.ACTIVE,
-      isEmailVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
+    
+    // For seamless session refresh, verify or decode refreshToken
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(dto.refreshToken);
+    } catch {
+      // In case refreshToken is an opaque string, extract or issue new
+    }
 
-    return this.createSessionAndTokens(user, 'Refreshed User');
+    const userId = payload?.sub;
+    let user: UserAuthEntity | null = null;
+    if (userId) {
+      user = await this.authRepository.findById(userId);
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid or expired refresh token session.');
+    }
+
+    const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
+    return this.createSessionAndTokens(user, displayName);
   }
 
   async logout(userId: string, refreshToken?: string): Promise<void> {
-    await this.authRepository.revokeAllUserSessions(userId);
+    if (userId) {
+      await this.authRepository.revokeAllUserSessions(userId);
+      this.logger.log(`Sessions revoked successfully for user ${userId}`);
+    }
   }
 
   async revokeAllSessions(userId: string): Promise<void> {
     await this.authRepository.revokeAllUserSessions(userId);
+  }
+
+  async getActiveSessions(userId: string): Promise<UserSessionEntity[]> {
+    return this.authRepository.findActiveSessionsByUserId(userId);
+  }
+
+  async revokeSessionById(userId: string, sessionId: string): Promise<void> {
+    const session = await this.authRepository.findSessionById(sessionId);
+    if (session && session.userId === userId) {
+      await this.authRepository.revokeSession(sessionId);
+    }
+  }
+
+  private parseDeviceInfo(userAgent?: string): string {
+    if (!userAgent) return 'Unknown Device';
+
+    let os = 'Desktop PC';
+    if (/windows nt 10/i.test(userAgent)) os = 'Windows PC';
+    else if (/windows/i.test(userAgent)) os = 'Windows PC';
+    else if (/macintosh|mac os x/i.test(userAgent)) os = 'MacBook Pro / Mac';
+    else if (/iphone|ipad|ipod/i.test(userAgent)) os = 'iPhone';
+    else if (/android/i.test(userAgent)) os = 'Android Device';
+    else if (/linux/i.test(userAgent)) os = 'Linux PC';
+
+    let browser = 'Browser';
+    if (/chrome|crios/i.test(userAgent) && !/edg|opr/i.test(userAgent)) browser = 'Chrome';
+    else if (/safari/i.test(userAgent) && !/chrome|crios/i.test(userAgent)) browser = 'Safari';
+    else if (/firefox|fxios/i.test(userAgent)) browser = 'Firefox';
+    else if (/edg/i.test(userAgent)) browser = 'Edge';
+    else if (/opr/i.test(userAgent)) browser = 'Opera';
+
+    return `${os} • ${browser}`;
   }
 
   private async createSessionAndTokens(
@@ -183,23 +229,35 @@ export class AuthService implements IAuthService {
     userAgent?: string,
   ): Promise<AuthResponseDto> {
     const sessionId = randomUUID();
-    const refreshToken = `rt_${randomUUID()}_${Date.now()}`;
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      email: user.email,
+      accountStatus: user.accountStatus,
+    });
+
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id, sessionId },
+      { expiresIn: '7d' },
+    );
+
     const refreshTokenHash = await bcrypt.hash(refreshToken, 8);
+
+    const formattedDeviceInfo = this.parseDeviceInfo(userAgent);
 
     const session = new UserSessionEntity({
       id: sessionId,
       userId: user.id,
       refreshTokenHash,
-      deviceInfo: userAgent || 'Unknown Device',
+      deviceInfo: formattedDeviceInfo,
       ipAddress: ipAddress || '127.0.0.1',
       isRevoked: false,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       createdAt: new Date(),
     });
 
     await this.authRepository.createSession(session);
 
-    const accessToken = `at_${randomUUID()}_${Date.now()}`;
     const authUser: AuthUserDto = {
       id: user.id,
       email: user.email,
@@ -212,7 +270,7 @@ export class AuthService implements IAuthService {
       user: authUser,
       accessToken,
       refreshToken,
-      expiresIn: 3600, // 1 hour
+      expiresIn: 3600,
     };
   }
 }

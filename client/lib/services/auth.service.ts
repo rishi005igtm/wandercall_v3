@@ -29,6 +29,16 @@ export interface AuthResponse {
   expiresIn: number;
 }
 
+export interface UserSession {
+  id: string;
+  userId: string;
+  deviceInfo: string;
+  ipAddress: string;
+  isRevoked: boolean;
+  expiresAt: string;
+  createdAt: string;
+}
+
 export const authService = {
   async register(payload: RegisterPayload): Promise<AuthResponse> {
     const { data } = await httpClient.post<AuthResponse>('/auth/register', payload);
@@ -56,6 +66,16 @@ export const authService = {
 
   async verifyEmail(email: string, code: string): Promise<{ verified: boolean; message: string }> {
     const { data } = await httpClient.post<{ verified: boolean; message: string }>('/auth/verify-email', { email, code });
+    return data;
+  },
+
+  async getActiveSessions(): Promise<UserSession[]> {
+    const { data } = await httpClient.get<UserSession[]>('/auth/sessions');
+    return data;
+  },
+
+  async revokeSession(sessionId: string): Promise<{ message: string }> {
+    const { data } = await httpClient.post<{ message: string }>(`/auth/sessions/revoke/${sessionId}`);
     return data;
   },
 };

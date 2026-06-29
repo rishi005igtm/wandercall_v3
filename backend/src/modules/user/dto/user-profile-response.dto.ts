@@ -2,6 +2,8 @@ export class UserProfileResponseDto {
   userId: string;
   username: string;
   displayName: string;
+  email: string;
+  isEmailVerified: boolean;
   avatarUrl?: string;
   bio?: string;
   locationFormatted?: string;

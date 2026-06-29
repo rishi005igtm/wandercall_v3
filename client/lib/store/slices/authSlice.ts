@@ -4,9 +4,11 @@ export interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isAuthReady: boolean;
   userId: string | null;
   email: string | null;
   name: string | null;
+  role: string;
   accountStatus: 'PROFILE_INCOMPLETE' | 'ACTIVE' | string | null;
   isEmailVerified: boolean;
 }
@@ -15,9 +17,11 @@ const initialState: AuthState = {
   accessToken: null,
   refreshToken: null,
   isAuthenticated: false,
+  isAuthReady: false,
   userId: null,
   email: null,
   name: null,
+  role: 'explorer',
   accountStatus: null,
   isEmailVerified: false,
 };
@@ -26,6 +30,9 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    setAuthReady: (state, action: PayloadAction<boolean>) => {
+      state.isAuthReady = action.payload;
+    },
     setAuthSession: (
       state,
       action: PayloadAction<{
@@ -37,6 +44,7 @@ export const authSlice = createSlice({
           name: string;
           accountStatus: string;
           isEmailVerified?: boolean;
+          role?: string;
         };
       }>
     ) => {
@@ -48,6 +56,9 @@ export const authSlice = createSlice({
       state.name = action.payload.user.name;
       state.accountStatus = action.payload.user.accountStatus;
       state.isEmailVerified = Boolean(action.payload.user.isEmailVerified);
+      if (action.payload.user.role) {
+        state.role = action.payload.user.role;
+      }
 
       if (typeof window !== 'undefined') {
         localStorage.setItem('wc_access_token', action.payload.accessToken);
@@ -78,5 +89,5 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setAuthSession, setEmailVerified, updateAccountStatus, clearAuthSession } = authSlice.actions;
+export const { setAuthReady, setAuthSession, setEmailVerified, updateAccountStatus, clearAuthSession } = authSlice.actions;
 export default authSlice.reducer;

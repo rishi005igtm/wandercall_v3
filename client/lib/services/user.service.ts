@@ -3,6 +3,7 @@ import { httpClient } from '../api/httpClient';
 export interface CompleteProfilePayload {
   userId: string;
   username: string;
+  displayName?: string;
   bio?: string;
   locationFormatted?: string;
   locationLat?: number;
@@ -14,6 +15,8 @@ export interface UserProfileResponse {
   userId: string;
   username: string;
   displayName: string;
+  email?: string;
+  isEmailVerified?: boolean;
   avatarUrl?: string;
   bio?: string;
   locationFormatted?: string;
@@ -58,6 +61,26 @@ export interface UserPlanResponse {
 }
 
 export const userService = {
+  async getCurrentUser(): Promise<UserProfileResponse> {
+    const { data } = await httpClient.get<UserProfileResponse>('/users/me');
+    return data;
+  },
+
+  async getMyProfile(): Promise<UserProfileResponse> {
+    const { data } = await httpClient.get<UserProfileResponse>('/users/profile/me');
+    return data;
+  },
+
+  async getMySettings(): Promise<UserSettingsResponse> {
+    const { data } = await httpClient.get<UserSettingsResponse>('/users/settings/me');
+    return data;
+  },
+
+  async getMyPlan(): Promise<UserPlanResponse> {
+    const { data } = await httpClient.get<UserPlanResponse>('/users/plan/me');
+    return data;
+  },
+
   async completeProfile(payload: CompleteProfilePayload): Promise<UserProfileResponse> {
     const { data } = await httpClient.post<UserProfileResponse>('/users/profile/complete', payload);
     return data;
@@ -80,6 +103,7 @@ export const userService = {
   },
 
   async getProfile(userId: string): Promise<UserProfileResponse> {
+    if (userId === 'me') return this.getMyProfile();
     const { data } = await httpClient.get<UserProfileResponse>(`/users/profile/${userId}`);
     return data;
   },
@@ -90,6 +114,7 @@ export const userService = {
   },
 
   async getSettings(userId: string): Promise<UserSettingsResponse> {
+    if (userId === 'me') return this.getMySettings();
     const { data } = await httpClient.get<UserSettingsResponse>(`/users/settings/${userId}`);
     return data;
   },
@@ -100,6 +125,7 @@ export const userService = {
   },
 
   async getPlan(userId: string): Promise<UserPlanResponse> {
+    if (userId === 'me') return this.getMyPlan();
     const { data } = await httpClient.get<UserPlanResponse>(`/users/plan/${userId}`);
     return data;
   },

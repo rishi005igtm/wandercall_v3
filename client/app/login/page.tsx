@@ -23,17 +23,21 @@ import {
   ArrowLeft
 } from "lucide-react";
 
+import { useLoginMutation, useGoogleAuthMutation } from "@/hooks/api/useAuthMutations";
+import { mapApiError } from "@/lib/utils/errorMapper";
+
 export default function LoginPage() {
   const router = useRouter();
+  const loginMutation = useLoginMutation();
+  const googleAuthMutation = useGoogleAuthMutation();
 
   // Form states
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [authSuccess, setAuthSuccess] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; api?: string }>({});
 
   // Stats counting animation states
   const [explorers, setExplorers] = useState(0);
@@ -86,20 +90,28 @@ export default function LoginPage() {
           return prev + 1;
         } else {
           clearInterval(stepInterval);
-          // Redirect to home page
-          router.push("/");
           return prev;
         }
       });
-    }, 200); // cycle texts quickly (approx 800ms total)
+    }, 200); // cycle texts quickly
 
     return () => clearInterval(stepInterval);
-  }, [authSuccess, router]);
+  }, [authSuccess, loaderTexts.length]);
+
+  // Decoupled router navigation to prevent state-update-during-render console warnings
+  useEffect(() => {
+    if (authSuccess && loaderStep === loaderTexts.length - 1) {
+      const navTimer = setTimeout(() => {
+        router.push("/");
+      }, 300);
+      return () => clearTimeout(navTimer);
+    }
+  }, [authSuccess, loaderStep, loaderTexts.length, router]);
 
   // Form submit handler
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newErrors: { email?: string; password?: string } = {};
+    const newErrors: typeof errors = {};
 
     // Basic validation
     if (!email) {
@@ -120,13 +132,18 @@ export default function LoginPage() {
     }
 
     setErrors({});
-    setIsSubmitting(true);
 
-    // Mock API Auth Call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setAuthSuccess(true);
-    }, 1500);
+    loginMutation.mutate(
+      { email: email.trim(), password },
+      {
+        onSuccess: () => {
+          setAuthSuccess(true);
+        },
+        onError: (err) => {
+          setErrors({ api: mapApiError(err) });
+        },
+      }
+    );
   };
 
   return (
@@ -299,6 +316,12 @@ export default function LoginPage() {
 
           {/* Credentials Authentication Form */}
           <form onSubmit={handleSubmit} className="flex flex-col gap-4 text-left">
+            {errors.api && (
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 shrink-0" />
+                <span>{errors.api}</span>
+              </div>
+            )}
             
             {/* Email Address */}
             <div className="flex flex-col gap-1.5 w-full">
@@ -382,14 +405,14 @@ export default function LoginPage() {
             {/* Sign In Trigger Button */}
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={loginMutation.isPending}
               className={`w-full h-[52px] rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-4 cursor-pointer ${
-                isSubmitting
+                loginMutation.isPending
                   ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5"
                   : "bg-gradient-to-r from-brand-indigo to-brand-purple hover:brightness-110 text-white shadow-lg shadow-brand-indigo/25 active:scale-[0.98]"
               }`}
             >
-              {isSubmitting ? (
+              {loginMutation.isPending ? (
                 <>
                   <div className="h-4 w-4 rounded-full border-2 border-zinc-500 border-t-white animate-spin" />
                   Authenticating...

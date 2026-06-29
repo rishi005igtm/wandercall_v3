@@ -41,6 +41,8 @@ import {
 import { useAppSelector } from "@/lib/store/store";
 import { useUserProfileQuery, useUserSettingsQuery, useUserPlanQuery } from "@/hooks/api/useUserQueries";
 import { useUpdateProfileMutation, useUpdateSettingsMutation, useUpdatePlanMutation } from "@/hooks/api/useUserMutations";
+import { useActiveSessionsQuery, useRevokeSessionMutation } from "@/hooks/api/useAuthMutations";
+import { UserSession } from "@/lib/services/auth.service";
 
 // ==========================================
 // Types & Data Structures
@@ -53,6 +55,13 @@ interface ActiveSession {
   country: string;
   lastActive: string;
   isCurrent: boolean;
+}
+
+interface SessionDisplayItem {
+  id: string;
+  deviceInfo: string;
+  ipAddress: string;
+  isCurrent?: boolean;
 }
 
 const INITIAL_SESSIONS: ActiveSession[] = [
@@ -89,14 +98,19 @@ const SETTINGS_SECTIONS = [
 type SettingsTab = typeof SETTINGS_SECTIONS[number]["id"];
 
 export default function SettingsPage() {
-  const authUserId = useAppSelector((state) => state.auth.userId);
+  const authState = useAppSelector((state) => state.auth);
+  const authUserId = authState.userId;
+  const authEmail = authState.email || "rishi005.dev@gmail.com";
+
   const { data: userProfile } = useUserProfileQuery(authUserId);
   const { data: userSettings } = useUserSettingsQuery(authUserId);
   const { data: userPlan } = useUserPlanQuery(authUserId);
+  const { data: activeSessionsList } = useActiveSessionsQuery(Boolean(authUserId));
 
   const updateProfileMutation = useUpdateProfileMutation(authUserId);
   const updateSettingsMutation = useUpdateSettingsMutation(authUserId);
   const updatePlanMutation = useUpdatePlanMutation(authUserId);
+  const revokeSessionMutation = useRevokeSessionMutation();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [searchQuery, setSearchQuery] = useState("");
@@ -111,6 +125,23 @@ export default function SettingsPage() {
   
   const [is2faEnabled, setIs2faEnabled] = useState(false);
   const [sessions, setSessions] = useState<ActiveSession[]>(INITIAL_SESSIONS);
+
+  const displaySessions: SessionDisplayItem[] = useMemo(() => {
+    if (activeSessionsList && activeSessionsList.length > 0) {
+      return activeSessionsList.map((s: UserSession, idx: number) => ({
+        id: s.id,
+        deviceInfo: s.deviceInfo || 'Explorer Node',
+        ipAddress: s.ipAddress || '127.0.0.1',
+        isCurrent: idx === 0,
+      }));
+    }
+    return sessions.map((s: ActiveSession) => ({
+      id: s.id,
+      deviceInfo: `${s.device} • ${s.browser}`,
+      ipAddress: s.country,
+      isCurrent: s.isCurrent,
+    }));
+  }, [activeSessionsList, sessions]);
 
   // Notification category toggles
   const [notifications, setNotifications] = useState({
@@ -437,8 +468,12 @@ export default function SettingsPage() {
                           <circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,0.03)" strokeWidth="4" fill="transparent" />
                           <circle cx="48" cy="48" r="42" stroke="#8b5cf6" strokeWidth="4" fill="transparent" strokeDasharray="264" strokeDashoffset="39.6" strokeLinecap="round" />
                         </svg>
-                        <div className="absolute inset-2 bg-zinc-950 rounded-full border border-white/10 flex items-center justify-center text-3xl select-none">
-                          🏔️
+                        <div className="absolute inset-2 bg-zinc-950 rounded-full border border-white/10 flex items-center justify-center text-2xl font-black text-white select-none overflow-hidden">
+                          {userProfile?.avatarUrl ? (
+                            <img src={userProfile.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                          ) : (
+                            displayName ? displayName.trim().charAt(0).toUpperCase() : "E"
+                          )}
                         </div>
                       </div>
 
@@ -449,7 +484,7 @@ export default function SettingsPage() {
                             <span className="text-[9px] text-brand-purple font-mono uppercase font-black">Explorer Level 1</span>
                           </div>
                           <button onClick={() => triggerToast("Avatar upload feature ready.")} className="px-3 py-1.5 bg-brand-purple/10 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer">
-                            Upload Avatar
+                            Upload
                           </button>
                         </div>
                         <p className="text-[9px] leading-relaxed text-zinc-400 font-bold uppercase tracking-wide">
@@ -527,7 +562,7 @@ export default function SettingsPage() {
                           <div>
                             <span className="text-[8px] uppercase font-black text-zinc-500 tracking-wider block mb-1">Primary Email</span>
                             <div className="flex items-center justify-between p-2.5 bg-zinc-950/20 border border-white/5 rounded-xl text-xs font-bold">
-                              <span>rishi005.dev@gmail.com</span>
+                              <span>{authEmail}</span>
                               <span className="text-[8.5px] font-black uppercase text-brand-emerald">Verified</span>
                             </div>
                           </div>
@@ -564,7 +599,7 @@ export default function SettingsPage() {
                       <div className="flex flex-wrap gap-4 text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider mt-2">
                         <div>Account ID: <span className="text-white">{username.replace(/^@/, '')}</span></div>
                         <div className="hidden sm:block">•</div>
-                        <div>Passport Issued: <span className="text-white">June 10, 2024</span></div>
+                        <div>Passport Issued: <span className="text-white">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'June 10, 2024'}</span></div>
                       </div>
                     </div>
                   </div>
@@ -690,18 +725,21 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Active Client Lobbies ({sessions.length})</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Active Client Lobbies ({displaySessions.length})</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {sessions.map(sess => (
+                        {displaySessions.map((sess: SessionDisplayItem, idx: number) => (
                           <div key={sess.id} className="bg-zinc-950/20 border border-white/5 p-3 rounded-2xl flex flex-col justify-between gap-3 text-left">
                             <div>
-                              <h5 className="text-[11px] font-extrabold text-white truncate">{sess.device}</h5>
-                              <p className="text-[9px] text-zinc-500 mt-1 font-bold">{sess.browser} • {sess.country}</p>
+                              <h5 className="text-[11px] font-extrabold text-white truncate">{sess.deviceInfo}</h5>
+                              <p className="text-[9px] text-zinc-500 mt-1 font-bold">IP: {sess.ipAddress}</p>
                             </div>
                             {!sess.isCurrent && (
                               <button 
-                                onClick={() => handleSignOutSession(sess.id)}
-                                className="w-full py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest text-rose-400 rounded-lg cursor-pointer"
+                                onClick={() => {
+                                  revokeSessionMutation.mutate(sess.id);
+                                  triggerToast("Session revoke initiated.");
+                                }}
+                                className="w-full py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest text-rose-400 rounded-lg cursor-pointer transition-all"
                               >
                                 Revoke Session
                               </button>

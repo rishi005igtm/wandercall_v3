@@ -31,10 +31,12 @@ function SignupCompleteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const completeProfileMutation = useCompleteProfileMutation();
-  const authUserId = useAppSelector((state) => state.auth.userId);
+  const authState = useAppSelector((state) => state.auth);
+  const authUserId = authState.userId;
+  const authName = authState.name;
 
-  const nameParam = searchParams.get("name") || "Explorer";
-  const userIdParam = searchParams.get("userId");
+  const nameParam = searchParams.get("name") || authName || "Explorer";
+  const userIdParam = searchParams.get("userId") || authUserId;
 
   // Form States
   const [username, setUsername] = useState("");
@@ -201,6 +203,7 @@ function SignupCompleteContent() {
       {
         userId: authUserId || userIdParam || "mock_user_id",
         username: username.trim(),
+        displayName: nameParam,
         bio: bio.trim() || undefined,
         locationFormatted: locationInput.trim() || undefined,
         locationLat: selectedLocation?.lat,

@@ -8,17 +8,45 @@ import {
   Patch,
   Post,
   Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { CompleteProfileRequestDto } from '../dto/complete-profile-request.dto';
 import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
 import { UpdateProfileRequestDto } from '../dto/update-profile-request.dto';
 import { UserSettingsDto } from '../dto/user-settings-dto';
 import { UserPlanDto } from '../dto/user-plan-dto';
 import { UserService } from '../services/user.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async getCurrentUser(@Req() req: any): Promise<UserProfileResponseDto> {
+    return this.userService.getProfileByUserId(req.user.userId);
+  }
+
+  @Get('profile/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyProfile(@Req() req: any): Promise<UserProfileResponseDto> {
+    return this.userService.getProfileByUserId(req.user.userId);
+  }
+
+  @Get('settings/me')
+  @UseGuards(JwtAuthGuard)
+  async getMySettings(@Req() req: any): Promise<UserSettingsDto> {
+    return this.userService.getSettings(req.user.userId);
+  }
+
+  @Get('plan/me')
+  @UseGuards(JwtAuthGuard)
+  async getMyPlan(@Req() req: any): Promise<UserPlanDto> {
+    return this.userService.getPlan(req.user.userId);
+  }
 
   @Post('profile/complete')
   @HttpCode(HttpStatus.OK)

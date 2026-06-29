@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { authService, GoogleAuthPayload, LoginPayload, RegisterPayload } from '../../lib/services/auth.service';
 import { setAuthSession, setEmailVerified, clearAuthSession } from '../../lib/store/slices/authSlice';
@@ -73,6 +73,26 @@ export function useLogoutMutation() {
       dispatch(clearAuthSession());
       queryClient.clear();
       router.push('/login');
+    },
+  });
+}
+
+export function useActiveSessionsQuery(enabled = true) {
+  return useQuery({
+    queryKey: ['auth', 'sessions'],
+    queryFn: () => authService.getActiveSessions(),
+    enabled,
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useRevokeSessionMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (sessionId: string) => authService.revokeSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
     },
   });
 }

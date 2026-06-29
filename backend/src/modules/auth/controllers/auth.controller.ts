@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Req, Post } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { RegisterRequestDto } from '../dto/register-request.dto';
 import { LoginRequestDto } from '../dto/login-request.dto';
@@ -6,6 +6,8 @@ import { GoogleAuthRequestDto } from '../dto/google-auth-request.dto';
 import { RefreshTokenRequestDto } from '../dto/refresh-token-request.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 import { AuthService } from '../services/auth.service';
+import { JwtAuthGuard } from '../guards/jwt-auth.guard';
+import { UserSessionEntity } from '../entities/user-session.entity';
 
 @Controller('auth')
 export class AuthController {
@@ -64,5 +66,22 @@ export class AuthController {
   async logout(@Body('userId') userId: string): Promise<{ message: string }> {
     await this.authService.logout(userId);
     return { message: 'Successfully logged out and session revoked.' };
+  }
+
+  @Get('sessions')
+  @UseGuards(JwtAuthGuard)
+  async getActiveSessions(@Req() req: any): Promise<UserSessionEntity[]> {
+    return this.authService.getActiveSessions(req.user.userId);
+  }
+
+  @Post('sessions/revoke/:sessionId')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  async revokeSession(
+    @Req() req: any,
+    @Param('sessionId') sessionId: string,
+  ): Promise<{ message: string }> {
+    await this.authService.revokeSessionById(req.user.userId, sessionId);
+    return { message: 'Session successfully revoked.' };
   }
 }

@@ -1,10 +1,11 @@
+"use client";
+
 import React from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import AIDiscovery from "../components/AIDiscovery";
 import Categories from "../components/Categories";
 import Trending from "../components/Trending";
-
 import AdventureDNA from "../components/AdventureDNA";
 import Campfires from "../components/Campfires";
 import CommunityStories from "../components/CommunityStories";
@@ -14,8 +15,15 @@ import HowItWorks from "../components/HowItWorks";
 import SocialProof from "../components/SocialProof";
 import FinalCTA from "../components/FinalCTA";
 import Footer from "../components/Footer";
+import { useAppSelector } from "@/lib/store/store";
+import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
+import { Sparkles, Compass, Award, Calendar, Radio } from "lucide-react";
+import Link from "next/link";
 
 export default function Home() {
+  const { isAuthenticated } = useAppSelector((state) => state.auth);
+  const { data: currentUser } = useCurrentUserQuery(isAuthenticated);
+
   return (
     <div className="flex flex-col min-h-screen bg-brand-bg text-white overflow-x-hidden font-sans">
       {/* Section 1: Floating Premium Navbar */}
@@ -33,8 +41,6 @@ export default function Home() {
 
         {/* Section 5: Trending Experiences */}
         <Trending />
-
-
 
         {/* Section 7: Adventure DNA */}
         <AdventureDNA />
@@ -58,7 +64,7 @@ export default function Home() {
         <SocialProof />
 
         {/* Section 15: Final CTA */}
-        <FinalCTA />
+        {!isAuthenticated && <FinalCTA />}
       </main>
 
       {/* Footer */}
@@ -66,4 +72,3 @@ export default function Home() {
     </div>
   );
 }
-

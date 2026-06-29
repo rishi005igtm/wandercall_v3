@@ -13,6 +13,9 @@ export class UserAuthEntity {
   passwordHash?: string;
 
   @Column({ nullable: true })
+  displayName?: string;
+
+  @Column({ nullable: true })
   googleId?: string;
 
   @Column({

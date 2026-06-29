@@ -13,6 +13,10 @@ export class CompleteProfileRequestDto {
 
   @IsOptional()
   @IsString()
+  displayName?: string;
+
+  @IsOptional()
+  @IsString()
   @MaxLength(160, { message: 'Bio cannot exceed 160 characters' })
   bio?: string;
 

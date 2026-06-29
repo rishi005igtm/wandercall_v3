@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -135,6 +136,10 @@ export class UserService {
       throw new NotFoundException('User account not found.');
     }
 
+    if (!authUser.isEmailVerified) {
+      throw new ForbiddenException('Email address must be verified before completing profile setup.');
+    }
+
     const usernameCheck = await this.checkUsernameAvailability(dto.username);
     const existingProfile = await this.userRepository.findByUserId(dto.userId);
     
@@ -142,7 +147,7 @@ export class UserService {
       throw new ConflictException('Username is already taken. Please choose another username.');
     }
 
-    const displayName = authUser.email ? authUser.email.split('@')[0] : 'Explorer';
+    const displayName = dto.displayName || authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : 'Explorer');
     const cleanUsername = dto.username.toLowerCase();
     const generatedProfileUrl = `https://wandercall.io/${cleanUsername}`;
 
@@ -150,7 +155,7 @@ export class UserService {
       id: existingProfile ? existingProfile.id : randomUUID(),
       userId: dto.userId,
       username: cleanUsername,
-      displayName: existingProfile?.displayName || displayName,
+      displayName: dto.displayName || existingProfile?.displayName || authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : 'Explorer'),
       avatarUrl: dto.avatarUrl || existingProfile?.avatarUrl || undefined,
       bio: dto.bio || existingProfile?.bio || undefined,
       locationFormatted: dto.locationFormatted || existingProfile?.locationFormatted || undefined,
@@ -284,11 +289,14 @@ export class UserService {
     return this.getPlan(userId);
   }
 
-  private mapProfileToDto(profile: UserProfileEntity, accountStatus: string): UserProfileResponseDto {
+  private async mapProfileToDto(profile: UserProfileEntity, accountStatus: string): Promise<UserProfileResponseDto> {
+    const authUser = await this.authRepository.findById(profile.userId);
     return {
       userId: profile.userId,
       username: profile.username,
       displayName: profile.displayName,
+      email: authUser?.email || '',
+      isEmailVerified: authUser?.isEmailVerified ?? false,
       avatarUrl: profile.avatarUrl,
       bio: profile.bio,
       locationFormatted: profile.locationFormatted,
