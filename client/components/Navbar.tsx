@@ -92,7 +92,8 @@ export default function Navbar({
   const handleLogout = async () => {
     try {
       if (userId) {
-        await httpClient.post("/auth/logout", { userId });
+        const refreshToken = typeof window !== "undefined" ? localStorage.getItem("wc_refresh_token") : null;
+        await httpClient.post("/auth/logout", { userId, refreshToken });
       }
     } catch {
       // Ignore network errors on logout
@@ -419,18 +420,21 @@ export default function Navbar({
                     {navLinks.map((link, index) => {
                       const Icon = link.icon;
                       return (
-                        <Link key={link.name} href={getHref(link.href, link.name)} passHref legacyBehavior>
-                          <motion.a
+                        <motion.div
+                          key={link.name}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: index * 0.05 }}
+                        >
+                          <Link
+                            href={getHref(link.href, link.name)}
                             onClick={() => setIsMobileMenuOpen(false)}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
                             className="flex items-center gap-4 px-4 py-3 rounded-xl hover:bg-white/5 text-base font-semibold text-zinc-300 hover:text-white transition-all cursor-pointer"
                           >
                             <Icon className="h-5 w-5 text-brand-indigo" />
                             {link.name}
-                          </motion.a>
-                        </Link>
+                          </Link>
+                        </motion.div>
                       );
                     })}
                   </div>

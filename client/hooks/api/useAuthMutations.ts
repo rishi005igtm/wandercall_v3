@@ -96,3 +96,25 @@ export function useRevokeSessionMutation() {
     },
   });
 }
+
+export function useRevokeOtherSessionsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authService.revokeOtherSessions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
+    },
+  });
+}
+
+export function useRevokeAllSessionsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => authService.revokeAllSessions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
+    },
+  });
+}

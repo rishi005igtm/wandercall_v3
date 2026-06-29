@@ -322,8 +322,10 @@ Every user account transitions through explicit, immutable lifecycle states:
 ### 🔑 Session Management & Multi-Device Architecture
 
 - **Token Lifecycle**: Short-lived access tokens (1 hour) paired with cryptographically secure, rotating refresh tokens (7 days).
-- **Multi-Device Tracking**: Each login creates an active record in `UserSessionEntity` storing `userId`, `refreshTokenHash`, `ipAddress`, and `deviceInfo`.
-- **Granular Revocation**: Supports logging out a single device (`/auth/logout`) or terminating all active global sessions across Web, iOS, and Android devices upon security events.
+- **Single Active Session per Device Policy**: To prevent database session proliferation and redundant row accumulation, Wandercall enforces a single active session per unique device/browser identity (`deviceFingerprint = SHA256(userId + OS + Browser + DeviceType)`).
+- **Session Reuse on Authentication**: Logging in or authenticating from a known browser/device updates the existing unrevoked `UserSessionEntity` record (refresh token hash, IP address, and `lastActive` timestamps) rather than inserting duplicate records.
+- **Single-Row Refresh Token Rotation**: Refreshing access tokens (`/api/v1/auth/refresh`) verifies the active session ID, updates the session's refresh token hash, and advances expiration without creating new database rows.
+- **Granular & Batch Revocation**: Supports logging out specific devices (`/auth/logout`), revoking individual session IDs (`/auth/sessions/revoke/:sessionId`), terminating all secondary devices (`/auth/sessions/revoke-others`), or revoking all global active sessions (`/auth/sessions/revoke-all`).
 
 ---
 

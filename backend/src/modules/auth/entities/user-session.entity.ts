@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('user_sessions')
 export class UserSessionEntity {
@@ -15,16 +15,34 @@ export class UserSessionEntity {
   deviceInfo?: string;
 
   @Column({ nullable: true })
+  deviceType?: string;
+
+  @Column({ nullable: true })
+  operatingSystem?: string;
+
+  @Column({ nullable: true })
+  browser?: string;
+
+  @Column({ nullable: true })
+  deviceFingerprint?: string;
+
+  @Column({ nullable: true })
   ipAddress?: string;
 
   @Column({ default: false })
   isRevoked: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  lastActive?: Date;
 
   @Column({ type: 'timestamp' })
   expiresAt: Date;
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @UpdateDateColumn()
+  updatedAt: Date;
 
   constructor(partial: Partial<UserSessionEntity>) {
     Object.assign(this, partial);

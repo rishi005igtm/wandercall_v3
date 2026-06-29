@@ -41,7 +41,7 @@ import {
 import { useAppSelector } from "@/lib/store/store";
 import { useUserProfileQuery, useUserSettingsQuery, useUserPlanQuery } from "@/hooks/api/useUserQueries";
 import { useUpdateProfileMutation, useUpdateSettingsMutation, useUpdatePlanMutation } from "@/hooks/api/useUserMutations";
-import { useActiveSessionsQuery, useRevokeSessionMutation } from "@/hooks/api/useAuthMutations";
+import { useActiveSessionsQuery, useRevokeSessionMutation, useRevokeOtherSessionsMutation, useRevokeAllSessionsMutation } from "@/hooks/api/useAuthMutations";
 import { UserSession } from "@/lib/services/auth.service";
 
 // ==========================================
@@ -62,6 +62,8 @@ interface SessionDisplayItem {
   deviceInfo: string;
   ipAddress: string;
   isCurrent?: boolean;
+  createdAt?: string;
+  lastActive?: string;
 }
 
 const INITIAL_SESSIONS: ActiveSession[] = [
@@ -111,6 +113,8 @@ export default function SettingsPage() {
   const updateSettingsMutation = useUpdateSettingsMutation(authUserId);
   const updatePlanMutation = useUpdatePlanMutation(authUserId);
   const revokeSessionMutation = useRevokeSessionMutation();
+  const revokeOtherSessionsMutation = useRevokeOtherSessionsMutation();
+  const revokeAllSessionsMutation = useRevokeAllSessionsMutation();
 
   const [activeTab, setActiveTab] = useState<SettingsTab>("profile");
   const [searchQuery, setSearchQuery] = useState("");
@@ -128,11 +132,13 @@ export default function SettingsPage() {
 
   const displaySessions: SessionDisplayItem[] = useMemo(() => {
     if (activeSessionsList && activeSessionsList.length > 0) {
-      return activeSessionsList.map((s: UserSession, idx: number) => ({
+      return activeSessionsList.map((s: UserSession) => ({
         id: s.id,
         deviceInfo: s.deviceInfo || 'Explorer Node',
         ipAddress: s.ipAddress || '127.0.0.1',
-        isCurrent: idx === 0,
+        isCurrent: Boolean(s.isCurrent),
+        createdAt: s.createdAt,
+        lastActive: s.lastActive,
       }));
     }
     return sessions.map((s: ActiveSession) => ({
@@ -732,13 +738,39 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Active Client Lobbies ({displaySessions.length})</h4>
+                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-white/5 pb-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Active Client Lobbies ({displaySessions.length})</h4>
+                        {displaySessions.length > 1 && (
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                revokeOtherSessionsMutation.mutate();
+                                triggerToast("Revoked all other active client sessions.");
+                              }}
+                              className="px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-[9px] font-black uppercase tracking-wider text-rose-400 rounded-lg transition-all cursor-pointer"
+                            >
+                              Revoke Other Devices
+                            </button>
+                          </div>
+                        )}
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {displaySessions.map((sess: SessionDisplayItem, idx: number) => (
-                          <div key={sess.id} className="bg-zinc-950/20 border border-white/5 p-3 rounded-2xl flex flex-col justify-between gap-3 text-left">
+                        {displaySessions.map((sess: SessionDisplayItem) => (
+                          <div key={sess.id} className={`p-4 rounded-2xl flex flex-col justify-between gap-3 text-left border transition-all ${
+                            sess.isCurrent ? "bg-brand-cyan/5 border-brand-cyan/30" : "bg-zinc-950/20 border-white/5"
+                          }`}>
                             <div>
-                              <h5 className="text-[11px] font-extrabold text-white truncate">{sess.deviceInfo}</h5>
-                              <p className="text-[9px] text-zinc-500 mt-1 font-bold">IP: {sess.ipAddress}</p>
+                              <div className="flex items-center justify-between gap-2">
+                                <h5 className="text-[11px] font-extrabold text-white truncate">{sess.deviceInfo}</h5>
+                                {sess.isCurrent ? (
+                                  <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-[8px] font-black text-emerald-400 rounded-full flex items-center gap-1 shrink-0">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Current Device
+                                  </span>
+                                ) : (
+                                  <span className="text-[8px] font-mono text-zinc-500 uppercase">Secondary</span>
+                                )}
+                              </div>
+                              <p className="text-[9px] text-zinc-400 mt-1.5 font-mono">IP: {sess.ipAddress}</p>
                             </div>
                             {!sess.isCurrent && (
                               <button 
@@ -746,7 +778,7 @@ export default function SettingsPage() {
                                   revokeSessionMutation.mutate(sess.id);
                                   triggerToast("Session revoke initiated.");
                                 }}
-                                className="w-full py-1 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest text-rose-400 rounded-lg cursor-pointer transition-all"
+                                className="w-full py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-[9px] font-black uppercase tracking-widest text-rose-400 rounded-lg cursor-pointer transition-all"
                               >
                                 Revoke Session
                               </button>

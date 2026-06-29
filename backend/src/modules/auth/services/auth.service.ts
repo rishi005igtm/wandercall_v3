@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
+import { createHash, randomUUID } from 'crypto';
 import { AuthResponseDto, AuthUserDto } from '../dto/auth-response.dto';
 import { GoogleAuthRequestDto } from '../dto/google-auth-request.dto';
 import { LoginRequestDto } from '../dto/login-request.dto';
@@ -152,42 +152,96 @@ export class AuthService implements IAuthService {
     return this.createSessionAndTokens(user, name, ipAddress, userAgent);
   }
 
-  async refreshToken(dto: RefreshTokenRequestDto): Promise<AuthResponseDto> {
+  async refreshToken(dto: RefreshTokenRequestDto, ipAddress?: string, userAgent?: string): Promise<AuthResponseDto> {
     if (!dto.refreshToken) {
       throw new UnauthorizedException('Refresh token is missing');
     }
     
-    // For seamless session refresh, verify or decode refreshToken
     let payload: any;
     try {
       payload = this.jwtService.verify(dto.refreshToken);
     } catch {
-      // In case refreshToken is an opaque string, extract or issue new
-    }
-
-    const userId = payload?.sub;
-    let user: UserAuthEntity | null = null;
-    if (userId) {
-      user = await this.authRepository.findById(userId);
-    }
-
-    if (!user) {
       throw new UnauthorizedException('Invalid or expired refresh token session.');
     }
 
+    const userId = payload?.sub;
+    const sessionId = payload?.sessionId;
+
+    if (!userId || !sessionId) {
+      throw new UnauthorizedException('Invalid refresh token payload.');
+    }
+
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      throw new UnauthorizedException('User account not found.');
+    }
+
+    const session = await this.authRepository.findSessionById(sessionId);
+    if (!session || session.isRevoked || session.userId !== userId) {
+      throw new UnauthorizedException('Session has been revoked or expired.');
+    }
+
+    const accessToken = this.jwtService.sign({
+      sub: user.id,
+      sessionId: session.id,
+      email: user.email,
+      accountStatus: user.accountStatus,
+    });
+
+    const newRefreshToken = this.jwtService.sign(
+      { sub: user.id, sessionId: session.id },
+      { expiresIn: '7d' },
+    );
+
+    const refreshTokenHash = await bcrypt.hash(newRefreshToken, 8);
+
+    session.refreshTokenHash = refreshTokenHash;
+    session.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    session.lastActive = new Date();
+    if (ipAddress) session.ipAddress = ipAddress;
+    await this.authRepository.saveSession(session);
+
     const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
-    return this.createSessionAndTokens(user, displayName);
+
+    const authUser: AuthUserDto = {
+      id: user.id,
+      email: user.email,
+      name: displayName,
+      accountStatus: user.accountStatus,
+      isEmailVerified: user.isEmailVerified,
+    };
+
+    return {
+      user: authUser,
+      accessToken,
+      refreshToken: newRefreshToken,
+      expiresIn: 3600,
+    };
   }
 
   async logout(userId: string, refreshToken?: string): Promise<void> {
+    if (refreshToken) {
+      try {
+        const payload: any = this.jwtService.decode(refreshToken);
+        if (payload?.sessionId) {
+          await this.authRepository.deleteSessionByIdAndUser(payload.sessionId, userId);
+          return;
+        }
+      } catch {
+        // Fallback to deleting all user sessions
+      }
+    }
     if (userId) {
-      await this.authRepository.revokeAllUserSessions(userId);
-      this.logger.log(`Sessions revoked successfully for user ${userId}`);
+      await this.authRepository.deleteAllUserSessions(userId);
     }
   }
 
   async revokeAllSessions(userId: string): Promise<void> {
-    await this.authRepository.revokeAllUserSessions(userId);
+    await this.authRepository.deleteAllUserSessions(userId);
+  }
+
+  async revokeOtherSessions(userId: string, currentSessionId: string): Promise<void> {
+    await this.authRepository.deleteOtherUserSessions(userId, currentSessionId);
   }
 
   async getActiveSessions(userId: string): Promise<UserSessionEntity[]> {
@@ -197,12 +251,21 @@ export class AuthService implements IAuthService {
   async revokeSessionById(userId: string, sessionId: string): Promise<void> {
     const session = await this.authRepository.findSessionById(sessionId);
     if (session && session.userId === userId) {
-      await this.authRepository.revokeSession(sessionId);
+      await this.authRepository.deleteSessionByIdAndUser(sessionId, userId);
     }
   }
 
-  private parseDeviceInfo(userAgent?: string): string {
-    if (!userAgent) return 'Unknown Device';
+  private extractDeviceMetadata(userAgent?: string, userId?: string) {
+    if (!userAgent) {
+      const fp = createHash('sha256').update(`${userId || ''}:Desktop PC:Browser:Desktop`).digest('hex').slice(0, 16);
+      return {
+        deviceType: 'Desktop',
+        operatingSystem: 'Desktop PC',
+        browser: 'Browser',
+        deviceInfo: 'Desktop PC • Browser',
+        deviceFingerprint: fp,
+      };
+    }
 
     let os = 'Desktop PC';
     if (/windows nt 10/i.test(userAgent)) os = 'Windows PC';
@@ -219,7 +282,20 @@ export class AuthService implements IAuthService {
     else if (/edg/i.test(userAgent)) browser = 'Edge';
     else if (/opr/i.test(userAgent)) browser = 'Opera';
 
-    return `${os} • ${browser}`;
+    let deviceType = 'Desktop';
+    if (/mobile|iphone|ipod|android/i.test(userAgent)) deviceType = 'Mobile';
+    else if (/ipad|tablet/i.test(userAgent)) deviceType = 'Tablet';
+
+    const rawFp = `${userId || ''}:${os}:${browser}:${deviceType}`;
+    const deviceFingerprint = createHash('sha256').update(rawFp).digest('hex').slice(0, 16);
+
+    return {
+      deviceType,
+      operatingSystem: os,
+      browser,
+      deviceInfo: `${os} • ${browser}`,
+      deviceFingerprint,
+    };
   }
 
   private async createSessionAndTokens(
@@ -228,10 +304,33 @@ export class AuthService implements IAuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<AuthResponseDto> {
-    const sessionId = randomUUID();
+    const meta = this.extractDeviceMetadata(userAgent, user.id);
+    const resolvedIp = ipAddress === '::1' ? '127.0.0.1' : (ipAddress || '127.0.0.1');
+
+    // Enterprise session reuse: check if an active session exists for this device fingerprint
+    let session = await this.authRepository.findActiveSessionByFingerprint(user.id, meta.deviceFingerprint);
+    let sessionId: string;
+
+    if (session) {
+      sessionId = session.id;
+    } else {
+      sessionId = randomUUID();
+      // Enforce Enterprise Limit: Maximum 4 concurrent active sessions per user profile
+      const activeSessions = await this.authRepository.findActiveSessionsByUserId(user.id);
+      if (activeSessions.length >= 4) {
+        const sorted = activeSessions.sort(
+          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        );
+        const numToDelete = activeSessions.length - 3;
+        for (let i = 0; i < numToDelete; i++) {
+          await this.authRepository.deleteSession(sorted[i].id);
+        }
+      }
+    }
 
     const accessToken = this.jwtService.sign({
       sub: user.id,
+      sessionId,
       email: user.email,
       accountStatus: user.accountStatus,
     });
@@ -243,20 +342,30 @@ export class AuthService implements IAuthService {
 
     const refreshTokenHash = await bcrypt.hash(refreshToken, 8);
 
-    const formattedDeviceInfo = this.parseDeviceInfo(userAgent);
-
-    const session = new UserSessionEntity({
-      id: sessionId,
-      userId: user.id,
-      refreshTokenHash,
-      deviceInfo: formattedDeviceInfo,
-      ipAddress: ipAddress || '127.0.0.1',
-      isRevoked: false,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      createdAt: new Date(),
-    });
-
-    await this.authRepository.createSession(session);
+    if (session) {
+      session.refreshTokenHash = refreshTokenHash;
+      session.ipAddress = resolvedIp;
+      session.lastActive = new Date();
+      session.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await this.authRepository.saveSession(session);
+    } else {
+      session = new UserSessionEntity({
+        id: sessionId,
+        userId: user.id,
+        refreshTokenHash,
+        deviceInfo: meta.deviceInfo,
+        deviceType: meta.deviceType,
+        operatingSystem: meta.operatingSystem,
+        browser: meta.browser,
+        deviceFingerprint: meta.deviceFingerprint,
+        ipAddress: resolvedIp,
+        isRevoked: false,
+        lastActive: new Date(),
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        createdAt: new Date(),
+      });
+      await this.authRepository.createSession(session);
+    }
 
     const authUser: AuthUserDto = {
       id: user.id,

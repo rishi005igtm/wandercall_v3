@@ -33,8 +33,13 @@ export interface UserSession {
   id: string;
   userId: string;
   deviceInfo: string;
+  deviceType?: string;
+  operatingSystem?: string;
+  browser?: string;
   ipAddress: string;
   isRevoked: boolean;
+  isCurrent?: boolean;
+  lastActive?: string;
   expiresAt: string;
   createdAt: string;
 }
@@ -61,7 +66,8 @@ export const authService = {
   },
 
   async logout(userId: string): Promise<void> {
-    await httpClient.post('/auth/logout', { userId });
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('wc_refresh_token') : null;
+    await httpClient.post('/auth/logout', { userId, refreshToken });
   },
 
   async verifyEmail(email: string, code: string): Promise<{ verified: boolean; message: string }> {
@@ -76,6 +82,16 @@ export const authService = {
 
   async revokeSession(sessionId: string): Promise<{ message: string }> {
     const { data } = await httpClient.post<{ message: string }>(`/auth/sessions/revoke/${sessionId}`);
+    return data;
+  },
+
+  async revokeOtherSessions(): Promise<{ message: string }> {
+    const { data } = await httpClient.post<{ message: string }>('/auth/sessions/revoke-others');
+    return data;
+  },
+
+  async revokeAllSessions(): Promise<{ message: string }> {
+    const { data } = await httpClient.post<{ message: string }>('/auth/sessions/revoke-all');
     return data;
   },
 };
