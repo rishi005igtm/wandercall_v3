@@ -505,12 +505,16 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Username Handle</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Username Handle</label>
+                          <span className="text-[8px] font-mono text-zinc-500 flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Read-Only</span>
+                        </div>
                         <input
                           type="text"
                           value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          className="w-full px-3 py-2 bg-zinc-900/50 border border-white/5 rounded-xl text-xs text-white outline-none focus:border-brand-purple/30 font-bold"
+                          disabled
+                          readOnly
+                          className="w-full px-3 py-2 bg-zinc-950/40 border border-white/5 rounded-xl text-xs text-zinc-400 font-bold outline-none cursor-not-allowed select-none opacity-70"
                         />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
@@ -534,13 +538,16 @@ export default function SettingsPage() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Travel Portfolio URL</label>
+                        <div className="flex items-center justify-between">
+                          <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Travel Portfolio URL</label>
+                          <span className="text-[8px] font-mono text-zinc-500 flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Read-Only</span>
+                        </div>
                         <input
                           type="text"
                           value={website}
-                          placeholder="https://wandercall.io/username"
-                          onChange={(e) => setWebsite(e.target.value)}
-                          className="w-full px-3 py-2 bg-zinc-900/50 border border-white/5 rounded-xl text-xs text-white outline-none focus:border-brand-purple/30 font-bold"
+                          disabled
+                          readOnly
+                          className="w-full px-3 py-2 bg-zinc-950/40 border border-white/5 rounded-xl text-xs text-zinc-400 font-bold outline-none cursor-not-allowed select-none opacity-70"
                         />
                       </div>
                     </div>
@@ -942,33 +949,58 @@ export default function SettingsPage() {
               Selected: {activeNavItem.label} • System synced
             </span>
             <button 
-              onClick={() => {
-                if (authUserId) {
-                  updateProfileMutation.mutate({
-                    displayName,
-                    bio,
-                    locationFormatted: location,
-                    profileUrl: website,
-                  });
-                  updateSettingsMutation.mutate({
-                    is2faEnabled,
-                    privacyMatrix,
-                    notifications,
-                    travelRadius,
-                    budgetRange,
-                    difficulty,
-                    selectedTags,
-                    connectedNetworks: integrations,
-                  });
-                  updatePlanMutation.mutate({
-                    selectedTier,
-                    billingCycle,
-                    paymentCard,
-                  });
+              disabled={updateProfileMutation.isPending || updateSettingsMutation.isPending || updatePlanMutation.isPending}
+              onClick={async () => {
+                if (!authUserId) return;
+                try {
+                  if (activeTab === "profile" || activeTab === "account") {
+                    await updateProfileMutation.mutateAsync({
+                      displayName,
+                      bio,
+                      locationFormatted: location,
+                    });
+                    triggerToast("Profile settings saved successfully!");
+                  } else if (activeTab === "plans") {
+                    await updatePlanMutation.mutateAsync({
+                      selectedTier,
+                      billingCycle,
+                      paymentCard,
+                    });
+                    triggerToast("Plan settings saved successfully!");
+                  } else if (activeTab === "security") {
+                    await updateSettingsMutation.mutateAsync({
+                      is2faEnabled,
+                    });
+                    triggerToast("Security settings saved successfully!");
+                  } else if (activeTab === "privacy") {
+                    await updateSettingsMutation.mutateAsync({
+                      privacyMatrix,
+                    });
+                    triggerToast("Privacy settings saved successfully!");
+                  } else if (activeTab === "notifications") {
+                    await updateSettingsMutation.mutateAsync({
+                      notifications,
+                    });
+                    triggerToast("Notification preferences saved successfully!");
+                  } else if (activeTab === "adventure") {
+                    await updateSettingsMutation.mutateAsync({
+                      travelRadius,
+                      budgetRange,
+                      difficulty,
+                      selectedTags,
+                    });
+                    triggerToast("Adventure preferences saved successfully!");
+                  } else if (activeTab === "integrations") {
+                    await updateSettingsMutation.mutateAsync({
+                      connectedNetworks: integrations,
+                    });
+                    triggerToast("Connected networks saved successfully!");
+                  }
+                } catch {
+                  triggerToast("Failed to save configuration settings.");
                 }
-                triggerToast("Configuration settings synced securely!");
               }}
-              className="px-4 py-2 bg-brand-cyan text-zinc-950 text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-cyan-400 transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center gap-1.5"
+              className="px-4 py-2 bg-brand-cyan text-zinc-950 text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-cyan-400 transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center gap-1.5 disabled:opacity-50"
             >
               {(updateProfileMutation.isPending || updateSettingsMutation.isPending || updatePlanMutation.isPending) && (
                 <Loader2 className="h-3 w-3 animate-spin" />

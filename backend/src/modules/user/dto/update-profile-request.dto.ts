@@ -19,9 +19,5 @@ export class UpdateProfileRequestDto {
 
   @IsOptional()
   @IsString()
-  profileUrl?: string;
-
-  @IsOptional()
-  @IsString()
   phoneCoordinate?: string;
 }

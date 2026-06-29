@@ -76,12 +76,24 @@ export class UserController {
     return this.userService.getProfileByUserId(userId);
   }
 
+  @Patch('profile/me')
+  @UseGuards(JwtAuthGuard)
+  async updateMyProfile(
+    @Req() req: any,
+    @Body() dto: UpdateProfileRequestDto,
+  ): Promise<UserProfileResponseDto> {
+    return this.userService.updateProfile(req.user.userId, dto);
+  }
+
   @Patch('profile/:userId')
+  @UseGuards(JwtAuthGuard)
   async updateProfile(
+    @Req() req: any,
     @Param('userId') userId: string,
     @Body() dto: UpdateProfileRequestDto,
   ): Promise<UserProfileResponseDto> {
-    return this.userService.updateProfile(userId, dto);
+    const targetId = req.user?.userId || userId;
+    return this.userService.updateProfile(targetId, dto);
   }
 
   @Get('settings/:userId')
@@ -89,12 +101,24 @@ export class UserController {
     return this.userService.getSettings(userId);
   }
 
+  @Patch('settings/me')
+  @UseGuards(JwtAuthGuard)
+  async updateMySettings(
+    @Req() req: any,
+    @Body() partial: Partial<UserSettingsDto>,
+  ): Promise<UserSettingsDto> {
+    return this.userService.updateSettings(req.user.userId, partial);
+  }
+
   @Patch('settings/:userId')
+  @UseGuards(JwtAuthGuard)
   async updateSettings(
+    @Req() req: any,
     @Param('userId') userId: string,
     @Body() partial: Partial<UserSettingsDto>,
   ): Promise<UserSettingsDto> {
-    return this.userService.updateSettings(userId, partial);
+    const targetId = req.user?.userId || userId;
+    return this.userService.updateSettings(targetId, partial);
   }
 
   @Get('plan/:userId')
@@ -102,11 +126,23 @@ export class UserController {
     return this.userService.getPlan(userId);
   }
 
+  @Patch('plan/me')
+  @UseGuards(JwtAuthGuard)
+  async updateMyPlan(
+    @Req() req: any,
+    @Body() partial: Partial<UserPlanDto>,
+  ): Promise<UserPlanDto> {
+    return this.userService.updatePlan(req.user.userId, partial);
+  }
+
   @Patch('plan/:userId')
+  @UseGuards(JwtAuthGuard)
   async updatePlan(
+    @Req() req: any,
     @Param('userId') userId: string,
     @Body() partial: Partial<UserPlanDto>,
   ): Promise<UserPlanDto> {
-    return this.userService.updatePlan(userId, partial);
+    const targetId = req.user?.userId || userId;
+    return this.userService.updatePlan(targetId, partial);
   }
 }

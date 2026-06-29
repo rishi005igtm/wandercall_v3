@@ -235,7 +235,6 @@ export class UserService {
     if (dto.bio !== undefined) profile.bio = dto.bio;
     if (dto.avatarUrl !== undefined) profile.avatarUrl = dto.avatarUrl;
     if (dto.locationFormatted !== undefined) profile.locationFormatted = dto.locationFormatted;
-    if (dto.profileUrl !== undefined) profile.profileUrl = dto.profileUrl;
     if (dto.phoneCoordinate !== undefined) profile.phoneCoordinate = dto.phoneCoordinate;
 
     profile.updatedAt = new Date();

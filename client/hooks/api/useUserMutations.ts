@@ -30,6 +30,7 @@ export function useUpdateProfileMutation(userId: string | null) {
     onSuccess: (data) => {
       queryClient.setQueryData(QUERY_KEYS.USER.PROFILE(data.userId), data);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.PROFILE(data.userId) });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.CURRENT });
     },
   });
 }
