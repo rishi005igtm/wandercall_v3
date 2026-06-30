@@ -39,6 +39,7 @@ export interface UserProfileResponse {
   followingCount?: number;
   relationshipState?: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self';
   dnaBadges?: any;
+  role?: string;
   accountStatus: 'PROFILE_INCOMPLETE' | 'ACTIVE' | string;
   createdAt: string;
 }

@@ -12,6 +12,7 @@ import { UserSessionEntity } from './entities/user-session.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 @Module({
   imports: [
@@ -29,7 +30,7 @@ import { OptionalJwtAuthGuard } from './guards/optional-jwt-auth.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, MailService, JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard],
-  exports: [AuthService, AuthRepository, MailService, JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard, PassportModule, JwtModule, TypeOrmModule],
+  providers: [AuthService, AuthRepository, MailService, JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
+  exports: [AuthService, AuthRepository, MailService, JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard, PassportModule, JwtModule, TypeOrmModule],
 })
 export class AuthModule {}

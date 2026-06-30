@@ -1,5 +1,6 @@
 import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 import { AccountStatus } from '../enums/account-status.enum';
+import { UserRole } from '../enums/user-role.enum';
 
 @Entity('users_auth')
 export class UserAuthEntity {
@@ -17,6 +18,13 @@ export class UserAuthEntity {
 
   @Column({ nullable: true })
   googleId?: string;
+
+  @Column({
+    type: 'varchar',
+    length: 50,
+    default: UserRole.INDIVIDUAL,
+  })
+  role: UserRole;
 
   @Column({
     type: 'enum',

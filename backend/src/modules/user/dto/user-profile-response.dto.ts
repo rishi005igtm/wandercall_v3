@@ -1,3 +1,5 @@
+import { UserRole } from '../../auth/enums/user-role.enum';
+
 export class UserProfileResponseDto {
   userId: string;
   username: string;
@@ -25,6 +27,7 @@ export class UserProfileResponseDto {
   dnaBadges?: any;
   followerCount: number;
   followingCount: number;
+  role: UserRole;
   accountStatus: string;
   createdAt: Date;
 }

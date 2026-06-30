@@ -21,7 +21,7 @@ const initialState: AuthState = {
   userId: null,
   email: null,
   name: null,
-  role: 'explorer',
+  role: 'INDIVIDUAL',
   accountStatus: null,
   isEmailVerified: false,
 };

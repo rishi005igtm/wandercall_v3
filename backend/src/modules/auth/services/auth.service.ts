@@ -16,6 +16,7 @@ import { RegisterRequestDto } from '../dto/register-request.dto';
 import { UserAuthEntity } from '../entities/user-auth.entity';
 import { UserSessionEntity } from '../entities/user-session.entity';
 import { AccountStatus } from '../enums/account-status.enum';
+import { UserRole } from '../enums/user-role.enum';
 import { IAuthService } from '../interfaces/auth-service.interface';
 import { AuthRepository } from '../repositories/auth.repository';
 import { MailService } from './mail.service';
@@ -52,6 +53,7 @@ export class AuthService implements IAuthService {
       email: dto.email.toLowerCase(),
       passwordHash,
       displayName: dto.name,
+      role: UserRole.INDIVIDUAL,
       accountStatus: AccountStatus.PROFILE_INCOMPLETE,
       isEmailVerified: false,
       verificationCode,
@@ -165,6 +167,7 @@ export class AuthService implements IAuthService {
         id: randomUUID(),
         email: email.toLowerCase(),
         googleId,
+        role: UserRole.INDIVIDUAL,
         accountStatus: AccountStatus.PROFILE_INCOMPLETE,
         isEmailVerified: true,
         createdAt: new Date(),
@@ -210,6 +213,7 @@ export class AuthService implements IAuthService {
       sessionId: session.id,
       email: user.email,
       accountStatus: user.accountStatus,
+      role: user.role,
     });
 
     const newRefreshToken = this.jwtService.sign(
@@ -231,6 +235,7 @@ export class AuthService implements IAuthService {
       id: user.id,
       email: user.email,
       name: displayName,
+      role: user.role,
       accountStatus: user.accountStatus,
       isEmailVerified: user.isEmailVerified,
     };
@@ -357,6 +362,7 @@ export class AuthService implements IAuthService {
       sessionId,
       email: user.email,
       accountStatus: user.accountStatus,
+      role: user.role,
     });
 
     const refreshToken = this.jwtService.sign(
@@ -395,6 +401,7 @@ export class AuthService implements IAuthService {
       id: user.id,
       email: user.email,
       name,
+      role: user.role,
       accountStatus: user.accountStatus,
       isEmailVerified: user.isEmailVerified,
     };

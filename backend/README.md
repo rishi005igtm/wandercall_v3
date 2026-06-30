@@ -534,5 +534,40 @@ sequenceDiagram
 - Lists connections matching optional search queries, supporting cursor pagination.
 - **Response**: `{ items: FollowerPreviewDto[], nextCursor?: string }`
 
+---
 
+## 🔐 Enterprise Role-Based Access Control (RBAC) Foundation
 
+Wandercall features a scalable, enterprise-grade Role-Based Access Control (RBAC) foundation to prepare the platform for future Host and Admin capabilities.
+
+### 1. Centralized Role Definitions
+All authorization behaviors depend on a single source of truth defined in the shared `UserRole` enum (`backend/src/modules/auth/enums/user-role.enum.ts`):
+- `INDIVIDUAL`: Default explorer. Can book experiences, join campfires, create feed posts, and manage their profiles.
+- `HOST`: Reserved role for travel guides and organizers (unlocked post-KYC verification).
+- `ADMIN`: Reserved role for internal Wandercall administrators to manage moderation, approvals, and analytics.
+
+### 2. Separation of Concerns & Storage Strategy
+The primary user role is stored inside the **`users_auth`** credential table rather than the profile table. Because roles represent core identity authentication claims (rather than public profile metadata), this ensures:
+- Clean data separation between credentials (`users_auth`) and user profiles (`users_profiles`).
+- Tamper-proof role resolution directly inside the authentication microservice.
+
+### 3. Signup & Login Lifecycle
+- During registration (`/auth/register` or `/auth/google`), the backend automatically sets the default user role to `INDIVIDUAL`. No client-side inputs or manual role assignments are allowed.
+- Successful login responses and token refreshes include the user's active `role` inside the `AuthUserDto` response payload.
+- The JWT access token payload contains a compact `role` claim, enabling fast local authorization checks by middleware/gateways without repetitive database queries.
+
+### 4. Future Transitions & Scalability
+- **Become a Host**: Upgrading a user to a `HOST` requires only modifying the `role` field on their credentials row (e.g. after KYC validation is approved). No database migrations or architectural shifts are required.
+- **Admin Dashboard**: Admin accounts simply carry the `ADMIN` role, which grants authorization access to future administrative modules.
+
+### 5. Future-Ready Route Authorization (Guards & Decorators)
+The platform establishes decorators and guards to easily secure routes in the future:
+- **`@Roles(...roles: UserRole[])`**: Annotates target controller routes with required authorization levels.
+- **`RolesGuard`**: Extracts route role metadata using the NestJS `Reflector` and validates it against `request.user.role` extracted from the JWT token passport strategy.
+
+### 6. Existing Users Migration (Backfill)
+Existing user accounts without a designated role are handled safely at application startup. The `DatabaseInitializerService` automatically executes a safe database query on boot:
+```sql
+UPDATE users_auth SET role = 'INDIVIDUAL' WHERE role IS NULL;
+```
+This ensures zero service disruption for existing users.

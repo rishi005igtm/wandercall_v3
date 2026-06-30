@@ -16,6 +16,17 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
     try {
       // Synchronize database schema once on server boot if needed
       await this.dataSource.synchronize();
+
+      // Ensure all existing users have a role assigned
+      try {
+        await this.dataSource.query(
+          `UPDATE users_auth SET role = 'INDIVIDUAL' WHERE role IS NULL`
+        );
+        this.logger.log('Enterprise Database: Assigned default INDIVIDUAL role to any null records.');
+      } catch (err: any) {
+        this.logger.warn(`Database backfill notice: ${err.message}`);
+      }
+
       this.logger.log(
         'Enterprise Database Initialization Completed: All tables (users_auth, user_sessions, users_profile, users_settings, users_plan) verified and ready.',
       );

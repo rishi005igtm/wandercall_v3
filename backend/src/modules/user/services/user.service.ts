@@ -8,6 +8,7 @@ import {
 import { randomUUID } from 'crypto';
 import { AuthRepository } from '../../auth/repositories/auth.repository';
 import { AccountStatus } from '../../auth/enums/account-status.enum';
+import { UserRole } from '../../auth/enums/user-role.enum';
 import { CompleteProfileRequestDto } from '../dto/complete-profile-request.dto';
 import { UserProfileResponseDto } from '../dto/user-profile-response.dto';
 import { UpdateProfileRequestDto } from '../dto/update-profile-request.dto';
@@ -422,6 +423,7 @@ export class UserService {
       followerCount: profile.followerCount ?? 0,
       followingCount: profile.followingCount ?? 0,
       dnaBadges: profile.dnaBadges,
+      role: authUser?.role || UserRole.INDIVIDUAL,
       accountStatus,
       createdAt: profile.createdAt,
     };

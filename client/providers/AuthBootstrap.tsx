@@ -32,6 +32,7 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
               name: currentUser.displayName,
               accountStatus: currentUser.accountStatus,
               isEmailVerified: currentUser.isEmailVerified ?? true,
+              role: currentUser.role,
             },
           })
         );
@@ -49,6 +50,7 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
                     email: data.user.email,
                     name: data.user.name,
                     accountStatus: data.user.accountStatus,
+                    role: data.user.role,
                   },
                 })
               );
