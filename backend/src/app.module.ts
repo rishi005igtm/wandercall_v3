@@ -6,6 +6,7 @@ import { DatabaseInitializerService } from './core/providers/database-initialize
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { StorageModule } from './modules/storage/storage.module';
+import { FeedModule } from './modules/feed/feed.module';
 import { UserAuthEntity } from './modules/auth/entities/user-auth.entity';
 import { UserSessionEntity } from './modules/auth/entities/user-session.entity';
 import { UserProfileEntity } from './modules/user/entities/user-profile.entity';
@@ -45,6 +46,7 @@ import { FollowEntity } from './modules/user/entities/follow.entity';
     AuthModule,
     UserModule,
     StorageModule,
+    FeedModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],

@@ -31,4 +31,10 @@ export const QUERY_KEYS = {
   NOTIFICATIONS: {
     USER: ['notifications', 'user'] as const,
   },
+  FEED: {
+    LIST: (filters: any) => ['feed', 'list', filters] as const,
+    INFINITE: (filters: any) => ['feed', 'infinite', filters] as const,
+    USER_FEED: (username: string, category?: string) => ['feed', 'user', username, { category }] as const,
+    COMMENTS: (postId: string) => ['feed', 'comments', postId] as const,
+  },
 } as const;

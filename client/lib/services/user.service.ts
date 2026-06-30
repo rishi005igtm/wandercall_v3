@@ -146,6 +146,7 @@ export const userService = {
     formData.append('file', file);
     const { data } = await httpClient.post<UserProfileResponse>('/users/profile/avatar', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
     });
     return data;
   },
@@ -155,6 +156,7 @@ export const userService = {
     formData.append('file', file);
     const { data } = await httpClient.post<UserProfileResponse>('/users/profile/cover', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 90000,
     });
     return data;
   },

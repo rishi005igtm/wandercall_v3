@@ -22,11 +22,13 @@ import {
   Lock,
   ChevronRight,
   Flame,
-  CheckCircle2
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 import { useAppSelector } from "@/lib/store/store";
 import Navbar from "@/components/Navbar";
 import LocationSearch from "@/components/location/LocationSearch";
+import { useCreatePostMutation } from "@/hooks/api/useFeed";
 
 // Popular adventure categories matching feed presets
 const categories = [
@@ -53,14 +55,14 @@ export default function CreatePostPage() {
   const [postType, setPostType] = useState<string>("story");
   const [postTitle, setPostTitle] = useState("");
   const [postLocation, setPostLocation] = useState<{ formatted_address: string; latitude: number; longitude: number } | null>(null);
-  const [postDuration, setPostDuration] = useState("");
-  const [postCost, setPostCost] = useState("");
   const [postText, setPostText] = useState("");
   const [visibility, setVisibility] = useState<"Public" | "Friends" | "Community">("Public");
 
   // Media attachments
   const [attachedImages, setAttachedImages] = useState<string[]>([]);
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [attachedVoice, setAttachedVoice] = useState<{ name: string; duration: number } | null>(null);
+  const [voiceFile, setVoiceFile] = useState<File | null>(null);
 
   // UI state variables
   const [activeTab, setActiveTab] = useState<"media" | "details" | "story">("media");
@@ -71,9 +73,50 @@ export default function CreatePostPage() {
   const [isAiEnhancing, setIsAiEnhancing] = useState(false);
 
   // Validation helpers
-  const isMediaValid = attachedImages.length >= 1;
+  const isMediaValid = imageFiles.length >= 1;
   const isDetailsValid = postTitle.trim() !== "" && postLocation !== null;
   const isStoryValid = postText.trim().length >= 50;
+
+  // Draft Preservation local storage logic
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const draft = localStorage.getItem("wc_post_draft");
+      if (draft) {
+        try {
+          const parsed = JSON.parse(draft);
+          setPostType(parsed.postType || "story");
+          setPostTitle(parsed.postTitle || "");
+          setPostText(parsed.postText || "");
+          setVisibility(parsed.visibility || "Public");
+          if (parsed.postLocation) {
+            setPostLocation(parsed.postLocation);
+          }
+          triggerToast("Restored draft details!");
+        } catch {
+          // Ignore parsing issues
+        }
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const draftObj = {
+        postType,
+        postTitle,
+        postText,
+        visibility,
+        postLocation
+      };
+      localStorage.setItem("wc_post_draft", JSON.stringify(draftObj));
+    }
+  }, [postType, postTitle, postText, visibility, postLocation]);
+
+  const clearDraft = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("wc_post_draft");
+    }
+  };
 
   // Lock navigation between wizard tabs if required field constraints are not met
   const handleTabClick = (tab: "media" | "details" | "story") => {
@@ -108,8 +151,6 @@ export default function CreatePostPage() {
   };
 
   // Preset shortcut data for fast selection on mobile
-  const durationPresets = ["1 Day", "3 Days", "5 Days", "1 Week", "2 Weeks"];
-  const costPresets = ["Free", "₹1,500", "₹3,500", "₹5,000", "₹10,000+"];
   const aiTones = ["Inspiring", "Humorous", "Detailed", "Short & Sweet"];
 
   // Voice recording simulation
@@ -136,7 +177,7 @@ export default function CreatePostPage() {
   }, [isRecording]);
 
   const startRecording = () => {
-    if (attachedVoice) {
+    if (attachedVoice || voiceFile) {
       triggerToast("You can only attach 1 voice note per post.");
       return;
     }
@@ -148,8 +189,14 @@ export default function CreatePostPage() {
     setIsRecording(false);
     if (save) {
       const duration = recordingSeconds || 12;
+      
+      // Generate a mock mp3 blob and file for recorded note to comply with backend
+      const dummyAudioBlob = new Blob([new Uint8Array(100)], { type: 'audio/mp3' });
+      const mockFile = new File([dummyAudioBlob], `recorded_voice_${Date.now()}.mp3`, { type: 'audio/mp3' });
+
+      setVoiceFile(mockFile);
       setAttachedVoice({
-        name: `voice_note_${Date.now().toString().slice(-4)}.mp3`,
+        name: mockFile.name,
         duration
       });
       triggerToast("Voice note recorded!");
@@ -196,18 +243,19 @@ export default function CreatePostPage() {
     const files = Array.from(e.target.files || []);
     setValidationError(null);
 
-    // Check video
     const hasVideo = files.some(file => file.type.startsWith("video/"));
     if (hasVideo) {
       setValidationError("Videos are not allowed. Please choose images only.");
       return;
     }
 
-    const totalImages = attachedImages.length + files.length;
+    const totalImages = imageFiles.length + files.length;
     if (totalImages > 4) {
       setValidationError("You can only upload up to 4 images for a single post.");
       return;
     }
+
+    setImageFiles(prev => [...prev, ...files]);
 
     const readPromises = files.map(file => {
       return new Promise<string>((resolve) => {
@@ -230,17 +278,31 @@ export default function CreatePostPage() {
     if (!file) return;
     setValidationError(null);
 
-    if (attachedVoice) {
+    if (attachedVoice || voiceFile) {
       triggerToast("You can only upload 1 voice file.");
       return;
     }
 
+    setVoiceFile(file);
     setAttachedVoice({
       name: file.name,
-      duration: 35 // Mock duration
+      duration: 35
     });
     triggerToast("Audio file attached!");
   };
+
+  const removeImage = (idx: number) => {
+    setAttachedImages(prev => prev.filter((_, i) => i !== idx));
+    setImageFiles(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  const removeAudio = () => {
+    setAttachedVoice(null);
+    setVoiceFile(null);
+  };
+
+  // Mutation
+  const createPostMutation = useCreatePostMutation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -257,51 +319,56 @@ export default function CreatePostPage() {
       return;
     }
 
-    // Create post object
-    const newPost = {
-      id: `custom-post-${Date.now()}`,
-      type: postType === "memory" ? "memory" : "experience",
-      category: postType,
-      user: {
-        name: "Rishiraj",
-        username: "@rishi005",
-        avatar: "R",
-        level: 12,
-        verified: true
+    const formData = new FormData();
+    formData.append("title", postTitle);
+    formData.append("content", postText);
+    formData.append("category", postType);
+    formData.append("visibility", visibility === "Public" ? "PUBLIC" : visibility === "Friends" ? "FOLLOWERS" : "PRIVATE");
+    
+    if (postLocation) {
+      formData.append("locationName", postLocation.formatted_address);
+      formData.append("locationLat", String(postLocation.latitude));
+      formData.append("locationLon", String(postLocation.longitude));
+    }
+
+    // Append attachments
+    imageFiles.forEach((file) => {
+      formData.append("images", file);
+    });
+
+    if (voiceFile) {
+      formData.append("audio", voiceFile);
+    }
+
+    triggerToast("Synchronizing your coordinates...");
+    
+    createPostMutation.mutate(formData, {
+      onSuccess: () => {
+        clearDraft();
+        triggerToast("Coordinates synchronized successfully!");
+        router.push("/feed");
       },
-      timestamp: "Just now",
-      visibility: visibility,
-      experienceName: postType === "memory" ? undefined : postTitle,
-      memoryTitle: postType === "memory" ? postTitle : undefined,
-      location: postLocation?.formatted_address || "On the Trail",
-      duration: postDuration || "1 Day",
-      cost: postCost || "Free",
-      rating: 5.0,
-      storyText: postType === "memory" ? undefined : postText,
-      memoryText: postType === "memory" ? postText : undefined,
-      images: attachedImages,
-      singleImage: postType === "memory" ? attachedImages[0] : undefined,
-      likes: 1,
-      commentsCount: 0,
-      comments: [],
-      voiceNote: attachedVoice ? attachedVoice : undefined,
-      hasLiked: true,
-      hasSaved: false
-    };
-
-    // Save to local storage for integration
-    const existing = JSON.parse(localStorage.getItem("custom_feed_posts") || "[]");
-    localStorage.setItem("custom_feed_posts", JSON.stringify([newPost, ...existing]));
-
-    triggerToast("Publishing your coordinates...");
-    setTimeout(() => {
-      router.push("/feed");
-    }, 800);
+      onError: (error: any) => {
+        const errorMsg = error?.response?.data?.message || "Failed to publish post.";
+        setValidationError(Array.isArray(errorMsg) ? errorMsg.join(", ") : errorMsg);
+        triggerToast("Synchronization error.");
+      }
+    });
   };
 
   return (
-    <div className="flex flex-col h-screen bg-brand-bg text-white overflow-hidden font-sans">
+    <div className="flex flex-col h-screen bg-brand-bg text-white overflow-hidden font-sans relative">
       <Navbar />
+
+      {/* Loading Overlay Spinner during Upload */}
+      {createPostMutation.isPending && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center gap-4 z-[200]">
+          <Loader2 className="h-10 w-10 text-brand-cyan animate-spin" />
+          <p className="text-sm font-mono text-zinc-500 uppercase tracking-widest animate-pulse">
+            Synchronizing adventure node...
+          </p>
+        </div>
+      )}
 
       {/* TOAST PANEL */}
       <AnimatePresence>
@@ -323,7 +390,6 @@ export default function CreatePostPage() {
           
           {/* TOP ACTION HEADER */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0 bg-zinc-950/40">
-            {/* Back button triggers step-back or exit */}
             <button 
               onClick={() => {
                 if (activeTab === "story") {
@@ -339,18 +405,15 @@ export default function CreatePostPage() {
               <ArrowLeft className="h-4 w-4" />
             </button>
 
-            {/* Title - Hidden on Phone viewports */}
             <div className="hidden md:block flex-1 ml-3 text-left">
               <h1 className="text-sm md:text-base font-black text-white uppercase tracking-wider flex items-center gap-1.5">
-                <Compass className="h-4.5 w-4.5 text-brand-cyan" />
+                <Compass className="h-4.5 w-4.5 text-brand-cyan animate-pulse" />
                 Synchronize Coordinates
               </h1>
               <p className="text-[10px] text-zinc-500 font-mono mt-0.5">Publish your live adventure logs into the global explorer dashboard</p>
             </div>
 
-            {/* Action buttons (Continue and Publish) */}
             <div className="flex items-center gap-2">
-              {/* Continue button (Only shown on mobile sizes when not all inputs are valid and not on story tab) */}
               <button
                 type="button"
                 disabled={activeTab === "media" ? !isMediaValid : !isDetailsValid}
@@ -368,10 +431,9 @@ export default function CreatePostPage() {
                 Continue
               </button>
 
-              {/* Publish button (Enabled only if all required inputs are filled, shown on desktop or on story tab or when all valid) */}
               <button
                 type="button"
-                disabled={!(isMediaValid && isDetailsValid && isStoryValid)}
+                disabled={!(isMediaValid && isDetailsValid && isStoryValid) || createPostMutation.isPending}
                 onClick={handleSubmit}
                 className={`h-9 px-5 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white text-[10px] font-black uppercase tracking-widest hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:pointer-events-none transition-all shadow-lg cursor-pointer ${
                   (isMediaValid && isDetailsValid && isStoryValid) || activeTab === "story" ? "block" : "hidden md:block"
@@ -406,10 +468,10 @@ export default function CreatePostPage() {
             ))}
           </div>
 
-          {/* CORE CONTAINER (Fits 100% Height - No Scrollbars on Desktop) */}
+          {/* CORE CONTAINER */}
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full items-stretch">
             
-            {/* LEFT AREA: WORKSPACE & MEDIA (Desktop: 60% Width, scrollable. Mobile: conditional on tab) */}
+            {/* LEFT AREA: WORKSPACE & MEDIA */}
             <div className={`flex-1 md:w-[60%] md:flex flex-col border-r border-white/5 overflow-y-auto no-scrollbar p-6 gap-5 text-left ${
               activeTab === "media" ? "flex" : "hidden"
             }`}>
@@ -438,15 +500,14 @@ export default function CreatePostPage() {
                   <span className="text-[8px] font-mono text-zinc-600">Supports PNG, JPG, WEBP (No video allowed)</span>
                 </div>
 
-                {/* Previews horizontal grid */}
                 {attachedImages.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {attachedImages.map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group">
+                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group bg-zinc-900">
                         <img src={img} alt="Attached Preview" className="w-full h-full object-cover" />
                         <button
                           type="button"
-                          onClick={() => setAttachedImages(prev => prev.filter((_, i) => i !== idx))}
+                          onClick={() => removeImage(idx)}
                           className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-zinc-950/80 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
                         >
                           <X className="h-3 w-3" />
@@ -463,7 +524,7 @@ export default function CreatePostPage() {
                   <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Audio coordinates (Max 1 file)</span>
                   {attachedVoice && (
                     <button
-                      onClick={() => setAttachedVoice(null)}
+                      onClick={removeAudio}
                       className="text-[9px] font-mono text-rose-500 hover:text-rose-400 flex items-center gap-1 cursor-pointer font-bold"
                     >
                       <Trash2 className="h-3 w-3" /> Remove Audio
@@ -498,7 +559,6 @@ export default function CreatePostPage() {
                   </div>
                 )}
 
-                {/* Simulated Recording Waveform */}
                 {isRecording && (
                   <div className="flex flex-col gap-2 items-center py-2">
                     <div className="flex items-center gap-2 text-rose-500 animate-pulse">
@@ -527,7 +587,6 @@ export default function CreatePostPage() {
                   </div>
                 )}
 
-                {/* Attached Audio Card */}
                 {attachedVoice && (
                   <div className="flex items-center gap-3 bg-zinc-950/40 border border-white/5 p-3 rounded-xl">
                     <div className="h-8 w-8 rounded-full bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 flex items-center justify-center shrink-0">
@@ -541,7 +600,6 @@ export default function CreatePostPage() {
                 )}
               </div>
 
-              {/* Presets and tabs for mobile quick options */}
               <div className="flex flex-col gap-2 shrink-0 md:hidden">
                 <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Shortcut Presets</span>
                 <button
@@ -555,7 +613,7 @@ export default function CreatePostPage() {
               </div>
             </div>
 
-            {/* MIDDLE AREA: METADATA & SIDEBAR (Desktop: 40% Width. Mobile: conditional on tab) */}
+            {/* MIDDLE AREA: METADATA & SIDEBAR */}
             <div className={`flex-1 md:w-[40%] md:flex flex-col overflow-y-auto no-scrollbar p-6 gap-5 text-left bg-zinc-950/15 ${
               activeTab === "details" ? "flex" : "hidden md:flex"
             }`}>
@@ -640,7 +698,6 @@ export default function CreatePostPage() {
                 </div>
               </div>
 
-              {/* Mobile next page shortcut */}
               <div className="flex flex-col gap-2 shrink-0 md:hidden">
                 <button
                   type="button"
@@ -653,7 +710,7 @@ export default function CreatePostPage() {
               </div>
             </div>
 
-            {/* RIGHT AREA: JOURNAL STORY AND AI GENERATOR (Desktop: 40% Width. Mobile: conditional on tab) */}
+            {/* RIGHT AREA: JOURNAL STORY AND AI GENERATOR */}
             <div className={`flex-1 md:w-[40%] md:flex flex-col overflow-y-auto no-scrollbar p-6 gap-5 text-left ${
               activeTab === "story" ? "flex" : "hidden md:flex"
             }`}>
@@ -665,7 +722,7 @@ export default function CreatePostPage() {
                   required
                   value={postText}
                   onChange={(e) => setPostText(e.target.value)}
-                  placeholder="Share details of your trail experience, paths navigated, campsites, homestay reviews, or guides..."
+                  placeholder="Share details of your trail experience, paths navigated, campsites, homestay reviews, or guides (Min 50 chars)..."
                   className="flex-1 w-full p-4 rounded-2xl bg-zinc-950/40 border border-white/10 text-xs text-white placeholder-zinc-600 focus:border-brand-cyan focus:outline-none transition-colors font-semibold resize-none min-h-[160px]"
                 />
               </div>

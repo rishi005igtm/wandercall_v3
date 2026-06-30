@@ -571,3 +571,186 @@ Existing user accounts without a designated role are handled safely at applicati
 UPDATE users_auth SET role = 'INDIVIDUAL' WHERE role IS NULL;
 ```
 This ensures zero service disruption for existing users.
+
+---
+
+## 📢 Enterprise Feed & Recommendation Engine Service
+
+The Feed Bounded Context is implemented not as a simple CRUD posts system, but as an enterprise-grade, high-throughput personalized recommendation engine designed for millions of daily active users. Every feed retrieval query is treated as a recommendation evaluation: **"What should THIS particular user see RIGHT NOW?"**
+
+### 📐 Module Folder Structure
+```
+src/modules/feed/
+├── config/
+│   └── ranking.config.ts          # Scoring weights, freshness decay coefficients, penalties
+├── constants/                     # Module error constants
+├── controllers/
+│   └── feed.controller.ts         # Endpoints for publishing, likes, bookmarks, cursor queries
+├── dto/
+│   ├── create-post-request.dto.ts # Validates coordinates logging inputs
+│   ├── update-post-request.dto.ts # Validates coordinate edits
+│   ├── feed-query.dto.ts          # Validates type filters & cursors
+│   └── comment-request.dto.ts     # Validates post comments inputs
+├── entities/
+│   ├── post.entity.ts             # Primary post metadata, coordinates, categories, metrics
+│   ├── post-like.entity.ts        # Unique user-post like mapping
+│   ├── post-save.entity.ts        # Unique user-post bookmarks mapping
+│   ├── post-comment.entity.ts     # Post comments
+│   ├── user-interest.entity.ts    # Lightweight category affinity vector per user
+│   ├── user-interaction.entity.ts # Telemetry telemetry interaction logging
+│   └── feed-impression.entity.ts  # Historical impression records to avoid repetition fatigue
+├── events/
+│   └── feed-event.dispatcher.ts   # Decoupled Node EventEmitter for domain/integration events
+├── repositories/
+│   ├── post.repository.ts         # Candidate retrieval queries with database-level visibility checks
+│   └── interaction.repository.ts  # CRUD for likes, saves, comments, impressions, and interests
+└── services/
+    ├── post.service.ts            # CRUD orchestration, uploads validation, status state machine
+    ├── ranking.engine.ts          # Freshness decays, engagement scalars, interest scores
+    ├── interest.engine.ts         # User activity affinity processors
+    └── recommendation.engine.ts   # Cursor parsing, candidate filters, diversity re-ranking, batch stitching
+```
+
+---
+
+### 🏛️ System Architecture & Recommendation Pipeline
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as Explorer Client
+    participant API as FeedController
+    participant Recs as RecommendationEngine
+    participant DB as Post/Interaction Repository
+    participant Rank as RankingEngine
+    participant Users as UserModule (UserService)
+
+    User->>API: GET /feed (cursor, feedType)
+    API->>Recs: getPersonalizedFeed(viewerId, query)
+    
+    critical Generate Candidates
+        Recs->>DB: getCandidates(viewerId, followedCreatorIds)
+        DB-->>Recs: return candidate list (top 500 published posts)
+    end
+
+    opt Viewer is Authenticated
+        Recs->>DB: getImpressions(viewerId)
+        DB-->>Recs: return previously seen post IDs
+        Recs->>DB: getUserInterestMap(viewerId)
+        DB-->>Recs: return category interest score vector
+    end
+
+    loop For each candidate post
+        Recs->>Rank: scorePost(post, viewerId, userInterests, follows, seen)
+        Note over Rank: Calculate Freshness, Engagement, Interests,<br/>Relationship boosts, and Seen penalties.
+        Rank-->>Recs: return recommendation score
+    end
+
+    Note over Recs: Apply Creator & Category Diversity Re-ranking<br/>(Demote consecutive repeats)
+    Note over Recs: Slice page according to Cursor offset limits
+    
+    rect rgb(20, 20, 25)
+        Note over Recs,Users: Batch stitch profiles (Avoid N+1 queries)
+        Recs->>Users: findByUserId(authorIds)
+        Users-->>Recs: return creator profile metadata
+    end
+
+    Recs-->>API: return items page + next base64 cursor
+    API-->>User: HTTP 200 OK (Paginated feed response)
+```
+
+---
+
+### ⏱️ Post Lifecycle State Machine
+Wandercall tracks posts through modular status states rather than a simple published flag:
+1. **DRAFT**: Entity initialized with owner ID and baseline parameters.
+2. **VALIDATING**: Checked against required constraints (title presence, categories, story length >= 50 chars).
+3. **IMAGE_VERIFIED**: Images uploaded using `StorageService` to Cloudinary. Verified that at least 1 image exists.
+4. **METADATA_GENERATED**: Optional audio note uploaded to Cloudinary. Tag mappings created and initial AI quality score set.
+5. **PUBLISHED**: Post set to `publishedAt = Date.now()` and becomes indexable by recommendation generators.
+6. **DELETED**: Post removed and Cloudinary resources garbage collected.
+
+---
+
+### 🧮 Personalization & Scoring Formula
+The recommendation engine evaluates posts using a multi-factor scorer:
+$$Score = \Big( W_{interest} \cdot S_{interest} + W_{relationship} \cdot S_{relationship} + W_{freshness} \cdot S_{freshness} + W_{engagement} \cdot S_{engagement} \Big) \cdot Penalty_{seen} \cdot Score_{AI}$$
+
+- **Freshness Score ($S_{freshness}$)**: Derived using an exponential time decay: $S_{freshness} = e^{-k \cdot t_{days}}$ where $k$ is the decay rate (default `0.15`) and $t_{days}$ is the time since publication.
+- **Engagement Score ($S_{engagement}$)**: Derived using a saturation curve: $S_{engagement} = \frac{E}{E + 15}$ where $E$ is the weighted engagement sum: $E = 1 \cdot Likes + 2 \cdot Comments + 3 \cdot Saves + 4 \cdot Shares$.
+- **Interest Score ($S_{interest}$)**: Saturation mapped: $\frac{A}{A + 5}$ where $A$ is the cumulative interest score for the category updated when users like (+1), comment (+2), save (+3), share (+4), or view (+0.2) content.
+- **Relationship Score ($S_{relationship}$)**: Binary boost (`1.0` if viewer follows creator, `0.0` otherwise).
+- **Seen fatigue ($Penalty_{seen}$)**: If the post ID matches the viewer's impression history, score is multiplied by `0.20` to demote it.
+
+---
+
+### 🌊 Infinite Scroll & Stable Cursors
+To avoid duplicates or missing items on scrolling while pages are ranked dynamically:
+- Cursors are represented as base64-encoded strings: `Buffer.from(JSON.stringify({ timestamp, offset, feedType, category })).toString('base64')`.
+- Freshness calculations are evaluated relative to the cursor's `timestamp` (the exact instant the user began viewing the feed) rather than `Date.now()`. This ensures that post scoring is frozen and static throughout the user's paginated session, allowing stable offset cursors.
+
+---
+
+### 🧩 Future AI & Search Extension Points
+- **AI Moderation & Quality scoring**: Post entity contains `aiQualityScore: number` and `aiMetadata: jsonb` fields. Future AI pipelines can run asynchronously on `PostPublished` events to update these scores or flag content.
+- **Search Engine Synchronization**: Search indexes are isolated from database schemas. Future Elasticsearch/Meilisearch synchronization services can listen to `post.published`, `post.updated`, and `post.deleted` events from `FeedEventDispatcher` to index metadata out-of-band.
+
+---
+
+### 📁 Database Relationships
+- **`posts`**:
+  - `authorId` -> maps to `users_profile.userId` (logical relationship, no database-level joins to maintain microservice readiness).
+- **`post_likes`** / **`post_saves`** / **`post_comments`**:
+  - `postId` -> foreign key to `posts.id` (ON DELETE CASCADE).
+  - `userId` -> maps to `users_profile.userId`.
+- **`user_interests`** / **`user_interactions`** / **`feed_impressions`**:
+  - Indexed by `userId` to speed up personalized query loops.
+
+---
+
+### 🔐 Security & Publishing Rules
+1. **Ownership Enforcement**: Edits and deletions verify that `request.user.userId === post.authorId` (except for `ADMIN` override).
+2. **RBAC Rules**: User roles determine authorship:
+   - `INDIVIDUAL` publishes as author type `INDIVIDUAL`.
+   - `HOST` publishes as author type `HOST` (indicated in UI badges).
+   - `ADMIN` publishes official system coordinates as `OFFICIAL`.
+3. **Storage Sanitization**: File uploads enforce MIME restrictions (JPG/PNG/WEBP for images, MP3/WAV/WebM for audio coordinates) and size limits (15MB images, 10MB audio) to prevent resource fatigue.
+
+---
+
+### 📄 API Documentation
+
+#### `GET /api/v1/feed` (Guest allowed)
+- Retrieves feed according to type.
+- **Query Params**:
+  - `feedType`: `'global' | 'following' | 'trending' | 'recent' | 'category'`
+  - `category`: string (e.g. `'story'`, `'memory'`, `'food'`)
+  - `limit`: number (default `10`)
+  - `cursor`: string (base64 string representing pagination context)
+- **Response**: `{ items: FeedPostDto[], nextCursor?: string }`
+
+#### `POST /api/v1/feed/posts` (Authenticated)
+- Creates coordinates log with attachments (Multipart Form-Data).
+- **Body Params**: `title`, `content` (min 50 chars), `category`, `visibility` (`PUBLIC`|`FOLLOWERS`|`PRIVATE`), location coordinates, and metadata.
+- **File Uploads**: `images` (up to 4 files, required), `audio` (up to 1 file, optional).
+
+#### `PATCH /api/v1/feed/posts/:id` (Authenticated)
+- Updates title, description, category, or visibility of a post.
+
+#### `DELETE /api/v1/feed/posts/:id` (Authenticated)
+- Deletes post and triggers Cloudinary media asset garbage collection.
+
+#### `POST /api/v1/feed/posts/:id/like` & `DELETE /api/v1/feed/posts/:id/like`
+- Likes or unlikes post; dynamically adjusts category interests score.
+
+#### `POST /api/v1/feed/posts/:id/save` & `DELETE /api/v1/feed/posts/:id/save`
+- Bookmarks or un-bookmarks post.
+
+#### `POST /api/v1/feed/posts/:id/comments` & `GET /api/v1/feed/posts/:id/comments`
+- Adds comments or retrieves post comment thread.
+
+#### `POST /api/v1/feed/posts/:id/share`
+- Tracks sharing interaction (updates engagement scores).
+
+#### `POST /api/v1/feed/posts/:id/view`
+- Logs impression in database to apply seen fatigue penalty.
+

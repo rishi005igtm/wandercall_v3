@@ -50,6 +50,11 @@ import {
   useFollowingInfiniteQuery
 } from "@/hooks/api/useUserQueries";
 import { UserProfileResponse } from "@/lib/services/user.service";
+import { 
+  useUserFeedQuery, 
+  useLikePostMutation, 
+  useSavePostMutation 
+} from "@/hooks/api/useFeed";
 
 interface ProfileRendererProps {
   profile: UserProfileResponse;
@@ -198,6 +203,10 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
   // Follow/Unfollow Click
   const handleFollowClick = () => {
+    if (!authUserId) {
+      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     if (relationshipState === "Following") {
       unfollowMutation.mutate(undefined, {
         onSuccess: () => triggerToast(`Unfollowed @${profile.username}`),
@@ -212,6 +221,10 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
   };
 
   const handleMessageClick = () => {
+    if (!authUserId) {
+      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
     router.push("/profile/friends");
     triggerToast(`Connecting secure chat tunnel to ${profile.displayName}...`);
   };
@@ -307,68 +320,49 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
     ];
   }, [profile.displayName]);
 
-  const initialMemories = useMemo(() => [
-    { 
-      id: 1,
-      title: "Netrani Scuba Diving", 
-      text: "Swam alongside sea turtles and barracudas at 18m depth. Magical marine life.", 
-      tag: "Underwater",
-      location: "Netrani Island, Murdeshwar",
-      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop",
-      likes: 124,
-      comments: 28,
-      liked: false,
-      saved: false
-    },
-    { 
-      id: 2,
-      title: "Sunset Over Coorg Hills", 
-      text: "Steep climbs under the rain. The clouds parted to reveal this green valley.", 
-      tag: "Mountain Trek",
-      location: "Coorg, Karnataka",
-      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
-      likes: 98,
-      comments: 14,
-      liked: false,
-      saved: true
-    },
-    { 
-      id: 3,
-      title: "Manali Heights Campfire", 
-      text: "Gathered around a crackling bonfire beneath a canopy of stars. Storytelling and laughter in the chilly night air.", 
-      tag: "Campfire",
-      location: "Manali, Himachal Pradesh",
-      image: "https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=600&auto=format&fit=crop",
-      likes: 156,
-      comments: 32,
-      liked: false,
-      saved: false
-    }
-  ], []);
+  // Load memories from backend
+  const { data: userFeedData } = useUserFeedQuery(profile.username, "memory");
 
-  const [memoriesList, setMemoriesList] = useState(initialMemories);
-
-  const handleLikeMemory = (id: number) => {
-    setMemoriesList(prev => prev.map(item => {
-      if (item.id === id) {
-        return {
-          ...item,
-          liked: !item.liked,
-          likes: item.liked ? item.likes - 1 : item.likes + 1
-        };
-      }
-      return item;
+  const memoriesList = useMemo(() => {
+    if (!userFeedData?.items) return [];
+    
+    return userFeedData.items.slice(0, 3).map((post: any) => ({
+      id: post.id,
+      title: post.title,
+      text: post.content || "",
+      tag: post.category.toUpperCase(),
+      location: post.locationName || "On the Trail",
+      image: post.images && post.images.length > 0 
+        ? post.images[0] 
+        : "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
+      likes: post.likeCount || 0,
+      comments: post.commentCount || 0,
+      liked: post.hasLiked || false,
+      saved: post.hasSaved || false
     }));
+  }, [userFeedData]);
+
+  const likeMutation = useLikePostMutation();
+  const saveMutation = useSavePostMutation();
+
+  const handleLikeMemory = (postId: string, alreadyLiked: boolean) => {
+    if (!authUserId) {
+      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    likeMutation.mutate({ postId, alreadyLiked });
   };
 
-  const handleSaveMemory = (id: number) => {
-    setMemoriesList(prev => prev.map(item => {
-      if (item.id === id) {
-        triggerToast(!item.saved ? "Memory saved to bookmarks!" : "Memory removed from bookmarks!");
-        return { ...item, saved: !item.saved };
+  const handleSaveMemory = (postId: string, alreadySaved: boolean) => {
+    if (!authUserId) {
+      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
+      return;
+    }
+    saveMutation.mutate({ postId, alreadySaved }, {
+      onSuccess: () => {
+        triggerToast(!alreadySaved ? "Memory saved to bookmarks!" : "Memory removed from bookmarks!");
       }
-      return item;
-    }));
+    });
   };
 
   // Radar calculations
@@ -764,10 +758,10 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   <div className="border-t border-white/5 pt-2 flex items-center justify-between text-zinc-500">
                     <span className="text-[8.5px] font-bold truncate flex items-center gap-1"><MapPin className="h-3 w-3 text-brand-purple" /> {item.location}</span>
                     <div className="flex items-center gap-2 ml-2 shrink-0">
-                      <button onClick={() => handleLikeMemory(item.id)} className={`hover:text-rose-500 transition-colors p-1 cursor-pointer ${item.liked ? "text-rose-500" : ""}`}>
+                      <button onClick={() => handleLikeMemory(item.id, item.liked)} className={`hover:text-rose-500 transition-colors p-1 cursor-pointer ${item.liked ? "text-rose-500" : ""}`} aria-label="Like memory">
                         <Heart className="h-3.5 w-3.5 fill-current" />
                       </button>
-                      <button onClick={() => handleSaveMemory(item.id)} className={`hover:text-brand-cyan transition-colors p-1 cursor-pointer ${item.saved ? "text-brand-cyan" : ""}`}>
+                      <button onClick={() => handleSaveMemory(item.id, item.saved)} className={`hover:text-brand-cyan transition-colors p-1 cursor-pointer ${item.saved ? "text-brand-cyan" : ""}`} aria-label="Save memory">
                         <Bookmark className="h-3.5 w-3.5 fill-current" />
                       </button>
                     </div>
