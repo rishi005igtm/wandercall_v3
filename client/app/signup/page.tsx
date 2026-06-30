@@ -22,7 +22,7 @@ import {
   ShieldAlert,
   ArrowLeft
 } from "lucide-react";
-import { useSignupMutation, useGoogleAuthMutation, useVerifyEmailMutation } from "@/hooks/api/useAuthMutations";
+import { useSignupMutation, useGoogleAuthMutation, useVerifyEmailMutation, useResendVerificationMutation } from "@/hooks/api/useAuthMutations";
 import { useAppSelector } from "@/lib/store/store";
 import { mapApiError } from "@/lib/utils/errorMapper";
 import { Loader2, KeyRound } from "lucide-react";
@@ -32,7 +32,14 @@ export default function SignupPage() {
   const signupMutation = useSignupMutation();
   const googleAuthMutation = useGoogleAuthMutation();
   const verifyEmailMutation = useVerifyEmailMutation();
-  const authUserId = useAppSelector((state) => state.auth.userId);
+  const resendVerificationMutation = useResendVerificationMutation();
+
+  const authState = useAppSelector((state) => state.auth);
+  const authUserId = authState.userId;
+  const authEmail = authState.email;
+  const authName = authState.name;
+  const authIsAuthenticated = authState.isAuthenticated;
+  const authIsEmailVerified = authState.isEmailVerified;
 
   // Form states
   const [name, setName] = useState("");
@@ -46,7 +53,17 @@ export default function SignupPage() {
   const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [verifyError, setVerifyError] = useState<string | null>(null);
+  const [verifySuccess, setVerifySuccess] = useState<string | null>(null);
   const otpInputsRef = React.useRef<(HTMLInputElement | null)[]>([]);
+
+  // Automatically open verification modal if user is registered but not verified yet
+  useEffect(() => {
+    if (authIsAuthenticated && !authIsEmailVerified) {
+      setShowVerifyModal(true);
+      if (authEmail) setEmail(authEmail);
+      if (authName) setName(authName);
+    }
+  }, [authIsAuthenticated, authIsEmailVerified, authEmail, authName]);
 
   // Stats counting animation states
   const [explorers, setExplorers] = useState(0);
@@ -136,6 +153,7 @@ export default function SignupPage() {
     newOtp[index] = cleanValue;
     setOtp(newOtp);
     setVerifyError(null);
+    setVerifySuccess(null);
 
     if (cleanValue && index < 5) {
       otpInputsRef.current[index + 1]?.focus();
@@ -155,6 +173,8 @@ export default function SignupPage() {
       setVerifyError("Please enter the complete 6-digit verification code");
       return;
     }
+    setVerifyError(null);
+    setVerifySuccess(null);
 
     verifyEmailMutation.mutate(
       { email: email.trim(), code },
@@ -535,6 +555,13 @@ export default function SignupPage() {
                 </div>
               )}
 
+              {verifySuccess && (
+                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400 font-medium flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                  <span>{verifySuccess}</span>
+                </div>
+              )}
+
               <form onSubmit={handleVerifySubmit} className="flex flex-col gap-6">
                 {/* 6 Individual Numeric OTP Input Boxes */}
                 <div className="flex justify-between gap-2">
@@ -574,10 +601,31 @@ export default function SignupPage() {
 
                   <button
                     type="button"
-                    onClick={() => signupMutation.mutate({ name: name.trim(), email: email.trim(), password, termsAccepted })}
-                    className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors text-center cursor-pointer py-1"
+                    disabled={resendVerificationMutation.isPending}
+                    onClick={() => {
+                      setVerifyError(null);
+                      setVerifySuccess(null);
+                      resendVerificationMutation.mutate(email.trim(), {
+                        onSuccess: (data) => {
+                          setVerifySuccess(data.message || "Verification code successfully resent!");
+                        },
+                        onError: (err) => {
+                          setVerifyError(mapApiError(err));
+                        }
+                      });
+                    }}
+                    className="text-xs font-semibold text-zinc-400 hover:text-white transition-colors text-center cursor-pointer py-1 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Didn't receive code? <span className="text-brand-cyan hover:underline">Resend email</span>
+                    {resendVerificationMutation.isPending ? (
+                      <span className="flex items-center justify-center gap-1">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-brand-cyan" />
+                        Resending code...
+                      </span>
+                    ) : (
+                      <>
+                        Didn't receive code? <span className="text-brand-cyan hover:underline">Resend email</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

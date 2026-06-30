@@ -14,6 +14,8 @@ interface IntentRule {
   transformationPreset?: any;
 }
 
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif'];
+
 @Injectable()
 export class StorageService implements IStorageService {
   private readonly logger = new Logger(StorageService.name);
@@ -22,7 +24,7 @@ export class StorageService implements IStorageService {
     [UploadIntent.PROFILE_AVATAR]: {
       folder: 'wandercall/users/avatars',
       maxSizeBytes: 5 * 1024 * 1024, // 5MB
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (userId: string) => `avatar_${userId}`,
       transformationPreset: { aspect_ratio: '1:1', gravity: 'face', crop: 'fill' },
@@ -30,7 +32,7 @@ export class StorageService implements IStorageService {
     [UploadIntent.PROFILE_BANNER]: {
       folder: 'wandercall/users/banners',
       maxSizeBytes: 10 * 1024 * 1024, // 10MB
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (userId: string) => `banner_${userId}`,
       transformationPreset: { aspect_ratio: '3:1', crop: 'fill' },
@@ -38,42 +40,42 @@ export class StorageService implements IStorageService {
     [UploadIntent.COMMUNITY_BANNER]: {
       folder: 'wandercall/communities/banners',
       maxSizeBytes: 10 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (communityId: string) => `banner_${communityId}`,
     },
     [UploadIntent.COMMUNITY_THUMBNAIL]: {
       folder: 'wandercall/communities/thumbnails',
       maxSizeBytes: 5 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (communityId: string) => `thumb_${communityId}`,
     },
     [UploadIntent.COMMUNITY_COVER]: {
       folder: 'wandercall/communities/covers',
       maxSizeBytes: 10 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (communityId: string) => `cover_${communityId}`,
     },
     [UploadIntent.FEED_IMAGE]: {
       folder: 'wandercall/feed/images',
       maxSizeBytes: 15 * 1024 * 1024, // 15MB
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (postId: string) => `post_${postId}_${Date.now()}`,
     },
     [UploadIntent.EXPERIENCE_IMAGE]: {
       folder: 'wandercall/experiences/gallery',
       maxSizeBytes: 15 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (expId: string) => `exp_${expId}_${Date.now()}`,
     },
     [UploadIntent.PROVIDER_IMAGE]: {
       folder: 'wandercall/providers',
       maxSizeBytes: 10 * 1024 * 1024,
-      allowedMimeTypes: ['image/jpeg', 'image/png', 'image/webp'],
+      allowedMimeTypes: ALLOWED_IMAGE_TYPES,
       resourceType: 'image',
       publicIdGenerator: (providerId: string) => `provider_${providerId}_${Date.now()}`,
     },
@@ -100,15 +102,18 @@ export class StorageService implements IStorageService {
    */
   private validateFile(file: Express.Multer.File, rule: IntentRule) {
     if (!file || !file.buffer || file.buffer.length === 0) {
+      this.logger.warn(`File validation failed: File is empty or corrupted.`);
       throw new BadRequestException('Uploaded file is corrupted or empty.');
     }
 
     if (file.size > rule.maxSizeBytes) {
       const maxMb = (rule.maxSizeBytes / (1024 * 1024)).toFixed(1);
+      this.logger.warn(`File validation failed: Size (${file.size} bytes) exceeds limit of ${maxMb}MB.`);
       throw new BadRequestException(`File size exceeds maximum allowed limit of ${maxMb}MB for this upload type.`);
     }
 
     if (!rule.allowedMimeTypes.includes(file.mimetype)) {
+      this.logger.warn(`File validation failed: MimeType '${file.mimetype}' is not supported. Allowed: ${rule.allowedMimeTypes.join(', ')}`);
       throw new BadRequestException(`Unsupported file format (${file.mimetype}). Allowed formats: ${rule.allowedMimeTypes.join(', ')}`);
     }
   }

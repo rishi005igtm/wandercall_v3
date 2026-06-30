@@ -22,10 +22,18 @@ import { UserSettingsDto } from '../dto/user-settings-dto';
 import { UserPlanDto } from '../dto/user-plan-dto';
 import { UserService } from '../services/user.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from '../../auth/guards/optional-jwt-auth.guard';
+import { FollowService } from '../services/follow.service';
+import { PublicProfileResponseDto } from '../dto/public-profile-response.dto';
+import { RelationshipResponseDto } from '../dto/relationship-response.dto';
+import { FollowerPreviewDto } from '../dto/follower-preview.dto';
 
 @Controller('users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly followService: FollowService,
+  ) {}
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
@@ -167,5 +175,66 @@ export class UserController {
   ): Promise<UserPlanDto> {
     const targetId = req.user?.userId || userId;
     return this.userService.updatePlan(targetId, partial);
+  }
+
+  @Get('profile/username/:username')
+  @UseGuards(OptionalJwtAuthGuard)
+  async getPublicProfile(
+    @Req() req: any,
+    @Param('username') username: string,
+  ): Promise<PublicProfileResponseDto> {
+    const currentUserId = req.user?.userId || null;
+    return this.userService.getPublicProfileByUsername(username, currentUserId);
+  }
+
+  @Get('relationship/:username')
+  @UseGuards(JwtAuthGuard)
+  async getRelationshipState(
+    @Req() req: any,
+    @Param('username') username: string,
+  ): Promise<RelationshipResponseDto> {
+    return this.followService.getRelationshipState(req.user.userId, username);
+  }
+
+  @Post('follow/:username')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async followUser(
+    @Req() req: any,
+    @Param('username') username: string,
+  ): Promise<RelationshipResponseDto> {
+    return this.followService.followUser(req.user.userId, username);
+  }
+
+  @Post('unfollow/:username')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async unfollowUser(
+    @Req() req: any,
+    @Param('username') username: string,
+  ): Promise<RelationshipResponseDto> {
+    return this.followService.unfollowUser(req.user.userId, username);
+  }
+
+  @Get('/:username/followers')
+  async getFollowers(
+    @Param('username') username: string,
+    @Query('limit') limit = '10',
+    @Query('cursor') cursor?: string,
+    @Query('search') search?: string,
+  ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
+    const parsedLimit = parseInt(limit, 10) || 10;
+    return this.followService.getFollowers(username, parsedLimit, cursor, search);
+  }
+
+  @Get('/:username/following')
+  async getFollowing(
+    @Param('username') username: string,
+    @Query('limit') limit = '10',
+    @Query('cursor') cursor?: string,
+    @Query('search') search?: string,
+  ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
+    const parsedLimit = parseInt(limit, 10) || 10;
+    return this.followService.getFollowing(username, parsedLimit, cursor, search);
   }
 }

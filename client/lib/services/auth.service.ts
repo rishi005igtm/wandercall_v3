@@ -75,6 +75,11 @@ export const authService = {
     return data;
   },
 
+  async resendVerification(email: string): Promise<{ success: boolean; message: string }> {
+    const { data } = await httpClient.post<{ success: boolean; message: string }>('/auth/resend-verification', { email });
+    return data;
+  },
+
   async getActiveSessions(): Promise<UserSession[]> {
     const { data } = await httpClient.get<UserSession[]>('/auth/sessions');
     return data;

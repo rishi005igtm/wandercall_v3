@@ -18,7 +18,9 @@ import { UserSettingsEntity } from '../entities/user-settings.entity';
 import { UserPlanEntity } from '../entities/user-plan.entity';
 import { UserRepository } from '../repositories/user.repository';
 import { StorageService } from '../../storage/services/storage.service';
+import { PublicProfileResponseDto } from '../dto/public-profile-response.dto';
 import { UploadIntent } from '../../storage/enums/upload-intent.enum';
+import { FollowRepository } from '../repositories/follow.repository';
 
 @Injectable()
 export class UserService {
@@ -28,6 +30,7 @@ export class UserService {
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
     private readonly storageService: StorageService,
+    private readonly followRepository: FollowRepository,
   ) {}
 
   async checkUsernameAvailability(username: string): Promise<{ available: boolean; username: string }> {
@@ -192,6 +195,7 @@ export class UserService {
   }
 
   async getProfileByUserId(userId: string): Promise<UserProfileResponseDto> {
+    this.logger.log(`Profile fetch: Requesting profile for userId '${userId}'`);
     let profile = await this.userRepository.findByUserId(userId);
     const authUser = await this.authRepository.findById(userId);
 
@@ -226,6 +230,49 @@ export class UserService {
     await this.ensureDefaultPlan(userId);
 
     return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+  }
+
+  async getPublicProfileByUsername(username: string, currentUserId?: string | null): Promise<PublicProfileResponseDto> {
+    const profile = await this.userRepository.findByUsername(username);
+    if (!profile) {
+      throw new NotFoundException(`User profile with username '${username}' not found.`);
+    }
+
+    this.logger.log(`Username resolution: Resolved username '${username}' to userId '${profile.userId}'`);
+
+    let relationshipState: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' = 'Not Following';
+    if (currentUserId) {
+      if (profile.userId === currentUserId) {
+        relationshipState = 'Self';
+      } else {
+        const isFollowing = await this.followRepository.findOne(currentUserId, profile.userId);
+        relationshipState = isFollowing ? 'Following' : 'Not Following';
+      }
+    }
+
+    this.logger.log(`Profile fetch: Checked relationship between requesting user ${currentUserId || 'anonymous'} and target ${profile.userId} (State: ${relationshipState})`);
+
+    return {
+      userId: profile.userId,
+      username: profile.username,
+      displayName: profile.displayName,
+      avatarUrl: profile.avatarUrl,
+      coverImageUrl: profile.coverImageUrl,
+      bio: profile.bio,
+      locationFormatted: profile.locationFormatted,
+      level: profile.level ?? 1,
+      xpCurrent: profile.xpCurrent ?? 1000,
+      xpNext: profile.xpNext ?? 2000,
+      reputationScore: profile.reputationScore ?? 0,
+      adventuresCompleted: profile.adventuresCompleted ?? 0,
+      communitiesJoined: profile.communitiesJoined ?? 0,
+      campfiresHosted: profile.campfiresHosted ?? 0,
+      followerCount: profile.followerCount ?? 0,
+      followingCount: profile.followingCount ?? 0,
+      relationshipState,
+      dnaBadges: profile.dnaBadges,
+      createdAt: profile.createdAt,
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileRequestDto): Promise<UserProfileResponseDto> {
@@ -270,6 +317,8 @@ export class UserService {
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
+    this.logger.log(`Avatar loading: Successfully uploaded and updated avatar URL to ${metadata.secureUrl} for userId ${userId}`);
+
     const authUser = await this.authRepository.findById(userId);
     return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
   }
@@ -293,6 +342,8 @@ export class UserService {
     profile.coverImagePublicId = metadata.publicId;
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
+
+    this.logger.log(`Banner loading: Successfully uploaded and updated cover image URL to ${metadata.secureUrl} for userId ${userId}`);
 
     const authUser = await this.authRepository.findById(userId);
     return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
@@ -368,6 +419,8 @@ export class UserService {
       adventuresCompleted: profile.adventuresCompleted ?? 0,
       communitiesJoined: profile.communitiesJoined ?? 0,
       campfiresHosted: profile.campfiresHosted ?? 0,
+      followerCount: profile.followerCount ?? 0,
+      followingCount: profile.followingCount ?? 0,
       dnaBadges: profile.dnaBadges,
       accountStatus,
       createdAt: profile.createdAt,

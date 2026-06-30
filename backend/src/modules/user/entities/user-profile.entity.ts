@@ -68,6 +68,12 @@ export class UserProfileEntity {
   @Column({ default: 0 })
   campfiresHosted: number;
 
+  @Column({ default: 0 })
+  followerCount: number;
+
+  @Column({ default: 0 })
+  followingCount: number;
+
   @Column({ type: 'json', nullable: true })
   dnaBadges?: any;
 

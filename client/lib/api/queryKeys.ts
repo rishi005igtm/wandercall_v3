@@ -9,6 +9,10 @@ export const QUERY_KEYS = {
     PLAN: (userId: string) => ['user', 'plan', userId] as const,
     USERNAME_CHECK: (username: string) => ['user', 'username', 'check', username] as const,
     USERNAME_SUGGESTIONS: (name: string) => ['user', 'username', 'suggestions', name] as const,
+    PUBLIC_PROFILE: (username: string) => ['user', 'public_profile', username] as const,
+    RELATIONSHIP: (username: string) => ['user', 'relationship', username] as const,
+    FOLLOWERS: (username: string, search?: string) => ['user', 'followers', username, { search }] as const,
+    FOLLOWING: (username: string, search?: string) => ['user', 'following', username, { search }] as const,
   },
   EXPERIENCES: {
     ALL: ['experiences'] as const,

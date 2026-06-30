@@ -471,5 +471,68 @@ Cloudinary automatically applies real-time optimization and formatting parameter
 - **Mobile Ready**: REST endpoints accept standard `multipart/form-data`, ensuring 100% compatibility with React Native, Android (Kotlin), and iOS (Swift).
 - **Future Video & Document Ready**: Architecture designed with multi-resource support (`resourceType: 'image' | 'raw' | 'video' | 'auto'`). Adding video or audio stream processing will reuse the existing Storage Service pipeline without breaking domain modules.
 
+---
+
+## 👥 Public User Profile Discovery & Follow Relationship Architecture
+
+Wandercall implements an enterprise-grade public user profile discovery and scalable follow relationship social graph system, designed for high concurrency and fast performance similarly to Instagram.
+
+### 🏛️ Architecture & Relationship Model
+1. **Separation of Concerns**: User auth credentials (`users_auth`) and user session states are isolated from relationship contexts. Follow relationships are managed inside a dedicated `user_follows` table rather than nested columns inside user profiles.
+2. **Double-Indexed Social Graph**: The `FollowEntity` table maintains indexed columns for `followerId` and `followingId`, alongside a unique composite index `(followerId, followingId)` to guarantee that double-following is physically impossible and ensure queries scale to millions of records.
+3. **Cached Metric Counters**: To avoid expensive full-table aggregation scans (`COUNT`) on profile load, cached columns `followerCount` and `followingCount` are placed in `users_profile`. These are dynamically updated via atomic TypeORM database transactions during follow/unfollow operations to prevent race conditions.
+
+### 🔄 Relationship Lifecycle Workflows
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Controller as UserController
+    participant Service as FollowService
+    participant DB as Database (Postgres)
+
+    Client->>Controller: POST /users/follow/:username (JWT Auth)
+    Controller->>Service: followUser(currentUserId, targetUsername)
+    Service->>DB: Lookup Target Profile by username
+    alt Username not found
+        Service-->>Client: 404 Not Found
+    else Username found
+        Service->>DB: Check existing relationship / self-following
+        alt Invalid relationship (self or duplicate)
+            Service-->>Client: 400 Bad Request
+        else Valid relationship
+            rect rgb(20, 20, 25)
+                Note over Service,DB: TypeORM Database Transaction (ACID)
+                Service->>DB: Insert Follow Entity (followerId, followingId)
+                Service->>DB: Increment target followerCount +1
+                Service->>DB: Increment follower followingCount +1
+            end
+            DB-->>Service: Transaction Success
+            Service-->>Client: 200 OK { state: 'Following' }
+        end
+    end
+```
+
+### ⚡ Client State & Invalidation Strategy
+1. **State Segregation**: Redux Toolkit handles only ephemeral UI states (modal triggers, tabs selection, search query values). Server states (profile data, relationship statuses, paginated connections lists) are managed entirely by TanStack Query.
+2. **Optimistic Updates**: Following/unfollowing triggers mutations that immediately flip the client-side relationship state and adjust profile counts. The client UI responds instantly to user gestures, rolling back to query cache snapshots automatically if the API reports a failure.
+3. **Cursor-Based Pagination & Search**: Followers/following modals utilize cursor pagination (`createdAt` timestamps) to bypass heavy SQL offset scans. Debounced inputs trigger database-level `LIKE` queries to filter matches without over-fetching or client-side overhead.
+
+### 📄 API Contracts
+#### `GET /api/v1/users/profile/username/:username` (Public)
+- Resolves username to public profile. Excludes private fields (email, phone coordinates, internal permissions).
+- **Response DTO**: `PublicProfileResponseDto`
+
+#### `GET /api/v1/users/relationship/:username` (Authenticated)
+- Evaluates relationship state from current user to target.
+- **Response**: `{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }`
+
+#### `POST /api/v1/users/follow/:username` & `POST /api/v1/users/unfollow/:username` (Authenticated)
+- Adds or removes follow records and updates cache counters.
+- **Response**: `{ state: 'Following' | 'Not Following' }`
+
+#### `GET /api/v1/users/:username/followers` & `GET /api/v1/users/:username/following` (Public)
+- Lists connections matching optional search queries, supporting cursor pagination.
+- **Response**: `{ items: FollowerPreviewDto[], nextCursor?: string }`
+
 
 

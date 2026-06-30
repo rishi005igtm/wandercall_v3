@@ -36,6 +36,10 @@ export function useLoginMutation() {
     mutationFn: (payload: LoginPayload) => authService.login(payload),
     onSuccess: (data) => {
       dispatch(setAuthSession(data));
+      if (!data.user.isEmailVerified) {
+        router.push('/signup');
+        return;
+      }
       if (data.user.accountStatus === 'PROFILE_INCOMPLETE') {
         router.push(`/signup/complete?name=${encodeURIComponent(data.user.name)}&email=${encodeURIComponent(data.user.email)}`);
       } else {
@@ -116,5 +120,11 @@ export function useRevokeAllSessionsMutation() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth', 'sessions'] });
     },
+  });
+}
+
+export function useResendVerificationMutation() {
+  return useMutation({
+    mutationFn: (email: string) => authService.resendVerification(email),
   });
 }

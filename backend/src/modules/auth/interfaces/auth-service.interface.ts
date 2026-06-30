@@ -11,4 +11,5 @@ export interface IAuthService {
   refreshToken(dto: RefreshTokenRequestDto): Promise<AuthResponseDto>;
   logout(userId: string, refreshToken?: string): Promise<void>;
   revokeAllSessions(userId: string): Promise<void>;
+  resendVerificationCode(email: string): Promise<{ success: boolean; message: string }>;
 }

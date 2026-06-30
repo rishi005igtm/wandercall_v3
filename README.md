@@ -79,3 +79,32 @@ Wandercall implements a production-grade, multi-tenant authentication lifecycle 
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) to view the client.
+
+---
+
+## 👤 Profile & Relationship Graph Lifecycle
+
+Wandercall implements a fully synchronized, backend-driven profile and follower network architecture mirroring enterprise standards.
+
+### 1. Data Model & DTOs
+All profile metrics, images, and relationships are driven by backend payloads, eliminating hardcoded fallbacks:
+* **UserProfileResponseDto**: Served for `/users/profile/me`. Returns owner profile fields, including `followerCount` and `followingCount`.
+* **PublicProfileResponseDto**: Served for `/users/profile/username/:username`. Returns target profile details, including `followerCount`, `followingCount`, and requesting user's `relationshipState`.
+* **Dynamic Resolution**: Checks if the target user profile exists. If missing, a 404 "Passport Not Found" error is returned immediately.
+
+### 2. Optional Authentication & Relationship State
+To resolve target user relationships on public endpoints (e.g. `/profile/:username`) while keeping the page readable for anonymous visitors:
+1. **OptionalJwtAuthGuard**: Intercepts request headers to evaluate user tokens without throwing `UnauthorizedException` if absent.
+2. **Context Passing**: Passes requesting user ID to `getPublicProfileByUsername`.
+3. **Status Check**: Determines if requesting user is the target user (`'Self'`), following the target user (`'Following'`), or not (`'Not Following'`).
+
+### 3. Caching and Invalidation Strategy
+State updates are executed reactively on the client using TanStack Query, avoiding manual refreshes:
+* **Follow Mutations**: Following or unfollowing triggers immediate query invalidation.
+* **Prefix Invalidation**: Instead of targeting exact sub-keys, the system invalidates base keys (`['user', 'relationship', username]`, `['user', 'public_profile', username]`, `['user', 'followers']`, `['user', 'following']`, `['user', 'current']`, `['user', 'profile']`).
+* **Search Context**: Ensures list queries with different search strings, pagination cursors, or pages are correctly refetched inside connections modals.
+
+### 4. Image Rendering & Fail-safes
+Avatar and Cover Banner rendering utilize strict rules to handle missing assets without demo fallbacks:
+* **Cover Photo**: Shows uploaded `coverImageUrl`. If missing, renders the verified grid and neon glow styling from the passport design system.
+* **Avatar**: Shows uploaded `avatarUrl`. If missing, renders a text avatar based on the first letter of the user's `displayName`.

@@ -96,6 +96,30 @@ export class AuthService implements IAuthService {
     return { verified: true, message: 'Email successfully verified.' };
   }
 
+  async resendVerificationCode(email: string): Promise<{ success: boolean; message: string }> {
+    const user = await this.authRepository.findByEmail(email);
+    if (!user) {
+      throw new BadRequestException('User account not found.');
+    }
+
+    if (user.isEmailVerified) {
+      return { success: true, message: 'Email is already verified.' };
+    }
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    user.verificationCode = verificationCode;
+    user.verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    user.updatedAt = new Date();
+
+    await this.authRepository.updateUser(user);
+    this.logger.log(`Verification code resent for ${email}`);
+
+    const displayName = user.displayName || 'Explorer';
+    await this.mailService.sendVerificationCode(email, displayName, verificationCode);
+
+    return { success: true, message: 'Verification code successfully resent.' };
+  }
+
   async login(
     dto: LoginRequestDto,
     ipAddress?: string,

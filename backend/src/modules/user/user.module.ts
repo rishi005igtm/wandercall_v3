@@ -8,15 +8,18 @@ import { UserRepository } from './repositories/user.repository';
 import { UserProfileEntity } from './entities/user-profile.entity';
 import { UserSettingsEntity } from './entities/user-settings.entity';
 import { UserPlanEntity } from './entities/user-plan.entity';
+import { FollowEntity } from './entities/follow.entity';
+import { FollowRepository } from './repositories/follow.repository';
+import { FollowService } from './services/follow.service';
 
 @Module({
   imports: [
     AuthModule,
     StorageModule,
-    TypeOrmModule.forFeature([UserProfileEntity, UserSettingsEntity, UserPlanEntity]),
+    TypeOrmModule.forFeature([UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity]),
   ],
   controllers: [UserController],
-  providers: [UserService, UserRepository],
-  exports: [UserService, UserRepository],
+  providers: [UserService, UserRepository, FollowRepository, FollowService],
+  exports: [UserService, UserRepository, FollowRepository, FollowService],
 })
 export class UserModule {}

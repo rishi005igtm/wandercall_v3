@@ -85,8 +85,9 @@ export function useUploadAvatarMutation(userId: string | null) {
     mutationFn: (file: File) => userService.uploadAvatar(file),
     onSuccess: (data) => {
       queryClient.setQueryData(QUERY_KEYS.USER.PROFILE(data.userId), data);
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.PROFILE(data.userId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.CURRENT });
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'public_profile'] });
     },
   });
 }
@@ -98,8 +99,95 @@ export function useUploadCoverImageMutation(userId: string | null) {
     mutationFn: (file: File) => userService.uploadCoverImage(file),
     onSuccess: (data) => {
       queryClient.setQueryData(QUERY_KEYS.USER.PROFILE(data.userId), data);
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.PROFILE(data.userId) });
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.USER.CURRENT });
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'public_profile'] });
+    },
+  });
+}
+
+export function useFollowMutation(username: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => userService.followUser(username),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.RELATIONSHIP(username) });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.PUBLIC_PROFILE(username) });
+
+      const prevRelationship = queryClient.getQueryData(QUERY_KEYS.USER.RELATIONSHIP(username));
+      const prevProfile = queryClient.getQueryData<UserProfileResponse>(QUERY_KEYS.USER.PUBLIC_PROFILE(username));
+
+      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), { state: 'Following' });
+
+      if (prevProfile) {
+        queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), {
+          ...prevProfile,
+          followerCount: (prevProfile.followerCount || 0) + 1,
+        });
+      }
+
+      return { prevRelationship, prevProfile };
+    },
+    onError: (err, variables, context) => {
+      if (context) {
+        queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), context.prevRelationship);
+        if (context.prevProfile) {
+          queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), context.prevProfile);
+        }
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), data);
+      queryClient.invalidateQueries({ queryKey: ['user', 'relationship', username] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'public_profile', username] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'followers', username] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'following'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+    },
+  });
+}
+
+export function useUnfollowMutation(username: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => userService.unfollowUser(username),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.RELATIONSHIP(username) });
+      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.PUBLIC_PROFILE(username) });
+
+      const prevRelationship = queryClient.getQueryData(QUERY_KEYS.USER.RELATIONSHIP(username));
+      const prevProfile = queryClient.getQueryData<UserProfileResponse>(QUERY_KEYS.USER.PUBLIC_PROFILE(username));
+
+      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), { state: 'Not Following' });
+
+      if (prevProfile) {
+        queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), {
+          ...prevProfile,
+          followerCount: Math.max(0, (prevProfile.followerCount || 0) - 1),
+        });
+      }
+
+      return { prevRelationship, prevProfile };
+    },
+    onError: (err, variables, context) => {
+      if (context) {
+        queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), context.prevRelationship);
+        if (context.prevProfile) {
+          queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), context.prevProfile);
+        }
+      }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), data);
+      queryClient.invalidateQueries({ queryKey: ['user', 'relationship', username] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'public_profile', username] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'followers', username] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'following'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
     },
   });
 }

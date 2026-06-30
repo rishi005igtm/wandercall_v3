@@ -11,6 +11,7 @@ import { UserSessionEntity } from './modules/auth/entities/user-session.entity';
 import { UserProfileEntity } from './modules/user/entities/user-profile.entity';
 import { UserSettingsEntity } from './modules/user/entities/user-settings.entity';
 import { UserPlanEntity } from './modules/user/entities/user-plan.entity';
+import { FollowEntity } from './modules/user/entities/follow.entity';
 
 @Module({
   imports: [
@@ -27,7 +28,7 @@ import { UserPlanEntity } from './modules/user/entities/user-plan.entity';
           username: configService.get<string>('database.username', 'postgres'),
           password: configService.get<string>('database.password', 'anmol162004'),
           database: configService.get<string>('database.name', 'postgres'),
-          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity, UserSettingsEntity, UserPlanEntity],
+          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity],
           synchronize: false, // Disabled for runtime API operations; handled safely once on startup via DatabaseInitializerService
           autoLoadEntities: true,
         };

@@ -35,6 +35,9 @@ export interface UserProfileResponse {
   adventuresCompleted: number;
   communitiesJoined: number;
   campfiresHosted: number;
+  followerCount?: number;
+  followingCount?: number;
+  relationshipState?: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self';
   dnaBadges?: any;
   accountStatus: 'PROFILE_INCOMPLETE' | 'ACTIVE' | string;
   createdAt: string;
@@ -152,6 +155,52 @@ export const userService = {
     const { data } = await httpClient.post<UserProfileResponse>('/users/profile/cover', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return data;
+  },
+
+  async getPublicProfile(username: string): Promise<UserProfileResponse> {
+    const { data } = await httpClient.get<UserProfileResponse>(`/users/profile/username/${username}`);
+    return data;
+  },
+
+  async getRelationshipState(username: string): Promise<{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }> {
+    const { data } = await httpClient.get<{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }>(`/users/relationship/${username}`);
+    return data;
+  },
+
+  async followUser(username: string): Promise<{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }> {
+    const { data } = await httpClient.post<{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }>(`/users/follow/${username}`);
+    return data;
+  },
+
+  async unfollowUser(username: string): Promise<{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }> {
+    const { data } = await httpClient.post<{ state: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' }>(`/users/unfollow/${username}`);
+    return data;
+  },
+
+  async getFollowers(
+    username: string,
+    limit = 10,
+    cursor?: string,
+    search?: string,
+  ): Promise<{ items: any[]; nextCursor?: string }> {
+    const { data } = await httpClient.get<{ items: any[]; nextCursor?: string }>(
+      `/users/${username}/followers`,
+      { params: { limit, cursor, search } }
+    );
+    return data;
+  },
+
+  async getFollowing(
+    username: string,
+    limit = 10,
+    cursor?: string,
+    search?: string,
+  ): Promise<{ items: any[]; nextCursor?: string }> {
+    const { data } = await httpClient.get<{ items: any[]; nextCursor?: string }>(
+      `/users/${username}/following`,
+      { params: { limit, cursor, search } }
+    );
     return data;
   },
 };

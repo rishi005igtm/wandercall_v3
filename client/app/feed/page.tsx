@@ -1040,9 +1040,49 @@ export default function ExplorerFeedPage() {
     return () => observer.disconnect();
   }, [page, isLoading, hasMore]);
 
-  // Split posts into 2 columns for masonry layout on desktop
-  const leftColumnPosts = processedPosts.filter((_, idx) => idx % 2 === 0);
-  const rightColumnPosts = processedPosts.filter((_, idx) => idx % 2 === 1);
+  // Estimate height of a post to distribute evenly across columns
+  const estimatePostHeight = (post: FeedPost) => {
+    let height = 150; // base card height (avatar header + footer comments/likes)
+    if (post.type === "experience") {
+      height += 280; // large image + action button
+    } else if (post.type === "memory" || post.type === "recap") {
+      height += 220; // standard image
+    }
+    const description = post.storyText || post.memoryText || post.discussionHighlight || "";
+    if (description) {
+      height += Math.min(120, description.length * 0.35); // description length scaling
+    }
+    if (post.type === "quest") {
+      height += 110; // celebrate button + rewards badge
+    }
+    if (post.type === "community") {
+      height += 190; // join community button + image background
+    }
+    return height;
+  };
+
+  // Dynamically distribute posts to the shortest column
+  const col1Posts: FeedPost[] = [];
+  const col2Posts: FeedPost[] = [];
+  const col3Posts: FeedPost[] = [];
+
+  let col1Height = 0;
+  let col2Height = 0;
+  let col3Height = 0;
+
+  processedPosts.forEach((post) => {
+    const postHeight = estimatePostHeight(post);
+    if (col1Height <= col2Height && col1Height <= col3Height) {
+      col1Posts.push(post);
+      col1Height += postHeight;
+    } else if (col2Height <= col1Height && col2Height <= col3Height) {
+      col2Posts.push(post);
+      col2Height += postHeight;
+    } else {
+      col3Posts.push(post);
+      col3Height += postHeight;
+    }
+  });
 
   const renderPostCard = (post: FeedPost) => {
     const UserIcon = post.user.avatar;
@@ -1069,8 +1109,8 @@ export default function ExplorerFeedPage() {
         transition={{ duration: 0.35, ease: "easeOut" }}
         className={`glass-panel border p-4 md:p-6 rounded-3xl flex flex-col gap-4 text-left shadow-lg transition-all duration-300 relative overflow-hidden group w-full shine-card ${typeClasses} ${
           isRishiraj 
-            ? "border-amber-500/20 shadow-amber-500/[0.01] bg-gradient-to-tr from-amber-500/[0.02] via-transparent to-rose-500/[0.01] hover:border-amber-500/35 hover:shadow-amber-500/5" 
-            : "border-white/5 hover:border-white/10"
+            ? "border-amber-500/35 shadow-amber-500/[0.01] bg-gradient-to-tr from-amber-500/[0.02] via-transparent to-rose-500/[0.01] hover:border-amber-500/50 hover:shadow-amber-500/5" 
+            : "border-white/12 hover:border-white/20"
         }`}
       >
 
@@ -1911,26 +1951,33 @@ export default function ExplorerFeedPage() {
         )}
       </AnimatePresence>
 
-      {/* Mobile Layout (chronological single column) */}
-      <div className="flex flex-col gap-6 md:hidden w-full">
+      {/* Mobile & Tablet Layout */}
+      <div className="flex flex-col md:grid md:grid-cols-2 gap-6 lg:hidden w-full">
         <AnimatePresence mode="popLayout">
           {processedPosts.map((post) => renderPostCard(post))}
         </AnimatePresence>
       </div>
 
-      {/* Desktop Layout (Masonry side-by-side columns) */}
-      <div className="hidden md:grid grid-cols-2 gap-6 items-start w-full">
-        {/* Left Column */}
+      {/* Desktop Layout (Masonry side-by-side columns - 3 fixed columns) */}
+      <div className="hidden lg:grid grid-cols-3 gap-6 items-start w-full">
+        {/* Column 1 */}
         <div className="flex flex-col gap-6">
           <AnimatePresence mode="popLayout">
-            {leftColumnPosts.map((post) => renderPostCard(post))}
+            {col1Posts.map((post) => renderPostCard(post))}
           </AnimatePresence>
         </div>
 
-        {/* Right Column */}
+        {/* Column 2 */}
         <div className="flex flex-col gap-6">
           <AnimatePresence mode="popLayout">
-            {rightColumnPosts.map((post) => renderPostCard(post))}
+            {col2Posts.map((post) => renderPostCard(post))}
+          </AnimatePresence>
+        </div>
+
+        {/* Column 3 */}
+        <div className="flex flex-col gap-6">
+          <AnimatePresence mode="popLayout">
+            {col3Posts.map((post) => renderPostCard(post))}
           </AnimatePresence>
         </div>
       </div>
@@ -1939,7 +1986,7 @@ export default function ExplorerFeedPage() {
       {hasMore && (
         <div ref={loaderRef} className="py-6 w-full">
           {isLoading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full">
               {/* Skeleton Card 1 */}
               <div className="bg-white/[0.01] border border-white/5 p-6 rounded-3xl flex flex-col gap-4 animate-pulse">
                 <div className="flex justify-between items-center">
@@ -1955,6 +2002,20 @@ export default function ExplorerFeedPage() {
                 <div className="h-4 bg-zinc-900 rounded-md w-3/4" />
               </div>
               {/* Skeleton Card 2 */}
+              <div className="bg-white/[0.01] border border-white/5 p-6 rounded-3xl flex flex-col gap-4 animate-pulse">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-zinc-900" />
+                    <div className="flex flex-col gap-1.5">
+                      <div className="h-3 w-28 bg-zinc-900 rounded-md" />
+                      <div className="h-2 w-16 bg-zinc-900 rounded-md" />
+                    </div>
+                  </div>
+                </div>
+                <div className="h-32 bg-zinc-900 rounded-2xl w-full" />
+                <div className="h-4 bg-zinc-900 rounded-md w-3/4" />
+              </div>
+              {/* Skeleton Card 3 */}
               <div className="bg-white/[0.01] border border-white/5 p-6 rounded-3xl flex flex-col gap-4 animate-pulse">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-3">

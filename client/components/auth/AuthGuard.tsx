@@ -31,6 +31,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     // 1. Guest-Only Route Redirection for Authenticated Users
     if (isAuthenticated && isGuestRoute) {
+      if (!isEmailVerified) {
+        return;
+      }
       if (accountStatus === 'PROFILE_INCOMPLETE') {
         router.replace('/signup/complete');
       } else {
@@ -51,6 +54,18 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
       if (accountStatus === 'PROFILE_INCOMPLETE' && !isSignupComplete) {
         router.replace('/signup/complete');
+        return;
+      }
+    }
+
+    // 3. Signup Complete Route Enforcement
+    if (isSignupComplete) {
+      if (!isAuthenticated) {
+        router.replace('/login');
+        return;
+      }
+      if (!isEmailVerified) {
+        router.replace('/signup');
         return;
       }
     }

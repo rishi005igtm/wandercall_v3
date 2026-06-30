@@ -33,6 +33,14 @@ export class AuthController {
     return this.authService.verifyEmailCode(email, code);
   }
 
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+  async resendVerification(
+    @Body('email') email: string,
+  ): Promise<{ success: boolean; message: string }> {
+    return this.authService.resendVerificationCode(email);
+  }
+
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
