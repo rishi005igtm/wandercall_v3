@@ -3,7 +3,9 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { useAppSelector } from "@/lib/store/store";
 import {
   Compass,
   MapPin,
@@ -50,6 +52,132 @@ import {
   Home,
   DollarSign
 } from "lucide-react";
+
+// Image gallery slideshow component for split views and indicators
+interface FeedImageGalleryProps {
+  images: string[];
+  onImageClick: (idx: number) => void;
+}
+
+const FeedImageGallery = ({ images, onImageClick }: FeedImageGalleryProps) => {
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    if (images.length < 3) return;
+    const interval = setInterval(() => {
+      setTick(prev => prev + 1);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [images.length]);
+
+  if (!images || images.length === 0) return null;
+
+  // Compute which indices are visible
+  let leftIdx = 0;
+  let rightIdx = 1;
+
+  if (images.length === 2) {
+    leftIdx = 0;
+    rightIdx = 1;
+  } else if (images.length === 3) {
+    // Cycle: (0,1) -> (2,0) -> (1,2) -> repeat
+    const cycles = [
+      [0, 1],
+      [2, 0],
+      [1, 2]
+    ];
+    const currentCycle = cycles[tick % cycles.length];
+    leftIdx = currentCycle[0];
+    rightIdx = currentCycle[1];
+  } else if (images.length >= 4) {
+    // Cycle: (0,1) -> (2,3) -> repeat
+    const cycles = [
+      [0, 1],
+      [2, 3]
+    ];
+    const currentCycle = cycles[tick % cycles.length];
+    leftIdx = currentCycle[0];
+    rightIdx = currentCycle[1];
+  }
+
+  return (
+    <div className="relative w-full rounded-2xl overflow-hidden border border-white/5 bg-zinc-950 group">
+      {images.length === 1 ? (
+        // Single Image Layout
+        <div 
+          onClick={() => onImageClick(0)}
+          className="w-full h-[220px] relative overflow-hidden cursor-pointer"
+        >
+          <img 
+            src={images[0]} 
+            alt="Adventure scene" 
+            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+          />
+        </div>
+      ) : (
+        // Split Image Layout
+        <div className="grid grid-cols-2 gap-2 h-[220px] relative">
+          {/* Left Frame */}
+          <div 
+            onClick={() => onImageClick(leftIdx)}
+            className="relative h-full overflow-hidden cursor-pointer bg-zinc-950"
+          >
+            <AnimatePresence mode="popLayout">
+              <motion.img 
+                key={`left-${leftIdx}`}
+                src={images[leftIdx]} 
+                alt="Adventure scene left" 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8 }}
+                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* Right Frame */}
+          <div 
+            onClick={() => onImageClick(rightIdx)}
+            className="relative h-full overflow-hidden cursor-pointer bg-zinc-950"
+          >
+            <AnimatePresence mode="popLayout">
+              <motion.img 
+                key={`right-${rightIdx}`}
+                src={images[rightIdx]} 
+                alt="Adventure scene right" 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8 }}
+                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+              />
+            </AnimatePresence>
+          </div>
+        </div>
+      )}
+
+      {/* Dots Indicator Overlay */}
+      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 bg-black/40 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
+        {images.map((_, idx) => {
+          const isHighlighted = images.length === 1 
+            ? idx === 0 
+            : (idx === leftIdx || idx === rightIdx);
+          return (
+            <div 
+              key={idx}
+              className={`h-1.5 rounded-full transition-all duration-500 ${
+                isHighlighted 
+                  ? "w-3 bg-brand-cyan" 
+                  : "w-1.5 bg-white/30"
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 // Types
 interface Comment {
@@ -655,9 +783,16 @@ const DescriptionText = ({ text, isItalic = false, borderClass = "" }: { text: s
 };
 
 export default function ExplorerFeedPage() {
+  const router = useRouter();
+  const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+
+  // Sync Redux auth state
+  useEffect(() => {
+    setIsLoggedIn(isAuthenticated);
+  }, [isAuthenticated]);
 
   const executeAuthAction = (actionName: string, actionCallback: () => void) => {
     if (!isLoggedIn) {
@@ -671,24 +806,29 @@ export default function ExplorerFeedPage() {
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>(initialFeedPosts);
   const [activeFilter, setActiveFilter] = useState("All");
   const [activeSort, setActiveSort] = useState("Trending");
-  const [postText, setPostText] = useState("");
-  const [postTitle, setPostTitle] = useState("");
-  const [postType, setPostType] = useState<"story" | "memory" | "itinerary" | "review" | "tips" | "food" | "stay" | "budget" | "meetup">("story");
-  const [isCreatePostOpen, setIsCreatePostOpen] = useState(false);
-  const [postLocation, setPostLocation] = useState("");
-  const [postDuration, setPostDuration] = useState("");
-  const [postCost, setPostCost] = useState("");
+
+  // Load custom posts from localStorage on mount
+  useEffect(() => {
+    const localPostsStr = localStorage.getItem("custom_feed_posts");
+    if (localPostsStr) {
+      try {
+        const localPosts = JSON.parse(localPostsStr) as FeedPost[];
+        if (localPosts.length > 0) {
+          setFeedPosts(prev => {
+            const filteredLocal = localPosts.filter(lp => !prev.some(p => p.id === lp.id));
+            return [...filteredLocal, ...prev];
+          });
+        }
+      } catch (e) {
+        console.error("Failed to parse custom local feed posts:", e);
+      }
+    }
+  }, []);
+
   const [isLoading, setIsLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
-
-  // Media upload & Voice recording states
-  const [attachedImages, setAttachedImages] = useState<string[]>([]);
-  const [attachedVoice, setAttachedVoice] = useState<{ name: string; duration: number } | null>(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingSeconds, setRecordingSeconds] = useState(0);
-  const [postStep, setPostStep] = useState(1);
 
   // Image Viewer Modal States
   const [modalImages, setModalImages] = useState<string[]>([]);
@@ -722,56 +862,7 @@ export default function ExplorerFeedPage() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isModalOpen, modalImages]);
 
-  // Simulated Voice Recording Timer
-  useEffect(() => {
-    let interval: any = null;
-    if (isRecording) {
-      interval = setInterval(() => {
-        setRecordingSeconds(prev => {
-          if (prev >= 59) {
-            setIsRecording(false);
-            setAttachedVoice({ name: "Voice Note (1:00)", duration: 60 });
-            triggerToast("Recording reached 1 minute limit!");
-            return 0;
-          }
-          return prev + 1;
-        });
-      }, 1000);
-    } else {
-      setRecordingSeconds(0);
-    }
-    return () => clearInterval(interval);
-  }, [isRecording]);
 
-  const handleAddMockImage = () => {
-    if (attachedImages.length >= 2) {
-      triggerToast("You can upload up to 2 images only!");
-      return;
-    }
-    const mockImages = [
-      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=600&auto=format&fit=crop"
-    ];
-    const newImg = mockImages[attachedImages.length % mockImages.length];
-    setAttachedImages(prev => [...prev, newImg]);
-    triggerToast("Image attached!");
-  };
-
-  const handleUploadMockAudio = () => {
-    if (attachedVoice) {
-      triggerToast("You can upload up to 1 voice note only!");
-      return;
-    }
-    setAttachedVoice({ name: "adventure_speech.mp3", duration: 42 });
-    triggerToast("Audio file attached!");
-  };
-
-  const handleRemoveVoice = () => {
-    setAttachedVoice(null);
-    triggerToast("Voice note removed!");
-  };
 
   // Comments toggles
   const [expandedCommentsId, setExpandedCommentsId] = useState<string | null>(null);
@@ -834,76 +925,7 @@ export default function ExplorerFeedPage() {
   }, [feedPosts, activeFilter, activeSort]);
 
 
-  // Handle post creation
-  const handleCreatePost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!postText.trim()) return;
 
-    const newPostId = `custom-post-${Date.now()}`;
-    let newPost: FeedPost;
-
-    if (postType === "memory") {
-      newPost = {
-        id: newPostId,
-        type: "memory",
-        category: "memory",
-        user: {
-          name: "Rishiraj",
-          username: "@rishi005",
-          avatar: "R",
-          level: 12,
-          verified: true
-        },
-        timestamp: "Just now",
-        visibility: "Public",
-        memoryTitle: postTitle.trim() || "Shared a new Memory",
-        memoryText: postText,
-        singleImage: attachedImages[0] || "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=800&auto=format&fit=crop",
-        likes: 1,
-        commentsCount: 0,
-        comments: [],
-        voiceNote: attachedVoice ? attachedVoice : undefined
-      };
-    } else {
-      newPost = {
-        id: newPostId,
-        type: "experience",
-        category: postType,
-        user: {
-          name: "Rishiraj",
-          username: "@rishi005",
-          avatar: "R",
-          level: 12,
-          verified: true
-        },
-        timestamp: "Just now",
-        visibility: "Public",
-        experienceName: postTitle.trim() || "Local Exploration",
-        location: postLocation.trim() || "On the Trail",
-        duration: postDuration.trim() || "1 Day",
-        cost: postCost.trim() || "Free",
-        rating: 5.0,
-        storyText: postText,
-        images: attachedImages.length > 0 ? attachedImages : ["https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=600&auto=format&fit=crop"],
-        likes: 1,
-        commentsCount: 0,
-        comments: [],
-        voiceNote: attachedVoice ? attachedVoice : undefined
-      };
-    }
-
-    setFeedPosts(prev => [newPost, ...prev]);
-    setPostText("");
-    setPostTitle("");
-    setPostLocation("");
-    setPostDuration("");
-    setPostCost("");
-    setAttachedImages([]);
-    setAttachedVoice(null);
-    setPostStep(1);
-    setIsCreatePostOpen(false);
-    triggerToast("Adventure story posted successfully!");
-  };
 
   // Toast notifier
   const triggerToast = (msg: string) => {
@@ -1042,22 +1064,43 @@ export default function ExplorerFeedPage() {
 
   // Estimate height of a post to distribute evenly across columns
   const estimatePostHeight = (post: FeedPost) => {
-    let height = 150; // base card height (avatar header + footer comments/likes)
-    if (post.type === "experience") {
-      height += 280; // large image + action button
-    } else if (post.type === "memory" || post.type === "recap") {
-      height += 220; // standard image
-    }
+    let height = 140; // base header/footer padding and margins
+    
+    // Description height
     const description = post.storyText || post.memoryText || post.discussionHighlight || "";
     if (description) {
-      height += Math.min(120, description.length * 0.35); // description length scaling
+      const textLen = description.length;
+      height += Math.min(80, textLen * 0.25); 
     }
-    if (post.type === "quest") {
-      height += 110; // celebrate button + rewards badge
+
+    // Image height
+    if (post.type === "experience") {
+      if (post.images && post.images.length > 0) {
+        height += 230; // image grid height + gap
+      }
+      // Try This Experience CTA button (only for Rishiraj host)
+      if (post.user.name === "Rishiraj") {
+        height += 48;
+      }
+    } else if (post.type === "memory" || post.type === "recap") {
+      if (post.singleImage) {
+        height += 234;
+      }
+    } else if (post.type === "community") {
+      if (post.communityBanner) {
+        height += 186;
+      }
+      height += 100; // meetup details + join button
+    } else if (post.type === "quest") {
+      height += 150; // badge info + celebrate button
     }
-    if (post.type === "community") {
-      height += 190; // join community button + image background
+
+    // Comments block if expanded
+    if (expandedCommentsId === post.id) {
+      const commentsCount = post.comments?.length || 0;
+      height += 60 + (commentsCount * 58); // input field + list items
     }
+
     return height;
   };
 
@@ -1177,21 +1220,14 @@ export default function ExplorerFeedPage() {
 
               {/* Image Carousel/Gallery Grid */}
               {post.images && post.images.length > 0 && (
-                <div className="grid grid-cols-2 gap-2 rounded-2xl overflow-hidden relative border border-white/5 max-h-[220px]">
-                  {post.images.map((img, idx) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => {
-                        setModalImages(post.images ?? []);
-                        setActiveImageIndex(idx);
-                        setIsModalOpen(true);
-                      }}
-                      className="h-[220px] relative overflow-hidden cursor-pointer"
-                    >
-                      <img src={img} alt="Adventure scene" className="w-full h-full object-cover group-hover:scale-102 hover:scale-105 transition-transform duration-500" />
-                    </div>
-                  ))}
-                </div>
+                <FeedImageGallery 
+                  images={post.images} 
+                  onImageClick={(idx) => {
+                    setModalImages(post.images ?? []);
+                    setActiveImageIndex(idx);
+                    setIsModalOpen(true);
+                  }}
+                />
               )}
 
               {/* Travel details meta */}
@@ -1291,18 +1327,22 @@ export default function ExplorerFeedPage() {
                 <h2 className="text-base font-black text-white">{post.memoryTitle}</h2>
               </div>
 
-              {post.singleImage && (
-                <div 
-                  onClick={() => {
-                     setModalImages([post.singleImage!]);
-                    setActiveImageIndex(0);
-                    setIsModalOpen(true);
-                  }}
-                  className="w-full h-56 rounded-2xl overflow-hidden border border-white/5 relative cursor-pointer"
-                >
-                  <img src={post.singleImage} alt="Memory scene" className="w-full h-full object-cover hover:scale-102 transition-transform duration-500" />
-                </div>
-              )}
+              {/* Image Carousel/Gallery Grid */}
+              {(() => {
+                const galleryImages = post.images && post.images.length > 0 
+                  ? post.images 
+                  : (post.singleImage ? [post.singleImage] : []);
+                return galleryImages.length > 0 && (
+                  <FeedImageGallery 
+                    images={galleryImages} 
+                    onImageClick={(idx) => {
+                      setModalImages(galleryImages);
+                      setActiveImageIndex(idx);
+                      setIsModalOpen(true);
+                    }}
+                  />
+                );
+              })()}
 
               <DescriptionText text={post.memoryText || ""} isItalic={true} borderClass="pl-3 border-l border-brand-purple/30" />
 
@@ -1601,27 +1641,12 @@ export default function ExplorerFeedPage() {
           <button
             onClick={() => {
               executeAuthAction("create posts", () => {
-                const nextState = !isCreatePostOpen;
-                setIsCreatePostOpen(nextState);
-                if (nextState) {
-                  setTimeout(() => {
-                    const el = document.getElementById("create-post-card");
-                    el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                  }, 150);
-                }
+                router.push("/feed/create-post");
               });
             }}
             className="h-8 px-3 rounded-lg bg-gradient-to-r from-brand-indigo to-brand-purple text-[10px] font-bold uppercase tracking-wider text-white hover:brightness-110 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-brand-indigo/10 shrink-0"
           >
-            {isCreatePostOpen ? (
-              <>
-                <X className="h-3.5 w-3.5" /> Close Editor
-              </>
-            ) : (
-              <>
-                <Plus className="h-3.5 w-3.5" /> Create Post
-              </>
-            )}
+            <Plus className="h-3.5 w-3.5" /> Create Post
           </button>
         </div>
 
@@ -1641,315 +1666,6 @@ export default function ExplorerFeedPage() {
           ))}
         </div>
       </div>
-
-
-
-      {/* CREATE POST CARD CONTAINER */}
-      <AnimatePresence>
-        {isCreatePostOpen && (
-          <motion.div
-            id="create-post-card"
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ 
-              opacity: 1, 
-              height: "auto", 
-              marginTop: 24,
-              transitionEnd: { overflow: "visible" } 
-            }}
-            exit={{ 
-              opacity: 0, 
-              height: 0, 
-              marginTop: 0,
-              overflow: "hidden" 
-            }}
-            transition={{ duration: 0.3 }}
-            className="w-full"
-          >
-            {/* On desktop: show side-by-side. On mobile: show step 1 or step 2 */}
-            <div className="flex flex-col md:flex-row gap-6 w-full items-stretch pb-2">
-
-              {/* LEFT CONTAINER: CREATE POST WORKSPACE */}
-              <div className={`${postStep === 1 ? "hidden md:flex" : "flex"} w-full md:w-[60%] bg-white/[0.01] border border-white/5 p-5 rounded-3xl flex-col gap-4 text-left shadow-lg relative justify-between`}>
-
-                <div className="flex flex-col gap-4 w-full">
-                  {/* Header inside the container */}
-                  <div className="flex items-center gap-3">
-                    <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple p-0.5 shrink-0">
-                      <div className="h-full w-full rounded-full bg-zinc-900 flex items-center justify-center font-black text-xs text-white">
-                        R
-                      </div>
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-white uppercase tracking-wider">Draft New Explorer Post</h3>
-                      <p className="text-[10px] text-zinc-500 font-medium">Select a category and share your adventure details.</p>
-                    </div>
-                  </div>
-
-                  {/* Title & Category Row */}
-                  <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-                    {/* Category Dropdown Selector (Browser Native Select) */}
-                    <div className="relative shrink-0 flex items-center gap-2">
-                      {(() => {
-                        const currentCat = categories.find(c => c.id === postType) || categories[0];
-                        const IconComponent = currentCat.icon;
-                        return (
-                          <div className={`p-2 rounded-xl bg-zinc-900 border border-white/5 flex items-center justify-center shrink-0 ${currentCat.color.split(' ')[0]}`}>
-                            <IconComponent className="h-4 w-4" />
-                          </div>
-                        );
-                      })()}
-                      <div className="relative">
-                        <select
-                          value={postType}
-                          onChange={(e) => setPostType(e.target.value as any)}
-                          className="w-full sm:w-44 h-9 bg-zinc-900 border border-white/5 rounded-xl pl-3 pr-8 text-xs font-bold text-white outline-none focus:border-white/10 hover:border-white/10 transition-all cursor-pointer appearance-none select-none"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23a1a1aa' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")`,
-                            backgroundPosition: 'right 0.6rem center',
-                            backgroundSize: '1rem',
-                            backgroundRepeat: 'no-repeat'
-                          }}
-                        >
-                          {categories.map((cat) => (
-                            <option key={cat.id} value={cat.id} className="bg-zinc-950 text-zinc-300 font-semibold py-2">
-                              {cat.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    {/* Title Input Field */}
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={postTitle}
-                        onChange={(e) => setPostTitle(e.target.value)}
-                        placeholder="Enter post title..."
-                        className="w-full h-9 bg-zinc-900 border border-white/5 rounded-xl px-3 text-xs text-white outline-none focus:border-white/10 font-bold placeholder-zinc-500 transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Form Input fields */}
-                  <form onSubmit={handleCreatePost} className="flex-grow flex flex-col gap-3">
-                    {/* Description Text Area */}
-                    <div>
-                      <textarea
-                        value={postText}
-                        onChange={(e) => setPostText(e.target.value)}
-                        placeholder={
-                          categories.find(c => c.id === postType)?.placeholder || 
-                          "Write your adventure details..."
-                        }
-                        className="w-full min-h-[110px] bg-zinc-900 border border-white/5 rounded-xl px-3 py-2.5 text-xs text-zinc-200 outline-none resize-none font-medium placeholder-zinc-500 focus:border-white/10 transition-all"
-                      />
-                    </div>
-
-                    {/* Location Input Field for individual user */}
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1 select-none">
-                        <MapPin className="h-3 w-3 text-brand-cyan shrink-0" /> Post Location (Optional)
-                      </span>
-                      <input
-                        type="text"
-                        value={postLocation}
-                        onChange={(e) => setPostLocation(e.target.value)}
-                        placeholder="e.g. Gokarna, Karnataka"
-                        className="w-full h-8.5 bg-zinc-900 border border-white/5 rounded-xl px-3 text-xs text-white outline-none focus:border-white/10 font-medium placeholder-zinc-600 transition-all"
-                      />
-                    </div>
-
-                    {/* Attached indicator inside creator view */}
-                    {(attachedImages.length > 0 || attachedVoice) && (
-                      <div className="flex flex-wrap items-center gap-2 border-t border-white/5 pt-2 text-[9px] text-zinc-500 font-semibold font-mono">
-                        <span>Attached:</span>
-                        {attachedImages.length > 0 && (
-                          <span className="text-brand-cyan bg-brand-cyan/5 px-2 py-0.5 rounded border border-brand-cyan/10">
-                            {attachedImages.length} Image(s)
-                          </span>
-                        )}
-                        {attachedVoice && (
-                          <span className="text-brand-purple bg-brand-purple/5 px-2 py-0.5 rounded border border-brand-purple/10">
-                            Voice ({attachedVoice.duration}s)
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    {/* Footer buttons of creator section */}
-                    <div className="flex justify-end items-center pt-2 border-t border-white/5 gap-2 mt-auto">
-                      <div className="flex items-center gap-2">
-                        {/* Back Button (Mobile Only) */}
-                        <button
-                          type="button"
-                          onClick={() => setPostStep(1)}
-                          className="md:hidden h-8 px-3 rounded-lg border border-white/10 text-[9px] font-bold uppercase tracking-wider text-zinc-400 hover:text-white transition-all whitespace-nowrap shrink-0"
-                        >
-                          Back
-                        </button>
-                        {/* Publish Post Button */}
-                        <button
-                          type="submit"
-                          disabled={!postText.trim() || !postTitle.trim()}
-                          className="h-8 px-4 rounded-lg bg-white text-zinc-950 font-bold text-[10px] uppercase tracking-wider hover:bg-zinc-200 disabled:opacity-30 disabled:hover:bg-white transition-all cursor-pointer flex items-center gap-1.5 whitespace-nowrap shrink-0"
-                        >
-                          Publish Post <Send className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </form>
-                </div>
-              </div>
-
-              {/* RIGHT CONTAINER: MEDIA ATTACHMENTS (STEP 1 ON MOBILE) */}
-              <div className={`${postStep === 2 ? "hidden md:flex" : "flex"} w-full md:w-[40%] bg-white/[0.01] border border-white/5 p-5 rounded-3xl flex-col gap-4 text-left shadow-lg justify-between`}>
-                <div className="flex flex-col gap-4 w-full">
-                  <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                    <span className="text-[10px] font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-                      Media Attachments
-                    </span>
-                    <span className="text-[9px] font-mono text-zinc-500 font-bold">
-                      {attachedImages.length}/2 Images • {attachedVoice ? "1/1" : "0/1"} Voice
-                    </span>
-                  </div>
-
-                  {/* Upload Images Zone */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[8.5px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Images (Max 2)</span>
-                    <div className="grid grid-cols-2 gap-2 w-full">
-                      {attachedImages.map((img, idx) => (
-                        <div key={idx} className="relative h-20 rounded-xl overflow-hidden border border-white/5 group/thumb">
-                          <img src={img} alt="Preview" className="w-full h-full object-cover" />
-                          <button
-                            type="button"
-                            onClick={() => setAttachedImages(prev => prev.filter((_, i) => i !== idx))}
-                            className="absolute top-1 right-1 h-5 w-5 rounded-full bg-zinc-950/85 hover:bg-zinc-900 border border-white/10 text-white flex items-center justify-center cursor-pointer transition-colors"
-                            aria-label="Remove image"
-                          >
-                            <X className="h-3 w-3" />
-                          </button>
-                        </div>
-                      ))}
-                      {attachedImages.length < 2 && (
-                        <button
-                          type="button"
-                          onClick={handleAddMockImage}
-                          className="h-20 rounded-xl border border-dashed border-white/10 bg-white/[0.01] hover:bg-white/[0.02] hover:border-white/20 transition-all flex flex-col items-center justify-center gap-1 text-zinc-500 hover:text-zinc-300 cursor-pointer"
-                        >
-                          <Camera className="h-4 w-4" />
-                          <span className="text-[8px] font-black uppercase tracking-wider">Add Image</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Record or Upload Voice Zone */}
-                  <div className="flex flex-col gap-2 mt-1">
-                    <span className="text-[8.5px] font-mono font-bold text-zinc-500 uppercase tracking-widest">Voice Note (Max 1 Min)</span>
-
-                    {isRecording ? (
-                      /* Recording active UI */
-                      <div className="bg-rose-500/5 border border-rose-500/25 p-3 rounded-2xl flex flex-col gap-2">
-                        <div className="flex justify-between items-center">
-                          <span className="text-[9px] font-bold text-rose-500 flex items-center gap-1.5 uppercase animate-pulse">
-                            <span className="h-2 w-2 rounded-full bg-rose-500" />
-                            Recording Audio
-                          </span>
-                          <span className="text-xs font-mono font-black text-rose-500">
-                            0:{recordingSeconds < 10 ? `0${recordingSeconds}` : recordingSeconds} / 01:00
-                          </span>
-                        </div>
-                        {/* Simulated Waveform animation */}
-                        <div className="flex gap-0.5 items-center justify-center h-5">
-                          {[...Array(20)].map((_, i) => {
-                            const h = [6, 12, 18, 8, 14, 10, 16, 6, 12, 10, 14, 8, 18, 12, 6, 14, 10, 16, 8, 6][i];
-                            return (
-                              <div
-                                key={i}
-                                style={{ height: `${h}px` }}
-                                className="w-1 rounded-full bg-rose-500/50 animate-pulse"
-                              />
-                            );
-                          })}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsRecording(false);
-                            setAttachedVoice({ name: `Voice Note (0:${recordingSeconds < 10 ? `0${recordingSeconds}` : recordingSeconds})`, duration: recordingSeconds });
-                            triggerToast("Recording attached!");
-                          }}
-                          className="h-8 w-full rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-[9px] uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Square className="h-3.5 w-3.5 fill-white text-white" /> Stop & Attach
-                        </button>
-                      </div>
-                    ) : attachedVoice ? (
-                      /* Attached voice file player draft UI */
-                      <div className="bg-brand-purple/5 border border-brand-purple/20 p-3 rounded-2xl flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <button
-                            type="button"
-                            onClick={() => triggerToast("Playing attached draft voice...")}
-                            className="h-7 w-7 rounded-full bg-brand-purple/15 text-brand-purple flex items-center justify-center shrink-0 cursor-pointer"
-                          >
-                            <Play className="h-3.5 w-3.5 fill-brand-purple/20" />
-                          </button>
-                          <div className="min-w-0 text-left">
-                            <span className="text-[10px] font-bold text-zinc-300 block truncate">{attachedVoice.name}</span>
-                            <span className="text-[8px] font-mono text-zinc-500">Duration: 0:{attachedVoice.duration < 10 ? `0${attachedVoice.duration}` : attachedVoice.duration}</span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={handleRemoveVoice}
-                          className="h-6 w-6 rounded-lg bg-zinc-950 border border-white/5 text-zinc-500 hover:text-rose-500 flex items-center justify-center cursor-pointer transition-colors"
-                          title="Delete voice"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      /* Audio controls upload/record triggers */
-                      <div className="flex gap-2 w-full">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsRecording(true);
-                            setRecordingSeconds(0);
-                            triggerToast("Recording started...");
-                          }}
-                          className="flex-1 h-9 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] text-[9px] font-bold uppercase tracking-wider text-rose-500 hover:text-rose-400 flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Mic className="h-4 w-4 shrink-0" /> Record Mic
-                        </button>
-                        <button
-                          type="button"
-                          onClick={handleUploadMockAudio}
-                          className="flex-1 h-9 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.02] text-[9px] font-bold uppercase tracking-wider text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 cursor-pointer"
-                        >
-                          <Upload className="h-4 w-4 shrink-0" /> Upload Voice
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Mobile Next button - only shown in Step 1 on mobile */}
-                <button
-                  type="button"
-                  onClick={() => setPostStep(2)}
-                  className="md:hidden w-full h-10 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-xs font-bold uppercase tracking-wider text-white flex items-center justify-center gap-1.5 cursor-pointer mt-4"
-                >
-                  Next: Add Text <ArrowRight className="h-4 w-4" />
-                </button>
-              </div>
-
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Mobile & Tablet Layout */}
       <div className="flex flex-col md:grid md:grid-cols-2 gap-6 lg:hidden w-full">
@@ -2156,7 +1872,7 @@ export default function ExplorerFeedPage() {
               )}
 
               {/* Active Image */}
-              <div className="relative w-full max-h-[80vh] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-zinc-950">
+              <div className="relative w-fit max-w-full max-h-[80vh] flex items-center justify-center overflow-hidden rounded-2xl border border-white/10 shadow-2xl bg-zinc-950">
                 <AnimatePresence mode="wait">
                   <motion.img
                     key={activeImageIndex}

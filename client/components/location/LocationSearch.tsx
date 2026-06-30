@@ -208,23 +208,20 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
         </div>
       ) : (
         // Locked Location Info Card Mode
-        <div className="w-full bg-zinc-950/60 border border-brand-purple/20 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-left shadow-lg backdrop-blur-md">
-          <div className="flex items-start gap-3 min-w-0">
-            <div className="h-9 w-9 rounded-xl bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-brand-purple shrink-0 mt-0.5">
-              <MapPin className="h-5 w-5 animate-pulse" />
-            </div>
-            <div className="flex flex-col leading-tight min-w-0">
-              <span className="text-sm font-black text-white truncate max-w-full">
-                📍 {selectedLocation.formatted_address}
-              </span>
-            </div>
+        <div className="w-full h-12 bg-zinc-950/60 border border-brand-purple/20 px-3.5 rounded-2xl flex items-center justify-between gap-3 text-left shadow-lg backdrop-blur-md">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <MapPin className="h-4.5 w-4.5 text-brand-purple shrink-0 animate-pulse" />
+            <span className="text-xs font-black text-white truncate flex-1 leading-none">
+              {selectedLocation.formatted_address}
+            </span>
           </div>
           <button
             type="button"
             onClick={handleClear}
-            className="px-3 py-1.5 border border-white/10 hover:border-white/20 hover:bg-white/5 text-[9px] font-black uppercase tracking-wider text-zinc-400 hover:text-white rounded-lg transition-all shrink-0 cursor-pointer self-end sm:self-center"
+            className="h-7 w-7 rounded-lg border border-white/5 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all shrink-0 cursor-pointer flex items-center justify-center"
+            title="Clear Location"
           >
-            Change Location
+            <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
