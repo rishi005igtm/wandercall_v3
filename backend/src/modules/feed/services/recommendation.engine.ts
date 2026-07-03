@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PostRepository } from '../repositories/post.repository';
 import { InteractionRepository } from '../repositories/interaction.repository';
 import { RankingEngine } from './ranking.engine';
@@ -9,10 +10,11 @@ import { RANKING_CONFIG } from '../config/ranking.config';
 import { PostEntity } from '../entities/post.entity';
 
 export interface FeedQueryDto {
-  feedType?: 'global' | 'following' | 'trending' | 'recent' | 'category' | 'saved' | 'host';
+  feedType?: 'global' | 'following' | 'trending' | 'recent' | 'category' | 'saved' | 'host' | 'explore';
   category?: string;
   limit?: number;
   cursor?: string;
+  feedSessionId?: string; // Stage 11: Feed Session Stability
 }
 
 interface FeedCursor {
@@ -20,6 +22,7 @@ interface FeedCursor {
   offset: number;
   feedType: string;
   category?: string;
+  feedSessionId?: string;
 }
 
 @Injectable()
@@ -55,74 +58,85 @@ export class RecommendationEngine {
         cursor = { timestamp: Date.now(), offset: 0, feedType };
       }
     } else {
-      cursor = { timestamp: Date.now(), offset: 0, feedType, category: query.category };
+      cursor = { 
+        timestamp: Date.now(), 
+        offset: 0, 
+        feedType, 
+        category: query.category, 
+        feedSessionId: query.feedSessionId || randomUUID()
+      };
     }
 
-    this.logger.log(`Generating feed: type=${feedType}, viewer=${viewerId}, offset=${cursor.offset}`);
+    const currentSessionId = query.feedSessionId || cursor.feedSessionId;
+    this.logger.log(`Generating feed: type=${feedType}, viewer=${viewerId}, offset=${cursor.offset}, session=${currentSessionId}`);
 
     // 2. Fetch context information (follows, interests, impressions)
     let followedCreatorIds: string[] = [];
     const followedSet = new Set<string>();
     const seenSet = new Set<string>();
+    let viewCounts = new Map<string, number>();
     let userInterests: Record<string, number> = {};
 
     if (viewerId) {
-      // Fetch followed creators
-      const followingResult = await this.followRepository.getFollowing(viewerId, 1000);
-      followedCreatorIds = followingResult.items.map((item) => item.profile.userId);
-      for (const id of followedCreatorIds) {
-        followedSet.add(id);
+      // Fetch followed creators gracefully
+      try {
+        const followingResult = await this.followRepository.getFollowing(viewerId, 1000);
+        followedCreatorIds = followingResult.items.map((item) => item.profile.userId);
+        for (const id of followedCreatorIds) {
+          followedSet.add(id);
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to fetch follows for user ${viewerId}: ${err.message}`);
       }
 
-      // Fetch user impressions history to apply seen fatigue penalty
-      const impressionsList = await this.interactionRepo.getImpressions(viewerId);
-      for (const postId of impressionsList) {
-        seenSet.add(postId);
+      // Fetch user impressions history gracefully
+      try {
+        const impressions = await this.interactionRepo.getImpressions(viewerId);
+        for (const imp of impressions) {
+          viewCounts.set(imp.postId, imp.impressionCount);
+          seenSet.add(imp.postId);
+        }
+      } catch (err: any) {
+        this.logger.warn(`Failed to fetch impressions for user ${viewerId}: ${err.message}`);
       }
 
-      // Fetch interest affinities
-      userInterests = await this.interestEngine.getUserInterestMap(viewerId);
+      // Fetch interest affinities gracefully
+      try {
+        userInterests = await this.interestEngine.getUserInterestMap(viewerId);
+      } catch (err: any) {
+        this.logger.warn(`Failed to fetch user interests for user ${viewerId}: ${err.message}`);
+      }
+    }
+    
+    let authorAffinityMap: Record<string, number> = {};
+    if (viewerId) {
+      try {
+        authorAffinityMap = await this.interestEngine.getUserAuthorAffinityMap(viewerId);
+      } catch (err: any) {
+        this.logger.warn(`Failed to fetch author affinity map for user ${viewerId}: ${err.message}`);
+      }
     }
 
-    // 3. Candidate Generation
+    // 3. Candidate Generation and Eligibility Filtering
     let candidates = await this.postRepository.getCandidates(viewerId || undefined, followedCreatorIds);
+    candidates = await this.applyEligibilityFilters(candidates, feedType, query.category, viewerId);
 
-    // Apply strict filters based on feed type
-    if (feedType === 'following') {
-      // Filter candidates to only followed creators
-      candidates = candidates.filter((c) => followedSet.has(c.authorId) || c.authorId === viewerId);
-    } else if (feedType === 'category' && query.category) {
-      if (query.category === 'experience') {
-        const experienceCategories = ['story', 'itinerary', 'stay', 'review', 'tips', 'food', 'budget', 'meetup'];
-        candidates = candidates.filter((c) => experienceCategories.includes(c.category));
-      } else if (query.category === 'memory') {
-        candidates = candidates.filter((c) => c.category === 'memory' || c.category === 'memories');
-      } else {
-        candidates = candidates.filter((c) => c.category === query.category);
-      }
-    } else if (feedType === 'saved') {
-      if (viewerId) {
-        const saves = await this.interactionRepo.findSavesByUserId(viewerId);
-        const savedPostIds = new Set(saves.map((s) => s.postId));
-        candidates = candidates.filter((c) => savedPostIds.has(c.id));
-      } else {
-        candidates = [];
-      }
-    } else if (feedType === 'host') {
-      candidates = candidates.filter((c) => c.authorType === 'HOST');
-    }
-
-    // 4. Scoring candidates using stable query reference timestamp
+    // 4. Scoring candidates using stable query reference timestamp (Stage 3 & 4)
+    const isExplore = feedType === 'explore';
     const scoredCandidates = candidates.map((post) => {
-      const score = this.scorePostWithCustomTime(
-        post,
-        cursor.timestamp,
-        viewerId,
+      const hasLiked = false; // We can pull this from states later or fetch efficiently if needed, but we already have impression logic in the ranking engine. For performance, we can skip fetching full user_post_states for all candidates if not needed, or just use interaction map.
+      const hasSaved = false;
+      const score = this.rankingEngine.scorePost(post, {
+        viewerId: viewerId || undefined,
+        referenceTime: cursor.timestamp,
         userInterests,
-        followedSet,
-        seenSet,
-        feedType === 'trending', // Emphasize trending signals if requested
-      );
+        authorAffinityMap,
+        followedCreatorIds: followedSet,
+        impressionCounts: Object.fromEntries(viewCounts),
+        hasLiked,
+        hasSaved,
+        isExplore
+      });
       return { post, score };
     });
 
@@ -155,8 +169,156 @@ export class RecommendationEngine {
       }
     }
 
-    // Stitch together final user payload
-    const items = paginatedSlice.map((item) => {
+    const postIds = paginatedSlice.map(item => item.post.id);
+    const likedPostIds = new Set<string>();
+    const savedPostIds = new Set<string>();
+
+    if (viewerId && postIds.length > 0) {
+      const states = await this.interactionRepo.getUserPostStates(viewerId, postIds);
+      states.forEach(state => {
+        if (state.hasLiked) likedPostIds.add(state.postId);
+        if (state.hasSaved) savedPostIds.add(state.postId);
+      });
+    }
+
+    // Stitch together final user payload using separated mapping function
+    const items = this.buildDTOs(paginatedSlice, profilesMap, likedPostIds, savedPostIds);
+
+    // 8. Generate next base64 cursor
+    let nextCursor: string | undefined;
+    if (hasMore) {
+      const nextCursorObj: FeedCursor = {
+        timestamp: cursor.timestamp,
+        offset: cursor.offset + limit,
+        feedType,
+        category: query.category,
+        feedSessionId: currentSessionId,
+      };
+      nextCursor = Buffer.from(JSON.stringify(nextCursorObj)).toString('base64');
+    }
+
+    return { items, nextCursor };
+  }
+
+
+  /**
+   * Apply creator and category diversity rules to ensure a balanced feed (Stage 5)
+   */
+  private applyDiversityReRanking(
+    candidates: { post: PostEntity; score: number }[],
+  ): { post: PostEntity; score: number }[] {
+    const list: { post: PostEntity; score: number }[] = [];
+    const pool = [...candidates];
+
+    const maxConsecutiveAuthor = RANKING_CONFIG.diversity.maxConsecutiveAuthor || 2;
+    const maxConsecutiveCategory = RANKING_CONFIG.diversity.maxConsecutiveCategory || 3;
+
+    const creatorWindow: string[] = [];
+    const categoryWindow: string[] = [];
+
+    while (pool.length > 0) {
+      let bestIdx = -1;
+      let fallbackIdx = 0; // If all violate constraints, just take the highest score remaining
+
+      for (let i = 0; i < pool.length; i++) {
+        const authorId = pool[i].post.authorId;
+        const category = pool[i].post.category;
+
+        // Check if author constraint violated
+        let consecutiveAuthors = 0;
+        for (let j = creatorWindow.length - 1; j >= 0; j--) {
+          if (creatorWindow[j] === authorId) consecutiveAuthors++;
+          else break;
+        }
+
+        // Check if category constraint violated
+        let consecutiveCategories = 0;
+        for (let j = categoryWindow.length - 1; j >= 0; j--) {
+          if (categoryWindow[j] === category) consecutiveCategories++;
+          else break;
+        }
+
+        if (consecutiveAuthors < maxConsecutiveAuthor && consecutiveCategories < maxConsecutiveCategory) {
+          bestIdx = i;
+          break; // Found the highest scoring candidate that satisfies constraints (pool is pre-sorted)
+        }
+      }
+
+      const chosenIdx = bestIdx !== -1 ? bestIdx : fallbackIdx;
+      const chosen = pool.splice(chosenIdx, 1)[0];
+      
+      list.push(chosen);
+      creatorWindow.push(chosen.post.authorId);
+      categoryWindow.push(chosen.post.category);
+
+      // Keep windows bounded to prevent memory leaks, we only care about trailing sequence
+      if (creatorWindow.length > maxConsecutiveAuthor + 1) creatorWindow.shift();
+      if (categoryWindow.length > maxConsecutiveCategory + 1) categoryWindow.shift();
+    }
+
+    return list;
+  }
+
+  /**
+   * Modularity: Independent Eligibility Filter testing
+   */
+  public async applyEligibilityFilters(
+    candidates: PostEntity[],
+    feedType: string,
+    category?: string,
+    viewerId?: string | null,
+  ): Promise<PostEntity[]> {
+    if (feedType === 'following') {
+      if (viewerId) {
+        try {
+          const followingResult = await this.followRepository.getFollowing(viewerId, 1000);
+          const followedSet = new Set(followingResult.items.map((item) => item.profile.userId));
+          return candidates.filter((c) => followedSet.has(c.authorId) || c.authorId === viewerId);
+        } catch (e) {
+          return candidates; // fallback gracefully
+        }
+      }
+    } else if (feedType === 'category' && category) {
+      if (category === 'experience') {
+        const experienceCategories = ['story', 'itinerary', 'stay', 'review', 'tips', 'food', 'budget', 'meetup'];
+        return candidates.filter((c) => experienceCategories.includes(c.category));
+      } else if (category === 'memory') {
+        return candidates.filter((c) => c.category === 'memory' || c.category === 'memories');
+      } else {
+        return candidates.filter((c) => c.category === category);
+      }
+    } else if (feedType === 'saved') {
+      if (viewerId && candidates.length > 0) {
+        try {
+          const postIds = candidates.map((c) => c.id);
+          const savedPostIds = new Set<string>();
+          const states = await this.interactionRepo.getUserPostStates(viewerId, postIds);
+          states.forEach((state) => {
+            if (state.hasSaved) savedPostIds.add(state.postId);
+          });
+          return candidates.filter((c) => savedPostIds.has(c.id));
+        } catch (e) {
+          return []; // fallback gracefully
+        }
+      } else {
+        return [];
+      }
+    } else if (feedType === 'host') {
+      return candidates.filter((c) => c.authorType === 'HOST');
+    }
+    return candidates;
+  }
+
+  /**
+   * Modularity: Independent DTO Mapping Logic
+   */
+  public buildDTOs(
+    paginatedSlice: { post: PostEntity; score: number }[],
+    profilesMap: Map<string, any>,
+    likedPostIds: Set<string>,
+    savedPostIds: Set<string>
+  ): any[] {
+    return paginatedSlice.map((item) => {
       const authorProfile = profilesMap.get(item.post.authorId) || {
         username: 'unknown',
         displayName: 'Wanderer',
@@ -185,6 +347,8 @@ export class RecommendationEngine {
         aiQualityScore: item.post.aiQualityScore,
         publishedAt: item.post.publishedAt || item.post.createdAt,
         createdAt: item.post.createdAt,
+        hasLiked: likedPostIds.has(item.post.id),
+        hasSaved: savedPostIds.has(item.post.id),
         author: {
           id: item.post.authorId,
           type: item.post.authorType,
@@ -193,139 +357,6 @@ export class RecommendationEngine {
         recommendationScore: item.score,
       };
     });
-
-    // 8. Generate next base64 cursor
-    let nextCursor: string | undefined;
-    if (hasMore) {
-      const nextCursorObj: FeedCursor = {
-        timestamp: cursor.timestamp,
-        offset: cursor.offset + limit,
-        feedType,
-        category: query.category,
-      };
-      nextCursor = Buffer.from(JSON.stringify(nextCursorObj)).toString('base64');
-    }
-
-    return { items, nextCursor };
-  }
-
-  /**
-   * Scorer utility using reference time instead of current millis to ensure sorting is stable across paginations.
-   */
-  private scorePostWithCustomTime(
-    post: PostEntity,
-    referenceTime: number,
-    viewerId: string | null,
-    userInterests: Record<string, number>,
-    followedCreatorIds: Set<string>,
-    seenPostIds: Set<string>,
-    isTrendingOnly: boolean,
-  ): number {
-    const publishedAt = post.publishedAt || post.createdAt;
-    const diffMs = Math.max(0, referenceTime - publishedAt.getTime());
-    const daysElapsed = diffMs / (1000 * 60 * 60 * 24);
-    
-    // Freshness factor
-    const freshnessScore = Math.exp(-RANKING_CONFIG.freshness.decayRate * daysElapsed);
-
-    // Engagement score (normalised sigmoidal)
-    const baseEngagement =
-      post.likeCount * RANKING_CONFIG.engagementMultipliers.like +
-      post.commentCount * RANKING_CONFIG.engagementMultipliers.comment +
-      post.saveCount * RANKING_CONFIG.engagementMultipliers.save +
-      post.shareCount * RANKING_CONFIG.engagementMultipliers.share;
-    
-    const engagementScore = baseEngagement > 0 ? baseEngagement / (baseEngagement + 15.0) : 0;
-
-    // Category Interest affinity
-    const rawInterest = userInterests[post.category] || 0.0;
-    const interestScore = rawInterest > 0 ? rawInterest / (rawInterest + 5.0) : 0.0;
-
-    // Follow relationships
-    const isFollowing = followedCreatorIds.has(post.authorId);
-    const relationshipScore = isFollowing ? 1.0 : 0.0;
-
-    let score = 0.0;
-
-    if (isTrendingOnly) {
-      // Trending emphasizes recent high-engagement posts
-      // Score is dominated by engagement speed (engagementScore * freshnessScore)
-      score = engagementScore * 0.7 + freshnessScore * 0.3;
-    } else if (viewerId) {
-      score =
-        interestScore * RANKING_CONFIG.weights.interest +
-        relationshipScore * RANKING_CONFIG.weights.relationship +
-        freshnessScore * RANKING_CONFIG.weights.freshness +
-        engagementScore * RANKING_CONFIG.weights.engagement;
-    } else {
-      score = freshnessScore * 0.5 + engagementScore * 0.5;
-    }
-
-    // Apply seen fatigue multiplier
-    if (viewerId && seenPostIds.has(post.id)) {
-      score *= RANKING_CONFIG.penalties.seen;
-    }
-
-    // Apply quality multiplier
-    score *= (post.aiQualityScore || 1.0);
-
-    return score;
-  }
-
-  /**
-   * Apply creator and category diversity rules to demote repetitive creators or categories.
-   */
-  private applyDiversityReRanking(
-    candidates: { post: PostEntity; score: number }[],
-  ): { post: PostEntity; score: number }[] {
-    const list: { post: PostEntity; score: number }[] = [];
-    const pool = [...candidates];
-
-    // Maintain tracking window of last added entries to ensure diversity
-    const creatorWindow: string[] = [];
-    const categoryWindow: string[] = [];
-
-    while (pool.length > 0) {
-      let bestIdx = 0;
-      let bestScore = -9999;
-
-      for (let i = 0; i < pool.length; i++) {
-        let candidateScore = pool[i].score;
-        const authorId = pool[i].post.authorId;
-        const category = pool[i].post.category;
-
-        // Apply diversity penalties relative to sliding window
-        // Demote if matches last creator
-        if (creatorWindow.length > 0 && creatorWindow[creatorWindow.length - 1] === authorId) {
-          candidateScore *= RANKING_CONFIG.penalties.consecutiveCreator;
-        }
-
-        // Demote if matches last 2 categories
-        if (categoryWindow.length >= 2 && 
-            categoryWindow[categoryWindow.length - 1] === category && 
-            categoryWindow[categoryWindow.length - 2] === category) {
-          candidateScore *= RANKING_CONFIG.penalties.consecutiveCategory;
-        }
-
-        if (candidateScore > bestScore) {
-          bestScore = candidateScore;
-          bestIdx = i;
-        }
-      }
-
-      // Add selected item to list and update tracking windows
-      const chosen = pool.splice(bestIdx, 1)[0];
-      list.push(chosen);
-
-      creatorWindow.push(chosen.post.authorId);
-      categoryWindow.push(chosen.post.category);
-
-      // Keep windows capped
-      if (creatorWindow.length > 5) creatorWindow.shift();
-      if (categoryWindow.length > 5) categoryWindow.shift();
-    }
-
-    return list;
   }
 
   async getUserFeed(

@@ -14,12 +14,13 @@ import { FeedEventDispatcher } from './events/feed-event.dispatcher';
 
 // Entities
 import { PostEntity } from './entities/post.entity';
-import { PostLikeEntity } from './entities/post-like.entity';
 import { PostSaveEntity } from './entities/post-save.entity';
 import { PostCommentEntity } from './entities/post-comment.entity';
+import { PostLikeEntity } from './entities/post-like.entity';
 import { UserInterestEntity } from './entities/user-interest.entity';
-import { UserInteractionEntity } from './entities/user-interaction.entity';
+import { UserAuthorAffinityEntity } from './entities/user-author-affinity.entity';
 import { FeedImpressionEntity } from './entities/feed-impression.entity';
+import { UserPostStateEntity } from './entities/user-post-state.entity';
 
 @Module({
   imports: [
@@ -28,12 +29,13 @@ import { FeedImpressionEntity } from './entities/feed-impression.entity';
     StorageModule,
     TypeOrmModule.forFeature([
       PostEntity,
-      PostLikeEntity,
       PostSaveEntity,
       PostCommentEntity,
+      PostLikeEntity,
       UserInterestEntity,
-      UserInteractionEntity,
+      UserAuthorAffinityEntity,
       FeedImpressionEntity,
+      UserPostStateEntity,
     ]),
   ],
   controllers: [FeedController],

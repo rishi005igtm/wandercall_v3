@@ -9,7 +9,7 @@ export function useFeedInfiniteQuery(filters: FeedQueryFilters, enabled = true) 
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled,
-    staleTime: 30 * 1000, // Stale while revalidate behavior
+    staleTime: 30 * 1000,
   });
 }
 
@@ -36,12 +36,12 @@ export function useCreatePostMutation() {
 
   return useMutation({
     mutationFn: (formData: FormData) => feedService.createPost(formData),
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       // Invalidate all feeds to fetch new posts
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      await queryClient.invalidateQueries({ queryKey: ['feed'] });
       // Invalidate current user profile stats
-      queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
-      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+      await queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+      await queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
     },
   });
 }
@@ -117,10 +117,6 @@ export function useLikePostMutation() {
       // Rollback on failure: refetch feeds
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
-    onSuccess: () => {
-      // Invalidate in background to ensure correct sync
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-    },
   });
 }
 
@@ -176,9 +172,6 @@ export function useSavePostMutation() {
     onError: () => {
       queryClient.invalidateQueries({ queryKey: ['feed'] });
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
-    },
   });
 }
 
@@ -191,8 +184,30 @@ export function useCommentMutation() {
     onSuccess: (data, variables) => {
       // Invalidate comments of this post
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.FEED.COMMENTS(variables.postId) });
-      // Invalidate feed list to update commentCount
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      
+      // Optimistically update comment count instead of invalidating to prevent feed reshuffling
+      queryClient.setQueriesData({ queryKey: ['feed'] }, (oldData: any) => {
+        if (!oldData) return oldData;
+        const updater = (post: FeedPost) => ({ ...post, commentCount: post.commentCount + 1 });
+        if (oldData.pages) {
+          return {
+            ...oldData,
+            pages: oldData.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((p: FeedPost) => (p.id === variables.postId ? updater(p) : p)),
+            })),
+          };
+        }
+        return oldData;
+      });
     },
+  });
+}
+
+export function useTrackViewMutation() {
+  return useMutation({
+    mutationFn: ({ postId, data }: { postId: string, data?: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string } }) => 
+      feedService.trackView(postId, data),
+    // Fire and forget, no cache invalidation needed for telemetry
   });
 }

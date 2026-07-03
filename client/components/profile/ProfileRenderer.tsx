@@ -320,8 +320,8 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
     ];
   }, [profile.displayName]);
 
-  // Load memories from backend
-  const { data: userFeedData } = useUserFeedQuery(profile.username, "memory");
+  // Load all user posts (formerly strictly 'memory' category) from backend
+  const { data: userFeedData } = useUserFeedQuery(profile.username);
 
   const memoriesList = useMemo(() => {
     if (!userFeedData?.items) return [];

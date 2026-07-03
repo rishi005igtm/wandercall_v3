@@ -34,7 +34,9 @@ import {
   Zap,
   Volume2,
   Trash2,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  Activity
 } from "lucide-react";
 
 import {
@@ -43,8 +45,10 @@ import {
   useCommentMutation,
   useLikePostMutation,
   useSavePostMutation,
-  useDeletePostMutation
+  useDeletePostMutation,
+  useTrackViewMutation
 } from "@/hooks/api/useFeed";
+import { useImpression } from "@/hooks/useImpression";
 
 import { FeedPost, FeedQueryFilters } from "@/lib/services/feed.service";
 
@@ -54,15 +58,22 @@ interface FeedImageGalleryProps {
   onImageClick: (idx: number) => void;
 }
 
+const ImpressionTracker = ({ children, postId, onImpression, feedSessionId, sourceFeed }: { children: React.ReactNode, postId: string, onImpression: (id: string, data: any) => void, feedSessionId?: string, sourceFeed?: string }) => {
+  const { ref } = useImpression(() => onImpression(postId, { feedSessionId, durationMs: 1500, lastVisiblePercent: 100, sourceFeed }), 0.5, 1500);
+
+  return <div ref={ref} className="w-full relative h-auto">{children}</div>;
+};
+
 const FeedImageGallery = ({ images, onImageClick }: FeedImageGalleryProps) => {
   const [tick, setTick] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({});
+
+  const handleImageLoad = (idx: number) => {
+    setLoadedImages(prev => ({ ...prev, [idx]: true }));
+  };
 
   useEffect(() => {
-    if (images.length < 3) return;
-    const interval = setInterval(() => {
-      setTick(prev => prev + 1);
-    }, 5000);
-    return () => clearInterval(interval);
+    // Disabled auto-transition animation from the card
   }, [images.length]);
 
   if (!images || images.length === 0) return null;
@@ -99,10 +110,16 @@ const FeedImageGallery = ({ images, onImageClick }: FeedImageGalleryProps) => {
           onClick={() => onImageClick(0)}
           className="w-full h-[220px] relative overflow-hidden cursor-pointer"
         >
+          {!loadedImages[0] && (
+            <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center z-0">
+              <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-brand-cyan animate-spin"></div>
+            </div>
+          )}
           <img 
             src={images[0]} 
             alt="Adventure scene" 
-            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+            onLoad={() => handleImageLoad(0)}
+            className={`w-full h-full object-cover transition-all duration-500 hover:scale-105 relative z-10 ${loadedImages[0] ? 'opacity-100' : 'opacity-0'}`} 
           />
         </div>
       ) : (
@@ -111,16 +128,22 @@ const FeedImageGallery = ({ images, onImageClick }: FeedImageGalleryProps) => {
             onClick={() => onImageClick(leftIdx)}
             className="relative h-full overflow-hidden cursor-pointer bg-zinc-950"
           >
+            {!loadedImages[leftIdx] && (
+              <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center z-0">
+                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-brand-cyan animate-spin"></div>
+              </div>
+            )}
             <AnimatePresence mode="popLayout">
               <motion.img 
                 key={`left-${leftIdx}`}
                 src={images[leftIdx]} 
                 alt="Adventure scene left" 
+                onLoad={() => handleImageLoad(leftIdx)}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: loadedImages[leftIdx] ? 1 : 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.8 }}
-                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500 z-10" 
               />
             </AnimatePresence>
           </div>
@@ -129,16 +152,22 @@ const FeedImageGallery = ({ images, onImageClick }: FeedImageGalleryProps) => {
             onClick={() => onImageClick(rightIdx)}
             className="relative h-full overflow-hidden cursor-pointer bg-zinc-950"
           >
+            {!loadedImages[rightIdx] && (
+              <div className="absolute inset-0 bg-zinc-900 animate-pulse flex items-center justify-center z-0">
+                <div className="w-6 h-6 rounded-full border-2 border-white/10 border-t-brand-cyan animate-spin"></div>
+              </div>
+            )}
             <AnimatePresence mode="popLayout">
               <motion.img 
                 key={`right-${rightIdx}`}
                 src={images[rightIdx]} 
                 alt="Adventure scene right" 
+                onLoad={() => handleImageLoad(rightIdx)}
                 initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                animate={{ opacity: loadedImages[rightIdx] ? 1 : 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.8 }}
-                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500 z-10" 
               />
             </AnimatePresence>
           </div>
@@ -327,7 +356,7 @@ export default function ExplorerFeedPage() {
   const [activeSort, setActiveSort] = useState("Trending");
 
   // Filters Options
-  const filters = ["All", "Following", "Communities", "Experiences", "Memories", "Trending", "Nearby", "Saved", "Host", "Quests"];
+  const filters = ["All", "Following", "Communities", "Experiences", "Trending", "Nearby", "Saved", "Host", "Quests"];
   const sortOptions = ["Trending", "Latest", "Popular"];
 
   // Map Filter Tab to Backend Feed Filters
@@ -342,9 +371,6 @@ export default function ExplorerFeedPage() {
     } else if (activeFilter === 'Experiences') {
       feedType = 'category';
       category = 'experience';
-    } else if (activeFilter === 'Memories') {
-      feedType = 'category';
-      category = 'memory';
     } else if (activeFilter === 'Communities') {
       feedType = 'category';
       category = 'community';
@@ -366,7 +392,7 @@ export default function ExplorerFeedPage() {
       feedType = 'recent';
     }
 
-    return { feedType, category, limit: 9 };
+    return { feedType, category, limit: 9, feedSessionId: crypto.randomUUID() };
   }, [activeFilter, activeSort]);
 
   // TanStack Infinite Query API integration
@@ -425,6 +451,7 @@ export default function ExplorerFeedPage() {
   const saveMutation = useSavePostMutation();
   const deleteMutation = useDeletePostMutation();
   const addCommentMutation = useCommentMutation();
+  const trackViewMutation = useTrackViewMutation();
 
   const [toast, setToast] = useState<string | null>(null);
 
@@ -624,7 +651,7 @@ export default function ExplorerFeedPage() {
     }
   });
 
-  const renderPostCard = (post: any) => {
+  const renderPostCard = (post: any, index: number) => {
     const isRishiraj = post.user.name === "Rishiraj" || post.user.username === "@rishi005";
 
     const typeClasses = {
@@ -636,20 +663,19 @@ export default function ExplorerFeedPage() {
     }[post.type as string] || "";
 
     return (
-      <motion.div
-        key={post.id}
-        initial={{ opacity: 0, y: 15, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className={`glass-panel border p-4 md:p-6 rounded-3xl flex flex-col gap-4 text-left shadow-lg transition-all duration-300 relative overflow-hidden group w-full shine-card ${typeClasses} ${
+      <ImpressionTracker 
+        key={post.id} 
+        postId={post.id} 
+        feedSessionId={currentFilters.feedSessionId}
+        sourceFeed={currentFilters.feedType}
+        onImpression={(id, data) => trackViewMutation.mutate({ postId: id, data })}>
+        <div className={`glass-panel border p-4 md:p-6 rounded-3xl flex flex-col gap-4 text-left shadow-lg transition-all duration-300 relative overflow-hidden group w-full shine-card ${typeClasses} ${
           isRishiraj 
             ? "border-amber-500/35 shadow-amber-500/[0.01] bg-gradient-to-tr from-amber-500/[0.02] via-transparent to-rose-500/[0.01] hover:border-amber-500/50 hover:shadow-amber-500/5" 
             : "border-white/12 hover:border-white/20"
-        }`}
-      >
-        {/* CARD HEADER */}
-        <div className="flex justify-between items-start">
+        }`}>
+          {/* CARD HEADER */}
+          <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
             <div 
               onClick={() => router.push(`/profile/${post.user.username.replace('@', '')}`)}
@@ -828,6 +854,13 @@ export default function ExplorerFeedPage() {
                 />
               )}
 
+              {post.location && (
+                <div className="flex items-center gap-1.5 bg-white/[0.02] p-2.5 rounded-xl border border-white/5 text-[10px] font-semibold text-zinc-400">
+                  <MapPin className="h-3.5 w-3.5 text-brand-purple shrink-0" />
+                  <span className="truncate">{post.location}</span>
+                </div>
+              )}
+
               <DescriptionText text={post.memoryText || ""} isItalic={true} borderClass="pl-3 border-l border-brand-purple/30" />
             </div>
           )}
@@ -874,7 +907,8 @@ export default function ExplorerFeedPage() {
             <span>Share</span>
           </button>
         </div>
-      </motion.div>
+      </div>
+      </ImpressionTracker>
     );
   };
 
@@ -975,29 +1009,19 @@ export default function ExplorerFeedPage() {
 
           {/* Mobile & Tablet Layout */}
           <div className="flex flex-col md:grid md:grid-cols-2 gap-6 lg:hidden w-full">
-            <AnimatePresence mode="popLayout">
-              {feedPosts.map((post) => renderPostCard(post))}
-            </AnimatePresence>
+            {feedPosts.map((post, idx) => renderPostCard(post, idx))}
           </div>
 
           {/* Desktop Layout (Masonry side-by-side columns - 3 fixed columns) */}
-          <div className="hidden lg:grid grid-cols-3 gap-6 items-start w-full">
+          <div className="hidden lg:grid grid-cols-3 gap-6 w-full items-start">
             <div className="flex flex-col gap-6">
-              <AnimatePresence mode="popLayout">
-                {col1Posts.map((post) => renderPostCard(post))}
-              </AnimatePresence>
+              {col1Posts.map((post, idx) => renderPostCard(post, idx))}
             </div>
-
             <div className="flex flex-col gap-6">
-              <AnimatePresence mode="popLayout">
-                {col2Posts.map((post) => renderPostCard(post))}
-              </AnimatePresence>
+              {col2Posts.map((post, idx) => renderPostCard(post, idx))}
             </div>
-
             <div className="flex flex-col gap-6">
-              <AnimatePresence mode="popLayout">
-                {col3Posts.map((post) => renderPostCard(post))}
-              </AnimatePresence>
+              {col3Posts.map((post, idx) => renderPostCard(post, idx))}
             </div>
           </div>
 

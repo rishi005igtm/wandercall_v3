@@ -1,0 +1,13 @@
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\.agents\rules\graphify.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\.agents\workflows\graphify.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\README.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\backend\README.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\AGENTS.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\CLAUDE.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\README.md
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\public\file.svg
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\public\globe.svg
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\public\hero-bg.png
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\public\next.svg
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\public\vercel.svg
+C:\Users\anmol\OneDrive\Desktop\wandercall_v3\client\public\window.svg

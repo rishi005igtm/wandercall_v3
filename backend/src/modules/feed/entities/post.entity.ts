@@ -19,6 +19,7 @@ export enum PostStatus {
   IMAGE_VERIFIED = 'IMAGE_VERIFIED',
   METADATA_GENERATED = 'METADATA_GENERATED',
   PUBLISHED = 'PUBLISHED',
+  FAILED = 'FAILED',
 }
 
 @Entity('posts')
@@ -108,6 +109,45 @@ export class PostEntity {
 
   @Column({ type: 'jsonb', nullable: true })
   searchMetadata?: any; // For future search index mappings
+
+  @Column({ type: 'float', default: 0.0 })
+  popularityScore: number;
+
+  @Column({ type: 'float', default: 0.0 })
+  trendingVelocity: number;
+
+  @Column({ default: false })
+  isDeleted: boolean;
+
+  @Column({ default: false })
+  isArchived: boolean;
+
+  @Column({ nullable: true })
+  language?: string;
+
+  @Column({ nullable: true })
+  countryCode?: string;
+
+  @Column({ nullable: true })
+  cityId?: string;
+
+  @Column({ default: true })
+  commentingEnabled: boolean;
+
+  @Column({ default: false })
+  allowRemix: boolean;
+
+  @Column({ nullable: true })
+  mediaAspectRatio?: string;
+
+  @Column({ nullable: true })
+  primaryImage?: string;
+
+  @Column({ nullable: true })
+  processingStatus?: string;
+
+  @Column({ default: 'v1' })
+  rankingVersion: string;
 
   @Column({ type: 'timestamp', nullable: true })
   publishedAt?: Date;

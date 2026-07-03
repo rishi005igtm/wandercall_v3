@@ -59,7 +59,16 @@ export class PostRepository {
    */
   async getCandidates(viewerId?: string, followedCreatorIds: string[] = []): Promise<PostEntity[]> {
     const query = this.repo.createQueryBuilder('post')
-      .where('post.status = :status', { status: PostStatus.PUBLISHED });
+      .where(
+        viewerId 
+          ? '(post.status = :publishedStatus OR (post.status IN (:...processingStatuses) AND post.authorId = :viewerId))'
+          : 'post.status = :publishedStatus',
+        { 
+          publishedStatus: PostStatus.PUBLISHED,
+          processingStatuses: [PostStatus.DRAFT, PostStatus.VALIDATING, PostStatus.IMAGE_VERIFIED, PostStatus.METADATA_GENERATED, PostStatus.FAILED],
+          viewerId
+        }
+      );
 
     if (!viewerId) {
       // Guest sees only PUBLIC posts
@@ -109,7 +118,15 @@ export class PostRepository {
   async getPostsByAuthor(authorId: string, viewerId?: string | null, isFollowing = false): Promise<PostEntity[]> {
     const query = this.repo.createQueryBuilder('post')
       .where('post.authorId = :authorId', { authorId })
-      .andWhere('post.status = :status', { status: PostStatus.PUBLISHED });
+      .andWhere(
+        viewerId === authorId
+          ? '(post.status = :publishedStatus OR post.status IN (:...processingStatuses))'
+          : 'post.status = :publishedStatus',
+        { 
+          publishedStatus: PostStatus.PUBLISHED,
+          processingStatuses: [PostStatus.DRAFT, PostStatus.VALIDATING, PostStatus.IMAGE_VERIFIED, PostStatus.METADATA_GENERATED, PostStatus.FAILED]
+        }
+      );
 
     if (!viewerId) {
       // Guest sees only PUBLIC posts

@@ -439,7 +439,11 @@ export default function CreatePostPage() {
                   (isMediaValid && isDetailsValid && isStoryValid) || activeTab === "story" ? "block" : "hidden md:block"
                 }`}
               >
-                Publish Post
+                {createPostMutation.isPending ? (
+                  <span className="flex items-center gap-1.5"><div className="w-3 h-3 border-2 border-white/20 border-t-white rounded-full animate-spin" /> Publishing...</span>
+                ) : (
+                  "Publish Post"
+                )}
               </button>
             </div>
           </div>

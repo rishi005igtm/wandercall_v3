@@ -14,6 +14,15 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
   async onApplicationBootstrap(): Promise<void> {
     this.logger.log('Executing Enterprise Database Initialization check on server startup...');
     try {
+      // Clean up legacy orphan tables
+      try {
+        await this.dataSource.query(`DROP TABLE IF EXISTS "post_likes" CASCADE`);
+        await this.dataSource.query(`DROP TABLE IF EXISTS "interaction_events" CASCADE`);
+        await this.dataSource.query(`DROP TABLE IF EXISTS "user_interactions" CASCADE`);
+        await this.dataSource.query(`DROP TABLE IF EXISTS "feed_impressions" CASCADE`); // Drop to recreate with unique constraint
+        this.logger.log('Enterprise Database: Cleaned up legacy tables for recommendation engine refactor.');
+      } catch (err: any) {}
+
       // Synchronize database schema once on server boot if needed
       await this.dataSource.synchronize();
 
@@ -25,6 +34,20 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         this.logger.log('Enterprise Database: Assigned default INDIVIDUAL role to any null records.');
       } catch (err: any) {
         this.logger.warn(`Database backfill notice: ${err.message}`);
+      }
+
+      // Backfill missing relational logs from user_post_state
+      try {
+        await this.dataSource.query(`
+          INSERT INTO post_saves ("id", "userId", "postId", "createdAt")
+          SELECT gen_random_uuid(), "userId", "postId", CURRENT_TIMESTAMP
+          FROM user_post_state
+          WHERE "hasSaved" = true
+          ON CONFLICT ("postId", "userId") DO NOTHING;
+        `);
+        this.logger.log('Enterprise Database: Backfilled missing saves from user_post_state.');
+      } catch (err: any) {
+        this.logger.warn(`Database backfill notice for relational logs: ${err.message}`);
       }
 
       this.logger.log(

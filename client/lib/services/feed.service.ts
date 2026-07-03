@@ -35,12 +35,23 @@ export interface FeedPost {
   locationLat?: number;
   locationLon?: number;
   visibility: 'PUBLIC' | 'FOLLOWERS' | 'PRIVATE';
-  status: 'DRAFT' | 'VALIDATING' | 'IMAGE_VERIFIED' | 'METADATA_GENERATED' | 'PUBLISHED';
+  status: 'DRAFT' | 'VALIDATING' | 'IMAGE_VERIFIED' | 'METADATA_GENERATED' | 'PUBLISHED' | 'FAILED';
   likeCount: number;
   commentCount: number;
   saveCount: number;
   shareCount: number;
   aiQualityScore: number;
+  isDeleted?: boolean;
+  isArchived?: boolean;
+  language?: string;
+  countryCode?: string;
+  cityId?: string;
+  commentingEnabled?: boolean;
+  allowRemix?: boolean;
+  mediaAspectRatio?: string;
+  primaryImage?: string;
+  processingStatus?: string;
+  rankingVersion?: string;
   publishedAt: string;
   createdAt: string;
   author: PostAuthor;
@@ -51,10 +62,11 @@ export interface FeedPost {
 }
 
 export interface FeedQueryFilters {
-  feedType?: 'global' | 'following' | 'trending' | 'recent' | 'category' | 'saved' | 'host';
+  feedType?: 'global' | 'following' | 'trending' | 'recent' | 'category' | 'saved' | 'host' | 'explore';
   category?: string;
   limit?: number;
   cursor?: string;
+  feedSessionId?: string;
 }
 
 export interface FeedResponse {
@@ -128,8 +140,7 @@ export const feedService = {
     return data;
   },
 
-  async trackView(postId: string): Promise<{ success: boolean; message: string }> {
-    const { data } = await httpClient.post<{ success: boolean; message: string }>(`/feed/posts/${postId}/view`);
-    return data;
+  async trackView(postId: string, data?: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string }): Promise<void> {
+    await httpClient.post(`/feed/posts/${postId}/view`, data || {});
   },
 };

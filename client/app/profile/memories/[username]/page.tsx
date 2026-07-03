@@ -38,7 +38,7 @@ export default function UserMemoriesPage() {
   const isOwner = dbProfile?.userId === authUserId;
 
   // Fetch memories from backend
-  const { data: feedData, isLoading: isFeedLoading } = useUserFeedQuery(username, "memory", Boolean(username));
+  const { data: feedData, isLoading: isFeedLoading } = useUserFeedQuery(username, undefined, Boolean(username));
   const memories = useMemo(() => {
     if (!feedData?.items) return [];
     return feedData.items;
@@ -138,14 +138,7 @@ export default function UserMemoriesPage() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center py-6 px-4 md:px-8 relative overflow-x-hidden selection:bg-brand-cyan/30 selection:text-white">
       
-      {/* Back to Profile top-left button */}
-      <button 
-        onClick={() => router.push(`/profile/${username}`)}
-        className="absolute top-6 left-4 md:left-8 h-9 w-9 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-all cursor-pointer z-10"
-        aria-label="Go back to profile"
-      >
-        <ArrowLeft className="h-4.5 w-4.5" />
-      </button>
+      {/* Back button removed as it is already provided by the layout header */}
 
       {/* Toast Alert */}
       <AnimatePresence>

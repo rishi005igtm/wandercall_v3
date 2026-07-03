@@ -236,9 +236,13 @@ export class FeedController {
   @Post('posts/:id/view')
   @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async trackView(@Param('id') id: string, @Req() req: any) {
+  async trackView(
+    @Param('id') id: string, 
+    @Req() req: any,
+    @Body() body: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string }
+  ) {
     const userId = req.user?.userId || null;
-    await this.postService.trackView(userId, id);
+    await this.postService.trackView(userId, id, body);
     return { success: true, message: 'View impression recorded.' };
   }
 }

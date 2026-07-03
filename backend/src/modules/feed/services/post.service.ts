@@ -7,11 +7,11 @@ import { StorageService } from '../../storage/services/storage.service';
 import { UploadIntent } from '../../storage/enums/upload-intent.enum';
 import { FeedEventDispatcher } from '../events/feed-event.dispatcher';
 import { PostEntity, PostStatus, PostAuthorType, PostVisibility } from '../entities/post.entity';
-import { PostLikeEntity } from '../entities/post-like.entity';
 import { PostSaveEntity } from '../entities/post-save.entity';
 import { PostCommentEntity } from '../entities/post-comment.entity';
+import { PostLikeEntity } from '../entities/post-like.entity';
 import { FeedImpressionEntity } from '../entities/feed-impression.entity';
-import { InteractionType } from '../entities/user-interaction.entity';
+import { InteractionType } from '../enums/interaction-type.enum';
 import { UserRole } from '../../auth/enums/user-role.enum';
 import { UserRepository } from '../../user/repositories/user.repository';
 
@@ -99,66 +99,61 @@ export class PostService {
       throw new BadRequestException('Adventure category is required.');
     }
 
-    // --- PHASE 3: IMAGE VERIFICATION & UPLOAD ---
-    post.status = PostStatus.IMAGE_VERIFIED;
-    this.logger.log(`[Lifecycle - Step 3: Image Verification] Verifying and uploading images`);
-    const imageUrls: string[] = [];
-    const imagePublicIds: string[] = [];
-
-    if (files?.images && files.images.length > 0) {
-      if (files.images.length > 4) {
-        throw new BadRequestException('Maximum image count is limited to 4.');
-      }
-
-      for (const file of files.images) {
-        const metadata = await this.storageService.uploadFile(
-          file,
-          UploadIntent.FEED_IMAGE,
-          postId,
-        );
-        imageUrls.push(metadata.secureUrl);
-        imagePublicIds.push(metadata.publicId);
-      }
-    } else {
-      throw new BadRequestException('Please attach at least 1 image for your post.');
-    }
-    post.images = imageUrls;
-    post.imagePublicIds = imagePublicIds;
-
-    // --- PHASE 4: METADATA GENERATION ---
+    // --- PHASE 3: METADATA GENERATION ---
     post.status = PostStatus.METADATA_GENERATED;
-    this.logger.log(`[Lifecycle - Step 4: Metadata Generation] Generating coordinates narratives and uploading audio`);
-
-    // Handle optional voice coordinate note
-    if (files?.audio) {
-      const audioMetadata = await this.storageService.uploadFile(
-        files.audio,
-        UploadIntent.FEED_AUDIO,
-        postId,
-      );
-      post.audioUrl = audioMetadata.secureUrl;
-      post.audioPublicId = audioMetadata.publicId;
-      // Duration estimation fallback or metadata retrieval
-      post.audioDuration = 35; // mock/placeholder duration
-    }
-
-    // Compute basic searchable tags and AI scores
-    post.aiQualityScore = 1.0; // Initial default score
+    this.logger.log(`[Lifecycle - Step 3: Metadata Generation] Generating initial metadata placeholder`);
+    post.aiQualityScore = 1.0; 
     post.searchMetadata = {
       tags: [post.category, 'wandercall', 'explore'],
       indexedAt: new Date().toISOString(),
     };
 
-    // --- PHASE 5: PUBLISH ---
-    post.status = PostStatus.PUBLISHED;
+    // --- PHASE 4: INITIAL SAVE & ASYNC DELEGATION ---
+    post.status = PostStatus.VALIDATING; // Setting to validating to show skeleton in feed initially
     post.publishedAt = new Date();
-    this.logger.log(`[Lifecycle - Step 5: Publish] Completed lifecycle pipelines. Saving post to database.`);
-
+    this.logger.log(`[Lifecycle - Step 4: Publish] Saving provisional post to database immediately.`);
     const savedPost = await this.postRepository.save(post);
 
-    // --- PHASE 6: DOMAIN EVENTS DISPATCH ---
-    this.eventDispatcher.dispatchPostCreated(savedPost);
-    this.eventDispatcher.dispatchPostPublished(savedPost);
+    this.logger.log(`[Lifecycle - Step 5: Processing] Uploading assets before publishing`);
+    
+    try {
+      const imageUrls: string[] = [];
+      const imagePublicIds: string[] = [];
+
+      if (files?.images && files.images.length > 0) {
+        const uploadPromises = files.images.map(file => 
+          this.storageService.uploadFile(file, UploadIntent.FEED_IMAGE, postId)
+        );
+        const metadatas = await Promise.all(uploadPromises);
+        metadatas.forEach(metadata => {
+          imageUrls.push(metadata.secureUrl);
+          imagePublicIds.push(metadata.publicId);
+        });
+        savedPost.images = imageUrls;
+        savedPost.imagePublicIds = imagePublicIds;
+      }
+
+      if (files?.audio) {
+        const audioMetadata = await this.storageService.uploadFile(
+          files.audio,
+          UploadIntent.FEED_AUDIO,
+          postId,
+        );
+        savedPost.audioUrl = audioMetadata.secureUrl;
+        savedPost.audioPublicId = audioMetadata.publicId;
+        savedPost.audioDuration = 35;
+      }
+
+      savedPost.status = PostStatus.PUBLISHED;
+      await this.postRepository.save(savedPost);
+      this.eventDispatcher.dispatchPostCreated(savedPost);
+      this.eventDispatcher.dispatchPostPublished(savedPost);
+      this.logger.log(`[Lifecycle - Step 5: Processing] Successfully published post ${postId}`);
+    } catch (err) {
+      this.logger.error(`[Lifecycle - Step 5: Processing] Failed processing for post ${postId}: ${err}`);
+      savedPost.status = PostStatus.FAILED;
+      await this.postRepository.save(savedPost);
+    }
 
     return savedPost;
   }
@@ -233,92 +228,85 @@ export class PostService {
     this.eventDispatcher.dispatchPostDeleted(postId, post.authorId);
   }
 
-  /**
-   * Like a post.
-   */
   async likePost(userId: string, postId: string): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const existingLike = await this.interactionRepository.findLike(postId, userId);
-    if (existingLike) {
+    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    if (state?.hasLiked) {
       return; // Already liked
     }
 
-    const like = new PostLikeEntity({
+    await this.interactionRepository.addLike(new PostLikeEntity({
       id: randomUUID(),
-      postId,
       userId,
-    });
-    await this.interactionRepository.saveLike(like);
+      postId,
+    }));
+    await this.interactionRepository.upsertUserPostState(userId, postId, { hasLiked: true });
     await this.postRepository.incrementLikes(postId);
 
     // Track interaction for personalization
-    await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.LIKE);
+    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.LIKE);
     this.eventDispatcher.dispatchLikeAdded(postId, userId, post.category);
   }
 
-  /**
-   * Unlike a post.
-   */
   async unlikePost(userId: string, postId: string): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const deleted = await this.interactionRepository.deleteLike(postId, userId);
-    if (deleted) {
-      await this.postRepository.decrementLikes(postId);
-      // Offset interest score by applying a negative view weight multiplier
-      await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.LIKE, -1.0);
-      this.eventDispatcher.dispatchLikeRemoved(postId, userId, post.category);
-    }
+    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    if (!state || !state.hasLiked) return; // Not liked
+
+    await this.interactionRepository.removeLike(postId, userId);
+    await this.interactionRepository.upsertUserPostState(userId, postId, { hasLiked: false });
+    await this.postRepository.decrementLikes(postId);
+    
+    // Offset interest score by applying a negative view weight multiplier
+    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.LIKE, -1.0);
+    this.eventDispatcher.dispatchLikeRemoved(postId, userId, post.category);
   }
 
-  /**
-   * Save a post.
-   */
   async savePost(userId: string, postId: string): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const existingSave = await this.interactionRepository.findSave(postId, userId);
-    if (existingSave) {
+    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    if (state?.hasSaved) {
       return; // Already saved
     }
 
-    const save = new PostSaveEntity({
+    await this.interactionRepository.saveSave(new PostSaveEntity({
       id: randomUUID(),
-      postId,
       userId,
-    });
-    await this.interactionRepository.saveSave(save);
+      postId,
+    }));
+    await this.interactionRepository.upsertUserPostState(userId, postId, { hasSaved: true });
     await this.postRepository.incrementSaves(postId);
 
-    await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.SAVE);
+    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.SAVE);
     this.eventDispatcher.dispatchSaveAdded(postId, userId, post.category);
   }
 
-  /**
-   * Unsave a post.
-   */
   async unsavePost(userId: string, postId: string): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const deleted = await this.interactionRepository.deleteSave(postId, userId);
-    if (deleted) {
-      await this.postRepository.decrementSaves(postId);
-      await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.SAVE, -1.0);
-      this.eventDispatcher.dispatchSaveRemoved(postId, userId, post.category);
-    }
+    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    if (!state || !state.hasSaved) return; // Not saved
+
+    await this.interactionRepository.deleteSave(postId, userId);
+    await this.interactionRepository.upsertUserPostState(userId, postId, { hasSaved: false });
+    await this.postRepository.decrementSaves(postId);
+    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.SAVE, -1.0);
+    this.eventDispatcher.dispatchSaveRemoved(postId, userId, post.category);
   }
 
   /**
@@ -339,7 +327,7 @@ export class PostService {
     const saved = await this.interactionRepository.addComment(comment);
     await this.postRepository.incrementComments(postId);
 
-    await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.COMMENT);
+    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.COMMENT);
     this.eventDispatcher.dispatchCommentAdded(postId, userId, saved.id, post.category);
 
     return saved;
@@ -394,28 +382,35 @@ export class PostService {
     await this.postRepository.incrementShares(postId);
 
     if (userId) {
-      await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.SHARE);
+      await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.SHARE);
       this.eventDispatcher.dispatchShareAdded(postId, userId, post.category);
     }
   }
 
-  /**
-   * Track view impression.
-   */
-  async trackView(userId: string | null, postId: string): Promise<void> {
+  async trackView(
+    userId: string | null, 
+    postId: string, 
+    data: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string } = {}
+  ): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
     if (userId) {
-      const impression = new FeedImpressionEntity({
+      const duration = (data.durationMs || 1500) / 1000;
+      await this.interactionRepository.addImpression(new FeedImpressionEntity({
         id: randomUUID(),
         userId,
         postId,
-      });
-      await this.interactionRepository.addImpression(impression);
-      await this.interestEngine.recordInteraction(userId, postId, post.category, InteractionType.VIEW);
+        feedSessionId: data.feedSessionId,
+        sourceFeed: data.sourceFeed || 'global',
+        lastVisiblePercent: data.lastVisiblePercent || 100,
+        totalVisibleDurationMs: data.durationMs || 1500,
+        completedViews: data.durationMs && data.durationMs > 3000 ? 1 : 0
+      }));
+      await this.interactionRepository.upsertUserPostState(userId, postId, { viewCount: 1, totalVisibleTime: duration });
+      await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.VIEW);
     }
   }
 }

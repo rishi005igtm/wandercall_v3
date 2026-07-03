@@ -1,26 +1,44 @@
 export const RANKING_CONFIG = {
   weights: {
-    interest: 0.35,      // Influence of user category affinity
-    relationship: 0.25,  // Boost if creator is followed by user
-    freshness: 0.20,     // Weight of post publication date
-    engagement: 0.20,    // Weight of total engagement score
+    interest: 0.30,
+    following: 0.20,
+    freshness: 0.15,
+    popularity: 0.15,
+    authorAffinity: 0.10,
+    aiQuality: 0.05,
+    diversityBoost: 0.05,
   },
   engagementMultipliers: {
+    view: 0.1,
+    longView: 0.2,
     like: 1.0,
-    comment: 2.0,
-    save: 3.0,
+    save: 2.0,
+    comment: 3.0,
     share: 4.0,
+    follow: 5.0,
   },
   freshness: {
-    decayRate: 0.15,     // Daily exponential decay factor (e.g., e^(-0.15 * days))
+    decayRate: 0.15,     // Daily exponential decay factor for post score
+    newPostBoost: 1.5,   // Temporary multiplier for very new posts
+    newPostWindowHours: 24, // Window where new post boost applies
   },
   penalties: {
-    seen: 0.20,          // Penalty multiplier (demotes posts the user has already viewed to 20% score)
-    consecutiveCreator: 0.50, // Multiplier for repeated consecutive creator posts in the list
-    consecutiveCategory: 0.65, // Multiplier for repeated consecutive categories in the list
+    seen1x: 1.0,         // No penalty for first view
+    seen2x: 0.8,         // Slight penalty
+    seen3x: 0.4,         // Larger penalty
+    seen4xPlus: 0.1,     // Significant penalty
+    authorFatigue: 0.7,  // Penalty if showing same author repeatedly
   },
   diversity: {
-    maxConsecutiveCreator: 1,
-    maxConsecutiveCategory: 2,
+    maxConsecutiveAuthor: 2,
+    maxConsecutiveCategory: 3,
   },
+  feedComposition: {
+    interest: 0.65,      // 65% user interest content
+    explore: 0.25,       // 25% exploratory content
+    trending: 0.10,      // 10% trending content
+  },
+  interestLearning: {
+    timeDecayFactor: 0.95, // Decay factor per week for old interests
+  }
 };

@@ -1,7 +1,7 @@
 import { Column, CreateDateColumn, Entity, PrimaryColumn, Index } from 'typeorm';
 
 @Entity('post_likes')
-@Index(['postId', 'userId'], { unique: true })
+@Index(['userId', 'postId'], { unique: true })
 @Index(['userId'])
 @Index(['postId'])
 export class PostLikeEntity {
@@ -9,10 +9,10 @@ export class PostLikeEntity {
   id: string;
 
   @Column('uuid')
-  postId: string;
+  userId: string;
 
   @Column('uuid')
-  userId: string;
+  postId: string;
 
   @CreateDateColumn()
   createdAt: Date;
