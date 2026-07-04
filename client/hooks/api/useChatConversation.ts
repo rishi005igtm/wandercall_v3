@@ -109,6 +109,33 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
         }))
     : [];
 
+  /**
+   * Conversation Focus Manager.
+   *
+   * Called by the UI when the conversation panel is actively visible.
+   * Emits mark-read for the last message NOT sent by the current user.
+   * This is the correct enterprise flow:
+   *   Conversation visible → messages rendered → mark-read
+   * NOT:
+   *   Socket connected → mark-read
+   */
+  const markConversationRead = useCallback(() => {
+    if (!conversationId || !currentUserId || !isConnected) return;
+
+    const allMessages = messagesData?.pages?.flatMap((p) => p.items) ?? [];
+    // Find the last message from the other user that hasn't been read
+    const lastUnreadFromOther = [...allMessages]
+      .reverse()
+      .find((m) => m.senderId !== currentUserId && m.status !== 'READ' && m.status !== 'DELETED');
+
+    if (lastUnreadFromOther) {
+      emit('mark-read', { conversationId, messageId: lastUnreadFromOther.id });
+    } else {
+      // No specific message but still clear unread count
+      emit('mark-read', { conversationId, messageId: '' });
+    }
+  }, [conversationId, currentUserId, isConnected, messagesData, emit]);
+
   const sendTextMessage = useCallback(
     async (text: string) => {
       if (!conversationId || !currentUserId || !text.trim()) return;
@@ -301,5 +328,6 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
     emitTyping,
     emitStopTyping,
     markRead,
+    markConversationRead,
   };
 }

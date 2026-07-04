@@ -8,6 +8,7 @@ import { useBlockedUsers, useBlockMutation, useUnblockMutation } from '@/hooks/a
 import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useChatConversation } from '@/hooks/api/useChatConversation';
+import { useChatInbox, formatMessagePreview, formatInboxTime } from '@/hooks/api/useChatInbox';
 import { useAppSelector } from '@/lib/store/store';
 import {
   Users,
@@ -498,6 +499,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const currentUserId = useAppSelector((state) => state.auth.userId);
+  const { getInboxState, totalUnread, sortedByRecent } = useChatInbox(currentUserId);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -705,8 +707,21 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
     sendSpecialMessage: sendRealSpecialMessage,
     emitTyping,
     emitStopTyping,
+    markConversationRead,
   } = useChatConversation({ targetUserId: activeFriendId });
   // ──────────────────────────────────────────────────────────────────────────
+
+  // Conversation Focus Manager:
+  // When the user opens a conversation and messages are rendered, mark them as read.
+  // This fires only when activeFriendId changes (new conversation opened) and realMessages have loaded.
+  useEffect(() => {
+    if (!activeFriendId || realMessages.length === 0) return;
+    // Small delay to let the UI render first — messages must be visually present
+    const timer = setTimeout(() => {
+      markConversationRead();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [activeFriendId, realMessages.length, markConversationRead]);
 
   // Pagination states for pending requests and blocked users
   const [incomingPage, setIncomingPage] = useState(1);
@@ -796,8 +811,9 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   }, [constellationNodes, searchQuery]);
 
   // Filtered companions for the left list based on category & search
+  // Sorted by most recent message (WhatsApp / Discord ordering)
   const filteredListCompanions = useMemo(() => {
-    return companions.filter(f => {
+    const filtered = companions.filter(f => {
       const matchesSearch =
         f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         f.username.toLowerCase().includes(searchQuery.toLowerCase());
@@ -808,9 +824,22 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
       if (selectedCategory === "partners") return f.isAdventurePartner;
       if (selectedCategory === "online") return f.status !== "Offline";
 
-      return true; // "all" and others
+      return true;
     });
-  }, [companions, selectedCategory, searchQuery]);
+
+    // Sort: friends with recent messages first (lastMessageAt DESC),
+    // then friends with no messages sorted by name
+    return filtered.sort((a, b) => {
+      const inboxA = getInboxState(a.id);
+      const inboxB = getInboxState(b.id);
+
+      const timeA = inboxA.lastMessageAt ? new Date(inboxA.lastMessageAt).getTime() : 0;
+      const timeB = inboxB.lastMessageAt ? new Date(inboxB.lastMessageAt).getTime() : 0;
+
+      if (timeA !== timeB) return timeB - timeA; // DESC
+      return a.name.localeCompare(b.name);
+    });
+  }, [companions, selectedCategory, searchQuery, getInboxState]);
 
   // DNA badge colors
   const getDnaBadgeStyle = (dna: string) => {
@@ -1061,26 +1090,71 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                   <div ref={companionListRef} className="flex flex-col gap-1.5 overflow-y-auto flex-1 no-scrollbar pr-1">
                     {filteredListCompanions.map(friend => {
                       const isSelected = activeFriendId === friend.id;
+                      const inbox = getInboxState(friend.id);
+                      const hasUnread = inbox.unreadCount > 0;
+                      const isFromMe = inbox.lastMessageSenderId === currentUserId;
+                      const preview = inbox.isTyping
+                        ? null
+                        : formatMessagePreview(inbox.lastMessageText, undefined, isFromMe);
+
                       return (
                         <div
                           key={friend.id}
                           onClick={() => {
                             router.push(`/profile/friends/chat:${friend.id}`);
                           }}
-                          className={`flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer border transition-all scale-100 hover:scale-[1.01] ${isSelected
-                              ? "bg-white/[0.03] border-brand-cyan/20 shadow-md"
+                          className={`flex items-center gap-2.5 p-2.5 rounded-2xl cursor-pointer border transition-all duration-200 ${isSelected
+                            ? "bg-white/[0.04] border-brand-cyan/30 shadow-md shadow-brand-cyan/5"
+                            : hasUnread
+                              ? "bg-brand-cyan/[0.03] border-brand-cyan/15 hover:border-brand-cyan/25"
                               : "bg-white/[0.01] border-white/5 hover:border-white/10"
-                            }`}
+                          }`}
                         >
+                          {/* Avatar with online indicator */}
                           <div className="relative shrink-0">
                             <CompanionAvatar avatar={friend.avatar} name={friend.name} className="h-8 w-8 text-[11px]" />
+                            {inbox.isOnline && (
+                              <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-brand-emerald border-[1.5px] border-zinc-950 shadow-sm" />
+                            )}
                           </div>
+
+                          {/* Content */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-1">
-                              <h4 className="text-xs font-bold text-zinc-200 truncate">{friend.name}</h4>
-                              <span className="text-[8px] font-mono text-zinc-500 shrink-0">{friend.compatibility}%</span>
+                              <h4 className={`text-xs truncate ${hasUnread ? "font-black text-white" : "font-bold text-zinc-200"}`}>
+                                {friend.name}
+                              </h4>
+                              <div className="flex items-center gap-1 shrink-0">
+                                {inbox.lastMessageAt && (
+                                  <span className={`text-[8px] font-mono ${hasUnread ? "text-brand-cyan" : "text-zinc-600"}`}>
+                                    {formatInboxTime(inbox.lastMessageAt)}
+                                  </span>
+                                )}
+                                {hasUnread && (
+                                  <span className="h-4 min-w-[16px] px-1 rounded-full bg-brand-cyan text-zinc-950 text-[8px] font-black flex items-center justify-center">
+                                    {inbox.unreadCount > 99 ? '99+' : inbox.unreadCount}
+                                  </span>
+                                )}
+                              </div>
                             </div>
-                            <p className="text-[9px] text-zinc-500 truncate mt-0.5">{friend.status} • {friend.sharedDNA}</p>
+
+                            {/* Preview line */}
+                            {inbox.isTyping ? (
+                              <p className="text-[9px] text-brand-cyan font-bold flex items-center gap-1 mt-0.5">
+                                <span className="inline-flex gap-0.5">
+                                  <span className="w-1 h-1 rounded-full bg-brand-cyan animate-bounce [animation-delay:0ms]" />
+                                  <span className="w-1 h-1 rounded-full bg-brand-cyan animate-bounce [animation-delay:150ms]" />
+                                  <span className="w-1 h-1 rounded-full bg-brand-cyan animate-bounce [animation-delay:300ms]" />
+                                </span>
+                                Typing...
+                              </p>
+                            ) : preview ? (
+                              <p className={`text-[9px] truncate mt-0.5 ${hasUnread ? "text-zinc-300 font-semibold" : "text-zinc-500"}`}>
+                                {preview}
+                              </p>
+                            ) : (
+                              <p className="text-[9px] text-zinc-600 truncate mt-0.5">{friend.status} • {friend.sharedDNA}</p>
+                            )}
                           </div>
                         </div>
                       );

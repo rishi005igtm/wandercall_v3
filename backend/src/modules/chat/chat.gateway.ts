@@ -7,10 +7,9 @@ import {
   OnGatewayInit,
   ConnectedSocket,
   MessageBody,
-  WsException,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
@@ -37,26 +36,21 @@ import {
 import { PresenceStatus } from './interfaces/presence.interface';
 
 /**
- * ChatGateway — The thin socket handler layer.
+ * ChatGateway — Thin socket handler layer.
  *
- * RULES (strictly enforced):
- * - Socket handlers only: authenticate, validate, call ChatService, return ACK
- * - NO business logic in handlers
- * - NO direct database access
- * - NO repository calls
- * - Each handler returns an ACK with { success, ...data } or { success: false, code, message }
+ * Rules:
+ * - Handlers only: authenticate → validate → call service → return ACK
+ * - NO business logic, NO raw DB queries, NO repository calls
+ * - All events return typed ACKs: { success, ...data } or { success: false, code, message }
  *
- * Multi-device support:
- * - User joins room `user:{userId}` on connect
- * - User joins conversation rooms as they open them
- * - All sockets for a userId receive events via `user:{userId}` room
+ * Delivery lifecycle managed here:
+ * - After broadcasting message:new, the gateway immediately dispatches MESSAGE_DELIVERED
+ *   for all recipients who are currently online (their socket exists in the room).
+ *   This closes the SENT → DELIVERED gap when both users are online simultaneously.
  */
 @Injectable()
 @WebSocketGateway({
-  cors: {
-    origin: '*',
-    credentials: true,
-  },
+  cors: { origin: '*', credentials: true },
   transports: ['websocket', 'polling'],
   path: '/socket.io/',
 })
@@ -75,7 +69,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly conversationRepository: ConversationRepository,
   ) {}
 
-  afterInit(server: Server): void {
+  afterInit(_server: Server): void {
     this.logger.log('ChatGateway initialized — Socket.IO server ready');
     this.registerEventSubscribers();
   }
@@ -85,38 +79,29 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   // ─────────────────────────────────────────────────────────
 
   async handleConnection(socket: Socket): Promise<void> {
-    try {
-      const userId = await this.authenticateSocket(socket);
-      if (!userId) {
-        this.logger.warn(`Socket ${socket.id} rejected — invalid or missing JWT`);
-        socket.emit(SOCKET_EVENTS.AUTH_ERROR, { message: 'Authentication required.' });
-        socket.disconnect(true);
-        return;
-      }
+    const userId = await this.authenticateSocket(socket);
 
-      // Attach userId to socket data for use in handlers
-      socket.data.userId = userId;
-
-      // Register presence
-      this.presenceService.connect(userId, socket.id);
-
-      // Join user's private room — all devices for this user share this room
-      await socket.join(`user:${userId}`);
-
-      socket.emit(SOCKET_EVENTS.CONNECTED, {
-        socketId: socket.id,
-        userId,
-        status: PresenceStatus.ONLINE,
-      });
-
-      // Broadcast presence change to all sockets that care about this user
-      this.broadcastPresenceChange(userId, PresenceStatus.ONLINE);
-
-      this.logger.log(`Socket ${socket.id} connected for user ${userId}`);
-    } catch (error) {
-      this.logger.error(`Connection error for socket ${socket.id}:`, error);
+    if (!userId) {
+      this.logger.warn(`Socket ${socket.id} rejected — invalid or missing JWT`);
+      socket.emit(SOCKET_EVENTS.AUTH_ERROR, { message: 'Authentication required.' });
       socket.disconnect(true);
+      return;
     }
+
+    socket.data.userId = userId;
+    this.presenceService.connect(userId, socket.id);
+    await socket.join(`user:${userId}`);
+
+    socket.emit(SOCKET_EVENTS.CONNECTED, { socketId: socket.id, userId, status: PresenceStatus.ONLINE });
+
+    // Notify only users who share a conversation with this user, not ALL sockets globally.
+    // For now we broadcast to the server room for this user — presence is lightweight.
+    this.server.to(`user:${userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+      userId,
+      status: PresenceStatus.ONLINE,
+    });
+
+    this.logger.log(`[Connect] socketId=${socket.id} userId=${userId} totalSockets=${this.presenceService.getSocketIds(userId).size}`);
   }
 
   handleDisconnect(socket: Socket): void {
@@ -128,14 +113,18 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     if (!isStillOnline) {
       const presence = this.presenceService.getPresence(userId);
-      this.broadcastPresenceChange(userId, PresenceStatus.OFFLINE, presence?.lastSeen);
+      this.server.to(`user:${userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+        userId,
+        status: PresenceStatus.OFFLINE,
+        lastSeen: presence?.lastSeen,
+      });
     }
 
-    this.logger.log(`Socket ${socket.id} disconnected for user ${userId}. Still online: ${isStillOnline}`);
+    this.logger.log(`[Disconnect] socketId=${socket.id} userId=${userId} stillOnline=${isStillOnline}`);
   }
 
   // ─────────────────────────────────────────────────────────
-  // SOCKET EVENT HANDLERS — thin wrappers only
+  // SOCKET EVENT HANDLERS
   // ─────────────────────────────────────────────────────────
 
   @SubscribeMessage(SOCKET_EVENTS.SEND_MESSAGE)
@@ -146,16 +135,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const userId = socket.data.userId;
     if (!userId) return this.ackError('AUTH_REQUIRED', 'Not authenticated.');
 
-    // Validate DTO
     const dto = plainToInstance(SendMessageDto, rawData);
     const errors = await validate(dto);
     if (errors.length > 0) {
       const detail = errors.map((e) => Object.values(e.constraints ?? {}).join(', ')).join('; ');
+      this.logger.warn(`[SendMsg:Invalid] socketId=${socket.id} userId=${userId} errors=${detail}`);
       return this.ackError('VALIDATION_ERROR', detail);
     }
 
     try {
       const message = await this.chatService.sendMessage(userId, dto);
+      this.logger.log(
+        `[SendMsg:ACK] messageId=${message.id} clientId=${dto.clientMessageId} ` +
+        `convId=${dto.conversationId} socketId=${socket.id}`,
+      );
       return {
         success: true,
         clientMessageId: dto.clientMessageId,
@@ -164,21 +157,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         createdAt: message.createdAt,
       };
     } catch (error: any) {
+      this.logger.error(`[SendMsg:Fail] socketId=${socket.id} error=${error.message}`);
       return this.ackError(error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED', error.message);
     }
   }
 
   @SubscribeMessage(SOCKET_EVENTS.TYPING_START)
-  async handleTypingStart(
+  handleTypingStart(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: TypingDto,
-  ): Promise<void> {
+  ): void {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId) return;
 
     this.presenceService.startTyping(userId, data.conversationId);
-
-    // Emit to everyone in the conversation room except the sender
     socket.to(`conv:${data.conversationId}`).emit(SOCKET_EVENTS.TYPING_START_BROADCAST, {
       userId,
       conversationId: data.conversationId,
@@ -186,15 +178,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   }
 
   @SubscribeMessage(SOCKET_EVENTS.TYPING_STOP)
-  async handleTypingStop(
+  handleTypingStop(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: TypingDto,
-  ): Promise<void> {
+  ): void {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId) return;
 
     this.presenceService.stopTyping(userId, data.conversationId);
-
     socket.to(`conv:${data.conversationId}`).emit(SOCKET_EVENTS.TYPING_STOP_BROADCAST, {
       userId,
       conversationId: data.conversationId,
@@ -208,12 +199,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ): Promise<void> {
     const userId = socket.data.userId;
     if (!userId || !data?.messageId) return;
-
     try {
       await this.chatService.markDelivered(data.messageId, userId);
-    } catch (_) {
-      // Non-critical — fire and forget
-    }
+    } catch (_) { /* non-critical */ }
   }
 
   @SubscribeMessage(SOCKET_EVENTS.MARK_READ)
@@ -223,12 +211,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ): Promise<void> {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId || !data?.messageId) return;
-
     try {
       await this.chatService.markRead(userId, data.conversationId, data.messageId);
-    } catch (_) {
-      // Non-critical
-    }
+    } catch (_) { /* non-critical */ }
   }
 
   @SubscribeMessage(SOCKET_EVENTS.OPEN_CONVERSATION)
@@ -237,73 +222,118 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: OpenConversationDto,
   ): Promise<any> {
     const userId = socket.data.userId;
-    if (!userId || !data?.conversationId) return this.ackError('VALIDATION_ERROR', 'conversationId required.');
+    if (!userId || !data?.conversationId) {
+      return this.ackError('VALIDATION_ERROR', 'conversationId required.');
+    }
 
     try {
-      // Join the conversation room so the user receives real-time messages
+      // 1. Join the socket room so receiver gets future messages in real-time
       await socket.join(`conv:${data.conversationId}`);
 
-      // Clear unread count (no messageId needed — clears the whole conversation)
+      // 2. Clear unread count and update lastReadAt
       await this.conversationRepository.clearUnreadCount(data.conversationId, userId);
 
-      // Fetch recent message history to return on open
+      // 3. Bulk-deliver any SENT messages the user hasn't received yet
+      //    (covers messages sent while user was offline or not in the room)
+      await this.chatService.markConversationDelivered(data.conversationId, userId);
+
+      // 4. Load recent history
       const { items } = await this.chatService.getMessages(userId, data.conversationId, 30);
+
+      this.logger.log(
+        `[OpenConv] convId=${data.conversationId} userId=${userId} socketId=${socket.id} msgs=${items.length}`,
+      );
 
       return { success: true, conversationId: data.conversationId, messages: items };
     } catch (error: any) {
+      this.logger.error(`[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`);
       return this.ackError('OPEN_FAILED', error.message);
     }
   }
 
   // ─────────────────────────────────────────────────────────
-  // EVENT SUBSCRIBERS — wired to ChatEventDispatcher
+  // EVENT SUBSCRIBERS
   // ─────────────────────────────────────────────────────────
 
   private registerEventSubscribers(): void {
-    // MESSAGE_CREATED: emit new message to all participants
-    this.chatEventDispatcher.subscribe<MessageCreatedEvent>('MESSAGE_CREATED', (payload) => {
+    /**
+     * MESSAGE_CREATED
+     *
+     * Broadcast message to all participants via their private `user:{id}` room.
+     * Using `user:` rooms (not `conv:`) ensures multi-device delivery —
+     * every tab and device for a user receives the message even if they haven't
+     * called open-conversation.
+     *
+     * Delivery lifecycle:
+     * - Emit message:new to each recipient
+     * - If the recipient is ONLINE (socket exists), immediately dispatch MESSAGE_DELIVERED
+     *   server-side. This transitions status SENT → DELIVERED without requiring the
+     *   client to explicitly emit mark-delivered.
+     */
+    this.chatEventDispatcher.subscribe<MessageCreatedEvent>('MESSAGE_CREATED', async (payload) => {
       const { message, recipientIds } = payload;
 
       for (const recipientId of recipientIds) {
-        // Emit to all devices for this user via their private room
+        // Emit message:new to all devices of this participant
         this.server.to(`user:${recipientId}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
           message: this.chatService.toResponseDto(message),
           conversationId: message.conversationId,
         });
+
+        // Auto-deliver for RECIPIENTS (not the sender) who are online right now
+        if (recipientId !== message.senderId && this.presenceService.isOnline(recipientId)) {
+          try {
+            await this.chatService.markDelivered(message.id, recipientId);
+            this.logger.log(
+              `[AutoDeliver] messageId=${message.id} recipientId=${recipientId} convId=${message.conversationId}`,
+            );
+          } catch (_) { /* non-critical — status stays SENT if this fails */ }
+        }
       }
 
-      this.logger.debug(`MESSAGE_CREATED broadcast to ${recipientIds.length} participants for conv ${message.conversationId}`);
+      this.logger.debug(
+        `[MESSAGE_CREATED] messageId=${message.id} convId=${message.conversationId} ` +
+        `recipients=${recipientIds.length}`,
+      );
     });
 
-    // MESSAGE_DELIVERED: notify the original sender
+    /** MESSAGE_DELIVERED → notify the sender their message was received */
     this.chatEventDispatcher.subscribe<MessageDeliveredEvent>('MESSAGE_DELIVERED', (payload) => {
       this.server.to(`user:${payload.senderId}`).emit(SOCKET_EVENTS.MESSAGE_DELIVERED, {
         messageId: payload.messageId,
         conversationId: payload.conversationId,
         deliveredAt: payload.deliveredAt,
       });
+      this.logger.debug(
+        `[MESSAGE_DELIVERED] messageId=${payload.messageId} senderId=${payload.senderId}`,
+      );
     });
 
-    // MESSAGE_READ: notify the original sender
+    /** MESSAGE_READ → notify the sender their message was read */
     this.chatEventDispatcher.subscribe<MessageReadEvent>('MESSAGE_READ', (payload) => {
       this.server.to(`user:${payload.senderId}`).emit(SOCKET_EVENTS.MESSAGE_READ, {
         messageId: payload.messageId,
         conversationId: payload.conversationId,
         readAt: payload.readAt,
       });
+      this.logger.debug(
+        `[MESSAGE_READ] messageId=${payload.messageId} senderId=${payload.senderId} readerId=${payload.readerId}`,
+      );
     });
 
-    // MESSAGE_EDITED: broadcast to conversation room
+    /** MESSAGE_EDITED → broadcast to all sockets in the conversation room */
     this.chatEventDispatcher.subscribe<MessageEditedEvent>('MESSAGE_EDITED', (payload) => {
       this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_EDITED, payload);
+      this.logger.debug(`[MESSAGE_EDITED] messageId=${payload.messageId} convId=${payload.conversationId}`);
     });
 
-    // MESSAGE_DELETED: broadcast to conversation room
+    /** MESSAGE_DELETED → broadcast to all sockets in the conversation room */
     this.chatEventDispatcher.subscribe<MessageDeletedEvent>('MESSAGE_DELETED', (payload) => {
       this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
+      this.logger.debug(`[MESSAGE_DELETED] messageId=${payload.messageId} convId=${payload.conversationId}`);
     });
 
-    this.logger.log('ChatGateway event subscribers registered');
+    this.logger.log('ChatGateway: all event subscribers registered');
   }
 
   // ─────────────────────────────────────────────────────────
@@ -312,25 +342,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
   private async authenticateSocket(socket: Socket): Promise<string | null> {
     try {
-      // Accept token from handshake.auth.token or query param for fallback
       const token =
         socket.handshake.auth?.token ||
-        socket.handshake.headers?.authorization?.replace('Bearer ', '') ||
-        socket.handshake.query?.token as string;
+        (socket.handshake.headers?.authorization as string | undefined)?.replace('Bearer ', '') ||
+        (socket.handshake.query?.token as string);
 
       if (!token) return null;
 
       const secret = this.configService.get<string>('jwt.secret', 'wandercall_jwt_secret_key_2026');
       const payload = this.jwtService.verify<{ sub: string; email: string }>(token, { secret });
-
       return payload.sub ?? null;
     } catch {
       return null;
     }
-  }
-
-  private broadcastPresenceChange(userId: string, status: PresenceStatus, lastSeen?: Date): void {
-    this.server.emit(SOCKET_EVENTS.PRESENCE_CHANGE, { userId, status, lastSeen });
   }
 
   private ackError(code: string, message: string) {

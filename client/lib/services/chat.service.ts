@@ -5,6 +5,10 @@ export interface ConversationItem {
   type: 'DIRECT' | 'GROUP' | 'CAMPFIRE' | 'COMMUNITY';
   lastMessageText?: string;
   lastMessageAt?: string;
+  lastMessageSenderId?: string;
+  /** unreadCounts jsonb from server: { [userId]: number } */
+  unreadCounts?: Record<string, number>;
+  /** Derived by ChatService for the requesting user */
   unreadCount: number;
   createdAt: string;
   updatedAt: string;

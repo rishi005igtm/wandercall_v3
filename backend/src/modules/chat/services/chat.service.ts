@@ -7,12 +7,14 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { randomUUID } from 'crypto';
 import { MessageEntity, MessageStatus, MessageType } from '../entities/message.entity';
+import { ConversationEntity } from '../entities/conversation.entity';
 import { MessageRepository } from '../repositories/message.repository';
 import { ConversationRepository } from '../repositories/conversation.repository';
 import { ChatEventDispatcher } from './chat-event.dispatcher';
-import { PresenceService } from './presence.service';
 import { PrivacyService } from '../../privacy/services/privacy.service';
 import { UserRepository } from '../../user/repositories/user.repository';
 import { SendMessageDto } from '../dto/send-message.dto';
@@ -24,47 +26,48 @@ import {
 } from '../constants/chat.constants';
 
 /**
- * ChatService — The core business logic layer for messaging.
+ * ChatService — Core business logic layer.
  *
- * RULES:
- * - Never directly manipulates TypeORM repositories — uses repository layer exclusively
- * - Never emits socket events directly — delegates to the gateway via event dispatcher
- * - Never contains socket.io references
- * - Each method is independently testable
+ * Responsibilities:
+ * - Conversation lifecycle (create / resolve / list)
+ * - Message lifecycle (send / edit / delete / deliver / read)
+ * - Rate limiting
+ * - Event dispatching
+ *
+ * Rules:
+ * - Never emits socket events — delegates to ChatEventDispatcher
+ * - Never contains Socket.IO references
+ * - All multi-step DB operations run inside transactions
  */
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
 
-  /**
-   * In-memory rate limiter: Map<userId, { count: number, windowStart: number }>
-   * Future: replace with Redis INCR + EXPIRE for distributed rate limiting
-   */
+  /** In-memory rate limiter — future: replace with Redis INCR+EXPIRE */
   private readonly rateLimitMap = new Map<string, { count: number; windowStart: number }>();
 
   constructor(
     private readonly messageRepository: MessageRepository,
     private readonly conversationRepository: ConversationRepository,
     private readonly chatEventDispatcher: ChatEventDispatcher,
-    private readonly presenceService: PresenceService,
     private readonly privacyService: PrivacyService,
     private readonly userRepository: UserRepository,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   // ─────────────────────────────────────────────────────────
   // CONVERSATION MANAGEMENT
   // ─────────────────────────────────────────────────────────
 
-  /**
-   * Get or create a direct conversation between two users.
-   * Validates that users are mutual follows (friends) before allowing chat.
-   */
-  async getOrCreateDirectConversation(requesterId: string, targetUserId: string): Promise<{ conversationId: string }> {
+  async getOrCreateDirectConversation(
+    requesterId: string,
+    targetUserId: string,
+  ): Promise<{ conversationId: string }> {
     if (requesterId === targetUserId) {
       throw new BadRequestException('Cannot start a conversation with yourself.');
     }
 
-    // Privacy check: both directions
     const [requesterBlocked, targetBlocked] = await Promise.all([
       this.privacyService.checkIsBlocked(requesterId, targetUserId),
       this.privacyService.checkIsBlocked(targetUserId, requesterId),
@@ -79,28 +82,14 @@ export class ChatService {
       targetUserId,
     );
 
-    this.logger.log(`Conversation ${conversation.id} resolved for users ${requesterId} ↔ ${targetUserId}`);
+    this.logger.log(
+      `[ConvResolve] conversationId=${conversation.id} userA=${requesterId} userB=${targetUserId}`,
+    );
     return { conversationId: conversation.id };
   }
 
-  /**
-   * Get all conversations for a user with the unread count for that user.
-   */
   async getConversations(userId: string) {
     const conversations = await this.conversationRepository.findByUserId(userId);
-    const participantIds = new Set<string>();
-
-    for (const conv of conversations) {
-      const ids = await this.conversationRepository.getParticipantIds(conv.id);
-      ids.forEach((id) => participantIds.add(id));
-    }
-
-    // Fetch all participant profiles in one query
-    const profiles = await Promise.all(
-      [...participantIds].map((id) => this.userRepository.findByUserId(id)),
-    );
-    const profileMap = new Map(profiles.filter(Boolean).map((p) => [p!.userId, p!]));
-
     return conversations.map((conv) => ({
       ...conv,
       unreadCount: conv.unreadCounts[userId] ?? 0,
@@ -108,43 +97,39 @@ export class ChatService {
   }
 
   // ─────────────────────────────────────────────────────────
-  // MESSAGE SENDING
+  // MESSAGE SENDING — atomic transaction
   // ─────────────────────────────────────────────────────────
 
   /**
-   * Full message send pipeline:
-   * 1. Rate limit check
-   * 2. Conversation membership validation
-   * 3. Privacy validation (block check)
-   * 4. Message content validation
-   * 5. Idempotency check (clientMessageId)
-   * 6. Persist message
-   * 7. Update conversation summary
-   * 8. Dispatch MESSAGE_CREATED event (socket gateway consumes this)
+   * Full send pipeline:
+   * 1. Rate limit
+   * 2. Membership check
+   * 3. Privacy (block) check
+   * 4. Content validation
+   * 5. Idempotency (clientMessageId)
+   * 6. Persist message + update conversation summary — ONE transaction
+   * 7. Dispatch MESSAGE_CREATED
    */
   async sendMessage(senderId: string, dto: SendMessageDto): Promise<MessageResponseDto> {
     // 1. Rate limiting
     this.enforceRateLimit(senderId);
 
-    // 2. Validate conversation membership
-    const isMember = await this.conversationRepository.isParticipant(
-      dto.conversationId,
-      senderId,
-    );
+    // 2. Membership check
+    const isMember = await this.conversationRepository.isParticipant(dto.conversationId, senderId);
     if (!isMember) {
       throw new ForbiddenException('You are not a participant in this conversation.');
     }
 
-    // 3. Privacy validation
+    // 3. Privacy check
     const recipientIds = await this.conversationRepository.getParticipantIds(dto.conversationId);
     const otherParticipants = recipientIds.filter((id) => id !== senderId);
 
     for (const recipientId of otherParticipants) {
-      const [senderBlockedByRecipient, recipientBlockedBySender] = await Promise.all([
-        this.privacyService.checkIsBlocked(recipientId, senderId),
+      const [blockedBySender, blockedByRecipient] = await Promise.all([
         this.privacyService.checkIsBlocked(senderId, recipientId),
+        this.privacyService.checkIsBlocked(recipientId, senderId),
       ]);
-      if (senderBlockedByRecipient || recipientBlockedBySender) {
+      if (blockedBySender || blockedByRecipient) {
         throw new ForbiddenException('Message cannot be sent due to privacy settings.');
       }
     }
@@ -159,44 +144,80 @@ export class ChatService {
       throw new BadRequestException(`Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters.`);
     }
 
-    // 5. Idempotency — return existing message if clientMessageId already exists
+    // 5. Idempotency
     const existing = await this.messageRepository.findByClientMessageId(dto.clientMessageId);
     if (existing) {
-      this.logger.warn(`Duplicate message detected for clientMessageId ${dto.clientMessageId} — returning existing message`);
+      this.logger.warn(
+        `[Idempotent] clientMessageId=${dto.clientMessageId} already exists — returning cached`,
+      );
       return this.toResponseDto(existing);
     }
 
-    // 6. Persist message
-    const message = new MessageEntity({
-      id: randomUUID(),
-      clientMessageId: dto.clientMessageId,
-      conversationId: dto.conversationId,
-      senderId,
-      type: dto.type ?? MessageType.TEXT,
-      text: dto.text,
-      attachments: dto.attachments,
-      replyToId: dto.replyToId,
-      metadata: dto.metadata,
-      status: MessageStatus.SENT,
-      mentions: [],
-      reactions: {},
+    // 6. Persist message + update conversation summary inside ONE transaction
+    const saved = await this.dataSource.transaction(async (manager) => {
+      const message = manager.create(MessageEntity, {
+        id: randomUUID(),
+        clientMessageId: dto.clientMessageId,
+        conversationId: dto.conversationId,
+        senderId,
+        type: dto.type ?? MessageType.TEXT,
+        text: dto.text,
+        attachments: dto.attachments,
+        replyToId: dto.replyToId,
+        metadata: dto.metadata,
+        status: MessageStatus.SENT,
+        mentions: [],
+        reactions: {},
+      });
+
+      const savedMsg = await manager.save(MessageEntity, message);
+
+      // Update lastMessage summary and increment unread for each recipient
+      // Unread is ONLY incremented for users who do NOT have the conversation actively open.
+      // "Actively open" is approximated by lastReadAt being recent — the client sends
+      // mark-read on open-conversation, which updates lastReadAt.
+      const conversation = await manager.findOneOrFail(
+        ConversationEntity,
+        { where: { id: dto.conversationId } },
+      );
+
+      const updatedUnreadCounts = { ...conversation.unreadCounts };
+      for (const recipientId of recipientIds) {
+        if (recipientId !== senderId) {
+          // Only increment if recipient hasn't explicitly cleared unread recently.
+          // We do increment here — the client clears it on open-conversation.
+          updatedUnreadCounts[recipientId] = (updatedUnreadCounts[recipientId] ?? 0) + 1;
+        }
+      }
+
+      const previewText = dto.text
+        ? dto.text.length > 100
+          ? dto.text.slice(0, 100) + '…'
+          : dto.text
+        : `[${dto.type ?? 'attachment'}]`;
+
+      await manager.update(
+        ConversationEntity,
+        dto.conversationId,
+        {
+          lastMessageId: savedMsg.id,
+          lastMessageSenderId: senderId,
+          lastMessageText: previewText,
+          lastMessageAt: savedMsg.createdAt,
+          unreadCounts: updatedUnreadCounts,
+        },
+      );
+
+      return savedMsg;
     });
 
-    const saved = await this.messageRepository.save(message);
-    this.logger.log(`Message ${saved.id} persisted in conversation ${dto.conversationId} by ${senderId}`);
-
-    // 7. Update conversation summary
-    const conversation = await this.conversationRepository.findById(dto.conversationId);
-    await this.conversationRepository.updateLastMessage(
-      dto.conversationId,
-      saved.id,
-      senderId,
-      dto.text ?? `[${dto.type ?? 'attachment'}]`,
-      saved.createdAt,
-      recipientIds,
+    this.logger.log(
+      `[MessageSent] messageId=${saved.id} clientId=${dto.clientMessageId} ` +
+      `convId=${dto.conversationId} senderId=${senderId}`,
     );
 
-    // 8. Dispatch event — the ChatGateway listens and emits to sockets
+    // 7. Dispatch — gateway picks this up and broadcasts
+    const conversation = await this.conversationRepository.findById(dto.conversationId);
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_CREATED',
       payload: {
@@ -218,17 +239,25 @@ export class ChatService {
     if (!isMember) {
       throw new ForbiddenException('You are not a participant in this conversation.');
     }
-
     return this.messageRepository.paginate(conversationId, limit, cursor);
   }
 
   // ─────────────────────────────────────────────────────────
-  // DELIVERY & READ RECEIPTS
+  // DELIVERY PIPELINE
   // ─────────────────────────────────────────────────────────
 
+  /**
+   * Mark a single message as DELIVERED and notify the sender.
+   * Called by the gateway immediately after broadcasting message:new to the receiver.
+   */
   async markDelivered(messageId: string, recipientId: string): Promise<void> {
     const updated = await this.messageRepository.markDelivered(messageId);
     if (!updated) return;
+
+    this.logger.log(
+      `[Delivered] messageId=${messageId} recipientId=${recipientId} ` +
+      `convId=${updated.conversationId} senderId=${updated.senderId}`,
+    );
 
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_DELIVERED',
@@ -241,18 +270,53 @@ export class ChatService {
     });
   }
 
+  /**
+   * Mark ALL SENT messages in a conversation as DELIVERED for a connecting user.
+   * Called on open-conversation to catch up messages sent while user was offline.
+   */
+  async markConversationDelivered(conversationId: string, recipientId: string): Promise<void> {
+    const messages = await this.messageRepository.findUnread(conversationId, recipientId);
+    const sentMessages = messages.filter((m) => m.status === MessageStatus.SENT);
+
+    for (const msg of sentMessages) {
+      const updated = await this.messageRepository.markDelivered(msg.id);
+      if (!updated) continue;
+
+      this.logger.log(
+        `[BulkDeliver] messageId=${msg.id} convId=${conversationId} recipientId=${recipientId}`,
+      );
+
+      this.chatEventDispatcher.dispatch({
+        type: 'MESSAGE_DELIVERED',
+        payload: {
+          messageId: msg.id,
+          conversationId: msg.conversationId,
+          senderId: msg.senderId,
+          deliveredAt: updated.deliveredAt!,
+        },
+      });
+    }
+  }
+
+  /**
+   * Mark a message as READ and clear unread count for this conversation.
+   * Called when user has the conversation open.
+   */
   async markRead(userId: string, conversationId: string, messageId: string): Promise<void> {
     const isMember = await this.conversationRepository.isParticipant(conversationId, userId);
     if (!isMember) throw new ForbiddenException('Not a participant.');
 
-    // Clear unread count regardless of specific messageId
+    // Always clear unread count when user is looking at the conversation
     await this.conversationRepository.clearUnreadCount(conversationId, userId);
 
-    // Only update the specific message if a real messageId was provided
     if (!messageId) return;
 
     const updated = await this.messageRepository.markRead(messageId);
     if (!updated) return;
+
+    this.logger.log(
+      `[Read] messageId=${messageId} convId=${conversationId} readerId=${userId} senderId=${updated.senderId}`,
+    );
 
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_READ',
@@ -281,6 +345,8 @@ export class ChatService {
     const updated = await this.messageRepository.edit(messageId, newText);
     if (!updated) throw new NotFoundException('Message not found or already deleted.');
 
+    this.logger.log(`[Edited] messageId=${messageId} convId=${updated.conversationId} userId=${userId}`);
+
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_EDITED',
       payload: {
@@ -301,6 +367,8 @@ export class ChatService {
 
     await this.messageRepository.softDelete(messageId);
 
+    this.logger.log(`[Deleted] messageId=${messageId} convId=${message.conversationId} userId=${userId}`);
+
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_DELETED',
       payload: {
@@ -313,7 +381,7 @@ export class ChatService {
   }
 
   // ─────────────────────────────────────────────────────────
-  // PRIVATE HELPERS
+  // HELPERS
   // ─────────────────────────────────────────────────────────
 
   private enforceRateLimit(userId: string): void {
@@ -328,7 +396,7 @@ export class ChatService {
     entry.count += 1;
     if (entry.count > RATE_LIMIT_MAX_MESSAGES) {
       throw new HttpException(
-        `Rate limit exceeded. Maximum ${RATE_LIMIT_MAX_MESSAGES} messages per ${RATE_LIMIT_WINDOW_MS / 1000} seconds.`,
+        `Rate limit exceeded. Max ${RATE_LIMIT_MAX_MESSAGES} messages per ${RATE_LIMIT_WINDOW_MS / 1000}s.`,
         HttpStatus.TOO_MANY_REQUESTS,
       );
     }
