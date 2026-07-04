@@ -106,19 +106,29 @@ export function useUploadCoverImageMutation(userId: string | null) {
   });
 }
 
-export function useFollowMutation(username: string) {
+import { RelationshipState } from './useRelationship';
+
+export function useFollowMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => userService.followUser(username),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.RELATIONSHIP(username) });
+    mutationFn: (username: string) => userService.followUser(username),
+    onMutate: async (username) => {
+      await queryClient.cancelQueries({ queryKey: ['relationship', username] });
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.PUBLIC_PROFILE(username) });
 
-      const prevRelationship = queryClient.getQueryData(QUERY_KEYS.USER.RELATIONSHIP(username));
+      const prevRelationship = queryClient.getQueryData<RelationshipState>(['relationship', username]);
       const prevProfile = queryClient.getQueryData<UserProfileResponse>(QUERY_KEYS.USER.PUBLIC_PROFILE(username));
 
-      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), { state: 'Following' });
+      if (prevRelationship) {
+        queryClient.setQueryData(['relationship', username], {
+          ...prevRelationship,
+          state: prevRelationship.targetFollowsViewer ? 'MUTUAL_FOLLOW' : 'FOLLOWING',
+          viewerFollowsTarget: true,
+          canFollow: false,
+          isFriend: prevRelationship.targetFollowsViewer,
+        });
+      }
 
       if (prevProfile) {
         queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), {
@@ -127,19 +137,19 @@ export function useFollowMutation(username: string) {
         });
       }
 
-      return { prevRelationship, prevProfile };
+      return { prevRelationship, prevProfile, username };
     },
-    onError: (err, variables, context) => {
+    onError: (err, username, context) => {
       if (context) {
-        queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), context.prevRelationship);
+        queryClient.setQueryData(['relationship', context.username], context.prevRelationship);
         if (context.prevProfile) {
-          queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), context.prevProfile);
+          queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(context.username), context.prevProfile);
         }
       }
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), data);
-      queryClient.invalidateQueries({ queryKey: ['user', 'relationship', username] });
+    onSuccess: (data, username) => {
+      queryClient.setQueryData(['relationship', username], data);
+      queryClient.invalidateQueries({ queryKey: ['relationship', username] });
       queryClient.invalidateQueries({ queryKey: ['user', 'public_profile', username] });
       queryClient.invalidateQueries({ queryKey: ['user', 'followers', username] });
       queryClient.invalidateQueries({ queryKey: ['user', 'following'] });
@@ -149,19 +159,28 @@ export function useFollowMutation(username: string) {
   });
 }
 
-export function useUnfollowMutation(username: string) {
+export function useUnfollowMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => userService.unfollowUser(username),
-    onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.RELATIONSHIP(username) });
+    mutationFn: (username: string) => userService.unfollowUser(username),
+    onMutate: async (username) => {
+      await queryClient.cancelQueries({ queryKey: ['relationship', username] });
       await queryClient.cancelQueries({ queryKey: QUERY_KEYS.USER.PUBLIC_PROFILE(username) });
 
-      const prevRelationship = queryClient.getQueryData(QUERY_KEYS.USER.RELATIONSHIP(username));
+      const prevRelationship = queryClient.getQueryData<RelationshipState>(['relationship', username]);
       const prevProfile = queryClient.getQueryData<UserProfileResponse>(QUERY_KEYS.USER.PUBLIC_PROFILE(username));
 
-      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), { state: 'Not Following' });
+      if (prevRelationship) {
+        queryClient.setQueryData(['relationship', username], {
+          ...prevRelationship,
+          state: prevRelationship.targetFollowsViewer ? 'FOLLOWED_BY' : 'NOT_CONNECTED',
+          viewerFollowsTarget: false,
+          canFollow: true,
+          canFollowBack: prevRelationship.targetFollowsViewer,
+          isFriend: false,
+        });
+      }
 
       if (prevProfile) {
         queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), {
@@ -170,19 +189,19 @@ export function useUnfollowMutation(username: string) {
         });
       }
 
-      return { prevRelationship, prevProfile };
+      return { prevRelationship, prevProfile, username };
     },
-    onError: (err, variables, context) => {
+    onError: (err, username, context) => {
       if (context) {
-        queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), context.prevRelationship);
+        queryClient.setQueryData(['relationship', context.username], context.prevRelationship);
         if (context.prevProfile) {
-          queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(username), context.prevProfile);
+          queryClient.setQueryData(QUERY_KEYS.USER.PUBLIC_PROFILE(context.username), context.prevProfile);
         }
       }
     },
-    onSuccess: (data) => {
-      queryClient.setQueryData(QUERY_KEYS.USER.RELATIONSHIP(username), data);
-      queryClient.invalidateQueries({ queryKey: ['user', 'relationship', username] });
+    onSuccess: (data, username) => {
+      queryClient.setQueryData(['relationship', username], data);
+      queryClient.invalidateQueries({ queryKey: ['relationship', username] });
       queryClient.invalidateQueries({ queryKey: ['user', 'public_profile', username] });
       queryClient.invalidateQueries({ queryKey: ['user', 'followers', username] });
       queryClient.invalidateQueries({ queryKey: ['user', 'following'] });

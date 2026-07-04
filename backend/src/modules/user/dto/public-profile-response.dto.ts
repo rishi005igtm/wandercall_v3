@@ -1,3 +1,5 @@
+import { RelationshipResponseDto } from './relationship-response.dto';
+
 export class PublicProfileResponseDto {
   userId: string;
   username: string;
@@ -15,7 +17,7 @@ export class PublicProfileResponseDto {
   campfiresHosted: number;
   followerCount: number;
   followingCount: number;
-  relationshipState?: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self';
+  relationship: RelationshipResponseDto;
   dnaBadges?: any;
   createdAt: Date;
 }

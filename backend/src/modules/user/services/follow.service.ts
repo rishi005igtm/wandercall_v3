@@ -8,6 +8,7 @@ import { FollowEntity } from '../entities/follow.entity';
 import { UserProfileEntity } from '../entities/user-profile.entity';
 import { RelationshipResponseDto } from '../dto/relationship-response.dto';
 import { FollowerPreviewDto } from '../dto/follower-preview.dto';
+import { RelationshipService } from './relationship.service';
 
 @Injectable()
 export class FollowService {
@@ -16,6 +17,7 @@ export class FollowService {
   constructor(
     private readonly followRepository: FollowRepository,
     private readonly userRepository: UserRepository,
+    private readonly relationshipService: RelationshipService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -63,7 +65,7 @@ export class FollowService {
         `User ${currentUserId} followed target user @${targetUsername} (${targetProfile.userId}) successfully in ${duration}ms. Counters synchronized.`,
       );
 
-      return { state: 'Following' };
+      return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
     } catch (error) {
       this.logger.error(`Database exception during follow action from ${currentUserId} to ${targetProfile.userId}`, error);
       throw error;
@@ -99,7 +101,7 @@ export class FollowService {
         `User ${currentUserId} unfollowed target user @${targetUsername} (${targetProfile.userId}) successfully in ${duration}ms. Counters synchronized.`,
       );
 
-      return { state: 'Not Following' };
+      return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
     } catch (error) {
       this.logger.error(`Database exception during unfollow action from ${currentUserId} to ${targetProfile.userId}`, error);
       throw error;
@@ -112,16 +114,7 @@ export class FollowService {
       throw new NotFoundException(`User with username '${targetUsername}' not found.`);
     }
 
-    if (!currentUserId) {
-      return { state: 'Not Following' };
-    }
-
-    if (targetProfile.userId === currentUserId) {
-      return { state: 'Self' };
-    }
-
-    const isFollowing = await this.followRepository.findOne(currentUserId, targetProfile.userId);
-    return { state: isFollowing ? 'Following' : 'Not Following' };
+    return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
   }
 
   async getFollowers(

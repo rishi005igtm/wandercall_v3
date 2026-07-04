@@ -41,11 +41,9 @@ import { useAppSelector } from "@/lib/store/store";
 import { 
   useUploadAvatarMutation, 
   useUploadCoverImageMutation,
-  useFollowMutation,
-  useUnfollowMutation
 } from "@/hooks/api/useUserMutations";
+import { RelationshipButton } from "@/components/shared/RelationshipButton";
 import { 
-  useRelationshipQuery,
   useFollowersInfiniteQuery,
   useFollowingInfiniteQuery
 } from "@/hooks/api/useUserQueries";
@@ -88,14 +86,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
   const uploadAvatarMutation = useUploadAvatarMutation(authUserId);
   const uploadCoverMutation = useUploadCoverImageMutation(authUserId);
 
-  // Follow/Unfollow mutations & queries for visitors
-  const { data: relationshipData } = useRelationshipQuery(profile.username, !isOwner);
-  const followMutation = useFollowMutation(profile.username);
-  const unfollowMutation = useUnfollowMutation(profile.username);
-
-  const relationshipState = isOwner 
-    ? "Self" 
-    : (relationshipData?.state ?? profile.relationshipState ?? "Not Following");
+  // Connection queries for visitors
 
   // Inputs
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -201,24 +192,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
     }
   };
 
-  // Follow/Unfollow Click
-  const handleFollowClick = () => {
-    if (!authUserId) {
-      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
-      return;
-    }
-    if (relationshipState === "Following") {
-      unfollowMutation.mutate(undefined, {
-        onSuccess: () => triggerToast(`Unfollowed @${profile.username}`),
-        onError: () => triggerToast("Failed to unfollow user."),
-      });
-    } else {
-      followMutation.mutate(undefined, {
-        onSuccess: () => triggerToast(`Following @${profile.username}`),
-        onError: () => triggerToast("Failed to follow user."),
-      });
-    }
-  };
+  // Follow logic is now delegated to RelationshipButton
 
   const handleMessageClick = () => {
     if (!authUserId) {
@@ -571,26 +545,11 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               </>
             ) : (
               <>
-                <button 
-                  onClick={handleFollowClick}
-                  disabled={followMutation.isPending || unfollowMutation.isPending}
-                  className={`h-10 px-6 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex-1 sm:flex-none flex items-center justify-center gap-1.5 ${
-                    relationshipState === "Following"
-                      ? "bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800"
-                      : "bg-brand-purple border border-brand-purple/20 text-zinc-950 hover:bg-brand-purple/95 hover:shadow-[0_0_15px_rgba(168,85,247,0.3)] font-black"
-                  }`}
-                >
-                  {followMutation.isPending || unfollowMutation.isPending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : relationshipState === "Following" ? (
-                    "Following"
-                  ) : (
-                    <>
-                      <UserPlus className="h-3.5 w-3.5" />
-                      Follow
-                    </>
-                  )}
-                </button>
+                <RelationshipButton 
+                  username={profile.username}
+                  variant="default"
+                  className="h-10 px-6 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-1 sm:flex-none flex items-center justify-center gap-1.5"
+                />
                 <button 
                   onClick={handleMessageClick}
                   className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none flex items-center justify-center gap-1.5"

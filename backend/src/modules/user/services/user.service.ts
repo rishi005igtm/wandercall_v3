@@ -22,6 +22,7 @@ import { StorageService } from '../../storage/services/storage.service';
 import { PublicProfileResponseDto } from '../dto/public-profile-response.dto';
 import { UploadIntent } from '../../storage/enums/upload-intent.enum';
 import { FollowRepository } from '../repositories/follow.repository';
+import { RelationshipService } from './relationship.service';
 
 @Injectable()
 export class UserService {
@@ -32,6 +33,7 @@ export class UserService {
     private readonly authRepository: AuthRepository,
     private readonly storageService: StorageService,
     private readonly followRepository: FollowRepository,
+    private readonly relationshipService: RelationshipService,
   ) {}
 
   async checkUsernameAvailability(username: string): Promise<{ available: boolean; username: string }> {
@@ -241,17 +243,9 @@ export class UserService {
 
     this.logger.log(`Username resolution: Resolved username '${username}' to userId '${profile.userId}'`);
 
-    let relationshipState: 'Following' | 'Not Following' | 'Requested' | 'Blocked' | 'Self' = 'Not Following';
-    if (currentUserId) {
-      if (profile.userId === currentUserId) {
-        relationshipState = 'Self';
-      } else {
-        const isFollowing = await this.followRepository.findOne(currentUserId, profile.userId);
-        relationshipState = isFollowing ? 'Following' : 'Not Following';
-      }
-    }
+    const relationship = await this.relationshipService.resolveRelationship(currentUserId || null, profile.userId);
 
-    this.logger.log(`Profile fetch: Checked relationship between requesting user ${currentUserId || 'anonymous'} and target ${profile.userId} (State: ${relationshipState})`);
+    this.logger.log(`Profile fetch: Checked relationship between requesting user ${currentUserId || 'anonymous'} and target ${profile.userId} (State: ${relationship.state})`);
 
     return {
       userId: profile.userId,
@@ -270,7 +264,7 @@ export class UserService {
       campfiresHosted: profile.campfiresHosted ?? 0,
       followerCount: profile.followerCount ?? 0,
       followingCount: profile.followingCount ?? 0,
-      relationshipState,
+      relationship,
       dnaBadges: profile.dnaBadges,
       createdAt: profile.createdAt,
     };
