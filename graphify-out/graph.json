@@ -840,7 +840,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_app_module",
-      "community": 68,
+      "community": 12,
       "norm_label": "app.module.ts"
     },
     {
@@ -850,7 +850,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_src_app_module_appmodule",
-      "community": 68,
+      "community": 12,
       "norm_label": "appmodule"
     },
     {
@@ -1250,7 +1250,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_core_providers_database_initializer_service",
-      "community": 68,
+      "community": 12,
       "norm_label": "database-initializer.service.ts"
     },
     {
@@ -1260,7 +1260,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "backend_src_core_providers_database_initializer_service_databaseinitializerservice",
-      "community": 68,
+      "community": 12,
       "norm_label": "databaseinitializerservice"
     },
     {
@@ -1270,7 +1270,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "backend_src_core_providers_database_initializer_service_databaseinitializerservice_constructor",
-      "community": 68,
+      "community": 12,
       "norm_label": ".constructor()"
     },
     {
@@ -1280,7 +1280,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "backend_src_core_providers_database_initializer_service_databaseinitializerservice_onapplicationbootstrap",
-      "community": 68,
+      "community": 12,
       "norm_label": ".onapplicationbootstrap()"
     },
     {
@@ -1290,7 +1290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_main",
-      "community": 68,
+      "community": 12,
       "norm_label": "main.ts"
     },
     {
@@ -1300,7 +1300,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "backend_src_main_bootstrap",
-      "community": 68,
+      "community": 12,
       "norm_label": "bootstrap()"
     },
     {
@@ -1320,7 +1320,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "backend_src_modules_auth_auth_module_authmodule",
-      "community": 68,
+      "community": 12,
       "norm_label": "authmodule"
     },
     {
@@ -1700,7 +1700,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_auth_guards_jwt_auth_guard",
-      "community": 24,
+      "community": 0,
       "norm_label": "jwt-auth.guard.ts"
     },
     {
@@ -1710,7 +1710,7 @@
       "source_location": "L5",
       "_origin": "ast",
       "id": "backend_src_modules_auth_guards_jwt_auth_guard_jwtauthguard",
-      "community": 24,
+      "community": 0,
       "norm_label": "jwtauthguard"
     },
     {
@@ -2390,7 +2390,7 @@
       "source_location": "L48",
       "_origin": "ast",
       "id": "backend_src_modules_feed_controllers_feed_controller_feedcontroller_getfeed",
-      "community": 25,
+      "community": 27,
       "norm_label": ".getfeed()"
     },
     {
@@ -2410,7 +2410,7 @@
       "source_location": "L78",
       "_origin": "ast",
       "id": "backend_src_modules_feed_controllers_feed_controller_feedcontroller_createpost",
-      "community": 27,
+      "community": 11,
       "norm_label": ".createpost()"
     },
     {
@@ -2560,7 +2560,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_feed_dto_feed_query_dto",
-      "community": 25,
+      "community": 27,
       "norm_label": "feed-query.dto.ts"
     },
     {
@@ -2570,7 +2570,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "backend_src_modules_feed_dto_feed_query_dto_feedquerydto",
-      "community": 25,
+      "community": 27,
       "norm_label": "feedquerydto"
     },
     {
@@ -2760,7 +2760,7 @@
       "source_location": "L31",
       "_origin": "ast",
       "id": "backend_src_modules_feed_entities_post_entity_postentity",
-      "community": 27,
+      "community": 11,
       "norm_label": "postentity"
     },
     {
@@ -2770,7 +2770,7 @@
       "source_location": "L161",
       "_origin": "ast",
       "id": "backend_src_modules_feed_entities_post_entity_postentity_constructor",
-      "community": 27,
+      "community": 11,
       "norm_label": ".constructor()"
     },
     {
@@ -2920,7 +2920,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "backend_src_modules_feed_events_feed_event_dispatcher_feedeventdispatcher_dispatchpostcreated",
-      "community": 27,
+      "community": 11,
       "norm_label": ".dispatchpostcreated()"
     },
     {
@@ -2930,7 +2930,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "backend_src_modules_feed_events_feed_event_dispatcher_feedeventdispatcher_dispatchpostpublished",
-      "community": 27,
+      "community": 11,
       "norm_label": ".dispatchpostpublished()"
     },
     {
@@ -2950,7 +2950,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "backend_src_modules_feed_events_feed_event_dispatcher_feedeventdispatcher_dispatchpostupdated",
-      "community": 27,
+      "community": 11,
       "norm_label": ".dispatchpostupdated()"
     },
     {
@@ -3300,7 +3300,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "backend_src_modules_feed_repositories_post_repository_postrepository",
-      "community": 27,
+      "community": 11,
       "norm_label": "postrepository"
     },
     {
@@ -3310,7 +3310,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "backend_src_modules_feed_repositories_post_repository_postrepository_constructor",
-      "community": 27,
+      "community": 11,
       "norm_label": ".constructor()"
     },
     {
@@ -3330,7 +3330,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "backend_src_modules_feed_repositories_post_repository_postrepository_save",
-      "community": 27,
+      "community": 11,
       "norm_label": ".save()"
     },
     {
@@ -3410,7 +3410,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "id": "backend_src_modules_feed_repositories_post_repository_postrepository_getcandidates",
-      "community": 27,
+      "community": 11,
       "norm_label": ".getcandidates()"
     },
     {
@@ -3420,7 +3420,7 @@
       "source_location": "L111",
       "_origin": "ast",
       "id": "backend_src_modules_feed_repositories_post_repository_postrepository_findbyauthor",
-      "community": 27,
+      "community": 11,
       "norm_label": ".findbyauthor()"
     },
     {
@@ -3550,7 +3550,7 @@
       "source_location": "L54",
       "_origin": "ast",
       "id": "backend_src_modules_feed_services_post_service_postservice_createpost",
-      "community": 27,
+      "community": 11,
       "norm_label": ".createpost()"
     },
     {
@@ -3560,7 +3560,7 @@
       "source_location": "L164",
       "_origin": "ast",
       "id": "backend_src_modules_feed_services_post_service_postservice_editpost",
-      "community": 27,
+      "community": 11,
       "norm_label": ".editpost()"
     },
     {
@@ -3690,7 +3690,7 @@
       "source_location": "L24",
       "_origin": "ast",
       "id": "backend_src_modules_feed_services_ranking_engine_rankingengine_scorepost",
-      "community": 27,
+      "community": 11,
       "norm_label": ".scorepost()"
     },
     {
@@ -3750,7 +3750,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "backend_src_modules_feed_services_recommendation_engine_recommendationengine_constructor",
-      "community": 12,
+      "community": 20,
       "norm_label": ".constructor()"
     },
     {
@@ -3970,7 +3970,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "backend_src_modules_friend_friend_module_friendmodule",
-      "community": 26,
+      "community": 12,
       "norm_label": "friendmodule"
     },
     {
@@ -4300,7 +4300,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "backend_src_modules_privacy_privacy_module_privacymodule",
-      "community": 68,
+      "community": 12,
       "norm_label": "privacymodule"
     },
     {
@@ -4900,7 +4900,7 @@
       "source_location": "L176",
       "_origin": "ast",
       "id": "backend_src_modules_storage_services_storage_service_storageservice_replacefile",
-      "community": 20,
+      "community": 3,
       "norm_label": ".replacefile()"
     },
     {
@@ -4940,7 +4940,7 @@
       "source_location": "L13",
       "_origin": "ast",
       "id": "backend_src_modules_storage_storage_module_storagemodule",
-      "community": 68,
+      "community": 12,
       "norm_label": "storagemodule"
     },
     {
@@ -4970,7 +4970,7 @@
       "source_location": "L33",
       "_origin": "ast",
       "id": "backend_src_modules_user_controllers_user_controller_usercontroller_constructor",
-      "community": 43,
+      "community": 7,
       "norm_label": ".constructor()"
     },
     {
@@ -5160,7 +5160,7 @@
       "source_location": "L182",
       "_origin": "ast",
       "id": "backend_src_modules_user_controllers_user_controller_usercontroller_getpublicprofile",
-      "community": 18,
+      "community": 7,
       "norm_label": ".getpublicprofile()"
     },
     {
@@ -5280,7 +5280,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_dto_public_profile_response_dto",
-      "community": 18,
+      "community": 7,
       "norm_label": "public-profile-response.dto.ts"
     },
     {
@@ -5290,7 +5290,7 @@
       "source_location": "L3",
       "_origin": "ast",
       "id": "backend_src_modules_user_dto_public_profile_response_dto_publicprofileresponsedto",
-      "community": 18,
+      "community": 7,
       "norm_label": "publicprofileresponsedto"
     },
     {
@@ -5300,7 +5300,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_dto_relationship_response_dto",
-      "community": 12,
+      "community": 7,
       "norm_label": "relationship-response.dto.ts"
     },
     {
@@ -5430,7 +5430,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_entities_user_plan_entity",
-      "community": 68,
+      "community": 12,
       "norm_label": "user-plan.entity.ts"
     },
     {
@@ -5440,7 +5440,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "backend_src_modules_user_entities_user_plan_entity_userplanentity",
-      "community": 68,
+      "community": 20,
       "norm_label": "userplanentity"
     },
     {
@@ -5450,7 +5450,7 @@
       "source_location": "L35",
       "_origin": "ast",
       "id": "backend_src_modules_user_entities_user_plan_entity_userplanentity_constructor",
-      "community": 68,
+      "community": 20,
       "norm_label": ".constructor()"
     },
     {
@@ -5490,7 +5490,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_entities_user_settings_entity",
-      "community": 68,
+      "community": 12,
       "norm_label": "user-settings.entity.ts"
     },
     {
@@ -5500,7 +5500,7 @@
       "source_location": "L4",
       "_origin": "ast",
       "id": "backend_src_modules_user_entities_user_settings_entity_usersettingsentity",
-      "community": 68,
+      "community": 20,
       "norm_label": "usersettingsentity"
     },
     {
@@ -5510,7 +5510,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "backend_src_modules_user_entities_user_settings_entity_usersettingsentity_constructor",
-      "community": 68,
+      "community": 20,
       "norm_label": ".constructor()"
     },
     {
@@ -5607,7 +5607,7 @@
       "label": ".getIncomingRequests()",
       "file_type": "code",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L161",
+      "source_location": "L163",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_follow_repository_followrepository_getincomingrequests",
       "community": 12,
@@ -5617,7 +5617,7 @@
       "label": ".getOutgoingRequests()",
       "file_type": "code",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L205",
+      "source_location": "L209",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_follow_repository_followrepository_getoutgoingrequests",
       "community": 12,
@@ -5630,7 +5630,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_user_repository",
-      "community": 68,
+      "community": 12,
       "norm_label": "user.repository.ts"
     },
     {
@@ -5640,7 +5640,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_user_repository_userrepository",
-      "community": 68,
+      "community": 20,
       "norm_label": "userrepository"
     },
     {
@@ -5650,7 +5650,7 @@
       "source_location": "L10",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_user_repository_userrepository_constructor",
-      "community": 68,
+      "community": 20,
       "norm_label": ".constructor()"
     },
     {
@@ -5690,7 +5690,7 @@
       "source_location": "L32",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_user_repository_userrepository_findsettingsbyuserid",
-      "community": 68,
+      "community": 20,
       "norm_label": ".findsettingsbyuserid()"
     },
     {
@@ -5710,7 +5710,7 @@
       "source_location": "L40",
       "_origin": "ast",
       "id": "backend_src_modules_user_repositories_user_repository_userrepository_findplanbyuserid",
-      "community": 68,
+      "community": 20,
       "norm_label": ".findplanbyuserid()"
     },
     {
@@ -5740,7 +5740,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "backend_src_modules_user_services_follow_service_followservice",
-      "community": 43,
+      "community": 18,
       "norm_label": "followservice"
     },
     {
@@ -5760,7 +5760,7 @@
       "source_location": "L25",
       "_origin": "ast",
       "id": "backend_src_modules_user_services_follow_service_followservice_calculatecompatibility",
-      "community": 43,
+      "community": 18,
       "norm_label": ".calculatecompatibility()"
     },
     {
@@ -5860,7 +5860,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_services_user_service",
-      "community": 68,
+      "community": 7,
       "norm_label": "user.service.ts"
     },
     {
@@ -6040,7 +6040,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_src_modules_user_user_module",
-      "community": 68,
+      "community": 12,
       "norm_label": "user.module.ts"
     },
     {
@@ -6050,7 +6050,7 @@
       "source_location": "L28",
       "_origin": "ast",
       "id": "backend_src_modules_user_user_module_usermodule",
-      "community": 68,
+      "community": 12,
       "norm_label": "usermodule"
     },
     {
@@ -6060,7 +6060,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "backend_test_app_e2e_spec",
-      "community": 68,
+      "community": 12,
       "norm_label": "app.e2e-spec.ts"
     },
     {
@@ -6580,7 +6580,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_app_experiences_page",
-      "community": 71,
+      "community": 29,
       "norm_label": "page.tsx"
     },
     {
@@ -6590,7 +6590,7 @@
       "source_location": "L27",
       "_origin": "ast",
       "id": "client_app_experiences_page_experienceitem",
-      "community": 71,
+      "community": 29,
       "norm_label": "experienceitem"
     },
     {
@@ -6600,7 +6600,7 @@
       "source_location": "L44",
       "_origin": "ast",
       "id": "client_app_experiences_page_experiencescatalog",
-      "community": 71,
+      "community": 29,
       "norm_label": "experiencescatalog"
     },
     {
@@ -6610,7 +6610,7 @@
       "source_location": "L197",
       "_origin": "ast",
       "id": "client_app_experiences_page_experiencespage",
-      "community": 71,
+      "community": 29,
       "norm_label": "experiencespage()"
     },
     {
@@ -6810,7 +6810,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_app_page",
-      "community": 70,
+      "community": 4,
       "norm_label": "page.tsx"
     },
     {
@@ -6820,7 +6820,7 @@
       "source_location": "L23",
       "_origin": "ast",
       "id": "client_app_page_home",
-      "community": 70,
+      "community": 4,
       "norm_label": "home()"
     },
     {
@@ -6830,7 +6830,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_app_profile_username_page",
-      "community": 69,
+      "community": 21,
       "norm_label": "page.tsx"
     },
     {
@@ -6840,7 +6840,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "client_app_profile_username_page_explorerprofilepage",
-      "community": 69,
+      "community": 21,
       "norm_label": "explorerprofilepage()"
     },
     {
@@ -7460,94 +7460,84 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page",
-      "community": 32,
+      "community": 23,
       "norm_label": "page.tsx"
     },
     {
       "label": "CompanionProps",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L26",
+      "source_location": "L28",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_companionprops",
-      "community": 32,
+      "community": 23,
       "norm_label": "companionprops"
     },
     {
       "label": "CompanionAvatarProps",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L30",
+      "source_location": "L32",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_companionavatarprops",
-      "community": 32,
+      "community": 23,
       "norm_label": "companionavatarprops"
     },
     {
       "label": "CompanionAvatar()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L36",
+      "source_location": "L38",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_companionavatar",
-      "community": 32,
+      "community": 23,
       "norm_label": "companionavatar()"
     },
     {
       "label": "DEFAULT_CAMPFIRES",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L81",
+      "source_location": "L83",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_default_campfires",
-      "community": 32,
+      "community": 23,
       "norm_label": "default_campfires"
     },
     {
       "label": "Companion",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L124",
+      "source_location": "L126",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_companion",
-      "community": 32,
+      "community": 23,
       "norm_label": "companion"
-    },
-    {
-      "label": "COMPANIONS",
-      "file_type": "code",
-      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L142",
-      "_origin": "ast",
-      "id": "client_app_profile_friends_chatid_page_companions",
-      "community": 32,
-      "norm_label": "companions"
     },
     {
       "label": "INITIAL_MESSAGES",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L247",
+      "source_location": "L146",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_initial_messages",
-      "community": 32,
+      "community": 23,
       "norm_label": "initial_messages"
     },
     {
       "label": "getIcebreakers()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L287",
+      "source_location": "L186",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_geticebreakers",
-      "community": 32,
+      "community": 23,
       "norm_label": "geticebreakers()"
     },
     {
       "label": "AudioMessagePlayer()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L327",
+      "source_location": "L226",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_audiomessageplayer",
       "community": 32,
@@ -7557,10 +7547,10 @@
       "label": "MobileChatPage()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L449",
+      "source_location": "L348",
       "_origin": "ast",
       "id": "client_app_profile_friends_chatid_page_mobilechatpage",
-      "community": 32,
+      "community": 23,
       "norm_label": "mobilechatpage()"
     },
     {
@@ -7624,60 +7614,20 @@
       "norm_label": "companion"
     },
     {
-      "label": "COMPANIONS",
-      "file_type": "code",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L166",
-      "_origin": "ast",
-      "id": "client_app_profile_friends_page_companions",
-      "community": 23,
-      "norm_label": "companions"
-    },
-    {
-      "label": "PENDING_INCOMING",
-      "file_type": "code",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L271",
-      "_origin": "ast",
-      "id": "client_app_profile_friends_page_pending_incoming",
-      "community": 23,
-      "norm_label": "pending_incoming"
-    },
-    {
-      "label": "PENDING_OUTGOING",
-      "file_type": "code",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L374",
-      "_origin": "ast",
-      "id": "client_app_profile_friends_page_pending_outgoing",
-      "community": 23,
-      "norm_label": "pending_outgoing"
-    },
-    {
       "label": "SUGGESTED_EXPLORERS",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L457",
+      "source_location": "L166",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_suggested_explorers",
       "community": 23,
       "norm_label": "suggested_explorers"
     },
     {
-      "label": "BLOCKED_USERS",
-      "file_type": "code",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L487",
-      "_origin": "ast",
-      "id": "client_app_profile_friends_page_blocked_users",
-      "community": 23,
-      "norm_label": "blocked_users"
-    },
-    {
       "label": "ACTIVITY_FEED",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L598",
+      "source_location": "L196",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_activity_feed",
       "community": 23,
@@ -7687,7 +7637,7 @@
       "label": "INITIAL_MESSAGES",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L606",
+      "source_location": "L204",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_initial_messages",
       "community": 23,
@@ -7697,7 +7647,7 @@
       "label": "AudioMessagePlayer()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L648",
+      "source_location": "L246",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_audiomessageplayer",
       "community": 23,
@@ -7707,7 +7657,7 @@
       "label": "useNestedScroll()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L770",
+      "source_location": "L368",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_usenestedscroll",
       "community": 23,
@@ -7717,7 +7667,7 @@
       "label": "getIcebreakers()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L842",
+      "source_location": "L440",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_geticebreakers",
       "community": 23,
@@ -7727,7 +7677,7 @@
       "label": "FriendsPageProps",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L886",
+      "source_location": "L484",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_friendspageprops",
       "community": 23,
@@ -7737,7 +7687,7 @@
       "label": "FriendsPage()",
       "file_type": "code",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L890",
+      "source_location": "L488",
       "_origin": "ast",
       "id": "client_app_profile_friends_page_friendspage",
       "community": 23,
@@ -7790,7 +7740,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_app_profile_memories_username_page",
-      "community": 69,
+      "community": 10,
       "norm_label": "page.tsx"
     },
     {
@@ -7800,7 +7750,7 @@
       "source_location": "L29",
       "_origin": "ast",
       "id": "client_app_profile_memories_username_page_usermemoriespage",
-      "community": 69,
+      "community": 10,
       "norm_label": "usermemoriespage()"
     },
     {
@@ -7810,7 +7760,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_app_profile_page",
-      "community": 4,
+      "community": 21,
       "norm_label": "page.tsx"
     },
     {
@@ -7820,7 +7770,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "id": "client_app_profile_page_profilepage",
-      "community": 4,
+      "community": 21,
       "norm_label": "profilepage()"
     },
     {
@@ -8120,7 +8070,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_aidiscovery",
-      "community": 72,
+      "community": 4,
       "norm_label": "aidiscovery.tsx"
     },
     {
@@ -8130,7 +8080,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_aidiscovery_experienceresult",
-      "community": 72,
+      "community": 4,
       "norm_label": "experienceresult"
     },
     {
@@ -8140,7 +8090,7 @@
       "source_location": "L18",
       "_origin": "ast",
       "id": "client_components_aidiscovery_aidiscovery",
-      "community": 72,
+      "community": 4,
       "norm_label": "aidiscovery()"
     },
     {
@@ -8190,7 +8140,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_campfires",
-      "community": 73,
+      "community": 4,
       "norm_label": "campfires.tsx"
     },
     {
@@ -8200,7 +8150,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_campfires_voiceroom",
-      "community": 73,
+      "community": 4,
       "norm_label": "voiceroom"
     },
     {
@@ -8210,7 +8160,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "client_components_campfires_campfires",
-      "community": 73,
+      "community": 4,
       "norm_label": "campfires()"
     },
     {
@@ -8220,7 +8170,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_categories",
-      "community": 70,
+      "community": 4,
       "norm_label": "categories.tsx"
     },
     {
@@ -8230,7 +8180,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_categories_categories",
-      "community": 70,
+      "community": 4,
       "norm_label": "categories()"
     },
     {
@@ -8240,7 +8190,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_communitystories",
-      "community": 74,
+      "community": 4,
       "norm_label": "communitystories.tsx"
     },
     {
@@ -8250,7 +8200,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "client_components_communitystories_storypost",
-      "community": 74,
+      "community": 4,
       "norm_label": "storypost"
     },
     {
@@ -8260,7 +8210,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "client_components_communitystories_communitystories",
-      "community": 74,
+      "community": 4,
       "norm_label": "communitystories()"
     },
     {
@@ -8270,7 +8220,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_featuredhosts",
-      "community": 75,
+      "community": 4,
       "norm_label": "featuredhosts.tsx"
     },
     {
@@ -8280,7 +8230,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_featuredhosts_host",
-      "community": 75,
+      "community": 4,
       "norm_label": "host"
     },
     {
@@ -8290,7 +8240,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "client_components_featuredhosts_featuredhosts",
-      "community": 75,
+      "community": 4,
       "norm_label": "featuredhosts()"
     },
     {
@@ -8300,7 +8250,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_finalcta",
-      "community": 70,
+      "community": 4,
       "norm_label": "finalcta.tsx"
     },
     {
@@ -8310,7 +8260,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_finalcta_finalcta",
-      "community": 70,
+      "community": 4,
       "norm_label": "finalcta()"
     },
     {
@@ -8320,7 +8270,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_footer",
-      "community": 71,
+      "community": 29,
       "norm_label": "footer.tsx"
     },
     {
@@ -8330,7 +8280,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "id": "client_components_footer_footer",
-      "community": 71,
+      "community": 29,
       "norm_label": "footer()"
     },
     {
@@ -8340,7 +8290,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_hero",
-      "community": 70,
+      "community": 4,
       "norm_label": "hero.tsx"
     },
     {
@@ -8350,7 +8300,7 @@
       "source_location": "L8",
       "_origin": "ast",
       "id": "client_components_hero_hero",
-      "community": 70,
+      "community": 4,
       "norm_label": "hero()"
     },
     {
@@ -8360,7 +8310,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_howitworks",
-      "community": 70,
+      "community": 4,
       "norm_label": "howitworks.tsx"
     },
     {
@@ -8370,7 +8320,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_howitworks_howitworks",
-      "community": 70,
+      "community": 4,
       "norm_label": "howitworks()"
     },
     {
@@ -8470,7 +8420,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_socialproof",
-      "community": 76,
+      "community": 4,
       "norm_label": "socialproof.tsx"
     },
     {
@@ -8480,7 +8430,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_socialproof_testimonial",
-      "community": 76,
+      "community": 4,
       "norm_label": "testimonial"
     },
     {
@@ -8490,7 +8440,7 @@
       "source_location": "L17",
       "_origin": "ast",
       "id": "client_components_socialproof_socialproof",
-      "community": 76,
+      "community": 4,
       "norm_label": "socialproof()"
     },
     {
@@ -8500,7 +8450,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_trending",
-      "community": 77,
+      "community": 4,
       "norm_label": "trending.tsx"
     },
     {
@@ -8510,7 +8460,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "id": "client_components_trending_experience",
-      "community": 77,
+      "community": 4,
       "norm_label": "experience"
     },
     {
@@ -8520,7 +8470,7 @@
       "source_location": "L36",
       "_origin": "ast",
       "id": "client_components_trending_trending",
-      "community": 77,
+      "community": 4,
       "norm_label": "trending()"
     },
     {
@@ -8530,7 +8480,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_upcomingevents",
-      "community": 78,
+      "community": 4,
       "norm_label": "upcomingevents.tsx"
     },
     {
@@ -8540,7 +8490,7 @@
       "source_location": "L7",
       "_origin": "ast",
       "id": "client_components_upcomingevents_eventitem",
-      "community": 78,
+      "community": 4,
       "norm_label": "eventitem"
     },
     {
@@ -8550,7 +8500,7 @@
       "source_location": "L19",
       "_origin": "ast",
       "id": "client_components_upcomingevents_upcomingevents",
-      "community": 78,
+      "community": 4,
       "norm_label": "upcomingevents()"
     },
     {
@@ -9000,7 +8950,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_components_profile_profilerenderer",
-      "community": 69,
+      "community": 22,
       "norm_label": "profilerenderer.tsx"
     },
     {
@@ -9020,7 +8970,7 @@
       "source_location": "L62",
       "_origin": "ast",
       "id": "client_components_profile_profilerenderer_companionavatarprops",
-      "community": 69,
+      "community": 22,
       "norm_label": "companionavatarprops"
     },
     {
@@ -9030,7 +8980,7 @@
       "source_location": "L68",
       "_origin": "ast",
       "id": "client_components_profile_profilerenderer_companionavatar",
-      "community": 69,
+      "community": 22,
       "norm_label": "companionavatar()"
     },
     {
@@ -9040,7 +8990,7 @@
       "source_location": "L80",
       "_origin": "ast",
       "id": "client_components_profile_profilerenderer_profilerenderer",
-      "community": 69,
+      "community": 22,
       "norm_label": "profilerenderer()"
     },
     {
@@ -9230,7 +9180,7 @@
       "source_location": "L16",
       "_origin": "ast",
       "id": "client_hooks_api_usefeed_useuserfeedquery",
-      "community": 69,
+      "community": 10,
       "norm_label": "useuserfeedquery()"
     },
     {
@@ -9270,7 +9220,7 @@
       "source_location": "L61",
       "_origin": "ast",
       "id": "client_hooks_api_usefeed_uselikepostmutation",
-      "community": 69,
+      "community": 10,
       "norm_label": "uselikepostmutation()"
     },
     {
@@ -9280,7 +9230,7 @@
       "source_location": "L123",
       "_origin": "ast",
       "id": "client_hooks_api_usefeed_usesavepostmutation",
-      "community": 69,
+      "community": 10,
       "norm_label": "usesavepostmutation()"
     },
     {
@@ -9610,7 +9560,7 @@
       "source_location": "L95",
       "_origin": "ast",
       "id": "client_hooks_api_useusermutations_useuploadcoverimagemutation",
-      "community": 69,
+      "community": 22,
       "norm_label": "useuploadcoverimagemutation()"
     },
     {
@@ -9640,7 +9590,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_hooks_api_useuserqueries",
-      "community": 69,
+      "community": 21,
       "norm_label": "useuserqueries.ts"
     },
     {
@@ -9660,7 +9610,7 @@
       "source_location": "L14",
       "_origin": "ast",
       "id": "client_hooks_api_useuserqueries_useuserprofilequery",
-      "community": 4,
+      "community": 21,
       "norm_label": "useuserprofilequery()"
     },
     {
@@ -9690,7 +9640,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "id": "client_hooks_api_useuserqueries_usepublicprofilequery",
-      "community": 69,
+      "community": 21,
       "norm_label": "usepublicprofilequery()"
     },
     {
@@ -9700,7 +9650,7 @@
       "source_location": "L50",
       "_origin": "ast",
       "id": "client_hooks_api_useuserqueries_userelationshipquery",
-      "community": 69,
+      "community": 21,
       "norm_label": "userelationshipquery()"
     },
     {
@@ -9710,7 +9660,7 @@
       "source_location": "L59",
       "_origin": "ast",
       "id": "client_hooks_api_useuserqueries_usefollowersinfinitequery",
-      "community": 69,
+      "community": 22,
       "norm_label": "usefollowersinfinitequery()"
     },
     {
@@ -9720,7 +9670,7 @@
       "source_location": "L69",
       "_origin": "ast",
       "id": "client_hooks_api_useuserqueries_usefollowinginfinitequery",
-      "community": 69,
+      "community": 22,
       "norm_label": "usefollowinginfinitequery()"
     },
     {
@@ -9840,7 +9790,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_lib_api_querykeys",
-      "community": 69,
+      "community": 21,
       "norm_label": "querykeys.ts"
     },
     {
@@ -9850,7 +9800,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "id": "client_lib_api_querykeys_query_keys",
-      "community": 69,
+      "community": 21,
       "norm_label": "query_keys"
     },
     {
@@ -26822,7 +26772,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L161",
+      "source_location": "L163",
       "weight": 1.0,
       "source": "backend_src_modules_user_repositories_follow_repository_followrepository_getincomingrequests",
       "target": "backend_src_modules_user_entities_follow_entity_followentity",
@@ -26844,7 +26794,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L205",
+      "source_location": "L209",
       "weight": 1.0,
       "source": "backend_src_modules_user_repositories_follow_repository_followrepository_getoutgoingrequests",
       "target": "backend_src_modules_user_entities_follow_entity_followentity",
@@ -27115,7 +27065,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L161",
+      "source_location": "L163",
       "weight": 1.0,
       "source": "backend_src_modules_user_repositories_follow_repository_followrepository_getincomingrequests",
       "target": "backend_src_modules_user_entities_user_profile_entity_userprofileentity",
@@ -27137,7 +27087,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L205",
+      "source_location": "L209",
       "weight": 1.0,
       "source": "backend_src_modules_user_repositories_follow_repository_followrepository_getoutgoingrequests",
       "target": "backend_src_modules_user_entities_user_profile_entity_userprofileentity",
@@ -27490,7 +27440,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L161",
+      "source_location": "L163",
       "weight": 1.0,
       "source": "backend_src_modules_user_repositories_follow_repository_followrepository",
       "target": "backend_src_modules_user_repositories_follow_repository_followrepository_getincomingrequests",
@@ -27510,7 +27460,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "backend/src/modules/user/repositories/follow.repository.ts",
-      "source_location": "L205",
+      "source_location": "L209",
       "weight": 1.0,
       "source": "backend_src_modules_user_repositories_follow_repository_followrepository",
       "target": "backend_src_modules_user_repositories_follow_repository_followrepository_getoutgoingrequests",
@@ -31057,7 +31007,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L327",
+      "source_location": "L226",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_audiomessageplayer",
@@ -31067,7 +31017,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L124",
+      "source_location": "L126",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_companion",
@@ -31077,7 +31027,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L36",
+      "source_location": "L38",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_companionavatar",
@@ -31087,7 +31037,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L30",
+      "source_location": "L32",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_companionavatarprops",
@@ -31097,7 +31047,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L26",
+      "source_location": "L28",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_companionprops",
@@ -31107,17 +31057,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L142",
-      "weight": 1.0,
-      "source": "client_app_profile_friends_chatid_page",
-      "target": "client_app_profile_friends_chatid_page_companions",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L81",
+      "source_location": "L83",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_default_campfires",
@@ -31127,7 +31067,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L287",
+      "source_location": "L186",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_geticebreakers",
@@ -31137,7 +31077,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L247",
+      "source_location": "L146",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_initial_messages",
@@ -31147,7 +31087,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L449",
+      "source_location": "L348",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page",
       "target": "client_app_profile_friends_chatid_page_mobilechatpage",
@@ -31165,11 +31105,99 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_usefriends",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_usefriends_useaddfavoritemutation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_usefriends_usefavorites",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_usefriends_usefriends",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_usefriends_useremovefavoritemutation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports_from",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_useprivacy",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_useprivacy_useblockedusers",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L7",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page",
+      "target": "client_hooks_api_useprivacy_useblockmutation",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L804",
+      "source_location": "L757",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page_mobilechatpage",
       "target": "client_app_profile_friends_chatid_page_geticebreakers",
@@ -31181,10 +31209,76 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L333",
+      "source_location": "L232",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page_audiomessageplayer",
       "target": "client_package_dependencies_react"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L362",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page_mobilechatpage",
+      "target": "client_hooks_api_usefriends_useaddfavoritemutation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L359",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page_mobilechatpage",
+      "target": "client_hooks_api_usefriends_usefavorites"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L358",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page_mobilechatpage",
+      "target": "client_hooks_api_usefriends_usefriends"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L363",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page_mobilechatpage",
+      "target": "client_hooks_api_usefriends_useremovefavoritemutation"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L360",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page_mobilechatpage",
+      "target": "client_hooks_api_useprivacy_useblockedusers"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "confidence_score": 1.0,
+      "source_file": "client/app/profile/friends/[chatId]/page.tsx",
+      "source_location": "L364",
+      "weight": 1.0,
+      "source": "client_app_profile_friends_chatid_page_mobilechatpage",
+      "target": "client_hooks_api_useprivacy_useblockmutation"
     },
     {
       "relation": "references",
@@ -31192,7 +31286,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/[chatId]/page.tsx",
-      "source_location": "L450",
+      "source_location": "L349",
       "weight": 1.0,
       "source": "client_app_profile_friends_chatid_page_mobilechatpage",
       "target": "client_package_dependencies_react"
@@ -31201,7 +31295,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L598",
+      "source_location": "L196",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_activity_feed",
@@ -31211,20 +31305,10 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L648",
+      "source_location": "L246",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_audiomessageplayer",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L487",
-      "weight": 1.0,
-      "source": "client_app_profile_friends_page",
-      "target": "client_app_profile_friends_page_blocked_users",
       "confidence_score": 1.0
     },
     {
@@ -31271,16 +31355,6 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L166",
-      "weight": 1.0,
-      "source": "client_app_profile_friends_page",
-      "target": "client_app_profile_friends_page_companions",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "client/app/profile/friends/page.tsx",
       "source_location": "L105",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
@@ -31291,7 +31365,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L890",
+      "source_location": "L488",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_friendspage",
@@ -31301,7 +31375,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L886",
+      "source_location": "L484",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_friendspageprops",
@@ -31311,7 +31385,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L842",
+      "source_location": "L440",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_geticebreakers",
@@ -31321,7 +31395,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L606",
+      "source_location": "L204",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_initial_messages",
@@ -31331,27 +31405,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L271",
-      "weight": 1.0,
-      "source": "client_app_profile_friends_page",
-      "target": "client_app_profile_friends_page_pending_incoming",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L374",
-      "weight": 1.0,
-      "source": "client_app_profile_friends_page",
-      "target": "client_app_profile_friends_page_pending_outgoing",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "contains",
-      "confidence": "EXTRACTED",
-      "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L457",
+      "source_location": "L166",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_suggested_explorers",
@@ -31361,7 +31415,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L770",
+      "source_location": "L368",
       "weight": 1.0,
       "source": "client_app_profile_friends_page",
       "target": "client_app_profile_friends_page_usenestedscroll",
@@ -31526,7 +31580,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L891",
+      "source_location": "L489",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_app_profile_friends_page_usenestedscroll",
@@ -31537,7 +31591,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L1746",
+      "source_location": "L1359",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_app_profile_friends_page_geticebreakers",
@@ -31549,7 +31603,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L967",
+      "source_location": "L565",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_useaddfavoritemutation"
@@ -31560,7 +31614,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L966",
+      "source_location": "L564",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_usecancelrequestmutation"
@@ -31571,7 +31625,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L961",
+      "source_location": "L559",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_usefavorites"
@@ -31582,7 +31636,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L964",
+      "source_location": "L562",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_usefollowbackmutation"
@@ -31593,7 +31647,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L958",
+      "source_location": "L556",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_usefriends"
@@ -31604,7 +31658,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L959",
+      "source_location": "L557",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_usependingincoming"
@@ -31615,7 +31669,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L960",
+      "source_location": "L558",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_usependingoutgoing"
@@ -31626,7 +31680,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L965",
+      "source_location": "L563",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_userejectrequestmutation"
@@ -31637,7 +31691,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L968",
+      "source_location": "L566",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_usefriends_useremovefavoritemutation"
@@ -31648,7 +31702,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L962",
+      "source_location": "L560",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_useprivacy_useblockedusers"
@@ -31659,7 +31713,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L969",
+      "source_location": "L567",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_useprivacy_useblockmutation"
@@ -31670,7 +31724,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "client/app/profile/friends/page.tsx",
-      "source_location": "L970",
+      "source_location": "L568",
       "weight": 1.0,
       "source": "client_app_profile_friends_page_friendspage",
       "target": "client_hooks_api_useprivacy_useunblockmutation"
@@ -37869,5 +37923,5 @@
     }
   ],
   "hyperedges": [],
-  "built_at_commit": "c8d77c62c11e01f112bdf3a202e121d7f6de885f"
+  "built_at_commit": "0669c7fed40ebacdad68b46b30a7756ac283b97b"
 }

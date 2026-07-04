@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import FriendsPage from "../page";
+import { useFriends, useFavorites, useAddFavoriteMutation, useRemoveFavoriteMutation } from '@/hooks/api/useFriends';
+import { useBlockedUsers, useBlockMutation } from '@/hooks/api/usePrivacy';
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -139,110 +141,7 @@ interface Companion {
   lastActive: string;
 }
 
-const COMPANIONS: Companion[] = [
-  {
-    id: "f-1",
-    name: "Arjun Mehta",
-    username: "@arjun_m",
-    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT-DzH0exY99acBDKcM1JGE3YVTVHhVzcli8vXt767EGw&s=10",
-    status: "Exploring",
-    compatibility: 92,
-    sharedDNA: "Explorer",
-    mutualExperiences: 8,
-    mutualCommunities: 5,
-    bio: "Summit bagger & dive master. Lives in the water. Trekking the Western Ghats this weekend.",
-    location: "Bangalore, India",
-    tags: ["High Altitude", "Scuba", "Adrenaline"],
-    isFavorite: true,
-    isAdventurePartner: true,
-    lastActive: "Active now"
-  },
-  {
-    id: "f-2",
-    name: "Sara Khan",
-    username: "@sara_k",
-    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTuST_QatrLMk5Y25ul_v3F1YiZNrY6uhzoesaNlFDpcQ&s=10",
-    status: "Available",
-    compatibility: 88,
-    sharedDNA: "Creative",
-    mutualExperiences: 5,
-    mutualCommunities: 3,
-    bio: "Landscape photographer & twilight stargazer. Documenting heritage cafes and old roads.",
-    location: "Mumbai, India",
-    tags: ["Astro Photo", "Culinary", "Road Trips"],
-    isFavorite: true,
-    isAdventurePartner: false,
-    lastActive: "Active 5m ago"
-  },
-  {
-    id: "f-3",
-    name: "Divya Kapoor",
-    username: "@divya_k",
-    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRMzvvUdpjqx6ylJAT_O5M_ABUSZubCY2xvq751JO1KbQ&s=10",
-    status: "In Campfire",
-    compatibility: 76,
-    sharedDNA: "Storyteller",
-    mutualExperiences: 3,
-    mutualCommunities: 4,
-    bio: "Backpacker across Southeast Asia. Hosting campfire chatrooms on local folklore and myths.",
-    location: "Delhi, India",
-    tags: ["Journaling", "History", "Folklore"],
-    isFavorite: false,
-    isAdventurePartner: true,
-    lastActive: "Active now"
-  },
-  {
-    id: "f-4",
-    name: "Karan Johar",
-    username: "@karan_j",
-    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTuaoqdshtIm4OxOC37taudV1TInXJ7FlAMnNQz6jwpg&s=10",
-    status: "Hosting",
-    compatibility: 84,
-    sharedDNA: "Learner",
-    mutualExperiences: 4,
-    mutualCommunities: 6,
-    bio: "Ecology researcher and off-grid pathfinder. Passionate about forest biodiversity preservation.",
-    location: "Coorg, India",
-    tags: ["Forestry", "Biodiversity", "Mapping"],
-    isFavorite: false,
-    isAdventurePartner: false,
-    lastActive: "Active 15m ago"
-  },
-  {
-    id: "f-5",
-    name: "Neha Nair",
-    username: "@neha_n",
-    avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQHc7L-dIuWttEj87TqAJQk479PTDuRCZ32sIFSsqJCPw&s=10",
-    status: "Busy",
-    compatibility: 72,
-    sharedDNA: "Explorer",
-    mutualExperiences: 2,
-    mutualCommunities: 3,
-    bio: "Hammock camper and solo highway rider. Always searching for lakeside campsites and starry skies.",
-    location: "Kochi, India",
-    tags: ["Solo Camp", "Motorcycling", "Stargazing"],
-    isFavorite: false,
-    isAdventurePartner: false,
-    lastActive: "Active 2h ago"
-  },
-  {
-    id: "f-6",
-    name: "Rohan Das",
-    username: "@rohan_d",
-    avatar: "https://invalid-avatar-url.com/rohan.jpg",
-    status: "Offline",
-    compatibility: 68,
-    sharedDNA: "Creative",
-    mutualExperiences: 1,
-    mutualCommunities: 2,
-    bio: "Marine conservation volunteer. Surfer, diver, and underwater video creator.",
-    location: "Goa, India",
-    tags: ["Conservation", "Surfing", "Vlogging"],
-    isFavorite: false,
-    isAdventurePartner: false,
-    lastActive: "Active 1d ago"
-  }
-];
+
 
 const INITIAL_MESSAGES: Record<string, any[]> = {
   "f-1": [
@@ -456,6 +355,51 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
   const router = useRouter();
 
+  const { data: friendsData } = useFriends(100);
+  const { data: favoritesData } = useFavorites();
+  const { data: blockedData } = useBlockedUsers(100);
+
+  const addFavoriteMutation = useAddFavoriteMutation();
+  const removeFavoriteMutation = useRemoveFavoriteMutation();
+  const blockMutation = useBlockMutation();
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const blockedIds = React.useMemo(() => {
+    if (!blockedData) return new Set<string>();
+    return new Set(blockedData.pages.flatMap(page => page.items || []).map(b => b.targetUserId));
+  }, [blockedData]);
+
+  const companions: Companion[] = React.useMemo(() => {
+    if (!friendsData) return [];
+    const favList = favoritesData?.pages?.flatMap(p => p) || [];
+    const favIds = new Set(favList.map((f: any) => f.userId || f.id));
+
+    return friendsData.pages.flatMap(page => page.items || [])
+      .filter(f => !blockedIds.has(f.userId))
+      .map(f => ({
+        id: f.userId,
+        name: f.displayName || f.username || 'Unknown User',
+        username: f.username ? `@${f.username}` : '',
+        avatar: f.avatarUrl || '',
+        status: "Available" as const,
+        compatibility: f.compatibility || 85,
+        sharedDNA: "Explorer" as const,
+        mutualExperiences: 3,
+        mutualCommunities: 2,
+        bio: "Exploring Wandercall communities and adventures.",
+        location: "Global",
+        tags: ["Adventure", "Explorer"],
+        isFavorite: favIds.has(f.userId),
+        isAdventurePartner: false,
+        lastActive: "Active recently"
+      }));
+  }, [friendsData, favoritesData, blockedIds]);
+
   const [activeFriend, setActiveFriend] = useState<Companion | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -495,10 +439,12 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
   // Initialize data on mount
   useEffect(() => {
-    const friend = COMPANIONS.find(c => c.id === userId) || COMPANIONS[0];
-    setActiveFriend(friend);
-    setMessages(INITIAL_MESSAGES[friend.id] || []);
-  }, [userId]);
+    if (companions.length > 0) {
+      const friend = companions.find(c => c.id === userId || c.username === `@${userId}` || c.username === userId) || companions[0];
+      setActiveFriend(friend);
+      setMessages(INITIAL_MESSAGES[friend.id] || []);
+    }
+  }, [userId, companions]);
 
   // Scroll to bottom instantly when messages load or change
   useEffect(() => {
@@ -583,6 +529,13 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
   return (
     <>
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 border border-brand-cyan/30 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="h-2 w-2 rounded-full bg-brand-cyan animate-pulse" />
+          <span className="text-xs font-bold">{toastMessage}</span>
+        </div>
+      )}
+
       {/* Desktop view rendering the main FriendsPage with the chatId */}
       <div className="hidden lg:block h-screen w-screen overflow-hidden">
         <FriendsPage activeChatId={chatId} />
@@ -618,7 +571,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
         <div className="flex items-center gap-2 shrink-0">
           <button
-            onClick={() => alert(`Calling ${activeFriend.name}...`)}
+            onClick={() => triggerToast(`Calling ${activeFriend.name}...`)}
             className="p-2 rounded-xl bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
             title="Voice Call"
           >
@@ -682,7 +635,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                         <h4 className="text-xs font-bold text-white truncate">{msg.metadata.title}</h4>
                         <p className="text-[9px] text-zinc-500">{msg.metadata.date} • Host: {msg.metadata.host}</p>
                         <button
-                          onClick={() => alert(`Booking slot for ${msg.metadata.title}...`)}
+                          onClick={() => triggerToast(`Booking slot for ${msg.metadata.title}...`)}
                           className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
                         >
                           Request Slot
@@ -835,7 +788,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
         <div className="flex items-center gap-2 bg-zinc-950/80 border border-white/10 p-1.5 rounded-2xl w-full">
           <button
-            onClick={() => alert("Simulating mic trigger...")}
+            onClick={() => triggerToast("Simulating mic trigger...")}
             className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
           >
             <Mic className="h-4 w-4" />
@@ -939,7 +892,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
             <div className="flex flex-col gap-2 pt-4">
               <button
                 onClick={() => {
-                  alert("User reported.");
+                  triggerToast("Explorer reported.");
                   setShowInspector(false);
                 }}
                 className="w-full py-2 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-rose-400 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
@@ -948,6 +901,15 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               </button>
               <button
                 onClick={() => {
+                  if (activeFriend.isFavorite) {
+                    removeFavoriteMutation.mutate(activeFriend.id, {
+                      onSuccess: () => triggerToast(`Removed ${activeFriend.name} from favorites.`)
+                    });
+                  } else {
+                    addFavoriteMutation.mutate(activeFriend.id, {
+                      onSuccess: () => triggerToast(`Added ${activeFriend.name} to favorites!`)
+                    });
+                  }
                   setActiveFriend(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : null);
                   setShowInspector(false);
                 }}
@@ -957,8 +919,16 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               </button>
               <button
                 onClick={() => {
-                  alert(`${activeFriend.name} has been blocked.`);
-                  router.push('/profile/friends');
+                  const target = activeFriend.username ? activeFriend.username.replace('@', '') : activeFriend.id;
+                  blockMutation.mutate({ targetUsername: target, reason: "Blocked from chat inspector" }, {
+                    onSuccess: () => {
+                      triggerToast(`${activeFriend.name} has been blocked.`);
+                      router.push('/profile/friends');
+                    },
+                    onError: () => {
+                      triggerToast(`Failed to block ${activeFriend.name}.`);
+                    }
+                  });
                 }}
                 className="w-full py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >

@@ -66,5 +66,16 @@
   "64": "graphify.md",
   "65": "graphify.md",
   "66": "AGENTS.md",
-  "67": "CLAUDE.md"
+  "67": "CLAUDE.md",
+  "68": "user.service.ts",
+  "69": "ProfileRenderer.tsx",
+  "70": "page.tsx",
+  "71": "page.tsx",
+  "72": "AIDiscovery.tsx",
+  "73": "Campfires.tsx",
+  "74": "CommunityStories.tsx",
+  "75": "FeaturedHosts.tsx",
+  "76": "SocialProof.tsx",
+  "77": "Trending.tsx",
+  "78": "UpcomingEvents.tsx"
 }

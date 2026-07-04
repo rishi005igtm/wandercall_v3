@@ -455,8 +455,8 @@
     "semantic_hash": "eab25177d73e3998ae07889e619fe83f"
   },
   "backend/src/modules/user/repositories/follow.repository.ts": {
-    "mtime": 1783157346.8577628,
-    "ast_hash": "74b009dfd15d0a6e16edf3fbfe2b9009",
+    "mtime": 1783161428.937254,
+    "ast_hash": "59dc3372bf714519a7225827cf595160",
     "semantic_hash": ""
   },
   "backend/src/modules/user/repositories/user.repository.ts": {
@@ -575,13 +575,13 @@
     "semantic_hash": "06a0895b0465fe3a12b35c6cccaeeff9"
   },
   "client/app/profile/friends/[chatId]/page.tsx": {
-    "mtime": 1782899601.3840957,
-    "ast_hash": "57f3c9e3a24b574a1dd80444a5b32301",
-    "semantic_hash": "57f3c9e3a24b574a1dd80444a5b32301"
+    "mtime": 1783163007.8117306,
+    "ast_hash": "0062a16b42e78714b39fdd6f37181531",
+    "semantic_hash": ""
   },
   "client/app/profile/friends/page.tsx": {
-    "mtime": 1783160029.9350095,
-    "ast_hash": "6cef7d8e088fdde578295f9abd3abc37",
+    "mtime": 1783163091.69449,
+    "ast_hash": "59e8275539047d78f67fa65f5b1dc09a",
     "semantic_hash": ""
   },
   "client/app/profile/layout.tsx": {
