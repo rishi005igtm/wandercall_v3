@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { StorageModule } from '../storage/storage.module';
+import { PrivacyModule } from '../privacy/privacy.module';
 import { UserController } from './controllers/user.controller';
 import { UserService } from './services/user.service';
 import { UserRepository } from './repositories/user.repository';
@@ -17,6 +18,7 @@ import { RelationshipService } from './services/relationship.service';
   imports: [
     AuthModule,
     StorageModule,
+    forwardRef(() => PrivacyModule),
     TypeOrmModule.forFeature([UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity]),
   ],
   controllers: [UserController],

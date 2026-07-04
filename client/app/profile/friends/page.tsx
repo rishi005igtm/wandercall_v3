@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { useFriends, usePendingIncoming, usePendingOutgoing, useFollowBackMutation, useRejectRequestMutation, useCancelRequestMutation } from '@/hooks/api/useFriends';
+import { useFriends, usePendingIncoming, usePendingOutgoing, useFollowBackMutation, useRejectRequestMutation, useCancelRequestMutation, useFavorites, useAddFavoriteMutation, useRemoveFavoriteMutation } from '@/hooks/api/useFriends';
+import { useBlockedUsers, useBlockMutation, useUnblockMutation } from '@/hooks/api/usePrivacy';
 import {
   Users,
   Heart,
@@ -957,60 +958,93 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const { data: friendsData } = useFriends(100, searchQuery);
   const { data: incomingData } = usePendingIncoming(100, searchQuery);
   const { data: outgoingData } = usePendingOutgoing(100, searchQuery);
+  const { data: favoritesData } = useFavorites();
+  const { data: blockedData } = useBlockedUsers(20);
 
   const followBackMutation = useFollowBackMutation();
   const rejectRequestMutation = useRejectRequestMutation();
   const cancelRequestMutation = useCancelRequestMutation();
+  const addFavoriteMutation = useAddFavoriteMutation();
+  const removeFavoriteMutation = useRemoveFavoriteMutation();
+  const blockMutation = useBlockMutation();
+  const unblockMutation = useUnblockMutation();
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const triggerToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  const blockedUsers = useMemo(() => {
+    if (!blockedData) return [];
+    return blockedData.pages.flatMap(page => page.items).map(b => ({
+      id: b.targetUserId,
+      name: b.targetUser?.displayName || b.targetUserId,
+      avatar: b.targetUser?.avatarUrl || '',
+      blockedDate: new Date(b.createdAt).toLocaleDateString(),
+      blockedAt: new Date(b.createdAt).toLocaleDateString(),
+      reason: b.reason || "No reason specified",
+      username: b.targetUser?.username ? `@${b.targetUser.username}` : ''
+    }));
+  }, [blockedData]);
+
+  const blockedIds = useMemo(() => new Set(blockedUsers.map(b => b.id)), [blockedUsers]);
 
   const companions = useMemo(() => {
     if (!friendsData) return [];
-    return friendsData.pages.flatMap(page => page.items).map(f => ({
-      id: f.userId,
-      name: f.displayName,
-      username: `@${f.username}`,
-      avatar: f.avatarUrl || '',
-      status: "Available" as any,
-      compatibility: f.compatibility || 90,
-      sharedDNA: "Explorer" as any,
-      mutualExperiences: 0,
-      mutualCommunities: 0,
-      bio: "An explorer on Wandercall.",
-      location: "Earth",
-      tags: ["Explorer"],
-      isFavorite: false,
-      isAdventurePartner: false,
-      lastActive: "Active now"
-    }));
-  }, [friendsData]);
+    const favList = favoritesData?.pages?.flatMap(p => p) || [];
+    return friendsData.pages.flatMap(page => page.items)
+      .filter(f => !blockedIds.has(f.userId))
+      .map(f => ({
+        id: f.userId,
+        name: f.displayName,
+        username: `@${f.username}`,
+        avatar: f.avatarUrl || '',
+        status: "Available" as any,
+        compatibility: f.compatibility || 90,
+        sharedDNA: "Explorer" as any,
+        mutualExperiences: 0,
+        mutualCommunities: 0,
+        bio: "An explorer on Wandercall.",
+        location: "Earth",
+        tags: ["Explorer"],
+        isFavorite: favList.some((fav: any) => fav.friendId === f.userId),
+        isAdventurePartner: false,
+        lastActive: "Active now"
+      }));
+  }, [friendsData, favoritesData, blockedIds]);
 
   const incomingRequests = useMemo(() => {
     if (!incomingData) return [];
-    return incomingData.pages.flatMap(page => page.items).map(f => ({
-      id: f.userId,
-      name: f.displayName,
-      username: `@${f.username}`,
-      avatar: f.avatarUrl || '',
-      compatibility: f.compatibility || 90,
-      mutualFriends: 0,
-      bio: "Wants to connect with you.",
-      status: "Incoming"
-    }));
-  }, [incomingData]);
+    return incomingData.pages.flatMap(page => page.items)
+      .filter(f => !blockedIds.has(f.userId))
+      .map(f => ({
+        id: f.userId,
+        name: f.displayName,
+        username: `@${f.username}`,
+        avatar: f.avatarUrl || '',
+        compatibility: f.compatibility || 90,
+        mutualFriends: 0,
+        bio: "Wants to connect with you.",
+        status: "Incoming"
+      }));
+  }, [incomingData, blockedIds]);
 
   const outgoingRequests = useMemo(() => {
     if (!outgoingData) return [];
-    return outgoingData.pages.flatMap(page => page.items).map(f => ({
-      id: f.userId,
-      name: f.displayName,
-      username: `@${f.username}`,
-      avatar: f.avatarUrl || '',
-      compatibility: f.compatibility || 90,
-      status: "Pending Sent"
-    }));
-  }, [outgoingData]);
+    return outgoingData.pages.flatMap(page => page.items)
+      .filter(f => !blockedIds.has(f.userId))
+      .map(f => ({
+        id: f.userId,
+        name: f.displayName,
+        username: `@${f.username}`,
+        avatar: f.avatarUrl || '',
+        compatibility: f.compatibility || 90,
+        status: "Pending Sent"
+      }));
+  }, [outgoingData, blockedIds]);
 
   const [suggestedExplorers, setSuggestedExplorers] = useState(SUGGESTED_EXPLORERS);
-  const [blockedUsers, setBlockedUsers] = useState(BLOCKED_USERS);
   const [chatMessages, setChatMessages] = useState<Record<string, any[]>>(INITIAL_MESSAGES);
   const [chatInput, setChatInput] = useState("");
 
@@ -1220,18 +1254,27 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   };
 
   // Unblock user
-  const handleUnblock = (id: string, name: string) => {
-    setBlockedUsers(prev => prev.filter(u => u.id !== id));
-    alert(`${name} has been unblocked.`);
+  const handleUnblock = async (id: string, name: string) => {
+    const user = blockedUsers.find(u => u.id === id);
+    if (user && user.username) {
+      try {
+        await unblockMutation.mutateAsync(user.username.replace('@', ''));
+        triggerToast(`${name} has been unblocked.`);
+      } catch (error: any) {
+        triggerToast(error?.response?.data?.message || "Failed to unblock user.");
+      }
+    } else {
+      triggerToast("User not found.");
+    }
   };
 
   // Accept request
   const handleAcceptRequest = async (request: any) => {
     try {
       await followBackMutation.mutateAsync(request.username.replace('@', ''));
-      alert(`You are now friends with ${request.name}!`);
+      triggerToast(`You are now friends with ${request.name}!`);
     } catch (error) {
-      alert("Failed to accept request.");
+      triggerToast("Failed to accept request.");
     }
   };
 
@@ -1241,9 +1284,9 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
     if (request) {
       try {
         await rejectRequestMutation.mutateAsync(request.username.replace('@', ''));
-        alert(`Friend request from ${name} declined.`);
+        triggerToast(`Friend request from ${name} declined.`);
       } catch (error) {
-        alert("Failed to decline request.");
+        triggerToast("Failed to decline request.");
       }
     }
   };
@@ -1254,9 +1297,9 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
     if (request) {
       try {
         await cancelRequestMutation.mutateAsync(request.username.replace('@', ''));
-        alert(`Friend request to ${name} cancelled.`);
+        triggerToast(`Friend request to ${name} cancelled.`);
       } catch (error) {
-        alert("Failed to cancel request.");
+        triggerToast("Failed to cancel request.");
       }
     }
   };
@@ -1265,9 +1308,9 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
     try {
       await followBackMutation.mutateAsync(suggested.username.replace('@', ''));
       setSuggestedExplorers(prev => prev.filter(s => s.id !== suggested.id));
-      alert(`Friend request sent to ${suggested.name}.`);
+      triggerToast(`Friend request sent to ${suggested.name}.`);
     } catch (error) {
-      alert("Failed to send request.");
+      triggerToast("Failed to send request.");
     }
   };
 
@@ -1494,7 +1537,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
                     <div className="flex items-center gap-2">
                       <button
-                        onClick={() => alert(`Calling ${activeFriend.name}...`)}
+                        onClick={() => triggerToast(`Calling ${activeFriend.name}...`)}
                         className="p-2 rounded-xl bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
                         title="Voice Call"
                       >
@@ -1558,7 +1601,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                     <h4 className="text-xs font-bold text-white truncate">{msg.metadata.title}</h4>
                                     <p className="text-[9px] text-zinc-500">{msg.metadata.date} • Host: {msg.metadata.host}</p>
                                     <button
-                                      onClick={() => alert(`Booking slot for ${msg.metadata.title}...`)}
+                                      onClick={() => triggerToast(`Booking slot for ${msg.metadata.title}...`)}
                                       className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
                                     >
                                       Request Slot
@@ -1590,7 +1633,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                       </span>
                                     ))}
                                     <button
-                                      onClick={() => alert("Added to adventure plan cohort!")}
+                                      onClick={() => triggerToast("Added to adventure plan cohort!")}
                                       className="h-5 w-5 bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-400 hover:text-white rounded-md flex items-center justify-center text-[10px] transition-all cursor-pointer"
                                       title="Join plan"
                                     >
@@ -1751,7 +1794,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
                     <div className="flex items-center gap-2 bg-zinc-950/80 border border-white/10 p-1.5 rounded-2xl w-full">
                       <button
-                        onClick={() => alert("Simulating mic trigger...")}
+                        onClick={() => triggerToast("Simulating mic trigger...")}
                         className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
                       >
                         <Mic className="h-4 w-4" />
@@ -1797,7 +1840,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
                         <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 p-1.5 rounded-xl w-full">
                           <button
-                            onClick={() => alert("Simulating mic trigger...")}
+                            onClick={() => triggerToast("Simulating mic trigger...")}
                             className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
                           >
                             <Mic className="h-4 w-4" />
@@ -1917,37 +1960,40 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     {/* Action shortcuts */}
                     <div className="flex flex-col gap-1.5">
                       <button
-                        onClick={() => alert(`User reported.`)}
+                        onClick={() => triggerToast(`User reported.`)}
                         className="w-full py-1.5 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-rose-400 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                       >
                         <Flag className="h-3 w-3" /> Report Explorer
                       </button>
                       <button
-                        onClick={() => {
-                          alert('Favorite feature will be available soon!');
+                        onClick={async () => {
+                          try {
+                            if (activeFriend.isFavorite) {
+                              await removeFavoriteMutation.mutateAsync(activeFriend.id);
+                            } else {
+                              await addFavoriteMutation.mutateAsync(activeFriend.id);
+                            }
+                          } catch (err: any) {
+                            triggerToast(err?.response?.data?.message || "Failed to update favorite status.");
+                          }
                         }}
                         className="w-full py-1.5 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-zinc-400 hover:text-white text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                       >
-                        <Heart className="h-3 w-3" /> {activeFriend.isFavorite ? "Unfavorite" : "Favorite"}
+                        <Heart className={`h-3 w-3 ${activeFriend.isFavorite ? "fill-brand-purple text-brand-purple" : ""}`} /> {activeFriend.isFavorite ? "Unfavorite" : "Favorite"}
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           const isBlocked = blockedUsers.some(u => u.id === activeFriend.id);
                           if (isBlocked) {
-                            alert(`${activeFriend.name} is already blocked.`);
+                            triggerToast(`${activeFriend.name} is already blocked.`);
                             return;
                           }
-                          const newBlocked = {
-                            id: activeFriend.id,
-                            name: activeFriend.name,
-                            username: activeFriend.username,
-                            avatar: activeFriend.avatar,
-                            reason: "Blocked by user from explorer details panel",
-                            blockedAt: `Blocked ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
-                            status: "Blocked" as const
-                          };
-                          setBlockedUsers(prev => [...prev, newBlocked]);
-                          alert(`${activeFriend.name} has been blocked.`);
+                          try {
+                            await blockMutation.mutateAsync({ targetUsername: activeFriend.username.replace('@', ''), reason: "Blocked from inspector" });
+                            triggerToast(`${activeFriend.name} has been blocked.`);
+                          } catch (err: any) {
+                            triggerToast(err?.response?.data?.message || "Failed to block user.");
+                          }
                         }}
                         className="w-full py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                       >
@@ -2318,6 +2364,21 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
+      {/* GLOBAL TOAST NOTIFICATION */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-6 right-6 z-50 bg-zinc-900/95 backdrop-blur-xl border border-brand-cyan/30 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-white text-xs font-bold"
+          >
+            <div className="w-2.5 h-2.5 rounded-full bg-brand-cyan animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
+            <span>{toastMessage}</span>
+          </motion.div>
         )}
       </AnimatePresence>
 

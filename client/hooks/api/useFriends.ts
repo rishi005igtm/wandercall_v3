@@ -103,8 +103,58 @@ export const useCancelRequestMutation = () => {
       return response.data;
     },
     onSuccess: (data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['friends', 'pending', 'outgoing'] });
       queryClient.invalidateQueries({ queryKey: ['relationship', variables] });
+    },
+  });
+};
+
+export const useFavorites = () => {
+  return useInfiniteQuery({
+    queryKey: ['friends', 'favorites'],
+    queryFn: async (): Promise<any[]> => {
+      const response = await httpClient.get('/friends/favorites');
+      return response.data;
+    },
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: () => undefined,
+  });
+};
+
+export const useAddFavoriteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (friendId: string) => {
+      const response = await httpClient.post(`/friends/favorites/${friendId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends', 'favorites'] });
+    },
+  });
+};
+
+export const useRemoveFavoriteMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (friendId: string) => {
+      const response = await httpClient.delete(`/friends/favorites/${friendId}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends', 'favorites'] });
+    },
+  });
+};
+
+export const useReorderFavoritesMutation = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      const response = await httpClient.patch('/friends/favorites/order', { orderedIds });
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['friends', 'favorites'] });
     },
   });
 };

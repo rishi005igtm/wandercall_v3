@@ -125,7 +125,9 @@ export class FollowRepository {
       .createQueryBuilder('f1')
       .innerJoin(FollowEntity, 'f2', 'f1.followingId = f2.followerId AND f1.followerId = f2.followingId')
       .innerJoinAndMapOne('f1.profile', UserProfileEntity, 'profile', 'f1.followingId = profile.userId')
-      .where('f1.followerId = :userId', { userId });
+      .leftJoin('user_privacy_relations', 'privacy', '((privacy.userId = :userId AND privacy.targetUserId = f1.followingId) OR (privacy.userId = f1.followingId AND privacy.targetUserId = :userId)) AND privacy.isBlocked = :isBlocked', { userId, isBlocked: true })
+      .where('f1.followerId = :userId', { userId })
+      .andWhere('privacy.id IS NULL');
 
     if (search && search.trim() !== '') {
       const searchClean = `%${search.trim().toLowerCase()}%`;
@@ -168,8 +170,10 @@ export class FollowRepository {
       .createQueryBuilder('f1')
       .leftJoin(FollowEntity, 'f2', 'f1.followerId = f2.followingId AND f1.followingId = f2.followerId')
       .innerJoinAndMapOne('f1.profile', UserProfileEntity, 'profile', 'f1.followerId = profile.userId')
+      .leftJoin('user_privacy_relations', 'privacy', '((privacy.userId = :userId AND privacy.targetUserId = f1.followerId) OR (privacy.userId = f1.followerId AND privacy.targetUserId = :userId)) AND privacy.isBlocked = :isBlocked', { userId, isBlocked: true })
       .where('f1.followingId = :userId', { userId })
-      .andWhere('f2.id IS NULL');
+      .andWhere('f2.id IS NULL')
+      .andWhere('privacy.id IS NULL');
 
     if (search && search.trim() !== '') {
       const searchClean = `%${search.trim().toLowerCase()}%`;
@@ -212,8 +216,10 @@ export class FollowRepository {
       .createQueryBuilder('f1')
       .leftJoin(FollowEntity, 'f2', 'f1.followingId = f2.followerId AND f1.followerId = f2.followingId')
       .innerJoinAndMapOne('f1.profile', UserProfileEntity, 'profile', 'f1.followingId = profile.userId')
+      .leftJoin('user_privacy_relations', 'privacy', '((privacy.userId = :userId AND privacy.targetUserId = f1.followingId) OR (privacy.userId = f1.followingId AND privacy.targetUserId = :userId)) AND privacy.isBlocked = :isBlocked', { userId, isBlocked: true })
       .where('f1.followerId = :userId', { userId })
-      .andWhere('f2.id IS NULL');
+      .andWhere('f2.id IS NULL')
+      .andWhere('privacy.id IS NULL');
 
     if (search && search.trim() !== '') {
       const searchClean = `%${search.trim().toLowerCase()}%`;

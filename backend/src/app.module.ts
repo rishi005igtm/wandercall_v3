@@ -15,7 +15,9 @@ import { UserPlanEntity } from './modules/user/entities/user-plan.entity';
 import { FollowEntity } from './modules/user/entities/follow.entity';
 
 import { FriendModule } from './modules/friend/friend.module';
-
+import { PrivacyModule } from './modules/privacy/privacy.module';
+import { PrivacyRelationEntity } from './modules/privacy/entities/privacy-relation.entity';
+import { FavoriteFriendEntity } from './modules/friend/entities/favorite-friend.entity';
 @Module({
   imports: [
     AppConfigModule,
@@ -31,7 +33,7 @@ import { FriendModule } from './modules/friend/friend.module';
           username: configService.get<string>('database.username', 'postgres'),
           password: configService.get<string>('database.password', 'anmol162004'),
           database: configService.get<string>('database.name', 'postgres'),
-          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity],
+          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity, PrivacyRelationEntity, FavoriteFriendEntity],
           synchronize: false, // Disabled for runtime API operations; handled safely once on startup via DatabaseInitializerService
           autoLoadEntities: true,
         };
@@ -50,6 +52,7 @@ import { FriendModule } from './modules/friend/friend.module';
     StorageModule,
     FeedModule,
     FriendModule,
+    PrivacyModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],

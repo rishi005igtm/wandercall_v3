@@ -1,5 +1,6 @@
-import { Controller, Get, Post, Delete, Param, Query, Req, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Patch, Body, Param, Query, Req, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { FriendService } from '../services/friend.service';
+import { FavoriteFriendService } from '../services/favorite-friend.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FollowerPreviewDto } from '../../user/dto/follower-preview.dto';
 import { RelationshipResponseDto } from '../../user/dto/relationship-response.dto';
@@ -7,7 +8,10 @@ import { RelationshipResponseDto } from '../../user/dto/relationship-response.dt
 @Controller('friends')
 @UseGuards(JwtAuthGuard)
 export class FriendController {
-  constructor(private readonly friendService: FriendService) {}
+  constructor(
+    private readonly friendService: FriendService,
+    private readonly favoriteService: FavoriteFriendService,
+  ) {}
 
   @Get()
   async getFriends(
@@ -17,6 +21,27 @@ export class FriendController {
     @Query('search') search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
     return this.friendService.getFriendsList(req.user.userId, parseInt(limit, 10), cursor, search);
+  }
+
+  @Get('favorites')
+  async getFavorites(@Req() req: any) {
+    return this.favoriteService.getFavorites(req.user.userId);
+  }
+
+  @Post('favorites/:friendId')
+  async addFavorite(@Req() req: any, @Param('friendId') friendId: string) {
+    return this.favoriteService.addFavorite(req.user.userId, friendId);
+  }
+
+  @Delete('favorites/:friendId')
+  @HttpCode(HttpStatus.OK)
+  async removeFavorite(@Req() req: any, @Param('friendId') friendId: string) {
+    return this.favoriteService.removeFavorite(req.user.userId, friendId);
+  }
+
+  @Patch('favorites/order')
+  async reorderFavorites(@Req() req: any, @Body('orderedIds') orderedIds: string[]) {
+    return this.favoriteService.reorderFavorites(req.user.userId, orderedIds);
   }
 
   @Get('pending/incoming')
