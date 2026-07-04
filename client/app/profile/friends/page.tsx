@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import { useFriends, usePendingIncoming, usePendingOutgoing, useFollowBackMutation, useRejectRequestMutation, useCancelRequestMutation } from '@/hooks/api/useFriends';
 import {
   Users,
   Heart,
@@ -941,7 +942,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
     const decoded = decodeURIComponent(activeChatId);
     const normalized = decoded.replace(/\s+/g, "-").replace(/_/g, "-");
     const cleanId = normalized.startsWith("chat:") ? normalized.substring(5) : normalized;
-    return COMPANIONS.some(c => c.id === cleanId) ? cleanId : null;
+    return cleanId; // Return raw ID, allow dynamic resolution
   }, [activeChatId]);
 
   const [activeFriendId, setActiveFriendId] = useState<string | null>(initialFriendId);
@@ -952,10 +953,62 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeMobileView, setActiveMobileView] = useState<"rail" | "chat" | "inspector">("rail");
 
-  // Local state for mutations
-  const [companions, setCompanions] = useState<Companion[]>(COMPANIONS);
-  const [incomingRequests, setIncomingRequests] = useState(PENDING_INCOMING);
-  const [outgoingRequests, setOutgoingRequests] = useState(PENDING_OUTGOING);
+  // API state
+  const { data: friendsData } = useFriends(100, searchQuery);
+  const { data: incomingData } = usePendingIncoming(100, searchQuery);
+  const { data: outgoingData } = usePendingOutgoing(100, searchQuery);
+
+  const followBackMutation = useFollowBackMutation();
+  const rejectRequestMutation = useRejectRequestMutation();
+  const cancelRequestMutation = useCancelRequestMutation();
+
+  const companions = useMemo(() => {
+    if (!friendsData) return [];
+    return friendsData.pages.flatMap(page => page.items).map(f => ({
+      id: f.userId,
+      name: f.displayName,
+      username: `@${f.username}`,
+      avatar: f.avatarUrl || '',
+      status: "Available" as any,
+      compatibility: f.compatibility || 90,
+      sharedDNA: "Explorer" as any,
+      mutualExperiences: 0,
+      mutualCommunities: 0,
+      bio: "An explorer on Wandercall.",
+      location: "Earth",
+      tags: ["Explorer"],
+      isFavorite: false,
+      isAdventurePartner: false,
+      lastActive: "Active now"
+    }));
+  }, [friendsData]);
+
+  const incomingRequests = useMemo(() => {
+    if (!incomingData) return [];
+    return incomingData.pages.flatMap(page => page.items).map(f => ({
+      id: f.userId,
+      name: f.displayName,
+      username: `@${f.username}`,
+      avatar: f.avatarUrl || '',
+      compatibility: f.compatibility || 90,
+      mutualFriends: 0,
+      bio: "Wants to connect with you.",
+      status: "Incoming"
+    }));
+  }, [incomingData]);
+
+  const outgoingRequests = useMemo(() => {
+    if (!outgoingData) return [];
+    return outgoingData.pages.flatMap(page => page.items).map(f => ({
+      id: f.userId,
+      name: f.displayName,
+      username: `@${f.username}`,
+      avatar: f.avatarUrl || '',
+      compatibility: f.compatibility || 90,
+      status: "Pending Sent"
+    }));
+  }, [outgoingData]);
+
   const [suggestedExplorers, setSuggestedExplorers] = useState(SUGGESTED_EXPLORERS);
   const [blockedUsers, setBlockedUsers] = useState(BLOCKED_USERS);
   const [chatMessages, setChatMessages] = useState<Record<string, any[]>>(INITIAL_MESSAGES);
@@ -1173,51 +1226,49 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   };
 
   // Accept request
-  const handleAcceptRequest = (request: typeof PENDING_INCOMING[0]) => {
-    setIncomingRequests(prev => prev.filter(r => r.id !== request.id));
-
-    // Add to companions
-    const newCompanion: Companion = {
-      id: `f-added-${Date.now()}`,
-      name: request.name,
-      username: request.username,
-      avatar: request.avatar,
-      status: "Available",
-      compatibility: request.compatibility,
-      sharedDNA: "Explorer",
-      mutualExperiences: 1,
-      mutualCommunities: request.mutualFriends,
-      bio: request.bio,
-      location: "Unknown",
-      tags: ["Trekking", "Companion"],
-      isFavorite: false,
-      isAdventurePartner: false,
-      lastActive: "Active now"
-    };
-
-    setCompanions(prev => [...prev, newCompanion]);
-    alert(`You are now friends with ${request.name}!`);
+  const handleAcceptRequest = async (request: any) => {
+    try {
+      await followBackMutation.mutateAsync(request.username.replace('@', ''));
+      alert(`You are now friends with ${request.name}!`);
+    } catch (error) {
+      alert("Failed to accept request.");
+    }
   };
 
   // Decline request
-  const handleDeclineRequest = (id: string, name: string) => {
-    setIncomingRequests(prev => prev.filter(r => r.id !== id));
-    alert(`Friend request from ${name} declined.`);
+  const handleDeclineRequest = async (id: string, name: string) => {
+    const request = incomingRequests.find(r => r.id === id);
+    if (request) {
+      try {
+        await rejectRequestMutation.mutateAsync(request.username.replace('@', ''));
+        alert(`Friend request from ${name} declined.`);
+      } catch (error) {
+        alert("Failed to decline request.");
+      }
+    }
   };
 
-  // Add friend from discovery
-  const handleSendRequest = (suggested: typeof SUGGESTED_EXPLORERS[0]) => {
-    setSuggestedExplorers(prev => prev.filter(s => s.id !== suggested.id));
-    const newRequest = {
-      id: `po-added-${Date.now()}`,
-      name: suggested.name,
-      username: suggested.username,
-      avatar: suggested.avatar,
-      compatibility: suggested.compatibility,
-      status: "Pending Sent"
-    };
-    setOutgoingRequests(prev => [...prev, newRequest]);
-    alert(`Friend request sent to ${suggested.name}.`);
+  // Cancel outgoing request
+  const handleCancelRequest = async (id: string, name: string) => {
+    const request = outgoingRequests.find(r => r.id === id);
+    if (request) {
+      try {
+        await cancelRequestMutation.mutateAsync(request.username.replace('@', ''));
+        alert(`Friend request to ${name} cancelled.`);
+      } catch (error) {
+        alert("Failed to cancel request.");
+      }
+    }
+  };
+
+  const handleSendRequest = async (suggested: typeof SUGGESTED_EXPLORERS[0]) => {
+    try {
+      await followBackMutation.mutateAsync(suggested.username.replace('@', ''));
+      setSuggestedExplorers(prev => prev.filter(s => s.id !== suggested.id));
+      alert(`Friend request sent to ${suggested.name}.`);
+    } catch (error) {
+      alert("Failed to send request.");
+    }
   };
 
   return (
@@ -1873,8 +1924,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       </button>
                       <button
                         onClick={() => {
-                          const updated = companions.map(f => f.id === activeFriend.id ? { ...f, isFavorite: !f.isFavorite } : f);
-                          setCompanions(updated);
+                          alert('Favorite feature will be available soon!');
                         }}
                         className="w-full py-1.5 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-zinc-400 hover:text-white text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                       >
@@ -1897,7 +1947,6 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                             status: "Blocked" as const
                           };
                           setBlockedUsers(prev => [...prev, newBlocked]);
-                          setCompanions(prev => prev.filter(c => c.id !== activeFriend.id));
                           alert(`${activeFriend.name} has been blocked.`);
                         }}
                         className="w-full py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
@@ -1955,7 +2004,10 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fadeIn_0.3s_ease]">
                         {paginatedIncoming.map(req => (
                           <div key={req.id} className="bg-gradient-to-r from-emerald-950/45 to-teal-950/20 border border-emerald-500/10 hover:border-emerald-500/20 p-4 rounded-3xl flex items-center justify-between gap-4 transition-all duration-300">
-                            <div className="flex items-center gap-3 min-w-0">
+                            <div 
+                              className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => router.push(`/profile/${req.username.replace('@', '')}`)}
+                            >
                               <CompanionAvatar avatar={req.avatar} name={req.name} className="h-10 w-10 text-[13px] shrink-0" />
                               <div className="min-w-0">
                                 <h4 className="text-xs font-bold text-white truncate">{req.name}</h4>
@@ -2021,7 +2073,10 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fadeIn_0.3s_ease]">
                         {paginatedOutgoing.map(req => (
                           <div key={req.id} className="bg-gradient-to-r from-indigo-950/45 to-blue-950/20 border border-indigo-500/10 hover:border-indigo-500/20 p-4 rounded-3xl flex items-center justify-between gap-4 transition-all duration-300">
-                            <div className="flex items-center gap-3 min-w-0">
+                            <div 
+                              className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => router.push(`/profile/${req.username.replace('@', '')}`)}
+                            >
                               <CompanionAvatar avatar={req.avatar} name={req.name} className="h-10 w-10 text-[13px] shrink-0" />
                               <div className="min-w-0">
                                 <h4 className="text-xs font-bold text-white truncate">{req.name}</h4>

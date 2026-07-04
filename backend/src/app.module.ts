@@ -14,6 +14,8 @@ import { UserSettingsEntity } from './modules/user/entities/user-settings.entity
 import { UserPlanEntity } from './modules/user/entities/user-plan.entity';
 import { FollowEntity } from './modules/user/entities/follow.entity';
 
+import { FriendModule } from './modules/friend/friend.module';
+
 @Module({
   imports: [
     AppConfigModule,
@@ -47,6 +49,7 @@ import { FollowEntity } from './modules/user/entities/follow.entity';
     UserModule,
     StorageModule,
     FeedModule,
+    FriendModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],
