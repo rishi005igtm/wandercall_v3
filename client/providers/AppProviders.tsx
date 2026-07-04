@@ -5,6 +5,7 @@ import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from '../lib/store/store';
 import { AuthBootstrap } from './AuthBootstrap';
+import { SocketProvider } from './SocketProvider';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -24,7 +25,12 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <AuthBootstrap>{children}</AuthBootstrap>
+        <AuthBootstrap>
+          {/* SocketProvider mounts after auth is bootstrapped so it always has the token */}
+          <SocketProvider>
+            {children}
+          </SocketProvider>
+        </AuthBootstrap>
       </QueryClientProvider>
     </Provider>
   );

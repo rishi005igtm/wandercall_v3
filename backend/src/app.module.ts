@@ -21,6 +21,13 @@ import { PrivacyRelationEntity } from './modules/privacy/entities/privacy-relati
 import { FavoriteFriendEntity } from './modules/friend/entities/favorite-friend.entity';
 import { UserSearchHistoryEntity } from './modules/search/entities/user-search-history.entity';
 import { UserRecommendationCacheEntity } from './modules/search/entities/user-recommendation-cache.entity';
+
+// Chat Platform
+import { ChatModule } from './modules/chat/chat.module';
+import { ConversationEntity } from './modules/chat/entities/conversation.entity';
+import { ConversationParticipantEntity } from './modules/chat/entities/conversation-participant.entity';
+import { MessageEntity } from './modules/chat/entities/message.entity';
+
 @Module({
   imports: [
     AppConfigModule,
@@ -36,8 +43,23 @@ import { UserRecommendationCacheEntity } from './modules/search/entities/user-re
           username: configService.get<string>('database.username', 'postgres'),
           password: configService.get<string>('database.password', 'anmol162004'),
           database: configService.get<string>('database.name', 'postgres'),
-          entities: [UserAuthEntity, UserSessionEntity, UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity, PrivacyRelationEntity, FavoriteFriendEntity, UserSearchHistoryEntity, UserRecommendationCacheEntity],
-          synchronize: false, // Disabled for runtime API operations; handled safely once on startup via DatabaseInitializerService
+          entities: [
+            UserAuthEntity,
+            UserSessionEntity,
+            UserProfileEntity,
+            UserSettingsEntity,
+            UserPlanEntity,
+            FollowEntity,
+            PrivacyRelationEntity,
+            FavoriteFriendEntity,
+            UserSearchHistoryEntity,
+            UserRecommendationCacheEntity,
+            // Chat Platform entities
+            ConversationEntity,
+            ConversationParticipantEntity,
+            MessageEntity,
+          ],
+          synchronize: false, // Handled on startup via DatabaseInitializerService
           autoLoadEntities: true,
         };
 
@@ -57,6 +79,7 @@ import { UserRecommendationCacheEntity } from './modules/search/entities/user-re
     FriendModule,
     PrivacyModule,
     SearchModule,
+    ChatModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],

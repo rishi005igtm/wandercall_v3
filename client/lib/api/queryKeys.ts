@@ -37,4 +37,9 @@ export const QUERY_KEYS = {
     USER_FEED: (username: string, category?: string) => ['feed', 'user', username, { category }] as const,
     COMMENTS: (postId: string) => ['feed', 'comments', postId] as const,
   },
+  CHAT: {
+    CONVERSATIONS: ['chat', 'conversations'] as const,
+    MESSAGES: (conversationId: string) => ['chat', 'messages', conversationId] as const,
+    PRESENCE: (userId: string) => ['chat', 'presence', userId] as const,
+  },
 } as const;

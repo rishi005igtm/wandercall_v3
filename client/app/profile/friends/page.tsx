@@ -7,6 +7,8 @@ import { useFriends, usePendingIncoming, usePendingOutgoing, useFollowBackMutati
 import { useBlockedUsers, useBlockMutation, useUnblockMutation } from '@/hooks/api/usePrivacy';
 import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useChatConversation } from '@/hooks/api/useChatConversation';
+import { useAppSelector } from '@/lib/store/store';
 import {
   Users,
   Heart,
@@ -495,6 +497,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const suggestedViewRef = useNestedScroll();
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
+  const currentUserId = useAppSelector((state) => state.auth.userId);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
@@ -692,6 +695,19 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const [chatMessages, setChatMessages] = useState<Record<string, any[]>>(INITIAL_MESSAGES);
   const [chatInput, setChatInput] = useState("");
 
+  // ─── Real-time Chat via useChatConversation ────────────────────────────────
+  // Use activeFriendId directly (declared above) — not activeFriend which is computed later
+  const {
+    conversationId: activeChatConversationId,
+    messages: realMessages,
+    isLoadingMessages: isChatLoading,
+    sendTextMessage: sendRealTextMessage,
+    sendSpecialMessage: sendRealSpecialMessage,
+    emitTyping,
+    emitStopTyping,
+  } = useChatConversation({ targetUserId: activeFriendId });
+  // ──────────────────────────────────────────────────────────────────────────
+
   // Pagination states for pending requests and blocked users
   const [incomingPage, setIncomingPage] = useState(1);
   const [outgoingPage, setOutgoingPage] = useState(1);
@@ -722,13 +738,13 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto scroll chat to bottom
+  // Auto scroll chat to bottom when real messages update
   useEffect(() => {
     const container = chatStreamRef.current;
     if (container) {
       container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
     }
-  }, [chatMessages, activeFriendId]);
+  }, [realMessages, activeFriendId]);
 
   // Find active selected friend profile
   const activeFriend = useMemo(() => {
@@ -818,82 +834,42 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   // Actions
   const handleSendMessage = () => {
     if (!currentChatId || !chatInput.trim()) return;
-    const newMsg = {
-      id: `m-custom-${Date.now()}`,
-      sender: "me",
-      text: chatInput,
-      type: "text",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    };
-
-    setChatMessages(prev => ({
-      ...prev,
-      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
-    }));
+    // Use real socket-based sending
+    sendRealTextMessage(chatInput.trim());
     setChatInput("");
   };
 
   const handleSendExperience = () => {
     if (!currentChatId) return;
-    const newMsg = {
-      id: `m-exp-${Date.now()}`,
-      sender: "me",
-      type: "experience",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      metadata: {
-        title: "Alpine Cliff Dive Experience",
-        host: "Bear G.",
-        date: "June 29 at 3:00 PM",
-        category: "Adventure",
-        image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=300&auto=format&fit=crop"
-      }
-    };
-    setChatMessages(prev => ({
-      ...prev,
-      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
-    }));
+    sendRealSpecialMessage('EXPERIENCE_CARD', {
+      title: "Alpine Cliff Dive Experience",
+      host: "Bear G.",
+      date: "June 29 at 3:00 PM",
+      category: "Adventure",
+      image: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=300&auto=format&fit=crop"
+    });
   };
 
   const handleSendPlan = () => {
     if (!currentChatId || !activeFriend) return;
-    const newMsg = {
-      id: `m-plan-${Date.now()}`,
-      sender: "me",
-      type: "plan",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      metadata: {
-        title: "Gokarna Cliff Dive & Coastal Camp",
-        date: "July 04-06",
-        location: "Gokarna Beach",
-        companions: ["Rishiraj", activeFriend.name],
-        status: "Planning"
-      }
-    };
-    setChatMessages(prev => ({
-      ...prev,
-      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
-    }));
+    sendRealSpecialMessage('PLAN_CARD', {
+      title: "Gokarna Cliff Dive & Coastal Camp",
+      date: "July 04-06",
+      location: "Gokarna Beach",
+      companions: ["Rishiraj", activeFriend.name],
+      status: "Planning"
+    });
   };
 
   const handleSendCampfireInvite = (campfire: any) => {
     if (!currentChatId) return;
-    const newMsg = {
-      id: `m-invite-${Date.now()}`,
-      sender: "me",
-      type: "campfire_invite",
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      metadata: {
-        id: campfire.id,
-        title: campfire.title,
-        hostName: campfire.hostName,
-        hostAvatar: campfire.hostAvatar,
-        category: campfire.category
-      }
-    };
-    setChatMessages(prev => ({
-      ...prev,
-      [currentChatId]: [...(prev[currentChatId] || []), newMsg]
-    }));
+    sendRealSpecialMessage('CAMPFIRE_INVITE', {
+      id: campfire.id,
+      title: campfire.title,
+      hostName: campfire.hostName,
+      hostAvatar: campfire.hostAvatar,
+      category: campfire.category
+    });
     setShowInviteModal(false);
   };
 
@@ -1228,42 +1204,42 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     ref={chatStreamRef}
                     className="flex-1 py-4 overflow-y-auto custom-scrollbar pr-2 pb-20"
                   >
-                    {(chatMessages[currentChatId] || []).length > 0 ? (
+                    {realMessages.length > 0 ? (
                       <div className="space-y-3">
-                        {(chatMessages[currentChatId] || []).map((msg: any) => {
-                          const isMe = msg.sender === "me";
+                        {realMessages.map((msg: any) => {
+                          const isMe = msg.senderId === currentUserId;
 
                           return (
                             <div
                               key={msg.id}
                               className={`flex flex-col max-w-[80%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
                             >
-                              {msg.type === "text" && (
+                              {(msg.type === "text" || msg.type === "TEXT") && (
                                 <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
                                     ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
                                     : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
                                   }`}>
-                                  {msg.text}
+                                  {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
                                 </div>
                               )}
 
-                              {msg.type === "audio" && (
-                                <AudioMessagePlayer duration={msg.metadata.duration} />
+                              {(msg.type === "audio" || msg.type === "AUDIO") && (
+                                <AudioMessagePlayer duration={msg.metadata?.duration ?? "0:30"} />
                               )}
 
-                              {msg.type === "experience" && (
+                              {(msg.type === "experience" || msg.type === "EXPERIENCE_CARD") && (
                                 <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden shadow-lg w-64 text-left">
                                   <div className="h-28 w-full relative">
-                                    <img src={msg.metadata.image} className="h-full w-full object-cover opacity-80" alt="" />
+                                    <img src={msg.metadata?.image} className="h-full w-full object-cover opacity-80" alt="" />
                                     <span className="absolute top-2 left-2 text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full">
-                                      {msg.metadata.category}
+                                      {msg.metadata?.category}
                                     </span>
                                   </div>
                                   <div className="p-3 space-y-2">
-                                    <h4 className="text-xs font-bold text-white truncate">{msg.metadata.title}</h4>
-                                    <p className="text-[9px] text-zinc-500">{msg.metadata.date} • Host: {msg.metadata.host}</p>
+                                    <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
+                                    <p className="text-[9px] text-zinc-500">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
                                     <button
-                                      onClick={() => triggerToast(`Booking slot for ${msg.metadata.title}...`)}
+                                      onClick={() => triggerToast(`Booking slot for ${msg.metadata?.title}...`)}
                                       className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
                                     >
                                       Request Slot
@@ -1272,24 +1248,24 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                 </div>
                               )}
 
-                              {msg.type === "plan" && (
+                              {(msg.type === "plan" || msg.type === "PLAN_CARD") && (
                                 <div className="glass-panel border border-white/10 p-3.5 rounded-2xl shadow-lg w-64 text-left space-y-3">
                                   <div className="flex items-center justify-between pb-2 border-b border-white/5">
                                     <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-purple text-white px-2 py-0.5 rounded-full">
                                       Adventure Plan
                                     </span>
-                                    <span className="text-[8px] font-mono text-brand-cyan font-bold">{msg.metadata.status}</span>
+                                    <span className="text-[8px] font-mono text-brand-cyan font-bold">{msg.metadata?.status}</span>
                                   </div>
                                   <div className="space-y-1">
-                                    <h4 className="text-xs font-bold text-white truncate">{msg.metadata.title}</h4>
+                                    <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
                                     <p className="text-[9px] text-zinc-500 flex items-center gap-1">
-                                      <MapPin className="h-3 w-3 text-zinc-400" /> {msg.metadata.location}
+                                      <MapPin className="h-3 w-3 text-zinc-400" /> {msg.metadata?.location}
                                     </p>
-                                    <p className="text-[9px] text-zinc-500 font-mono">Date: {msg.metadata.date}</p>
+                                    <p className="text-[9px] text-zinc-500 font-mono">Date: {msg.metadata?.date}</p>
                                   </div>
 
                                   <div className="flex items-center gap-1">
-                                    {msg.metadata.companions.map((name: string, i: number) => (
+                                    {(msg.metadata?.companions || []).map((name: string, i: number) => (
                                       <span key={i} className="h-5 px-2 bg-white/5 border border-white/5 text-[8px] font-bold rounded-md text-zinc-300">
                                         {name.split(" ")[0]}
                                       </span>
@@ -1305,29 +1281,29 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                 </div>
                               )}
 
-                              {msg.type === "campfire_invite" && (
+                              {(msg.type === "campfire_invite" || msg.type === "CAMPFIRE_INVITE") && (
                                 <div className="glass-panel border border-brand-cyan/35 bg-zinc-950/90 p-4 rounded-3xl shadow-2xl w-64 text-left space-y-3 relative overflow-hidden animate-[fadeIn_0.3s_ease]">
                                   <div className="absolute top-0 right-0 h-16 w-16 bg-brand-cyan/10 rounded-full filter blur-xl pointer-events-none" />
                                   <div className="flex items-center justify-between pb-2 border-b border-white/5">
                                     <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full flex items-center gap-1">
                                       <Flame className="h-2.5 w-2.5 fill-current animate-pulse text-zinc-950" /> Campfire Invite
                                     </span>
-                                    <span className="text-[8px] font-mono text-brand-cyan font-black">{msg.metadata.category}</span>
+                                    <span className="text-[8px] font-mono text-brand-cyan font-black">{msg.metadata?.category}</span>
                                   </div>
                                   <div className="space-y-2">
-                                    <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">{msg.metadata.title}</h4>
+                                    <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">{msg.metadata?.title}</h4>
                                     <div className="flex items-center gap-2 pt-1">
-                                      <CompanionAvatar avatar={msg.metadata.hostAvatar} name={msg.metadata.hostName} className="h-6 w-6 text-[9px]" />
+                                      <CompanionAvatar avatar={msg.metadata?.hostAvatar ?? ''} name={msg.metadata?.hostName ?? ''} className="h-6 w-6 text-[9px]" />
                                       <div>
-                                        <p className="text-[9px] text-zinc-400 font-bold leading-none">{msg.metadata.hostName}</p>
+                                        <p className="text-[9px] text-zinc-400 font-bold leading-none">{msg.metadata?.hostName}</p>
                                         <p className="text-[7px] text-zinc-500 font-mono mt-0.5">Host</p>
                                       </div>
                                     </div>
                                   </div>
                                   <button
                                     onClick={() => {
-                                      const slug = msg.metadata.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                                      router.push(`/profile/campfires/${msg.metadata.id}--${slug}`);
+                                      const slug = (msg.metadata?.title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                                      router.push(`/profile/campfires/${msg.metadata?.id}--${slug}`);
                                     }}
                                     className="w-full py-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 border border-brand-cyan/20 text-[10px] font-black rounded-xl transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center justify-center gap-1.5"
                                   >
@@ -1336,7 +1312,24 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                 </div>
                               )}
 
-                              <span className="text-[8px] text-zinc-650 mt-1 font-mono">{msg.timestamp}</span>
+                              {/* Message status indicator */}
+                              <span className="text-[8px] text-zinc-500 mt-1 font-mono flex items-center gap-1">
+                                {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (msg.timestamp ?? '')}
+                                {isMe && (
+                                  <span className={`ml-1 ${
+                                    msg.status === 'READ' ? 'text-brand-cyan' :
+                                    msg.status === 'DELIVERED' ? 'text-zinc-400' :
+                                    msg.status === 'FAILED' ? 'text-rose-500' :
+                                    msg.status === 'SENDING' ? 'text-zinc-600' : 'text-zinc-500'
+                                  }`}>
+                                    {msg.status === 'SENDING' && '◷'}
+                                    {msg.status === 'SENT' && '✓'}
+                                    {msg.status === 'DELIVERED' && '✓✓'}
+                                    {msg.status === 'READ' && '✓✓'}
+                                    {msg.status === 'FAILED' && '✗'}
+                                  </span>
+                                )}
+                              </span>
                             </div>
                           );
                         })}
