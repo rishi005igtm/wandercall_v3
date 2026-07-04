@@ -29,6 +29,12 @@ import {
   ChevronLeft,
   ChevronRight
 } from "lucide-react";
+import { useExplorerCirclesGraph, useUserSearch, ExplorerCircleNode, SearchUserItem } from "@/hooks/api/useDiscovery";
+import { useFollowMutation } from "@/hooks/api/useUserMutations";
+import { RelationshipButton } from "@/components/shared/RelationshipButton";
+import { useAppSelector } from "@/lib/store/store";
+import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
+import { useDebounce } from "@/hooks/useDebounce";
 
 // Mock Data Interfaces
 interface JoinedCommunity {
@@ -57,6 +63,12 @@ interface CompanionOrbitNode {
   bio: string;
   tags: string[];
   communities: string[];
+  level?: number;
+  reputationScore?: number;
+  location?: string;
+  isFollowing?: boolean;
+  isFriend?: boolean;
+  reasons?: string[];
 }
 
 interface CommunityTrophy {
@@ -325,7 +337,92 @@ export default function CommunitiesPage() {
   const [hoveredDockIndex, setHoveredDockIndex] = useState<number | null>(null);
   const [hoveredDockRow, setHoveredDockRow] = useState<"created" | "joined" | null>(null);
   const [selectedExplorer, setSelectedExplorer] = useState<CompanionOrbitNode | null>(null);
+  const { data: circlesGraph, isLoading: isCirclesLoading } = useExplorerCirclesGraph();
+  const followMutation = useFollowMutation();
+  const authState = useAppSelector((state) => state.auth);
+  const { data: currentUser } = useCurrentUserQuery(authState.isAuthenticated);
+  const displayName = currentUser?.displayName || authState.name || "Explorer";
+  const avatarUrl = currentUser?.avatarUrl;
+  const initial = displayName.trim().charAt(0).toUpperCase() || "E";
+
+  const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const { data: searchResults, isLoading: isSearchLoading } = useUserSearch(searchQuery, "all", 30);
+
+  const companionOrbitNodes: CompanionOrbitNode[] = useMemo(() => {
+    const nodesMap = new globalThis.Map<string, CompanionOrbitNode>();
+
+    // 1. First add default circle graph nodes
+    if (circlesGraph && circlesGraph.nodes && circlesGraph.nodes.length > 0) {
+      circlesGraph.nodes.forEach((node) => {
+        nodesMap.set(node.id, node as CompanionOrbitNode);
+      });
+    }
+
+    // 2. Merge in enterprise search results from database
+    if (searchResults && searchResults.pages) {
+      searchResults.pages.forEach((page) => {
+        if (page && page.items) {
+          page.items.forEach((item: SearchUserItem) => {
+            if (!nodesMap.has(item.userId)) {
+              nodesMap.set(item.userId, {
+                id: item.userId,
+                name: item.displayName || item.username,
+                username: item.username,
+                avatar: item.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+                compatibility: item.compatibility || 88,
+                sharedDNA: "Explorer",
+                mutualExperiences: Math.max(1, Math.round((item.compatibility || 80) / 20)),
+                mutualCommunities: Math.max(1, Math.round((item.compatibility || 80) / 30)),
+                mutualFriends: Math.max(0, Math.round((item.compatibility || 80) / 25) - 1),
+                bio: item.bio || "Wandercall explorer in the discovery network.",
+                tags: ["Trekking", "Adventure", "Travel"],
+                communities: ["Global Explorers", "Wander Tribe"],
+                level: item.level || 1,
+                reputationScore: item.reputationScore || 150,
+                location: item.locationFormatted || "Global",
+                isFollowing: false,
+                isFriend: false,
+                reasons: ["Search Discovery Match"],
+              } as CompanionOrbitNode);
+            }
+          });
+        }
+      });
+    }
+
+    const allNodes = Array.from(nodesMap.values());
+
+    // 3. Priority Sorting: If searching, prioritize matches! Otherwise prioritize compatibility!
+    if (searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase();
+      return allNodes.sort((a, b) => {
+        const aName = a.name.toLowerCase();
+        const aUser = a.username.toLowerCase();
+        const bName = b.name.toLowerCase();
+        const bUser = b.username.toLowerCase();
+
+        const aExact = aName === query || aUser === query || aUser === `@${query}`;
+        const bExact = bName === query || bUser === query || bUser === `@${query}`;
+        if (aExact && !bExact) return -1;
+        if (!aExact && bExact) return 1;
+
+        const aPrefix = aName.startsWith(query) || aUser.startsWith(query) || aUser.startsWith(`@${query}`);
+        const bPrefix = bName.startsWith(query) || bUser.startsWith(query) || bUser.startsWith(`@${query}`);
+        if (aPrefix && !bPrefix) return -1;
+        if (!aPrefix && bPrefix) return 1;
+
+        const aIncludes = aName.includes(query) || aUser.includes(query) || (a.bio && a.bio.toLowerCase().includes(query)) || a.tags.some(t => t.toLowerCase().includes(query));
+        const bIncludes = bName.includes(query) || bUser.includes(query) || (b.bio && b.bio.toLowerCase().includes(query)) || b.tags.some(t => t.toLowerCase().includes(query));
+        if (aIncludes && !bIncludes) return -1;
+        if (!aIncludes && bIncludes) return 1;
+
+        return (b.compatibility || 0) - (a.compatibility || 0);
+      });
+    }
+
+    return allNodes.sort((a, b) => (b.compatibility || 0) - (a.compatibility || 0));
+  }, [circlesGraph, searchResults, searchQuery]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [customCommunities, setCustomCommunities] = useState<JoinedCommunity[]>([]);
   const [failedExplorerAvatars, setFailedExplorerAvatars] = useState<Record<string, boolean>>({});
@@ -497,10 +594,10 @@ export default function CommunitiesPage() {
 
   // Auto-select first explorer on load
   useEffect(() => {
-    if (companionOrbitNodes.length > 0) {
+    if (companionOrbitNodes.length > 0 && !selectedExplorer) {
       setSelectedExplorer(companionOrbitNodes[0]);
     }
-  }, []);
+  }, [companionOrbitNodes, selectedExplorer]);
 
   // Selected filters (up to 3 categories). Default to first 3.
   const [selectedClusters, setSelectedClusters] = useState<string[]>([
@@ -649,218 +746,7 @@ export default function CommunitiesPage() {
     reputationPoints: 1420
   };
 
-  const companionOrbitNodes: CompanionOrbitNode[] = [
-    {
-      id: "orb-1",
-      name: "Sara Khan",
-      username: "sara_k",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBvq26wOg0Zi4H-gLYQKJsHN1IhEoteb3j2cn9u__ifA&s=10",
-      compatibility: 96,
-      sharedDNA: "Explorer",
-      mutualExperiences: 5,
-      mutualCommunities: 4,
-      mutualFriends: 8,
-      bio: "High altitude mountaineer & deep-sea reef mapping tracker. Chasing adventure milestones.",
-      tags: ["Trekking", "Scuba Diving", "Monsoons"],
-      communities: ["Cliff Trekkers", "Netrani Scuba", "Himalayan Base", "Western Hikes"]
-    },
-    {
-      id: "orb-2",
-      name: "Arjun Mehta",
-      username: "arjun_m",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvZFutcVD1y3r8oyib405OisAEFWrUg8V4jLXEQbaIcw&s=10",
-      compatibility: 89,
-      sharedDNA: "Explorer",
-      mutualExperiences: 3,
-      mutualCommunities: 3,
-      mutualFriends: 5,
-      bio: "Enduro cyclist, road running runner & slow homestay volunteer.",
-      tags: ["Cycling", "Running", "Homestays"],
-      communities: ["Enduro Cyclists", "Trail Runners", "Roadtrip Riders"]
-    },
-    {
-      id: "orb-3",
-      name: "Divya Kapoor",
-      username: "divya_k",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx2MPl0cP4JCKyDUZalUI22n5kjPSKM6BUfWmpLaIeeA&s=10",
-      compatibility: 84,
-      sharedDNA: "Creative",
-      mutualExperiences: 4,
-      mutualCommunities: 2,
-      mutualFriends: 4,
-      bio: "Landscape and candid lens photographer capturing rural folklore and temple scripts.",
-      tags: ["Landscape", "Street Photo", "Heritage"],
-      communities: ["Visual Storys", "Street Lens", "Heritage Walk"]
-    },
-    {
-      id: "orb-4",
-      name: "Milind Soman",
-      username: "milind_s",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8lVIJXtpBDkAYOUPk4jxPhvb9kUDMT7Py9zc_QL9CKg&s=10",
-      compatibility: 92,
-      sharedDNA: "Explorer",
-      mutualExperiences: 6,
-      mutualCommunities: 5,
-      mutualFriends: 11,
-      bio: "Ultra marathon trail runner & campsite storytelling guide. Basecamp safety expert.",
-      tags: ["Survival", "Camping", "Trail Runs"],
-      communities: ["Trail Runners", "Survival Campers", "Campfire Myths", "Himalayan Base"]
-    },
-    {
-      id: "orb-5",
-      name: "Ananya Rao",
-      username: "ananya_r",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQkhRGeb01nDVu6PoETV5jzYL75nO9mxPlbihWzbk-2A&s=10",
-      compatibility: 78,
-      sharedDNA: "Socializer",
-      mutualExperiences: 2,
-      mutualCommunities: 3,
-      mutualFriends: 3,
-      bio: "Traditional cafe hopper, filter coffee cartographer, and heritage food market crawler.",
-      tags: ["Food Crawls", "Cafes", "Organic"],
-      communities: ["Bangalore Crawl", "Heritage Foodies", "Cafe Hoppers"]
-    },
-    {
-      id: "orb-6",
-      name: "Rohit Kumar",
-      username: "rohit_k",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBvq26wOg0Zi4H-gLYQKJsHN1IhEoteb3j2cn9u__ifA&s=10",
-      compatibility: 95,
-      sharedDNA: "Explorer",
-      mutualExperiences: 8,
-      mutualCommunities: 6,
-      mutualFriends: 9,
-      bio: "PADI dive master and marine reef restoration organizer. Waterfall hiker.",
-      tags: ["Scuba", "Reef Mapping", "Waterfalls"],
-      communities: ["Netrani Scuba", "Waterfall Walks", "Cliff Trekkers"]
-    },
-    {
-      id: "orb-7",
-      name: "Zoe Chen",
-      username: "zoe_c",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvZFutcVD1y3r8oyib405OisAEFWrUg8V4jLXEQbaIcw&s=10",
-      compatibility: 73,
-      sharedDNA: "Socializer",
-      mutualExperiences: 3,
-      mutualCommunities: 2,
-      mutualFriends: 6,
-      bio: "Campfire acoustic singer, board game pub night host, and night explorer.",
-      tags: ["Music", "Survival", "Pub Crawls"],
-      communities: ["Acoustic Fire", "Pub Crawlers", "Midnight Walks"]
-    },
-    {
-      id: "orb-8",
-      name: "Kabir Singh",
-      username: "kabir_s",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx2MPl0cP4JCKyDUZalUI22n5kjPSKM6BUfWmpLaIeeA&s=10",
-      compatibility: 81,
-      sharedDNA: "Creative",
-      mutualExperiences: 4,
-      mutualCommunities: 3,
-      mutualFriends: 7,
-      bio: "Epigrapher exploring ruins and ghost settlements. Documenting local myths.",
-      tags: ["Archaeology", "Ruins", "Folklore"],
-      communities: ["Decipher Scripts", "Village Legends", "Heritage Walk"]
-    },
-    {
-      id: "orb-9",
-      name: "Priya Sharma",
-      username: "priya_s",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8lVIJXtpBDkAYOUPk4jxPhvb9kUDMT7Py9zc_QL9CKg&s=10",
-      compatibility: 87,
-      sharedDNA: "Explorer",
-      mutualExperiences: 4,
-      mutualCommunities: 3,
-      mutualFriends: 6,
-      bio: "Backpacking enthusiast and forest camping checklist reviewer.",
-      tags: ["Camping", "Forests", "Backpacking"],
-      communities: ["Himalayan Base", "Western Hikes", "Deoriatal Camps"]
-    },
-    {
-      id: "orb-10",
-      name: "Vikram Malhotra",
-      username: "vikram_m",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQkhRGeb01nDVu6PoETV5jzYL75nO9mxPlbihWzbk-2A&s=10",
-      compatibility: 76,
-      sharedDNA: "Socializer",
-      mutualExperiences: 3,
-      mutualCommunities: 3,
-      mutualFriends: 4,
-      bio: "Solo budget trip coordinator and airport lounge mapper.",
-      tags: ["Solo Travel", "Nomad Life", "Aviation"],
-      communities: ["Solo Backpacks", "Roadtrip Riders", "Offbeat Trails"]
-    },
-    {
-      id: "orb-11",
-      name: "Aisha Patel",
-      username: "aisha_p",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBvq26wOg0Zi4H-gLYQKJsHN1IhEoteb3j2cn9u__ifA&s=10",
-      compatibility: 83,
-      sharedDNA: "Creative",
-      mutualExperiences: 4,
-      mutualCommunities: 2,
-      mutualFriends: 5,
-      bio: "Travel journal sketch artist documenting local craft workshops.",
-      tags: ["Sketching", "Crafts", "Journals"],
-      communities: ["Travel Logs", "Folk Crafts", "Poetry Circle"]
-    },
-    {
-      id: "orb-12",
-      name: "Rohan Joshi",
-      username: "rohan_j",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSvZFutcVD1y3r8oyib405OisAEFWrUg8V4jLXEQbaIcw&s=10",
-      compatibility: 79,
-      sharedDNA: "Explorer",
-      mutualExperiences: 2,
-      mutualCommunities: 2,
-      mutualFriends: 3,
-      bio: "Urban skate trail mapper and sunset spot seeker.",
-      tags: ["Skating", "Urban Exploring", "Sunset Tracks"],
-      communities: ["Midnight Walks", "Bouldering Hub", "Landscape Pics"]
-    },
-    {
-      id: "orb-13",
-      name: "Neha Gupta",
-      username: "neha_g",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRx2MPl0cP4JCKyDUZalUI22n5kjPSKM6BUfWmpLaIeeA&s=10",
-      compatibility: 85,
-      sharedDNA: "Socializer",
-      mutualExperiences: 5,
-      mutualCommunities: 4,
-      mutualFriends: 7,
-      bio: "Night market food crawler and home-style noodle recipe enthusiast.",
-      tags: ["Street Food", "Cooking", "Night Crawls"],
-      communities: ["Street Eats Hub", "Bangalore Crawl", "Dessert Lovers"]
-    },
-    {
-      id: "orb-14",
-      name: "Dev Adams",
-      username: "dev_a",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8lVIJXtpBDkAYOUPk4jxPhvb9kUDMT7Py9zc_QL9CKg&s=10",
-      compatibility: 91,
-      sharedDNA: "Explorer",
-      mutualExperiences: 7,
-      mutualCommunities: 5,
-      mutualFriends: 10,
-      bio: "Wilderness survival mapper and offbeat route track creator.",
-      tags: ["Survival", "Offbeat Routes", "Navigation"],
-      communities: ["Survival Campers", "Map Makers", "Himalayan Base"]
-    },
-    {
-      id: "orb-15",
-      name: "Tara Sen",
-      username: "tara_s",
-      avatar: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTQkhRGeb01nDVu6PoETV5jzYL75nO9mxPlbihWzbk-2A&s=10",
-      compatibility: 88,
-      sharedDNA: "Creative",
-      mutualExperiences: 5,
-      mutualCommunities: 3,
-      mutualFriends: 8,
-      bio: "Astro-gazer and twilight photography expert mapping dark skies.",
-      tags: ["Astronomy", "Night Photo", "Stargazing"],
-      communities: ["Star Gazers", "Landscape Pics", "Acoustic Fire"]
-    }
-  ];
+
 
   const communityTrophies: CommunityTrophy[] = [
     { id: "tr-1", title: "Alps of India", requirement: "Complete 5 mountain treks above 10,000 ft", unlocked: true, tier: "Gold", dateUnlocked: "June 12, 2026" },
@@ -869,77 +755,95 @@ export default function CommunitiesPage() {
     { id: "tr-4", title: "Wander Tribe Captain", requirement: "Organize 3 successful companion cohorts", unlocked: false, tier: "Gold" }
   ];
 
-  // Seeded coordinate calculations for organic scatter network around center user
+  // Concentric Priority Orbit calculations with Zero Overlap Guarantee
   const explorerNodesWithCoords = useMemo(() => {
     const W = 1000;
     const H = 380;
     const centerX = 500;
     const centerY = 190;
     const centerR = 50; // User node radius (100px size)
-    const minSpacing = 36; // Increased spacing for larger nodes
+    const minSpacing = 44; // Strict spacing to guarantee zero overlap of avatars and labels
     const padding = 30;
 
-    // Filter nodes for tablet to maintain space
-    const baseNodes = isTablet ? companionOrbitNodes.slice(0, 10) : companionOrbitNodes;
+    // For mobile/tablet maintain clean spacing
+    const maxNodes = isMobile ? 8 : isTablet ? 12 : 20;
+    const baseNodes = companionOrbitNodes.slice(0, maxNodes);
     const placedNodes: { node: CompanionOrbitNode; x: number; y: number; r: number }[] = [];
 
     baseNodes.forEach((node, index) => {
-      // Larger circle sizes (radius 18px to 30px, i.e., diameter 36px to 60px)
+      // Circle radius based on device and priority
       const desktopRadius = 18 + (node.compatibility - 70) * (12 / 30);
       const r = isMobile ? desktopRadius * 0.85 : desktopRadius;
 
+      // Concentric Priority Orbits: Index 0 (Top search match / highest priority) is VERY CLOSE!
+      // Subsequent indices move progressively outward: Very Close -> Little Close -> Far -> Farther
+      let targetRadius = centerR + r + 35; // Innermost baseline
+      if (index === 0) targetRadius = centerR + r + 38; // Very close (#1 priority match)
+      else if (index <= 2) targetRadius = centerR + r + 65 + (index - 1) * 20; // Very close
+      else if (index <= 6) targetRadius = centerR + r + 125 + (index - 3) * 22; // Little close
+      else if (index <= 11) targetRadius = centerR + r + 210 + (index - 7) * 22; // Far
+      else targetRadius = centerR + r + 310 + (index - 12) * 25; // Farther
+
+      // Distribute initial angles using golden ratio (137.5 deg) with prominent placements for top matches
+      let baseAngle = (index * 137.5 * Math.PI) / 180;
+      if (index === 0) baseAngle = Math.PI * 1.15; // Prominent upper-left placement for #1 search result
+      else if (index === 1) baseAngle = Math.PI * 1.85; // Upper-right placement for #2
+      else if (index === 2) baseAngle = Math.PI * 0.85; // Lower-left for #3
+      else if (index === 3) baseAngle = Math.PI * 0.15; // Lower-right for #4
+
+      let placed = false;
       let x = 0;
       let y = 0;
-      let trial = 0;
-      let placed = false;
 
-      const isLeft = index % 2 === 0;
+      // Try angular search (stepping by 12 deg) and radial adjustments (+/- 15px increments)
+      for (let rOffset = 0; rOffset <= 250 && !placed; rOffset += 18) {
+        for (let aOffset = 0; aOffset < 360 && !placed; aOffset += 12) {
+          // Check both clockwise and counter-clockwise
+          for (const sign of [1, -1]) {
+            if (placed) break;
+            const angle = baseAngle + sign * (aOffset * Math.PI) / 180;
+            const currentRadius = targetRadius + rOffset;
 
-      while (trial < 1000 && !placed) {
-        // Deterministic placement using index seeds
-        const seedX = index * 73 + trial * 17 + 31;
-        const seedY = index * 41 + trial * 23 + 19;
+            // Calculate candidate coordinates
+            const cx = Math.round((centerX + currentRadius * Math.cos(angle)) * 10) / 10;
+            const cy = Math.round((centerY + currentRadius * Math.sin(angle)) * 10) / 10;
 
-        const randX = seededRandom(seedX);
-        const randY = seededRandom(seedY);
+            // Ensure within SVG canvas bounds (with padding for badges/labels)
+            if (cx < padding + r || cx > W - padding - r || cy < padding + r || cy > H - padding - r - 20) {
+              continue;
+            }
 
-        // Enforce left or right hemisphere boundary
-        const minX = isLeft ? padding + r : centerX + centerR + minSpacing;
-        const maxX = isLeft ? centerX - centerR - minSpacing : W - padding - r;
-        const minY = padding + r;
-        const maxY = H - padding - r - 15; // Extra bottom margin for name labels
+            // Check collision against center YOU node
+            const distCenter = Math.sqrt((cx - centerX) ** 2 + (cy - centerY) ** 2);
+            if (distCenter < centerR + r + minSpacing) {
+              continue;
+            }
 
-        const cx = Math.round((minX + randX * (maxX - minX || 1)) * 10) / 10;
-        const cy = Math.round((minY + randY * (maxY - minY || 1)) * 10) / 10;
+            // Check collision against all placed nodes
+            let hasCollision = false;
+            for (const existing of placedNodes) {
+              const dx = cx - existing.x;
+              const dy = cy - existing.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < r + existing.r + minSpacing) {
+                hasCollision = true;
+                break;
+              }
+            }
 
-        // Check collision against placed nodes
-        let hasCollision = false;
-        for (const existing of placedNodes) {
-          const dx = cx - existing.x;
-          const dy = cy - existing.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < r + existing.r + minSpacing) {
-            hasCollision = true;
-            break;
+            if (!hasCollision) {
+              x = cx;
+              y = cy;
+              placed = true;
+            }
           }
         }
-
-        if (!hasCollision) {
-          x = cx;
-          y = cy;
-          placed = true;
-        }
-        trial++;
       }
 
-      // Safe golden-spiral/arc fallback positions strictly respecting left/right boundaries
+      // Absolute safety fallback
       if (!placed) {
-        const groupIndex = Math.floor(index / 2);
-        const radius = centerR + r + 30 + (groupIndex * 15);
-        const angleOffset = (groupIndex * 0.7) - 1.2; // Spread in clean visual arcs
-        const angle = isLeft ? Math.PI + angleOffset : angleOffset;
-        x = Math.round((centerX + radius * Math.cos(angle)) * 10) / 10;
-        y = Math.round((centerY + radius * Math.sin(angle)) * 10) / 10;
+        x = centerX + (targetRadius + 50) * Math.cos(baseAngle);
+        y = centerY + (targetRadius + 50) * Math.sin(baseAngle);
       }
 
       placedNodes.push({ node, x, y, r });
@@ -964,6 +868,31 @@ export default function CommunitiesPage() {
       return { ...item, isMatched: matches };
     });
   }, [explorerNodesWithCoords, searchQuery]);
+
+  useEffect(() => {
+    if (searchQuery.trim() && filteredNodes.length > 0) {
+      const firstMatch = filteredNodes.find((f) => f.isMatched);
+      if (firstMatch) {
+        setSelectedExplorer(firstMatch.node);
+        
+        // Scroll horizontally to center the first match
+        if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          const containerWidth = container.clientWidth;
+          const scrollWidth = container.scrollWidth;
+          const ratio = scrollWidth / 1000; // viewBox width is 1000
+          
+          const targetX = firstMatch.x * ratio;
+          
+          container.scrollTo({
+            left: Math.max(0, targetX - (containerWidth / 2)),
+            behavior: "smooth"
+          });
+        }
+      }
+    }
+  }, [searchQuery, filteredNodes]);
+
 
   // Handle keyboard arrow selection accessibility
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -1691,15 +1620,24 @@ export default function CommunitiesPage() {
               A living network of explorers surrounding you based on shared milestones, DNA subclasses, and mutual experiences.
             </p>
           </div>
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl w-full sm:max-w-[220px]">
-            <Search className="h-3.5 w-3.5 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Search explorers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
-            />
+          <div className="flex items-center gap-2 w-full sm:max-w-[280px]">
+            <div className="flex flex-1 items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl focus-within:border-brand-cyan/50 transition-colors">
+              <Search className="h-3.5 w-3.5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search explorers..."
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(inputValue)}
+                className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
+              />
+            </div>
+            <button 
+              onClick={() => setSearchQuery(inputValue)}
+              className="bg-brand-cyan hover:bg-brand-cyan/80 text-black px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+            >
+              Search
+            </button>
           </div>
         </div>
 
@@ -1746,34 +1684,32 @@ export default function CommunitiesPage() {
                     );
                   })}
 
-                  {/* SVG Connecting Link lines from Selected Explorer to Center and other matched nodes */}
-                  {selectedExplorer && (
-                    filteredNodes.map(target => {
-                      if (target.node.id === selectedExplorer.id) return null;
-                      if (!target.isMatched && searchQuery) return null;
+                  {/* SVG Real Connecting Graph Edges from AI Discovery Service */}
+                  {circlesGraph?.edges && circlesGraph.edges.map((edge, idx) => {
+                    const sourceNode = filteredNodes.find(f => f.node.id === edge.source);
+                    const targetNode = filteredNodes.find(f => f.node.id === edge.target);
+                    if (!sourceNode || !targetNode) return null;
+                    if ((!sourceNode.isMatched || !targetNode.isMatched) && searchQuery) return null;
 
-                      const isDnaMatch = target.node.sharedDNA === selectedExplorer.sharedDNA;
-                      const isCompatMatch = target.node.compatibility > 85;
+                    const isConnectedToSelected = selectedExplorer && (edge.source === selectedExplorer.id || edge.target === selectedExplorer.id);
+                    const strokeClass = edge.relationship === "MUTUAL_FRIEND" 
+                      ? (isConnectedToSelected ? "stroke-brand-purple/80 stroke-[2]" : "stroke-brand-purple/30 stroke-[1.5]")
+                      : edge.relationship === "FRIEND"
+                      ? (isConnectedToSelected ? "stroke-brand-cyan/80 stroke-[2]" : "stroke-brand-cyan/30 stroke-[1.5]")
+                      : (isConnectedToSelected ? "stroke-brand-amber/60 stroke-[1.5]" : "stroke-white/10 stroke-[1]");
 
-                      if (isDnaMatch || isCompatMatch) {
-                        const source = filteredNodes.find(f => f.node.id === selectedExplorer.id);
-                        if (!source) return null;
-
-                        return (
-                          <line
-                            key={`link-${target.node.id}`}
-                            x1={source.x}
-                            y1={source.y}
-                            x2={target.x}
-                            y2={target.y}
-                            className="stroke-brand-cyan/20 stroke-[1.5]"
-                            strokeDasharray="4 4"
-                          />
-                        );
-                      }
-                      return null;
-                    })
-                  )}
+                    return (
+                      <line
+                        key={`edge-${idx}-${edge.source}-${edge.target}`}
+                        x1={sourceNode.x}
+                        y1={sourceNode.y}
+                        x2={targetNode.x}
+                        y2={targetNode.y}
+                        className={`${strokeClass} transition-all duration-300`}
+                        strokeDasharray={edge.relationship === "RECOMMENDED" ? "4 4" : undefined}
+                      />
+                    );
+                  })}
 
                   {/* Faint links from all matching nodes to Center User */}
                   {filteredNodes.map(target => {
@@ -1805,6 +1741,12 @@ export default function CommunitiesPage() {
 
                   {/* Fixed Center User Node (100px size) */}
                   <g transform="translate(500, 190)">
+                    <defs>
+                      <clipPath id="clip-center-user-node">
+                        <circle cx={0} cy={0} r={50} />
+                      </clipPath>
+                    </defs>
+
                     {/* Backlight halo glow */}
                     <circle
                       cx={0}
@@ -1813,28 +1755,60 @@ export default function CommunitiesPage() {
                       fill="url(#cluster-glow)"
                       className="text-brand-purple pointer-events-none opacity-40 animate-pulse"
                     />
+                    
+                    {/* Base node circle */}
                     <circle
                       cx={0}
                       cy={0}
                       r={50}
-                      className="fill-zinc-950 stroke-brand-purple/40 stroke-[2px] shadow-2xl"
+                      fill={avatarUrl ? "#09090b" : "url(#cluster-glow)"}
+                      className="stroke-brand-purple/60 stroke-[2px] shadow-2xl transition-all duration-300"
                     />
-                    <text
-                      x={0}
-                      y={-3}
-                      className="text-white fill-current text-[11px] font-black pointer-events-none select-none text-center uppercase tracking-wider"
-                      textAnchor="middle"
-                    >
-                      Rishiraj
-                    </text>
-                    <text
-                      x={0}
-                      y={10}
-                      className="fill-brand-purple text-[8px] font-black font-mono pointer-events-none select-none text-center tracking-widest uppercase"
-                      textAnchor="middle"
-                    >
-                      YOU
-                    </text>
+
+                    {/* Render inner avatar image or fallback first letter */}
+                    {avatarUrl ? (
+                      <g clipPath="url(#clip-center-user-node)">
+                        <image
+                          href={avatarUrl}
+                          x={-50}
+                          y={-50}
+                          width={100}
+                          height={100}
+                          preserveAspectRatio="xMidYMid slice"
+                          className="pointer-events-none select-none"
+                        />
+                      </g>
+                    ) : (
+                      <text
+                        x={0}
+                        y={8}
+                        fill="#ffffff"
+                        className="font-black text-[32px] select-none pointer-events-none text-center uppercase font-mono shadow-lg"
+                        textAnchor="middle"
+                      >
+                        {initial}
+                      </text>
+                    )}
+
+                    {/* Floating Pill Label below Center Node */}
+                    <g transform="translate(0, 64)">
+                      <rect
+                        x={-45}
+                        y={-10}
+                        width={90}
+                        height={20}
+                        rx={10}
+                        className="fill-zinc-950/95 stroke-brand-purple/50 stroke-[1.5px] shadow-lg"
+                      />
+                      <text
+                        x={0}
+                        y={4}
+                        className="fill-brand-cyan text-[9px] font-black font-mono pointer-events-none select-none text-center tracking-widest uppercase"
+                        textAnchor="middle"
+                      >
+                        YOU
+                      </text>
+                    </g>
                   </g>
 
                   {/* Surrounding Explorer Nodes */}
@@ -2064,17 +2038,17 @@ export default function CommunitiesPage() {
 
                   <div className="grid grid-cols-2 gap-2 mt-auto pt-4 border-t border-white/5">
                     <button
-                      onClick={() => triggerToast(`Messaging @${selectedExplorer.username}...`)}
+                      onClick={() => router.push(`/profile/friends/chat:${selectedExplorer.id}`)}
                       className="h-8 rounded-lg bg-zinc-900 border border-white/10 text-[8.5px] font-black uppercase tracking-wider hover:bg-zinc-800 transition-all cursor-pointer flex items-center justify-center text-white"
                     >
                       Message
                     </button>
-                    <button
-                      onClick={() => triggerToast(`Requesting cohort invite with ${selectedExplorer.name}...`)}
-                      className="h-8 rounded-lg bg-gradient-to-r from-brand-indigo to-brand-purple text-[8.5px] font-black uppercase tracking-wider hover:brightness-110 active:scale-98 transition-all cursor-pointer flex items-center justify-center text-white shadow-md"
-                    >
-                      Follow
-                    </button>
+                    {selectedExplorer?.username && (
+                      <RelationshipButton
+                        username={selectedExplorer.username.replace(/^@/, '')}
+                        className="h-8 rounded-lg text-[8.5px] font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center shadow-md w-full"
+                      />
+                    )}
                   </div>
                 </motion.div>
               </AnimatePresence>

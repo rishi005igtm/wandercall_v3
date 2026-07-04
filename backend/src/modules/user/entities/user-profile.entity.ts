@@ -1,6 +1,8 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity('users_profile')
+@Index(['username', 'displayName'])
+@Index(['reputationScore'])
 export class UserProfileEntity {
   @PrimaryColumn('uuid')
   id: string;

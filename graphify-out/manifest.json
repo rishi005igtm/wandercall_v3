@@ -15,8 +15,8 @@
     "semantic_hash": "a0fee86eda7c769ec64d1564f719c8dc"
   },
   "backend/src/app.module.ts": {
-    "mtime": 1783159632.4319224,
-    "ast_hash": "75b4d2c663861bdec44fd014050a04e6",
+    "mtime": 1783164506.3888369,
+    "ast_hash": "9b51fec1c6e1c29c88b9f50bfc6b0329",
     "semantic_hash": ""
   },
   "backend/src/config/ai/ai.config.ts": {
@@ -445,9 +445,9 @@
     "semantic_hash": "bd998d5f5052d65c8365beb82ff6b443"
   },
   "backend/src/modules/user/entities/user-profile.entity.ts": {
-    "mtime": 1782899601.2385457,
-    "ast_hash": "1f32eaa1472e3c050ba8f682176547ee",
-    "semantic_hash": "1f32eaa1472e3c050ba8f682176547ee"
+    "mtime": 1783171128.056525,
+    "ast_hash": "1d136233ddbd1190f308592de5736b46",
+    "semantic_hash": ""
   },
   "backend/src/modules/user/entities/user-settings.entity.ts": {
     "mtime": 1782899601.2385457,
@@ -460,9 +460,9 @@
     "semantic_hash": ""
   },
   "backend/src/modules/user/repositories/user.repository.ts": {
-    "mtime": 1782899601.2542565,
-    "ast_hash": "b059567058f781ed21cd79b23edcfb30",
-    "semantic_hash": "b059567058f781ed21cd79b23edcfb30"
+    "mtime": 1783164559.7732103,
+    "ast_hash": "d0883f3bced8df3e19fbb55f3e54c99f",
+    "semantic_hash": ""
   },
   "backend/src/modules/user/services/follow.service.ts": {
     "mtime": 1783155939.6647463,
@@ -565,23 +565,23 @@
     "semantic_hash": "1fc73c30a50d0a1b67b29b7e6d03e1db"
   },
   "client/app/profile/community/create/page.tsx": {
-    "mtime": 1782899601.3746028,
-    "ast_hash": "da87710d1540657fc71dd573f5b6587c",
-    "semantic_hash": "da87710d1540657fc71dd573f5b6587c"
+    "mtime": 1783167620.8759396,
+    "ast_hash": "640d6ee0a5e3d38498a35c46207bc77c",
+    "semantic_hash": ""
   },
   "client/app/profile/community/page.tsx": {
-    "mtime": 1782899601.3786097,
-    "ast_hash": "06a0895b0465fe3a12b35c6cccaeeff9",
-    "semantic_hash": "06a0895b0465fe3a12b35c6cccaeeff9"
+    "mtime": 1783171027.2986,
+    "ast_hash": "e5241fe70303acee613d882ccf9b221c",
+    "semantic_hash": ""
   },
   "client/app/profile/friends/[chatId]/page.tsx": {
-    "mtime": 1783163007.8117306,
-    "ast_hash": "0062a16b42e78714b39fdd6f37181531",
+    "mtime": 1783170211.692358,
+    "ast_hash": "b3cca8f8270bc3b766e5abac6336be4a",
     "semantic_hash": ""
   },
   "client/app/profile/friends/page.tsx": {
-    "mtime": 1783163091.69449,
-    "ast_hash": "59e8275539047d78f67fa65f5b1dc09a",
+    "mtime": 1783171060.0965106,
+    "ast_hash": "b55d0ee7f8a734791d10b6715f68f8af",
     "semantic_hash": ""
   },
   "client/app/profile/layout.tsx": {
@@ -780,8 +780,8 @@
     "semantic_hash": "3e26f74c0c2c8ecf2c73456c78dbded5"
   },
   "client/components/profile/ProfileRenderer.tsx": {
-    "mtime": 1783156124.3120596,
-    "ast_hash": "9cfb5e54eb5930b547d71d9ca6eb4142",
+    "mtime": 1783167136.5363946,
+    "ast_hash": "3a19982b6b4015eb07776c4562234595",
     "semantic_hash": ""
   },
   "client/eslint.config.mjs": {
@@ -1067,6 +1067,51 @@
   "client/hooks/useImpression.ts": {
     "mtime": 1782976401.1628394,
     "ast_hash": "ce000c2c69c5a46f9aa859a0fb70d73c",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/config/discovery.config.ts": {
+    "mtime": 1783164361.6984065,
+    "ast_hash": "9d775ce301031dbd7b5c4acb92b7a815",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/controllers/search.controller.ts": {
+    "mtime": 1783171079.7608726,
+    "ast_hash": "6cf226af78068eaee5b15f75cdc03180",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/entities/user-recommendation-cache.entity.ts": {
+    "mtime": 1783164351.5771925,
+    "ast_hash": "f80b3283ddd5bfd863a216aab0080bbb",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/entities/user-search-history.entity.ts": {
+    "mtime": 1783164340.950569,
+    "ast_hash": "823ecfb4a7d839da0e93a30cf23537b4",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/search.module.ts": {
+    "mtime": 1783164483.066474,
+    "ast_hash": "130b3163a785a93aa2fea2f2bed54fd7",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/services/social-discovery.service.ts": {
+    "mtime": 1783164570.1926,
+    "ast_hash": "31356bbeb5c74c41d9890fc11d281d7f",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/search/services/user-search.service.ts": {
+    "mtime": 1783171113.5566616,
+    "ast_hash": "1d6f9d0929100bedfa2c840940f803e9",
+    "semantic_hash": ""
+  },
+  "client/hooks/api/useDiscovery.ts": {
+    "mtime": 1783170998.461941,
+    "ast_hash": "4bdceb6a93c0f97cf5004c11ed64cb2a",
+    "semantic_hash": ""
+  },
+  "client/hooks/useDebounce.ts": {
+    "mtime": 1783170976.9059546,
+    "ast_hash": "c8f57b7c659ab7bfc2a5747397676a39",
     "semantic_hash": ""
   }
 }

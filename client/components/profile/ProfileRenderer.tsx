@@ -199,7 +199,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
       router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
-    router.push("/profile/friends");
+    router.push(`/profile/friends/chat:${profile.userId}`);
     triggerToast(`Connecting secure chat tunnel to ${profile.displayName}...`);
   };
 

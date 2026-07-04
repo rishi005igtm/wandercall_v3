@@ -18,6 +18,8 @@ import {
   Search
 } from "lucide-react";
 import LocationSearch from "../../../../components/location/LocationSearch";
+import { useAppSelector } from "@/lib/store/store";
+import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
 
 // Types
 interface Friend {
@@ -73,6 +75,9 @@ const TEMPLATE_WALLPAPERS = [
 export default function CreateCommunityPage() {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const authState = useAppSelector((state) => state.auth);
+  const { data: currentUser } = useCurrentUserQuery(authState.isAuthenticated);
+  const displayName = currentUser?.displayName || authState.name || "Explorer";
 
   // Wizard state
   const [step, setStep] = useState<1 | 2>(1);
@@ -236,7 +241,7 @@ export default function CreateCommunityPage() {
       liveStatus: "Idle",
       unreadCount: 0,
       energyScore: "Active",
-      recentActivity: `Established by Rishiraj just now`,
+      recentActivity: `Established by ${displayName} just now`,
       upcomingEvent: `Gathering at ${selectedLocation.city || "locked"} coordinates (Pending schedule)`,
       category: selectedCategory,
       description: description.trim(),

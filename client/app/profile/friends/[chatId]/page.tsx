@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import FriendsPage from "../page";
 import { useFriends, useFavorites, useAddFavoriteMutation, useRemoveFavoriteMutation } from '@/hooks/api/useFriends';
 import { useBlockedUsers, useBlockMutation } from '@/hooks/api/usePrivacy';
+import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -358,6 +359,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
   const { data: friendsData } = useFriends(100);
   const { data: favoritesData } = useFavorites();
   const { data: blockedData } = useBlockedUsers(100);
+  const { data: targetProfileData } = useUserProfileQuery(userId);
 
   const addFavoriteMutation = useAddFavoriteMutation();
   const removeFavoriteMutation = useRemoveFavoriteMutation();
@@ -379,7 +381,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
     const favList = favoritesData?.pages?.flatMap(p => p) || [];
     const favIds = new Set(favList.map((f: any) => f.userId || f.id));
 
-    return friendsData.pages.flatMap(page => page.items || [])
+    const baseList = friendsData.pages.flatMap(page => page.items || [])
       .filter(f => !blockedIds.has(f.userId))
       .map(f => ({
         id: f.userId,
@@ -398,7 +400,49 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         isAdventurePartner: false,
         lastActive: "Active recently"
       }));
-  }, [friendsData, favoritesData, blockedIds]);
+
+    if (userId && !baseList.some(c => c.id === userId || c.username === `@${userId}` || c.username === userId)) {
+      if (targetProfileData && (targetProfileData.userId === userId || targetProfileData.username === userId || `@${targetProfileData.username}` === userId)) {
+        baseList.unshift({
+          id: targetProfileData.userId,
+          name: targetProfileData.displayName || targetProfileData.username || 'Explorer',
+          username: targetProfileData.username ? `@${targetProfileData.username}` : '',
+          avatar: targetProfileData.avatarUrl || '',
+          status: "Available" as const,
+          compatibility: 88,
+          sharedDNA: "Explorer" as const,
+          mutualExperiences: targetProfileData.adventuresCompleted || 1,
+          mutualCommunities: targetProfileData.communitiesJoined || 1,
+          bio: targetProfileData.bio || "Wandercall explorer from community discovery.",
+          location: targetProfileData.locationFormatted || "Global",
+          tags: ["Adventure", "Explorer"],
+          isFavorite: false,
+          isAdventurePartner: false,
+          lastActive: "Active recently"
+        });
+      } else {
+        baseList.unshift({
+          id: userId,
+          name: userId.startsWith("f-") ? `Explorer (${userId})` : "Connecting Explorer...",
+          username: `@${userId}`,
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+          status: "Available" as const,
+          compatibility: 85,
+          sharedDNA: "Explorer" as const,
+          mutualExperiences: 1,
+          mutualCommunities: 1,
+          bio: "Connecting to explorer via Wandercall discovery network...",
+          location: "Global",
+          tags: ["Adventure", "Explorer"],
+          isFavorite: false,
+          isAdventurePartner: false,
+          lastActive: "Active recently"
+        });
+      }
+    }
+
+    return baseList;
+  }, [friendsData, favoritesData, blockedIds, userId, targetProfileData]);
 
   const [activeFriend, setActiveFriend] = useState<Companion | null>(null);
   const [messages, setMessages] = useState<any[]>([]);
@@ -442,7 +486,16 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
     if (companions.length > 0) {
       const friend = companions.find(c => c.id === userId || c.username === `@${userId}` || c.username === userId) || companions[0];
       setActiveFriend(friend);
-      setMessages(INITIAL_MESSAGES[friend.id] || []);
+      const initialMsgs = INITIAL_MESSAGES[friend.id] || [
+        {
+          id: `m-init-${friend.id}`,
+          sender: "them",
+          text: "Saw you share my adventure DNA! Up for a quick chat? 🎒",
+          type: "text",
+          timestamp: "Just now"
+        }
+      ];
+      setMessages(initialMsgs);
     }
   }, [userId, companions]);
 

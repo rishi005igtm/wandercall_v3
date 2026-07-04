@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useFriends, usePendingIncoming, usePendingOutgoing, useFollowBackMutation, useRejectRequestMutation, useCancelRequestMutation, useFavorites, useAddFavoriteMutation, useRemoveFavoriteMutation } from '@/hooks/api/useFriends';
 import { useBlockedUsers, useBlockMutation, useUnblockMutation } from '@/hooks/api/usePrivacy';
+import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
+import { useDebounce } from '@/hooks/useDebounce';
 import {
   Users,
   Heart,
@@ -549,6 +551,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   useEffect(() => {
     setActiveFriendId(initialFriendId);
   }, [initialFriendId]);
+  const [inputValue, setInputValue] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeMobileView, setActiveMobileView] = useState<"rail" | "chat" | "inspector">("rail");
 
@@ -558,6 +561,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const { data: outgoingData } = usePendingOutgoing(100, searchQuery);
   const { data: favoritesData } = useFavorites();
   const { data: blockedData } = useBlockedUsers(20);
+  const { data: targetProfileData } = useUserProfileQuery(activeFriendId);
 
   const followBackMutation = useFollowBackMutation();
   const rejectRequestMutation = useRejectRequestMutation();
@@ -591,26 +595,68 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const companions = useMemo(() => {
     if (!friendsData) return [];
     const favList = favoritesData?.pages?.flatMap(p => p) || [];
-    return friendsData.pages.flatMap(page => page.items)
+    const baseList = friendsData.pages.flatMap(page => page.items)
       .filter(f => !blockedIds.has(f.userId))
       .map(f => ({
         id: f.userId,
-        name: f.displayName,
-        username: `@${f.username}`,
+        name: f.displayName || f.username || 'Unknown User',
+        username: f.username ? `@${f.username}` : '',
         avatar: f.avatarUrl || '',
         status: "Available" as any,
         compatibility: f.compatibility || 90,
         sharedDNA: "Explorer" as any,
         mutualExperiences: 0,
         mutualCommunities: 0,
-        bio: "An explorer on Wandercall.",
-        location: "Earth",
+        bio: (f as any).bio || "An explorer on Wandercall.",
+        location: (f as any).locationFormatted || "Earth",
         tags: ["Explorer"],
-        isFavorite: favList.some((fav: any) => fav.friendId === f.userId),
+        isFavorite: favList.some((fav: any) => fav.friendId === f.userId || fav.userId === f.userId || fav.id === f.userId),
         isAdventurePartner: false,
         lastActive: "Active now"
       }));
-  }, [friendsData, favoritesData, blockedIds]);
+
+    if (activeFriendId && !baseList.some(c => c.id === activeFriendId || c.username === `@${activeFriendId}` || c.username === activeFriendId)) {
+      if (targetProfileData && (targetProfileData.userId === activeFriendId || targetProfileData.username === activeFriendId || `@${targetProfileData.username}` === activeFriendId)) {
+        baseList.unshift({
+          id: targetProfileData.userId,
+          name: targetProfileData.displayName || targetProfileData.username || 'Explorer',
+          username: targetProfileData.username ? `@${targetProfileData.username}` : '',
+          avatar: targetProfileData.avatarUrl || '',
+          status: "Available" as any,
+          compatibility: 88,
+          sharedDNA: "Explorer" as any,
+          mutualExperiences: targetProfileData.adventuresCompleted || 1,
+          mutualCommunities: targetProfileData.communitiesJoined || 1,
+          bio: targetProfileData.bio || "Wandercall explorer from community discovery.",
+          location: targetProfileData.locationFormatted || "Global",
+          tags: ["Explorer", "Discovery"],
+          isFavorite: false,
+          isAdventurePartner: false,
+          lastActive: "Active recently"
+        });
+      } else {
+        baseList.unshift({
+          id: activeFriendId,
+          name: activeFriendId.startsWith("f-") ? `Explorer (${activeFriendId})` : "Connecting Explorer...",
+          username: `@${activeFriendId}`,
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+          status: "Available" as any,
+          compatibility: 85,
+          sharedDNA: "Explorer" as any,
+          mutualExperiences: 1,
+          mutualCommunities: 1,
+          bio: "Connecting to explorer via Wandercall discovery network...",
+          location: "Global",
+          tags: ["Explorer"],
+          isFavorite: false,
+          isAdventurePartner: false,
+          lastActive: "Active now"
+        });
+      }
+    }
+
+    return baseList;
+  }, [friendsData, favoritesData, blockedIds, activeFriendId, targetProfileData]);
 
   const incomingRequests = useMemo(() => {
     if (!incomingData) return [];
@@ -940,15 +986,24 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl w-full sm:max-w-[280px]">
-          <Search className="h-3.5 w-3.5 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Search friends & DNA..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
-          />
+        <div className="flex items-center gap-2 w-full sm:max-w-[340px]">
+          <div className="flex flex-1 items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl focus-within:border-brand-cyan/50 transition-colors">
+            <Search className="h-3.5 w-3.5 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search friends & DNA..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(inputValue)}
+              className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
+            />
+          </div>
+          <button 
+            onClick={() => setSearchQuery(inputValue)}
+            className="bg-brand-cyan hover:bg-brand-cyan/80 text-black px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
+          >
+            Search
+          </button>
         </div>
       </div>
 
@@ -989,15 +1044,24 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         })}
 
         {/* Relocated Search Bar - Visible on desktop only */}
-        <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl max-w-[280px] ml-auto shrink-0">
-          <Search className="h-3.5 w-3.5 text-zinc-500" />
-          <input
-            type="text"
-            placeholder="Search friends & DNA..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
-          />
+        <div className="hidden md:flex items-center gap-2 max-w-[340px] ml-auto shrink-0">
+          <div className="flex flex-1 items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl focus-within:border-brand-cyan/50 transition-colors">
+            <Search className="h-3.5 w-3.5 text-zinc-500" />
+            <input
+              type="text"
+              placeholder="Search friends & DNA..."
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(inputValue)}
+              className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
+            />
+          </div>
+          <button 
+            onClick={() => setSearchQuery(inputValue)}
+            className="bg-brand-cyan hover:bg-brand-cyan/80 text-black px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
+          >
+            Search
+          </button>
         </div>
       </div>
 
