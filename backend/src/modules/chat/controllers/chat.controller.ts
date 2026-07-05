@@ -18,6 +18,8 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ChatService } from '../services/chat.service';
 import { PresenceService } from '../services/presence.service';
+import { SendMessageDto } from '../dto/send-message.dto';
+import { plainToInstance } from 'class-transformer';
 
 // ─────────────────────────────────────────────────────────
 // Decorator — extract authenticated user from request
@@ -54,6 +56,24 @@ export class ChatController {
     private readonly chatService: ChatService,
     private readonly presenceService: PresenceService,
   ) {}
+
+  @Post('conversations/:conversationId/messages')
+  async sendMessage(
+    @GetUser() user: AuthUser,
+    @Param('conversationId') conversationId: string,
+    @Body() body: { clientMessageId: string; type?: string; text?: string; attachments?: any[]; replyToId?: string; metadata?: Record<string, any> },
+  ) {
+    const dto = plainToInstance(SendMessageDto, {
+      clientMessageId: body.clientMessageId,
+      conversationId,
+      type: body.type,
+      text: body.text,
+      attachments: body.attachments,
+      replyToId: body.replyToId,
+      metadata: body.metadata,
+    });
+    return this.chatService.sendMessage(user.userId, dto);
+  }
 
   /**
    * GET /api/v1/chat/conversations

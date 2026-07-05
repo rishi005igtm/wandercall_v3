@@ -101,4 +101,21 @@ export const chatService = {
     const response = await httpClient.get(`/chat/presence/${userId}`);
     return response.data;
   },
+
+  /**
+   * Send a message via HTTP fallback.
+   */
+  async sendMessageHttp(
+    conversationId: string,
+    clientMessageId: string,
+    type: string = 'TEXT',
+    text?: string,
+    metadata?: Record<string, any>
+  ): Promise<Message> {
+    const response = await httpClient.post(
+      `/chat/conversations/${conversationId}/messages`,
+      { clientMessageId, type, text, metadata }
+    );
+    return response.data;
+  },
 };

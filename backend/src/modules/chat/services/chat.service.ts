@@ -311,23 +311,31 @@ export class ChatService {
 
     if (!messageId) return;
 
-    const updated = await this.messageRepository.markRead(messageId);
-    if (!updated) return;
+    const targetMessage = await this.messageRepository.findById(messageId);
+    if (!targetMessage) return;
 
-    this.logger.log(
-      `[Read] messageId=${messageId} convId=${conversationId} readerId=${userId} senderId=${updated.senderId}`,
-    );
+    const unreadMessages = await this.messageRepository.findUnread(conversationId, userId);
+    const toRead = unreadMessages.filter(m => m.createdAt.getTime() <= targetMessage.createdAt.getTime());
 
-    this.chatEventDispatcher.dispatch({
-      type: 'MESSAGE_READ',
-      payload: {
-        messageId,
-        conversationId,
-        senderId: updated.senderId,
-        readerId: userId,
-        readAt: updated.readAt!,
-      },
-    });
+    for (const msg of toRead) {
+      const updated = await this.messageRepository.markRead(msg.id);
+      if (!updated) continue;
+
+      this.logger.log(
+        `[Read] messageId=${msg.id} convId=${conversationId} readerId=${userId} senderId=${updated.senderId}`,
+      );
+
+      this.chatEventDispatcher.dispatch({
+        type: 'MESSAGE_READ',
+        payload: {
+          messageId: msg.id,
+          conversationId,
+          senderId: updated.senderId,
+          readerId: userId,
+          readAt: updated.readAt!,
+        },
+      });
+    }
   }
 
   // ─────────────────────────────────────────────────────────

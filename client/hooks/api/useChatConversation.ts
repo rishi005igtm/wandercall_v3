@@ -34,11 +34,14 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
-  // Track whether we've successfully joined the socket room
   const joinedRoomRef = useRef<string | null>(null);
 
-  // Step 1: Resolve conversation ID from server (HTTP, not socket)
-  // Only runs when auth is ready and targetUserId is set
+  // Track the messageId we last fired markRead for — prevents firing twice
+  const lastMarkedReadIdRef = useRef<string | null>(null);
+  // Track which conversationId the markRead was for
+  const lastMarkedReadConvRef = useRef<string | null>(null);
+
+  // Step 1: Resolve conversation via HTTP
   useEffect(() => {
     if (!targetUserId || !currentUserId || !isAuthReady) return;
 
@@ -57,19 +60,13 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
         if (!cancelled) setIsInitializing(false);
       });
 
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [targetUserId, currentUserId, isAuthReady]);
 
-  // Step 2: Join the socket room once BOTH conditions are true:
-  //   a) conversationId is resolved
-  //   b) socket is connected (isConnected === true)
-  // This effect re-runs whenever isConnected changes — so if the socket
-  // connects after the conversation was already resolved, we join then.
+  // Step 2: Join socket room when connected
   useEffect(() => {
     if (!conversationId || !isConnected) return;
-    if (joinedRoomRef.current === conversationId) return; // already joined this room
+    if (joinedRoomRef.current === conversationId) return;
 
     joinConversation(conversationId).then((result) => {
       if (result?.success !== false) {
@@ -78,12 +75,14 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
     });
   }, [conversationId, isConnected, joinConversation]);
 
-  // Reset joined room tracking when target changes
+  // Reset when target changes
   useEffect(() => {
     joinedRoomRef.current = null;
+    lastMarkedReadIdRef.current = null;
+    lastMarkedReadConvRef.current = null;
   }, [targetUserId]);
 
-  // Fetch message history via TanStack Query
+  // Message history
   const {
     data: messagesData,
     fetchNextPage,
@@ -110,39 +109,63 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
     : [];
 
   /**
-   * Conversation Focus Manager.
+   * Conversation Focus Manager
    *
-   * Called by the UI when the conversation panel is actively visible.
-   * Emits mark-read for the last message NOT sent by the current user.
-   * This is the correct enterprise flow:
-   *   Conversation visible → messages rendered → mark-read
-   * NOT:
-   *   Socket connected → mark-read
+   * Fires mark-read for the last unread message from the other user.
+   * Guards: only fires once per (conversationId, messageId) pair.
+   * This prevents the duplicate MESSAGE_READ logs.
    */
   const markConversationRead = useCallback(() => {
     if (!conversationId || !currentUserId || !isConnected) return;
 
     const allMessages = messagesData?.pages?.flatMap((p) => p.items) ?? [];
-    // Find the last message from the other user that hasn't been read
     const lastUnreadFromOther = [...allMessages]
       .reverse()
-      .find((m) => m.senderId !== currentUserId && m.status !== 'READ' && m.status !== 'DELETED');
+      .find(
+        (m) =>
+          m.senderId !== currentUserId &&
+          m.status !== 'READ' &&
+          m.status !== 'DELETED',
+      );
 
     if (lastUnreadFromOther) {
+      // Idempotency guard: only emit once per message per conversation
+      if (
+        lastMarkedReadIdRef.current === lastUnreadFromOther.id &&
+        lastMarkedReadConvRef.current === conversationId
+      ) {
+        return;
+      }
+      lastMarkedReadIdRef.current = lastUnreadFromOther.id;
+      lastMarkedReadConvRef.current = conversationId;
       emit('mark-read', { conversationId, messageId: lastUnreadFromOther.id });
     } else {
-      // No specific message but still clear unread count
-      emit('mark-read', { conversationId, messageId: '' });
+      // No unread from other — just clear unread counter if needed
+      // Only do this once per conversation open
+      if (lastMarkedReadConvRef.current !== conversationId) {
+        lastMarkedReadConvRef.current = conversationId;
+        emit('mark-read', { conversationId, messageId: '' });
+      }
     }
   }, [conversationId, currentUserId, isConnected, messagesData, emit]);
 
+  /**
+   * sendTextMessage
+   *
+   * Architecture: Database-first, socket as optimization
+   *
+   * Flow:
+   * 1. Generate clientMessageId
+   * 2. Optimistic insert → show message immediately
+   * 3. Attempt socket first (fast path, already connected)
+   * 4. If socket fails/unavailable → fall back to HTTP POST
+   * 5. On success (either path) → update optimistic entry
+   *
+   * Message is NEVER dropped regardless of socket state.
+   */
   const sendTextMessage = useCallback(
     async (text: string) => {
       if (!conversationId || !currentUserId || !text.trim()) return;
-      if (!isConnected) {
-        console.warn('[useChatConversation] Socket not connected — message dropped');
-        return;
-      }
 
       const clientMessageId = uuidv4();
       const now = new Date().toISOString();
@@ -179,15 +202,64 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
         };
       });
 
-      const ack = await emit('send-message', {
-        clientMessageId,
-        conversationId,
-        type: 'TEXT',
-        text: text.trim(),
-      });
+      // Try socket first (if connected)
+      if (isConnected) {
+        const ack = await emit('send-message', {
+          clientMessageId,
+          conversationId,
+          type: 'TEXT',
+          text: text.trim(),
+        });
 
-      if (ack?.success) {
-        // Replace optimistic entry with confirmed server entry
+        if (ack?.success) {
+          queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                items: page.items.map((msg: Message) =>
+                  msg.clientMessageId === clientMessageId
+                    ? { ...msg, id: ack.serverMessageId, status: 'SENT' }
+                    : msg,
+                ),
+              })),
+            };
+          });
+          queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
+          return; // Success via socket — done
+        }
+
+        // Socket returned error ACK (not null, but failed)
+        if (ack !== null) {
+          queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                items: page.items.map((msg: Message) =>
+                  msg.clientMessageId === clientMessageId
+                    ? { ...msg, status: 'FAILED' }
+                    : msg,
+                ),
+              })),
+            };
+          });
+          return;
+        }
+        // ack === null → socket not truly connected, fall through to HTTP
+      }
+
+      // Fallback: HTTP POST (guaranteed delivery regardless of socket state)
+      try {
+        const saved = await chatService.sendMessageHttp(
+          conversationId,
+          clientMessageId,
+          'TEXT',
+          text.trim(),
+        );
+
         queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
           if (!old) return old;
           return {
@@ -196,15 +268,15 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
               ...page,
               items: page.items.map((msg: Message) =>
                 msg.clientMessageId === clientMessageId
-                  ? { ...msg, id: ack.serverMessageId, status: 'SENT' }
+                  ? { ...msg, id: saved.id, status: saved.status }
                   : msg,
               ),
             })),
           };
         });
         queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
-      } else if (ack !== null) {
-        // Server returned an error ACK
+      } catch {
+        // HTTP also failed — mark as FAILED
         queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
           if (!old) return old;
           return {
@@ -220,15 +292,13 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
           };
         });
       }
-      // ack === null means socket not connected — optimistic entry stays as SENDING
-      // (shows the user a pending state; they can retry)
     },
     [conversationId, currentUserId, isConnected, emit, queryClient],
   );
 
   const sendSpecialMessage = useCallback(
     async (type: string, metadata: Record<string, any>) => {
-      if (!conversationId || !currentUserId || !isConnected) return;
+      if (!conversationId || !currentUserId) return;
 
       const clientMessageId = uuidv4();
       const now = new Date().toISOString();
@@ -249,29 +319,36 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
 
       queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
         if (!old) {
-          return {
-            pages: [{ items: [optimistic], nextCursor: undefined, hasMore: false }],
-            pageParams: [undefined],
-          };
+          return { pages: [{ items: [optimistic], nextCursor: undefined, hasMore: false }], pageParams: [undefined] };
         }
         const lastPage = old.pages[old.pages.length - 1];
-        return {
-          ...old,
-          pages: [
-            ...old.pages.slice(0, -1),
-            { ...lastPage, items: [...lastPage.items, optimistic] },
-          ],
-        };
+        return { ...old, pages: [...old.pages.slice(0, -1), { ...lastPage, items: [...lastPage.items, optimistic] }] };
       });
 
-      const ack = await emit('send-message', {
-        clientMessageId,
-        conversationId,
-        type,
-        metadata,
-      });
+      if (isConnected) {
+        const ack = await emit('send-message', { clientMessageId, conversationId, type, metadata });
+        if (ack?.success) {
+          queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+            if (!old) return old;
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                items: page.items.map((msg: Message) =>
+                  msg.clientMessageId === clientMessageId
+                    ? { ...msg, id: ack.serverMessageId, status: 'SENT' }
+                    : msg,
+                ),
+              })),
+            };
+          });
+          return;
+        }
+      }
 
-      if (ack?.success) {
+      // HTTP fallback for special messages
+      try {
+        const saved = await chatService.sendMessageHttp(conversationId, clientMessageId, type, undefined, metadata);
         queryClient.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
           if (!old) return old;
           return {
@@ -279,14 +356,12 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
             pages: old.pages.map((page: any) => ({
               ...page,
               items: page.items.map((msg: Message) =>
-                msg.clientMessageId === clientMessageId
-                  ? { ...msg, id: ack.serverMessageId, status: 'SENT' }
-                  : msg,
+                msg.clientMessageId === clientMessageId ? { ...msg, id: saved.id, status: saved.status } : msg,
               ),
             })),
           };
         });
-      }
+      } catch { /* stays SENDING until next sync */ }
     },
     [conversationId, currentUserId, isConnected, emit, queryClient],
   );
