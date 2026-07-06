@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, ILike } from 'typeorm';
+import { Repository, Like, ILike, DataSource } from 'typeorm';
 import { UserRepository } from '../../user/repositories/user.repository';
 import { FollowRepository } from '../../user/repositories/follow.repository';
 import { PrivacyService } from '../../privacy/services/privacy.service';
@@ -27,6 +27,7 @@ export class UserSearchService {
     private readonly privacyService: PrivacyService,
     @InjectRepository(UserSearchHistoryEntity)
     private readonly historyRepo: Repository<UserSearchHistoryEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -146,5 +147,62 @@ export class UserSearchService {
       bio: p.bio || 'Passionate explorer chasing scenic trails.',
       compatibility: Math.min(98, 70 + (p.level * 3)),
     }));
+  }
+
+  /**
+   * Search for members within a specific community.
+   */
+  async searchCommunityMembers(
+    communityId: string,
+    userId: string,
+    dto: UserSearchQueryDto,
+  ): Promise<{ items: any[]; nextCursor?: string }> {
+    const searchQuery = (dto.q || dto.query || '').trim().toLowerCase();
+    const limit = Number(dto.limit) || 20;
+    const offset = dto.cursor ? parseInt(dto.cursor, 10) || 0 : 0;
+
+    let queryBuilder = this.dataSource
+      .createQueryBuilder()
+      .select(['cm.id', 'cm.roleId', 'cm.isOwner', 'cm.isMuted', 'cm.joinedAt', 'cm.status'])
+      .addSelect(['up.userId', 'up.username', 'up.displayName', 'up.avatarUrl', 'up.level', 'cr.name as "roleName"'])
+      .from('community_members', 'cm')
+      .innerJoin('users_profile', 'up', 'cm.userId = up.userId')
+      .leftJoin('community_roles', 'cr', 'cm.roleId = cr.id')
+      .where('cm.communityId = :communityId', { communityId })
+      .andWhere("cm.status = 'ACTIVE'");
+
+    if (searchQuery) {
+      queryBuilder = queryBuilder.andWhere(
+        '(LOWER(up.username) LIKE :q OR LOWER(up.displayName) LIKE :q OR LOWER(cm.nickname) LIKE :q)',
+        { q: `%${searchQuery}%` }
+      );
+    }
+
+    const members = await queryBuilder
+      .orderBy('cm.joinedAt', 'ASC')
+      .limit(limit + 1)
+      .offset(offset)
+      .getRawMany();
+
+    const hasMore = members.length > limit;
+    const slice = hasMore ? members.slice(0, limit) : members;
+
+    return {
+      items: slice.map(m => ({
+        id: m.cm_id,
+        userId: m.up_userId,
+        username: m.up_username,
+        displayName: m.up_displayName,
+        avatarUrl: m.up_avatarUrl,
+        level: m.up_level,
+        roleId: m.cm_roleId,
+        roleName: m.roleName,
+        isOwner: m.cm_isOwner,
+        isMuted: m.cm_isMuted,
+        status: m.cm_status,
+        joinedAt: m.cm_joinedAt,
+      })),
+      nextCursor: hasMore ? (offset + limit).toString() : undefined,
+    };
   }
 }

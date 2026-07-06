@@ -32,9 +32,11 @@ import {
 import { useExplorerCirclesGraph, useUserSearch, ExplorerCircleNode, SearchUserItem } from "@/hooks/api/useDiscovery";
 import { useFollowMutation } from "@/hooks/api/useUserMutations";
 import { RelationshipButton } from "@/components/shared/RelationshipButton";
-import { useAppSelector } from "@/lib/store/store";
+import { useAppSelector, useAppDispatch } from "@/lib/store/store";
 import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useGalaxy, useDiscoverCommunities, useMyCommunities } from "@/hooks/useCommunity";
+import { toggleClusterSelection, setSearchQuery as setDiscoverySearchQuery, setMapLoaded, clearFilters } from "@/lib/store/slices/communityDiscoverySlice";
 
 // Mock Data Interfaces
 interface JoinedCommunity {
@@ -339,6 +341,10 @@ export default function CommunitiesPage() {
   const [selectedExplorer, setSelectedExplorer] = useState<CompanionOrbitNode | null>(null);
   const { data: circlesGraph, isLoading: isCirclesLoading } = useExplorerCirclesGraph();
   const followMutation = useFollowMutation();
+  const dispatch = useAppDispatch();
+  const discoveryState = useAppSelector(state => state.communityDiscovery);
+  const selectedClusters = discoveryState.selectedClusters;
+  const { data: galaxyData, isLoading: isGalaxyLoading } = useGalaxy();
   const authState = useAppSelector((state) => state.auth);
   const { data: currentUser } = useCurrentUserQuery(authState.isAuthenticated);
   const displayName = currentUser?.displayName || authState.name || "Explorer";
@@ -424,7 +430,7 @@ export default function CommunitiesPage() {
     return allNodes.sort((a, b) => (b.compatibility || 0) - (a.compatibility || 0));
   }, [circlesGraph, searchResults, searchQuery]);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
-  const [customCommunities, setCustomCommunities] = useState<JoinedCommunity[]>([]);
+  const { data: myCommunities } = useMyCommunities();
   const [failedExplorerAvatars, setFailedExplorerAvatars] = useState<Record<string, boolean>>({});
   const [isDragging, setIsDragging] = useState(false);
 
@@ -467,99 +473,51 @@ export default function CommunitiesPage() {
   };
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("wandercall_custom_communities");
-      if (stored) {
-        try {
-          setCustomCommunities(JSON.parse(stored));
-        } catch (e) {
-          console.error("Failed to parse custom communities", e);
-        }
-      }
-    }
+    // Local storage cleanups if any
   }, []);
 
-  const joinedCommunities: JoinedCommunity[] = [
-    {
-      id: "jc-1",
-      name: "Mountain Explorers",
-      avatar: "🏔️",
-      banner: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=300&auto=format&fit=crop",
-      members: 1420,
-      liveStatus: "Campfire Active",
-      unreadCount: 4,
-      energyScore: "Legendary",
-      recentActivity: "Rohit started a campfire voice room 10m ago",
-      upcomingEvent: "Kudremukh Trek (This Weekend)"
-    },
-    {
-      id: "jc-2",
-      name: "Scuba & Marine Cohort",
-      avatar: "🤿",
-      banner: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=300&auto=format&fit=crop",
-      members: 840,
-      liveStatus: "Event Live",
-      unreadCount: 2,
-      energyScore: "Thriving",
-      recentActivity: "3 members completed Netrani Deep Dive challenge",
-      upcomingEvent: "Netrani Reef Clean-up (Tomorrow)"
-    },
-    {
-      id: "jc-3",
-      name: "Heritage Food Crawlers",
-      avatar: "🍛",
-      banner: "https://images.unsplash.com/photo-1589301760014-d929f3979dbc?q=80&w=300&auto=format&fit=crop",
-      members: 2150,
-      liveStatus: "Active Now",
-      unreadCount: 0,
-      energyScore: "Legendary",
-      recentActivity: "Reviewing filter coffee locations in Malleshwaram",
-      upcomingEvent: "Old Bangalore Breakfast Walk (Today)"
-    },
-    {
-      id: "jc-4",
-      name: "Creative Writers & Guides",
-      avatar: "🖋️",
-      banner: "https://images.unsplash.com/photo-1455390582262-044cdead277a?q=80&w=300&auto=format&fit=crop",
-      members: 620,
-      liveStatus: "Idle",
-      unreadCount: 0,
-      energyScore: "Active",
-      recentActivity: "Siddharth shared Gokarna Sunset Memory log",
-      upcomingEvent: "Photography Journal Workshop (Next Week)"
-    },
-    {
-      id: "jc-5",
-      name: "Himalayan Basecamp Tribes",
-      avatar: "⛺",
-      banner: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=300&auto=format&fit=crop",
-      members: 980,
-      liveStatus: "Campfire Active",
-      unreadCount: 7,
-      energyScore: "Legendary",
-      recentActivity: "Campfire session live from altitude 12,000 ft",
-      upcomingEvent: "Sankri Ridge Night Camp (This Weekend)"
-    }
-  ];
 
   const allDockCommunities = useMemo(() => {
-    return [...joinedCommunities, ...customCommunities];
-  }, [customCommunities]);
-
-  const allGalaxyNodes = useMemo(() => {
-    const customNodes: CommunityNode[] = customCommunities.map(c => ({
+    if (!myCommunities) return [];
+    
+    return myCommunities.map((c: any) => ({
       id: c.id,
       name: c.name,
-      avatar: c.avatar,
-      category: (c as any).category || "Adventure",
-      members: c.members,
-      activeEvents: c.liveStatus === "Campfire Active" ? 1 : 0,
-      friendsInside: (c as any).invitedFriends ? (c as any).invitedFriends.length : 0,
-      description: (c as any).description || "",
-      energyScore: 75
+      avatar: c.avatar || "⛺",
+      banner: c.cover || "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=300&auto=format&fit=crop",
+      members: c.currentMemberCount || 0,
+      liveStatus: "Active",
+      unreadCount: 0,
+      energyScore: "Active",
+      recentActivity: c.description || "Community joined",
+      upcomingEvent: ""
     }));
-    return [...ALL_COMMUNITIES, ...customNodes];
-  }, [customCommunities]);
+  }, [myCommunities]);
+
+  const allGalaxyNodes = useMemo(() => {
+    if (galaxyData) {
+      // Map real backend galaxy clusters to frontend nodes
+      const realNodes: CommunityNode[] = [];
+      Object.values(galaxyData).forEach((cluster: any) => {
+        cluster.forEach((c: any) => {
+          realNodes.push({
+            id: c.id,
+            name: c.name,
+            avatar: c.avatar || "🌌",
+            category: c.primaryCategory?.name || "Adventure",
+            members: c.currentMemberCount || 0,
+            activeEvents: c.isLive ? 1 : 0,
+            friendsInside: c.onlineMemberCount || 0,
+            description: c.description || "",
+            energyScore: c.isLive ? 100 : 75
+          });
+        });
+      });
+      return realNodes;
+    }
+
+    return [];
+  }, [galaxyData]);
 
   const getCommunityWallpaper = (node: CommunityNode) => {
     if (node.avatar && (node.avatar.startsWith("http") || node.avatar.startsWith("data:"))) {
@@ -600,11 +558,7 @@ export default function CommunitiesPage() {
   }, [companionOrbitNodes, selectedExplorer]);
 
   // Selected filters (up to 3 categories). Default to first 3.
-  const [selectedClusters, setSelectedClusters] = useState<string[]>([
-    "c-adventure",
-    "c-food",
-    "c-storytelling"
-  ]);
+  // Using Redux state: selectedClusters
 
   // Active shape preset name mapping per category metadata id
   const [clusterShapes, setClusterShapes] = useState<Record<string, string>>({
@@ -652,14 +606,14 @@ export default function CommunitiesPage() {
         triggerToast("At least one category must be selected.");
         return;
       }
-      setSelectedClusters(prev => prev.filter(c => c !== id));
+      dispatch(toggleClusterSelection(id));
       setFocusedClusterIndex(0);
     } else {
       if (selectedClusters.length >= 3) {
         triggerToast("Maximum 3 clusters can be explored simultaneously.");
         return;
       }
-      setSelectedClusters(prev => [...prev, id]);
+      dispatch(toggleClusterSelection(id));
     }
   };
 
@@ -957,7 +911,7 @@ export default function CommunitiesPage() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <h3 className="text-xs font-black uppercase tracking-widest text-brand-purple flex items-center gap-1.5">
-              <Plus className="h-3.5 w-3.5 text-brand-purple" /> My Created Coordinates ({customCommunities.length})
+              <Plus className="h-3.5 w-3.5 text-brand-purple" /> My Created Coordinates ({myCommunities?.length || 0})
             </h3>
             <span className="text-[8px] font-mono text-zinc-500">
               Coordinates you established and manage
@@ -965,7 +919,7 @@ export default function CommunitiesPage() {
           </div>
 
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
-            {customCommunities.map((item, index) => {
+            {allDockCommunities.map((item: any, index: number) => {
               const isActive = item.liveStatus === "Campfire Active" || item.liveStatus === "Event Live" || item.liveStatus === "Active Now";
               return (
                 <div
@@ -1035,7 +989,7 @@ export default function CommunitiesPage() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <h3 className="text-xs font-black uppercase tracking-widest text-brand-cyan flex items-center gap-1.5">
-              <Compass className="h-3.5 w-3.5 text-brand-cyan" /> Saved Communities ({joinedCommunities.length})
+                  <Compass className="h-3.5 w-3.5 text-brand-cyan" /> Saved Communities ({allDockCommunities.length})
             </h3>
             <span className="text-[8px] font-mono text-zinc-500">
               Communities you joined and explore
@@ -1043,7 +997,7 @@ export default function CommunitiesPage() {
           </div>
 
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
-            {joinedCommunities.map((item, index) => {
+            {allDockCommunities.map((item: any, index: number) => {
               const isActive = item.liveStatus === "Campfire Active" || item.liveStatus === "Event Live" || item.liveStatus === "Active Now";
               return (
                 <div

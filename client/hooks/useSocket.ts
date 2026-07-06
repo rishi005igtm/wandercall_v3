@@ -12,6 +12,7 @@ import {
 } from '@/lib/store/slices/chatSlice';
 import { useQueryClient } from '@tanstack/react-query';
 import { CHAT_QUERY_KEYS } from './api/useChat';
+import { QUERY_KEYS } from '../lib/api/queryKeys';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
 
@@ -153,6 +154,13 @@ export function useSocket() {
     // ── Presence ───────────────────────────────────────────
     socket.on('presence:change', ({ userId, status, lastSeen }: any) => {
       dispatch(updatePresence({ userId, status, lastSeen }));
+    });
+
+    // ── Community ──────────────────────────────────────────
+    socket.on('COMMUNITY_LIVE_STATE_CHANGED', ({ communityId, isLive, onlineMemberCount }: any) => {
+      // Invalidate all community queries to refetch live stats
+      // Or we can manually optimistically update them here
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
     });
 
     return () => {

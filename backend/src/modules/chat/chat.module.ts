@@ -64,6 +64,6 @@ import { PrivacyModule } from '../privacy/privacy.module';
     // Socket Gateway
     ChatGateway,
   ],
-  exports: [ChatService, PresenceService, ChatEventDispatcher],
+  exports: [ChatService, PresenceService, ChatEventDispatcher, ChatGateway],
 })
 export class ChatModule {}

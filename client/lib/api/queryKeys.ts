@@ -20,7 +20,13 @@ export const QUERY_KEYS = {
   },
   COMMUNITIES: {
     ALL: ['communities'] as const,
-    DETAIL: (id: string) => ['communities', id] as const,
+    DETAIL: (slug: string) => ['communities', 'detail', slug] as const,
+    SETTINGS: (id: string) => ['communities', 'settings', id] as const,
+    SEARCH: (query: string) => ['communities', 'search', query] as const,
+    GALAXY: (categoryId?: string) => ['communities', 'galaxy', { categoryId }] as const,
+    CATEGORIES: ['communities', 'categories'] as const,
+    COORDINATES: (categoryId?: string) => ['communities', 'coordinates', { categoryId }] as const,
+    MEMBERS: (communityId: string, query?: string) => ['communities', 'members', communityId, { query }] as const,
   },
   BOOKINGS: {
     USER: ['bookings', 'user'] as const,

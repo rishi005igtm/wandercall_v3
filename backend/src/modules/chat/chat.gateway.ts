@@ -102,6 +102,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     });
 
     this.logger.log(`[Connect] socketId=${socket.id} userId=${userId} totalSockets=${this.presenceService.getSocketIds(userId).size}`);
+
+    this.chatEventDispatcher.dispatchUserConnected(userId, socket.id);
   }
 
   handleDisconnect(socket: Socket): void {
@@ -110,6 +112,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     this.presenceService.disconnect(userId, socket.id);
     const isStillOnline = this.presenceService.isOnline(userId);
+    
+    this.chatEventDispatcher.dispatchUserDisconnected(userId, socket.id, isStillOnline);
 
     if (!isStillOnline) {
       const presence = this.presenceService.getPresence(userId);

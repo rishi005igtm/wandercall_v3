@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -20,6 +20,9 @@ import {
 import LocationSearch from "../../../../components/location/LocationSearch";
 import { useAppSelector } from "@/lib/store/store";
 import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
+import { useCreateCommunity, useCategories } from "@/hooks/useCommunity";
+import { useFriends } from "@/hooks/api/useFriends";
+import { httpClient } from "@/lib/api/httpClient";
 
 // Types
 interface Friend {
@@ -41,27 +44,16 @@ interface LocationData {
   longitude: number;
 }
 
-const FRIENDS_LIST: Friend[] = [
-  { id: "orb-1", name: "Sara Khan", username: "sara_k", avatar: "🏔️", sharedDNA: "Explorer", compatibility: 96 },
-  { id: "orb-2", name: "Arjun Mehta", username: "arjun_m", avatar: "🚴", sharedDNA: "Explorer", compatibility: 89 },
-  { id: "orb-3", name: "Divya Kapoor", username: "divya_k", avatar: "📸", sharedDNA: "Creative", compatibility: 84 },
-  { id: "orb-4", name: "Milind Soman", username: "milind_s", avatar: "🏃", sharedDNA: "Explorer", compatibility: 92 },
-  { id: "orb-5", name: "Ananya Rao", username: "ananya_r", avatar: "🍛", sharedDNA: "Socializer", compatibility: 78 },
-  { id: "orb-6", name: "Rohit Kumar", username: "rohit_k", avatar: "🤿", sharedDNA: "Explorer", compatibility: 95 },
-  { id: "orb-7", name: "Zoe Chen", username: "zoe_c", avatar: "🎸", sharedDNA: "Socializer", compatibility: 73 },
-  { id: "orb-8", name: "Kabir Singh", username: "kabir_s", avatar: "🪨", sharedDNA: "Creative", compatibility: 81 }
-];
-
-const CATEGORIES = [
-  { id: "Adventure", name: "Adventure", icon: "🏔️", color: "from-cyan-500 to-blue-500", glow: "rgba(6, 182, 212, 0.4)", stroke: "stroke-brand-cyan", border: "border-brand-cyan/30", text: "text-brand-cyan" },
-  { id: "Food", name: "Food & Eats", icon: "🍛", color: "from-purple-500 to-indigo-500", glow: "rgba(139, 92, 246, 0.4)", stroke: "stroke-brand-purple", border: "border-brand-purple/30", text: "text-brand-purple" },
-  { id: "Photography", name: "Photography", icon: "📸", color: "from-emerald-500 to-teal-500", glow: "rgba(16, 185, 129, 0.4)", stroke: "stroke-brand-emerald", border: "border-brand-emerald/30", text: "text-brand-emerald" },
-  { id: "Storytelling", name: "Storytelling", icon: "🖋️", color: "from-amber-500 to-orange-500", glow: "rgba(245, 158, 11, 0.4)", stroke: "stroke-brand-amber", border: "border-brand-amber/30", text: "text-brand-amber" },
-  { id: "Travel", name: "Travel & Nomads", icon: "✈️", color: "from-rose-500 to-pink-500", glow: "rgba(244, 63, 94, 0.4)", stroke: "stroke-rose-500", border: "border-rose-500/30", text: "text-rose-500" },
-  { id: "Fitness", name: "Fitness & Runs", icon: "🚴", color: "from-blue-500 to-cyan-500", glow: "rgba(59, 130, 246, 0.4)", stroke: "stroke-blue-500", border: "border-blue-500/30", text: "text-blue-500" },
-  { id: "Learning", name: "Learning & Craft", icon: "🎒", color: "from-orange-500 to-red-500", glow: "rgba(249, 115, 22, 0.4)", stroke: "stroke-orange-500", border: "border-orange-500/30", text: "text-orange-500" },
-  { id: "Nightlife", name: "Nightlife", icon: "🌌", color: "from-pink-500 to-purple-500", glow: "rgba(236, 72, 153, 0.4)", stroke: "stroke-pink-500", border: "border-pink-500/30", text: "text-pink-500" }
-];
+const CATEGORY_STYLES: Record<string, any> = {
+  "Adventure": { icon: "🏔️", color: "from-cyan-500 to-blue-500", glow: "rgba(6, 182, 212, 0.4)", stroke: "stroke-brand-cyan", border: "border-brand-cyan/30", text: "text-brand-cyan" },
+  "Food & Eats": { icon: "🍛", color: "from-purple-500 to-indigo-500", glow: "rgba(139, 92, 246, 0.4)", stroke: "stroke-brand-purple", border: "border-brand-purple/30", text: "text-brand-purple" },
+  "Photography": { icon: "📸", color: "from-emerald-500 to-teal-500", glow: "rgba(16, 185, 129, 0.4)", stroke: "stroke-brand-emerald", border: "border-brand-emerald/30", text: "text-brand-emerald" },
+  "Storytelling": { icon: "🖋️", color: "from-amber-500 to-orange-500", glow: "rgba(245, 158, 11, 0.4)", stroke: "stroke-brand-amber", border: "border-brand-amber/30", text: "text-brand-amber" },
+  "Travel & Nomads": { icon: "✈️", color: "from-rose-500 to-pink-500", glow: "rgba(244, 63, 94, 0.4)", stroke: "stroke-rose-500", border: "border-rose-500/30", text: "text-rose-500" },
+  "Fitness & Runs": { icon: "🚴", color: "from-blue-500 to-cyan-500", glow: "rgba(59, 130, 246, 0.4)", stroke: "stroke-blue-500", border: "border-blue-500/30", text: "text-blue-500" },
+  "Learning & Craft": { icon: "🎒", color: "from-orange-500 to-red-500", glow: "rgba(249, 115, 22, 0.4)", stroke: "stroke-orange-500", border: "border-orange-500/30", text: "text-orange-500" },
+  "Nightlife": { icon: "🌌", color: "from-pink-500 to-purple-500", glow: "rgba(236, 72, 153, 0.4)", stroke: "stroke-pink-500", border: "border-pink-500/30", text: "text-pink-500" }
+};
 
 const TEMPLATE_WALLPAPERS = [
   { name: "Mountain Ridge", url: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=600&auto=format&fit=crop" },
@@ -78,6 +70,41 @@ export default function CreateCommunityPage() {
   const authState = useAppSelector((state) => state.auth);
   const { data: currentUser } = useCurrentUserQuery(authState.isAuthenticated);
   const displayName = currentUser?.displayName || authState.name || "Explorer";
+  const avatarUrl = currentUser?.avatarUrl;
+  const initial = displayName.trim().charAt(0).toUpperCase() || "E";
+  const createCommunity = useCreateCommunity();
+  // Customize States
+  const [invitedFriends, setInvitedFriends] = useState<Friend[]>([]);
+  const [wallpaper, setWallpaper] = useState(TEMPLATE_WALLPAPERS[0].url);
+  const [privacy, setPrivacy] = useState<"Public" | "Private">("Public");
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [friendSearchInput, setFriendSearchInput] = useState("");
+  const [friendSearchQuery, setFriendSearchQuery] = useState("");
+  const [passcode, setPasscode] = useState(["", "", "", "", "", ""]);
+
+  const { data: categoriesData } = useCategories();
+  const { data: friendsData } = useFriends(20, friendSearchQuery);
+
+  const mappedCategories = useMemo(() => {
+    if (!categoriesData) return [];
+    return categoriesData.map((cat: any) => ({
+      id: cat.id,
+      name: cat.name,
+      ...CATEGORY_STYLES[cat.name] || CATEGORY_STYLES["Adventure"]
+    }));
+  }, [categoriesData]);
+
+  const mappedFriends = useMemo(() => {
+    if (!friendsData?.pages) return [];
+    return friendsData.pages.flatMap((page: any) => page.items || []).map((f: any) => ({
+      id: f.userId,
+      name: f.displayName,
+      username: f.username,
+      avatar: f.avatarUrl || "👤",
+      sharedDNA: "Explorer" as const,
+      compatibility: f.compatibility || 85
+    }));
+  }, [friendsData]);
 
   // Wizard state
   const [step, setStep] = useState<1 | 2>(1);
@@ -85,20 +112,17 @@ export default function CreateCommunityPage() {
   // Form states
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Adventure");
+  const [selectedCategory, setSelectedCategory] = useState("");
   
   // Structured Location State
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
-  
-  // Customize States
-  const [invitedFriends, setInvitedFriends] = useState<Friend[]>([]);
-  const [wallpaper, setWallpaper] = useState(TEMPLATE_WALLPAPERS[0].url);
-  const [privacy, setPrivacy] = useState<"Public" | "Private">("Public");
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [friendSearch, setFriendSearch] = useState("");
 
-  // Passcode States & Refs
-  const [passcode, setPasscode] = useState<string[]>(["", "", "", "", "", ""]);
+  useEffect(() => {
+    if (mappedCategories.length > 0 && !selectedCategory) {
+      setSelectedCategory(mappedCategories[0].id);
+    }
+  }, [mappedCategories, selectedCategory]);
+
   const pin1Ref = useRef<HTMLInputElement>(null);
   const pin2Ref = useRef<HTMLInputElement>(null);
   const pin3Ref = useRef<HTMLInputElement>(null);
@@ -113,17 +137,17 @@ export default function CreateCommunityPage() {
   const [validationError, setValidationError] = useState<string | null>(null);
 
   const activeCategoryMeta = useMemo(() => {
-    return CATEGORIES.find(c => c.id === selectedCategory) || CATEGORIES[0];
-  }, [selectedCategory]);
+    return mappedCategories.find((c: any) => c.id === selectedCategory) || mappedCategories[0];
+  }, [selectedCategory, mappedCategories]);
 
   // Filter friends based on search query
   const filteredFriends = useMemo(() => {
-    const query = friendSearch.toLowerCase().trim();
-    if (!query) return FRIENDS_LIST;
-    return FRIENDS_LIST.filter(
-      f => f.name.toLowerCase().includes(query) || f.username.toLowerCase().includes(query)
-    );
-  }, [friendSearch]);
+    return mappedFriends; // The backend already handles the semantic search based on friendSearchQuery
+  }, [mappedFriends]);
+
+  const handleSearchFriends = () => {
+    setFriendSearchQuery(friendSearchInput);
+  };
 
   const handleFriendToggle = (friend: Friend) => {
     if (invitedFriends.some(f => f.id === friend.id)) {
@@ -208,7 +232,7 @@ export default function CreateCommunityPage() {
   };
 
   // Submit Handler
-  const handleCreate = (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) {
@@ -231,53 +255,59 @@ export default function CreateCommunityPage() {
       return;
     }
 
-    // Build JoinedCommunity object to save
-    const newCommunity = {
-      id: `jc-custom-${Date.now()}`,
-      name: title.trim(),
-      avatar: wallpaper,
-      banner: wallpaper,
-      members: invitedFriends.length + 1, // Invited friends + Creator
-      liveStatus: "Idle",
-      unreadCount: 0,
-      energyScore: "Active",
-      recentActivity: `Established by ${displayName} just now`,
-      upcomingEvent: `Gathering at ${selectedLocation.city || "locked"} coordinates (Pending schedule)`,
-      category: selectedCategory,
-      description: description.trim(),
-
-      // Save location data exactly as requested by specifications
-      formatted_address: selectedLocation.formatted_address,
-      country: selectedLocation.country,
-      state: selectedLocation.state,
-      district: selectedLocation.district,
-      city: selectedLocation.city,
-      latitude: selectedLocation.latitude, // numeric
-      longitude: selectedLocation.longitude, // numeric
-
-      // Privacy Settings
-      privacy: privacy,
-      passcode: privacy === "Private" ? passcode.join("") : null,
-
-      // Maintain backward compatibility for pages expecting these structures
-      region: selectedLocation.formatted_address,
-      coordinates: {
-        lat: selectedLocation.latitude,
-        lng: selectedLocation.longitude
-      },
-      invitedFriends: invitedFriends
-    };
+    if (!selectedCategory) {
+      setValidationError("Please select a category.");
+      return;
+    }
 
     try {
-      const stored = localStorage.getItem("wandercall_custom_communities");
-      const list = stored ? JSON.parse(stored) : [];
-      list.push(newCommunity);
-      localStorage.setItem("wandercall_custom_communities", JSON.stringify(list));
-      
-      // Redirect back to Communities dashboard
-      router.push("/profile/community");
-    } catch (err) {
-      setValidationError("Failed to save community. Please try again.");
+      let finalWallpaperUrl = wallpaper;
+
+      // If it's a data URL, we need to upload it via StorageService first
+      if (wallpaper.startsWith("data:image")) {
+        // Convert data URL to Blob
+        const response = await fetch(wallpaper);
+        const blob = await response.blob();
+        const file = new File([blob], "community-wallpaper.jpg", { type: "image/jpeg" });
+        
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        const uploadRes = await httpClient.post("/storage/upload", formData, {
+          headers: { "Content-Type": "multipart/form-data" }
+        });
+        
+        finalWallpaperUrl = uploadRes.data.url;
+      }
+
+      // Build JoinedCommunity object to save
+      const payload = {
+        name: title.trim(),
+        slug: title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        description: description.trim(),
+        primaryCategoryId: selectedCategory, // Use the dynamically fetched UUID
+        visibility: privacy.toUpperCase(),
+        avatar: finalWallpaperUrl,
+        cover: finalWallpaperUrl,
+        invitedUserIds: invitedFriends.map(f => f.id),
+      };
+
+      createCommunity.mutate(payload, {
+        onSuccess: (data: any) => {
+          if (data && data.slug) {
+            router.replace(`/community/${data.slug}`);
+          } else if (data && data.id) {
+            router.replace(`/community/${data.id}`);
+          } else {
+            router.push("/profile/community");
+          }
+        },
+        onError: (err: any) => {
+          setValidationError(err?.response?.data?.message || "Failed to create community");
+        }
+      });
+    } catch (error: any) {
+      setValidationError("Failed to upload image. Please try again.");
     }
   };
 
@@ -383,7 +413,7 @@ export default function CreateCommunityPage() {
                 Focus Category (Ecosystem Cluster Mapping)
               </span>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
-                {CATEGORIES.map(c => {
+                {mappedCategories.map((c: any) => {
                   const isSelected = selectedCategory === c.id;
                   return (
                     <button
@@ -504,17 +534,25 @@ export default function CreateCommunityPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] text-zinc-500 font-black uppercase tracking-wider">Members:</span>
                       <div className="flex -space-x-1.5 overflow-hidden">
-                        <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple border border-zinc-950 text-[9px] font-black flex items-center justify-center select-none text-white shrink-0">
-                          R
+                        <div className="h-5 w-5 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple border border-zinc-950 text-[9px] font-black flex items-center justify-center select-none text-white shrink-0 overflow-hidden">
+                          {avatarUrl ? (
+                            <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                          ) : (
+                            initial
+                          )}
                         </div>
                         {invitedFriends.length + 1 <= 8 ? (
                           invitedFriends.map(f => (
                             <div
                               key={f.id}
-                              className="h-5 w-5 rounded-full bg-zinc-900 border border-zinc-950 text-[9px] flex items-center justify-center select-none shadow-md shrink-0"
+                              className="h-5 w-5 rounded-full bg-zinc-900 border border-zinc-950 text-[9px] flex items-center justify-center select-none shadow-md shrink-0 overflow-hidden"
                               title={f.name}
                             >
-                              {f.avatar}
+                              {f.avatar.startsWith('http') || f.avatar.startsWith('data:') ? (
+                                <img src={f.avatar} alt={f.name} className="h-full w-full object-cover" />
+                              ) : (
+                                f.avatar
+                              )}
                             </div>
                           ))
                         ) : (
@@ -522,10 +560,14 @@ export default function CreateCommunityPage() {
                             {invitedFriends.slice(0, 7).map(f => (
                               <div
                                 key={f.id}
-                                className="h-5 w-5 rounded-full bg-zinc-900 border border-zinc-950 text-[9px] flex items-center justify-center select-none shadow-md shrink-0"
+                                className="h-5 w-5 rounded-full bg-zinc-900 border border-zinc-950 text-[9px] flex items-center justify-center select-none shadow-md shrink-0 overflow-hidden"
                                 title={f.name}
                               >
-                                {f.avatar}
+                                {f.avatar.startsWith('http') || f.avatar.startsWith('data:') ? (
+                                  <img src={f.avatar} alt={f.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  f.avatar
+                                )}
                               </div>
                             ))}
                             <div
@@ -605,7 +647,7 @@ export default function CreateCommunityPage() {
               {/* Heading */}
               <div className="flex flex-col gap-1.5">
                 <span className="text-[10px] font-black uppercase tracking-wider text-brand-cyan">
-                  {selectedCategory} Cluster • {selectedLocation?.city || "Locked"}
+                  {(activeCategoryMeta?.name || "ADVENTURE").toUpperCase()} CLUSTER &bull; {selectedLocation?.city.toUpperCase() || "LOCATION"}
                 </span>
                 <h1 className="text-xl font-black uppercase tracking-tight flex items-center gap-2 text-white">
                   Customize & Invite
@@ -701,15 +743,25 @@ export default function CreateCommunityPage() {
                         Select friends from your active explorer circles.
                       </p>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-950 border border-white/10 rounded-lg w-full sm:max-w-[200px]">
-                      <Search className="h-3.5 w-3.5 text-zinc-500" />
+                    <div className="flex items-center gap-2 px-2 py-1 bg-zinc-950 border border-white/10 rounded-lg w-full sm:max-w-[250px]">
+                      <Search className="h-3.5 w-3.5 text-zinc-500 ml-1" />
                       <input
                         type="text"
                         placeholder="Search friends..."
-                        value={friendSearch}
-                        onChange={(e) => setFriendSearch(e.target.value)}
-                        className="bg-transparent border-none outline-none text-[11px] text-white placeholder-zinc-500 w-full font-semibold"
+                        value={friendSearchInput}
+                        onChange={(e) => setFriendSearchInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSearchFriends();
+                        }}
+                        className="bg-transparent border-none outline-none text-[11px] text-white placeholder-zinc-500 w-full font-semibold px-1"
                       />
+                      <button 
+                        type="button" 
+                        onClick={handleSearchFriends}
+                        className="bg-brand-purple/20 text-brand-purple hover:bg-brand-purple/30 text-[10px] px-2 py-1 rounded font-bold transition-colors"
+                      >
+                        Search
+                      </button>
                     </div>
                   </div>
 
@@ -733,7 +785,13 @@ export default function CreateCommunityPage() {
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <span className="text-sm shrink-0 select-none">{friend.avatar}</span>
+                              <div className="h-8 w-8 rounded-full overflow-hidden bg-zinc-800 flex items-center justify-center shrink-0 border border-white/10 text-xs">
+                                {friend.avatar.startsWith('http') || friend.avatar.startsWith('data:') ? (
+                                  <img src={friend.avatar} alt={friend.name} className="h-full w-full object-cover" />
+                                ) : (
+                                  friend.avatar
+                                )}
+                              </div>
                               <div className="flex flex-col min-w-0 leading-tight">
                                 <span className="text-[11px] font-bold text-white truncate">{friend.name}</span>
                                 <span className="text-[8.5px] text-zinc-500 font-mono">@{friend.username}</span>

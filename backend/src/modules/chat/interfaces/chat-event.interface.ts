@@ -15,7 +15,9 @@ export type ChatEvent =
   | MessageReadEvent
   | MessageEditedEvent
   | MessageDeletedEvent
-  | ConversationCreatedEvent;
+  | ConversationCreatedEvent
+  | UserConnectedEvent
+  | UserDisconnectedEvent;
 
 export interface MessageCreatedEvent {
   type: 'MESSAGE_CREATED';
@@ -72,5 +74,22 @@ export interface ConversationCreatedEvent {
   payload: {
     conversation: ConversationEntity;
     participantIds: string[];
+  };
+}
+
+export interface UserConnectedEvent {
+  type: 'USER_CONNECTED';
+  payload: {
+    userId: string;
+    socketId: string;
+  };
+}
+
+export interface UserDisconnectedEvent {
+  type: 'USER_DISCONNECTED';
+  payload: {
+    userId: string;
+    socketId: string;
+    isStillOnline: boolean;
   };
 }

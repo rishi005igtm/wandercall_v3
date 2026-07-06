@@ -42,4 +42,18 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
     this.on(eventType, handler);
     this.logger.debug(`Subscriber registered for ${eventType}`);
   }
+
+  dispatchUserConnected(userId: string, socketId: string) {
+    this.dispatch({
+      type: 'USER_CONNECTED',
+      payload: { userId, socketId }
+    });
+  }
+
+  dispatchUserDisconnected(userId: string, socketId: string, isStillOnline: boolean) {
+    this.dispatch({
+      type: 'USER_DISCONNECTED',
+      payload: { userId, socketId, isStillOnline }
+    });
+  }
 }

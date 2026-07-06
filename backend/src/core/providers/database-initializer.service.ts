@@ -67,6 +67,17 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         this.logger.warn(`Chat integrity migration notice: ${err.message}`);
       }
 
+      // ─────────────────────────────────────────────────────────────────────────
+      // COMMUNITY CATEGORY SEEDING
+      // Seed default categories for Community Galaxy
+      // ─────────────────────────────────────────────────────────────────────────
+      try {
+        await this.seedCommunityCategories();
+        this.logger.log('Enterprise Database: Community categories seeded.');
+      } catch (err: any) {
+        this.logger.warn(`Community category seed notice: ${err.message}`);
+      }
+
       this.logger.log(
         'Enterprise Database Initialization Completed: All tables verified and ready.',
       );
@@ -213,6 +224,27 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       this.logger.log(`Chat migration: Deleted ${deletedCount} duplicate conversations, merged ${mergedCount} messages.`);
     } else {
       this.logger.log('Chat migration: No duplicate conversations found. Database is clean.');
+    }
+  }
+
+  private async seedCommunityCategories(): Promise<void> {
+    const categories = [
+      { id: '11111111-1111-4111-8111-111111111111', name: 'Adventure', slug: 'adventure' },
+      { id: '22222222-2222-4222-8222-222222222222', name: 'Food & Eats', slug: 'food-eats' },
+      { id: '33333333-3333-4333-8333-333333333333', name: 'Photography', slug: 'photography' },
+      { id: '44444444-4444-4444-8444-444444444444', name: 'Storytelling', slug: 'storytelling' },
+      { id: '55555555-5555-4555-8555-555555555555', name: 'Travel & Nomads', slug: 'travel-nomads' },
+      { id: '66666666-6666-4666-8666-666666666666', name: 'Fitness & Runs', slug: 'fitness-runs' },
+      { id: '77777777-7777-4777-8777-777777777777', name: 'Learning & Craft', slug: 'learning-craft' },
+      { id: '88888888-8888-4888-8888-888888888888', name: 'Nightlife', slug: 'nightlife' },
+    ];
+
+    for (const cat of categories) {
+      await this.dataSource.query(`
+        INSERT INTO community_categories (id, name, slug)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (slug) DO UPDATE SET id = EXCLUDED.id
+      `, [cat.id, cat.name, cat.slug]);
     }
   }
 }

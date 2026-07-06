@@ -28,6 +28,19 @@ import { ConversationEntity } from './modules/chat/entities/conversation.entity'
 import { ConversationParticipantEntity } from './modules/chat/entities/conversation-participant.entity';
 import { MessageEntity } from './modules/chat/entities/message.entity';
 
+// Community Platform
+import { CommunityModule } from './modules/community/community.module';
+import { CommunityEntity } from './modules/community/entities/community.entity';
+import { CommunitySettingsEntity } from './modules/community/entities/community-settings.entity';
+import { CommunityCategoryEntity } from './modules/community/entities/community-category.entity';
+import { CommunityCoordinateEntity } from './modules/community/entities/community-coordinate.entity';
+import { CommunitySavedEntity } from './modules/community/entities/community-saved.entity';
+import { CommunityStatisticsEntity } from './modules/community/entities/community-statistics.entity';
+import { CommunityMemberEntity } from './modules/community/entities/community-member.entity';
+import { CommunityRoleEntity } from './modules/community/entities/community-role.entity';
+import { CommunityInviteEntity } from './modules/community/entities/community-invite.entity';
+import { CommunityBanEntity } from './modules/community/entities/community-ban.entity';
+
 @Module({
   imports: [
     AppConfigModule,
@@ -58,6 +71,17 @@ import { MessageEntity } from './modules/chat/entities/message.entity';
             ConversationEntity,
             ConversationParticipantEntity,
             MessageEntity,
+            // Community Platform entities
+            CommunityEntity,
+            CommunitySettingsEntity,
+            CommunityCategoryEntity,
+            CommunityCoordinateEntity,
+            CommunitySavedEntity,
+            CommunityStatisticsEntity,
+            CommunityMemberEntity,
+            CommunityRoleEntity,
+            CommunityInviteEntity,
+            CommunityBanEntity,
           ],
           synchronize: false, // Handled on startup via DatabaseInitializerService
           autoLoadEntities: true,
@@ -80,6 +104,7 @@ import { MessageEntity } from './modules/chat/entities/message.entity';
     PrivacyModule,
     SearchModule,
     ChatModule,
+    CommunityModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],
