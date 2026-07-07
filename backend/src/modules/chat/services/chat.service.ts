@@ -426,6 +426,7 @@ export class ChatService {
       reactions: message.reactions,
       deliveredAt: message.deliveredAt,
       readAt: message.readAt,
+      metadata: message.metadata,
       createdAt: message.createdAt,
       updatedAt: message.updatedAt,
     };

@@ -89,37 +89,59 @@ export const useInviteMember = () => {
 };
 
 export const useKickMember = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ communityId, targetUserId }: { communityId: string, targetUserId: string }) => 
       communityApi.kickMember(communityId, targetUserId),
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['communities', variables.communityId, 'members'] });
+      }
   });
 };
 
 export const useBanMember = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ communityId, targetUserId, reason, permanent, expiresAt }: { communityId: string, targetUserId: string, reason?: string, permanent?: boolean, expiresAt?: string }) => 
       communityApi.banMember(communityId, targetUserId, reason, permanent, expiresAt),
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['communities', variables.communityId, 'members'] });
+      }
   });
 };
 
 export const useMuteMember = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ communityId, targetUserId, durationMinutes }: { communityId: string, targetUserId: string, durationMinutes: number }) => 
       communityApi.muteMember(communityId, targetUserId, durationMinutes),
+      onSuccess: (_, variables) => {
+        queryClient.invalidateQueries({ queryKey: ['communities', variables.communityId, 'members'] });
+      }
   });
 };
 
 export const useTransferOwnership = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ communityId, newOwnerId }: { communityId: string, newOwnerId: string }) => 
       communityApi.transferOwnership(communityId, newOwnerId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
+      queryClient.invalidateQueries({ queryKey: ['communities', variables.communityId] });
+      queryClient.invalidateQueries({ queryKey: ['communities', variables.communityId, 'members'] });
+    }
   });
 };
 
 export const useUpdateRole = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ communityId, targetUserId, roleId }: { communityId: string, targetUserId: string, roleId: string }) => 
       communityApi.updateRole(communityId, targetUserId, roleId),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['communities', variables.communityId, 'members'] });
+    }
   });
 };
 
@@ -128,5 +150,28 @@ export const useSearchCommunityMembers = (communityId: string, query: string = '
     queryKey: QUERY_KEYS.COMMUNITIES.MEMBERS(communityId, query),
     queryFn: () => communityApi.searchMembers(communityId, query, limit),
     enabled: !!communityId,
+  });
+};
+
+export const useAcceptInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => communityApi.acceptInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
+      queryClient.invalidateQueries({ queryKey: ['community', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['communities', 'galaxy'] });
+      queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+    },
+  });
+};
+
+export const useDeclineInvite = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (inviteId: string) => communityApi.declineInvite(inviteId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['chat', 'conversations'] });
+    },
   });
 };

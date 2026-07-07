@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
 import { CommunityVisibility } from '../constants/community.constant';
 
 export class CreateCommunityDto {
@@ -30,6 +30,30 @@ export class CreateCommunityDto {
   @IsUUID()
   @IsOptional()
   coordinateId?: string;
+
+  @IsString()
+  @IsOptional()
+  coordinateName?: string;
+
+  @IsNumber()
+  @IsOptional()
+  latitude?: number;
+
+  @IsNumber()
+  @IsOptional()
+  longitude?: number;
+
+  @IsString()
+  @IsOptional()
+  city?: string;
+
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @IsString()
+  @IsOptional()
+  region?: string;
 
   @IsString()
   @IsOptional()

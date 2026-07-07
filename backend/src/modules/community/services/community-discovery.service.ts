@@ -62,15 +62,10 @@ export class CommunityDiscoveryService {
 
     const communities = await qb.getMany();
 
-    // Group by coordinate (simulating galaxy clusters) and filter by isLive
+    // Group by coordinate (simulating galaxy clusters)
     const clusters = {};
     for (const community of communities) {
       const liveStats = this.presenceTracker.getCommunityLiveStats(community.id);
-      
-      // Only include communities that are live (>= 2 online members)
-      if (!liveStats.isLive) {
-        continue;
-      }
 
       // Decorate entity with dynamic stats
       (community as any).isLive = liveStats.isLive;

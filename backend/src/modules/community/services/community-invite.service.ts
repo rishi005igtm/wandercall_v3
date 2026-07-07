@@ -8,6 +8,7 @@ import { ChatService } from '../../chat/services/chat.service';
 import { CommunityEventDispatcher } from '../events/community-event.dispatcher';
 import { MessageType } from '../../chat/entities/message.entity';
 import { CommunityInviteStatus } from '../entities/community-invite.entity';
+import { CommunityMembershipService } from './community-membership.service';
 
 @Injectable()
 export class CommunityInviteService {
@@ -17,8 +18,26 @@ export class CommunityInviteService {
     private readonly followRepo: FollowRepository,
     private readonly chatService: ChatService,
     private readonly eventDispatcher: CommunityEventDispatcher,
+    private readonly membershipService: CommunityMembershipService,
     private readonly dataSource: DataSource,
   ) {}
+
+  async createInitialInvites(
+    community: any,
+    senderId: string,
+    invitedUserIds: string[],
+  ): Promise<void> {
+    if (!invitedUserIds || invitedUserIds.length === 0) return;
+    const uniqueIds = [...new Set(invitedUserIds)].filter((id) => id !== senderId);
+
+    for (const targetUserId of uniqueIds) {
+      try {
+        await this.sendInvite(community.id, senderId, targetUserId);
+      } catch (error) {
+        console.warn(`Failed to send initial invite to ${targetUserId}: ${error.message}`);
+      }
+    }
+  }
 
   async sendInvite(communityId: string, senderId: string, targetUserId: string): Promise<void> {
     if (senderId === targetUserId) {
@@ -30,16 +49,6 @@ export class CommunityInviteService {
       throw new NotFoundException('Community not found');
     }
 
-    // Must be mutual friends (Follows each other)
-    const [senderFollowsTarget, targetFollowsSender] = await Promise.all([
-      this.followRepo.findOne(senderId, targetUserId),
-      this.followRepo.findOne(targetUserId, senderId),
-    ]);
-
-    if (!senderFollowsTarget || !targetFollowsSender) {
-      throw new ForbiddenException('You can only invite mutual friends');
-    }
-
     // Check if already invited
     const existingInvite = await this.inviteRepo.findPendingInvite(communityId, targetUserId);
     if (existingInvite) {
@@ -48,7 +57,7 @@ export class CommunityInviteService {
 
     // Create the invite in DB
     const invite = await this.inviteRepo.create({
-      communityId,
+      communityId: community.id,
       senderId,
       receiverId: targetUserId,
       status: CommunityInviteStatus.PENDING,
@@ -58,9 +67,10 @@ export class CommunityInviteService {
     // Send chat message
     const { conversationId } = await this.chatService.getOrCreateDirectConversation(senderId, targetUserId);
     
-    await this.chatService.sendMessage(senderId, {
+    const msg = await this.chatService.sendMessage(senderId, {
       conversationId,
       type: MessageType.COMMUNITY_INVITE,
+      text: `Join ${community.name} - ${community.description?.slice(0, 60) || 'An adventurous community'}...`,
       clientMessageId: randomUUID(),
       metadata: {
         inviteId: invite.id,
@@ -74,6 +84,59 @@ export class CommunityInviteService {
       },
     });
 
+    invite.conversationId = conversationId;
+    invite.messageId = msg.id;
+    await this.inviteRepo.save(invite);
+
     this.eventDispatcher.dispatchMemberInvited(communityId, senderId, targetUserId);
   }
+
+  async acceptInvite(inviteId: string, userId: string): Promise<void> {
+    const invite = await this.inviteRepo.findById(inviteId);
+    if (!invite) {
+      throw new NotFoundException('Invite not found');
+    }
+
+    if (invite.receiverId !== userId) {
+      throw new ForbiddenException('You cannot accept an invite sent to someone else');
+    }
+
+    if (invite.status === CommunityInviteStatus.ACCEPTED) {
+      return; // Idempotent return if already accepted
+    }
+
+    if (invite.status !== CommunityInviteStatus.PENDING) {
+      throw new BadRequestException(`Invite is already ${invite.status.toLowerCase()}`);
+    }
+
+    if (invite.expiresAt && new Date() > invite.expiresAt) {
+      await this.inviteRepo.updateStatus(inviteId, CommunityInviteStatus.EXPIRED);
+      throw new BadRequestException('This invite has expired');
+    }
+
+    // Join community using membership service (which also dispatches JOINED event)
+    await this.membershipService.joinCommunity(invite.communityId, userId);
+
+    // Remove invite from community_invites table upon acceptance as required
+    await this.inviteRepo.delete(invite.id);
+  }
+
+  async declineInvite(inviteId: string, userId: string): Promise<void> {
+    const invite = await this.inviteRepo.findById(inviteId);
+    if (!invite) {
+      throw new NotFoundException('Invite not found');
+    }
+
+    if (invite.receiverId !== userId) {
+      throw new ForbiddenException('You cannot decline an invite sent to someone else');
+    }
+
+    if (invite.status !== CommunityInviteStatus.PENDING) {
+      throw new BadRequestException(`Invite is already ${invite.status.toLowerCase()}`);
+    }
+
+    // Remove invite from community_invites table upon declining as required
+    await this.inviteRepo.delete(invite.id);
+  }
 }
+

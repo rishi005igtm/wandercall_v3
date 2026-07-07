@@ -71,6 +71,18 @@ export const authSlice = createSlice({
     updateAccountStatus: (state, action: PayloadAction<string>) => {
       state.accountStatus = action.payload;
     },
+    updateTokens: (state, action: PayloadAction<{ accessToken: string; refreshToken?: string }>) => {
+      state.accessToken = action.payload.accessToken;
+      if (action.payload.refreshToken) {
+        state.refreshToken = action.payload.refreshToken;
+      }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('wc_access_token', action.payload.accessToken);
+        if (action.payload.refreshToken) {
+          localStorage.setItem('wc_refresh_token', action.payload.refreshToken);
+        }
+      }
+    },
     clearAuthSession: (state) => {
       state.accessToken = null;
       state.refreshToken = null;
@@ -89,5 +101,6 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setAuthReady, setAuthSession, setEmailVerified, updateAccountStatus, clearAuthSession } = authSlice.actions;
+export const { setAuthReady, setAuthSession, setEmailVerified, updateAccountStatus, updateTokens, clearAuthSession } = authSlice.actions;
 export default authSlice.reducer;
+

@@ -10,6 +10,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useChatConversation } from '@/hooks/api/useChatConversation';
 import { useChatInbox, formatMessagePreview, formatInboxTime } from '@/hooks/api/useChatInbox';
 import { useAppSelector } from '@/lib/store/store';
+import { getMessageRenderer } from '@/components/chat/renderers/registry';
 import {
   Users,
   Heart,
@@ -1091,7 +1092,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     {filteredListCompanions.map(friend => {
                       const isSelected = activeFriendId === friend.id;
                       const inbox = getInboxState(friend.id);
-                      const hasUnread = inbox.unreadCount > 0;
+                      const unreadCount = isSelected ? 0 : inbox.unreadCount;
+                      const hasUnread = unreadCount > 0;
                       const isFromMe = inbox.lastMessageSenderId === currentUserId;
                       const preview = inbox.isTyping
                         ? null
@@ -1132,7 +1134,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                 )}
                                 {hasUnread && (
                                   <span className="h-4 min-w-[16px] px-1 rounded-full bg-brand-cyan text-zinc-950 text-[8px] font-black flex items-center justify-center">
-                                    {inbox.unreadCount > 99 ? '99+' : inbox.unreadCount}
+                                    {unreadCount > 99 ? '99+' : unreadCount}
                                   </span>
                                 )}
                               </div>
@@ -1282,20 +1284,25 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       <div className="space-y-3">
                         {realMessages.map((msg: any) => {
                           const isMe = msg.senderId === currentUserId;
+                          const CustomRenderer = getMessageRenderer(msg.type);
 
                           return (
                             <div
                               key={msg.id}
                               className={`flex flex-col max-w-[80%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
                             >
-                              {(msg.type === "text" || msg.type === "TEXT") && (
-                                <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
-                                    ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
-                                    : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
-                                  }`}>
-                                  {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
-                                </div>
-                              )}
+                              {CustomRenderer ? (
+                                <CustomRenderer message={msg} currentUserId={currentUserId} />
+                              ) : (
+                                <>
+                                  {(msg.type === "text" || msg.type === "TEXT") && (
+                                    <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
+                                        ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
+                                        : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
+                                      }`}>
+                                      {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
+                                    </div>
+                                  )}
 
                               {(msg.type === "audio" || msg.type === "AUDIO") && (
                                 <AudioMessagePlayer duration={msg.metadata?.duration ?? "0:30"} />
@@ -1385,6 +1392,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                   </button>
                                 </div>
                               )}
+                            </>
+                          )}
 
                               {/* Message status indicator */}
                               <span className="text-[8px] text-zinc-500 mt-1 font-mono flex items-center gap-1">

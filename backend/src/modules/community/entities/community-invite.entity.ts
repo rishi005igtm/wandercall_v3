@@ -6,6 +6,7 @@ export enum CommunityInviteStatus {
   DECLINED = 'DECLINED',
   EXPIRED = 'EXPIRED',
   REVOKED = 'REVOKED',
+  CANCELED = 'CANCELED',
 }
 
 @Entity('community_invites')
@@ -26,8 +27,24 @@ export class CommunityInviteEntity {
   @Index()
   receiverId: string;
 
+  @Column({ type: 'uuid', nullable: true })
+  @Index()
+  conversationId?: string;
+
+  @Column({ type: 'uuid', nullable: true })
+  messageId?: string;
+
   @Column({ type: 'varchar', length: 20, default: CommunityInviteStatus.PENDING })
   status: CommunityInviteStatus;
+
+  @CreateDateColumn()
+  sentAt: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  acceptedAt?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  declinedAt?: Date;
 
   @Column({ type: 'timestamp', nullable: true })
   expiresAt?: Date;

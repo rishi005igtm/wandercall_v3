@@ -72,13 +72,12 @@ describe('Feed Recommendation & Ranking Suite', () => {
         publishedAt: now,
       });
 
-      const score = rankingEngine.scorePost(
-        freshPost,
-        'viewer-1',
-        { story: 5.0 }, // viewer is highly interested in stories
-        new Set(['user-1']), // viewer follows the author
-        new Set(), // post is unseen
-      );
+      const score = rankingEngine.scorePost(freshPost, {
+        viewerId: 'viewer-1',
+        userInterests: { story: 5.0 },
+        followedCreatorIds: new Set(['user-1']),
+        impressionCounts: {},
+      });
 
       expect(score).toBeGreaterThan(0);
       
@@ -101,13 +100,12 @@ describe('Feed Recommendation & Ranking Suite', () => {
         publishedAt: oldDate,
       });
 
-      const oldScore = rankingEngine.scorePost(
-        oldPost,
-        'viewer-1',
-        { story: 5.0 },
-        new Set(['user-1']),
-        new Set(),
-      );
+      const oldScore = rankingEngine.scorePost(oldPost, {
+        viewerId: 'viewer-1',
+        userInterests: { story: 5.0 },
+        followedCreatorIds: new Set(['user-1']),
+        impressionCounts: {},
+      });
 
       expect(score).toBeGreaterThan(oldScore); // Fresh post should score higher
     });
@@ -129,8 +127,11 @@ describe('Feed Recommendation & Ranking Suite', () => {
         publishedAt: now,
       });
 
-      const unseenScore = rankingEngine.scorePost(post, 'viewer-1', {}, new Set(), new Set());
-      const seenScore = rankingEngine.scorePost(post, 'viewer-1', {}, new Set(), new Set(['post-1']));
+      const unseenScore = rankingEngine.scorePost(post, { viewerId: 'viewer-1' });
+      const seenScore = rankingEngine.scorePost(post, { 
+        viewerId: 'viewer-1',
+        impressionCounts: { 'post-1': 1 }
+      });
 
       expect(seenScore).toBeLessThan(unseenScore);
       expect(seenScore).toBeCloseTo(unseenScore * 0.20); // Penalty is 0.20

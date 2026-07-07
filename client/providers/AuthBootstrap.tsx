@@ -22,10 +22,13 @@ export function AuthBootstrap({ children }: { children: React.ReactNode }) {
 
       try {
         const currentUser = await userService.getCurrentUser();
+        const latestAccessToken = typeof window !== 'undefined' ? localStorage.getItem('wc_access_token') : null;
+        const latestRefreshToken = typeof window !== 'undefined' ? localStorage.getItem('wc_refresh_token') : null;
+
         dispatch(
           setAuthSession({
-            accessToken: accessToken || 'session_active',
-            refreshToken: refreshToken || 'session_active',
+            accessToken: latestAccessToken || accessToken || 'session_active',
+            refreshToken: latestRefreshToken || refreshToken || 'session_active',
             user: {
               id: currentUser.userId,
               email: currentUser.email || `${currentUser.username}@wandercall.io`,

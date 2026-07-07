@@ -1,11 +1,11 @@
 # Graph Report - wandercall_v3  (2026-07-07)
 
 ## Corpus Check
-- 292 files · ~209,188 words
+- 292 files · ~208,730 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1736 nodes · 3892 edges · 85 communities (68 shown, 17 thin omitted)
+- 1730 nodes · 3871 edges · 90 communities (74 shown, 16 thin omitted)
 - Extraction: 100% EXTRACTED · 0% INFERRED · 0% AMBIGUOUS · INFERRED: 7 edges (avg confidence: 0.71)
 - Token cost: 0 input · 0 output
 
@@ -93,7 +93,11 @@
 - [[_COMMUNITY_Community Core Architecture|Community Core Architecture]]
 - [[_COMMUNITY_CommunitySavedEntity|CommunitySavedEntity]]
 - [[_COMMUNITY_page.tsx|page.tsx]]
-- [[_COMMUNITY_user.service.ts|user.service.ts]]
+- [[_COMMUNITY_useChatInbox.ts|useChatInbox.ts]]
+- [[_COMMUNITY_registry.ts|registry.ts]]
+- [[_COMMUNITY_Navbar.tsx|Navbar.tsx]]
+- [[_COMMUNITY_CommunityBanEntity|CommunityBanEntity]]
+- [[_COMMUNITY_communityWizardSlice.ts|communityWizardSlice.ts]]
 - [[_COMMUNITY_community.controller.ts|community.controller.ts]]
 - [[_COMMUNITY_AudioMessagePlayer.tsx|AudioMessagePlayer.tsx]]
 - [[_COMMUNITY_CommunityDashboard|CommunityDashboard]]
@@ -119,21 +123,21 @@
   client/app/profile/friends/[chatId]/page.tsx → client/components/shared/CompanionAvatar.tsx
 - `CompanionAvatar()` --calls--> `getHashColor()`  [INFERRED]
   client/app/profile/friends/page.tsx → client/components/shared/CompanionAvatar.tsx
-- `BookingSummary()` --references--> `react`  [EXTRACTED]
-  client/components/booking/BookingSummary.tsx → client/package.json
+- `UserProfileResponseDto` --references--> `UserRole`  [EXTRACTED]
+  backend/src/modules/user/dto/user-profile-response.dto.ts → backend/src/modules/auth/enums/user-role.enum.ts
 
 ## Import Cycles
 - None detected.
 
-## Communities (85 total, 17 thin omitted)
+## Communities (90 total, 16 thin omitted)
 
 ### Community 0 - "Auth Backend Module"
-Cohesion: 0.11
-Nodes (4): UserSessionEntity, AuthRepository, AuthService, MailService
+Cohesion: 0.05
+Nodes (18): AuthController, AuthResponseDto, AuthUserDto, GoogleAuthRequestDto, LoginRequestDto, RefreshTokenRequestDto, RegisterRequestDto, UserAuthEntity (+10 more)
 
 ### Community 1 - "Client Booking Module"
-Cohesion: 0.07
-Nodes (26): BookingPage(), EXPERIENCES_CATALOG, BookingStepperProps, BookingSummary(), BookingSummaryProps, AvailabilityLegend(), CalendarProps, DateDetailsPanelProps (+18 more)
+Cohesion: 0.08
+Nodes (25): BookingPage(), EXPERIENCES_CATALOG, BookingStepperProps, BookingSummaryProps, AvailabilityLegend(), CalendarProps, DateDetailsPanelProps, TimeSlotModalProps (+17 more)
 
 ### Community 2 - "Backend Package Module"
 Cohesion: 0.05
@@ -156,36 +160,32 @@ Cohesion: 0.32
 Nodes (7): CATEGORY_STYLES, CreateCommunityPage(), Friend, LocationData, TEMPLATE_WALLPAPERS, useCategories(), useCreateCommunity()
 
 ### Community 7 - "User Backend Module"
-Cohesion: 0.11
-Nodes (8): OptionalJwtAuthGuard, UserController, CompleteProfileRequestDto, PublicProfileResponseDto, UpdateProfileRequestDto, UserPlanDto, UserProfileResponseDto, UserSettingsDto
+Cohesion: 0.13
+Nodes (6): UserController, CompleteProfileRequestDto, UpdateProfileRequestDto, UserPlanDto, UserProfileResponseDto, UserSettingsDto
 
 ### Community 8 - "Client Package Module"
-Cohesion: 0.05
-Nodes (42): AudioMessagePlayer(), Achievement, ActiveQuest, LadderStep, LeaderboardUser, QuestsPage(), QuestStory, Region (+34 more)
+Cohesion: 0.06
+Nodes (33): dependencies, axios, framer-motion, lenis, lucide-react, next, react-dom, react-redux (+25 more)
 
 ### Community 9 - "useUserMutations.ts"
-Cohesion: 0.15
-Nodes (17): CompanionAvatarProps, ProfileRenderer(), ProfileRendererProps, RelationshipButton(), RelationshipButtonProps, RelationshipState, useRelationship(), useFollowMutation() (+9 more)
+Cohesion: 0.12
+Nodes (22): ProfilePage(), ExplorerProfilePage(), CompanionAvatarProps, ProfileRenderer(), ProfileRendererProps, RelationshipButton(), RelationshipButtonProps, RelationshipState (+14 more)
 
 ### Community 10 - "Client Feed Module"
 Cohesion: 0.15
 Nodes (20): categories, ExplorerFeedPage(), FeedImageGalleryProps, ImpressionTracker(), UserMemoriesPage(), useCommentMutation(), useCommentsQuery(), useDeletePostMutation() (+12 more)
 
-### Community 11 - "Feed Backend Module"
-Cohesion: 0.08
-Nodes (3): FeedController, FeedQueryDto, PostService
-
 ### Community 12 - "User Backend Module"
-Cohesion: 0.14
-Nodes (7): UserSearchQueryDto, FollowEntity, UserPlanEntity, UserProfileEntity, FollowRepository, UserRepository, RelationshipService
+Cohesion: 0.16
+Nodes (8): UserSearchQueryDto, FollowEntity, UserPlanEntity, UserProfileEntity, UserSettingsEntity, FollowRepository, UserRepository, RelationshipService
 
 ### Community 13 - "Feed Backend Module"
-Cohesion: 0.19
-Nodes (6): AuthModule, FeedImpressionEntity, PostCommentEntity, PostLikeEntity, UserPostStateEntity, FeedModule
+Cohesion: 0.21
+Nodes (7): FeedImpressionEntity, PostCommentEntity, PostLikeEntity, UserAuthorAffinityEntity, UserPostStateEntity, InteractionType, FeedModule
 
 ### Community 14 - "Client Store Module"
-Cohesion: 0.08
-Nodes (24): httpClient, QUERY_KEYS, authSlice, AuthState, initialState, chatSlice, ChatUiState, initialState (+16 more)
+Cohesion: 0.06
+Nodes (34): geistMono, geistSans, metadata, AUTH_ONLY_ROUTES, AuthGuard(), GUEST_ONLY_ROUTES, InviteModal(), InviteModalProps (+26 more)
 
 ### Community 15 - "Backend Package Module"
 Cohesion: 0.07
@@ -196,52 +196,52 @@ Cohesion: 0.05
 Nodes (33): CampfireRoom, CompanionAvatar(), CompanionAvatarProps, FloatingEmoji, INITIAL_CAMPFIRES, INITIAL_HOSTED_ROOMS, Listener, Speaker (+25 more)
 
 ### Community 17 - "Feed Backend Module"
-Cohesion: 0.13
-Nodes (5): PostSaveEntity, UserAuthorAffinityEntity, UserInterestEntity, InteractionRepository, InterestEngine
+Cohesion: 0.14
+Nodes (3): PostSaveEntity, InteractionRepository, InterestEngine
 
 ### Community 18 - "User Backend Module"
 Cohesion: 0.12
-Nodes (4): CommunityEventDispatcher, CommunityGalaxySubscriber, CommunitySearchSubscriber, CommunityStatisticsSubscriber
+Nodes (5): CommunityEventDispatcher, CommunityEvents, CommunityGalaxySubscriber, CommunitySearchSubscriber, CommunityStatisticsSubscriber
 
 ### Community 19 - "Backend Tsconfig Module"
 Cohesion: 0.10
 Nodes (20): compilerOptions, allowSyntheticDefaultImports, baseUrl, declaration, emitDecoratorMetadata, esModuleInterop, experimentalDecorators, forceConsistentCasingInFileNames (+12 more)
 
 ### Community 20 - "User Backend Module"
-Cohesion: 0.16
-Nodes (5): DatabaseInitializerService, CommunityRoleEntity, CommunityRoleRepository, CommunityRoleSeederService, SYSTEM_ROLES
+Cohesion: 0.31
+Nodes (3): DatabaseInitializerService, CommunityRoleSeederService, SYSTEM_ROLES
 
 ### Community 21 - "Client Settings Module"
-Cohesion: 0.15
-Nodes (11): AuthUserDto, GoogleAuthRequestDto, LoginRequestDto, RefreshTokenRequestDto, RegisterRequestDto, UserAuthEntity, AccountStatus, UserRole (+3 more)
+Cohesion: 0.14
+Nodes (5): FeedController, CommentRequestDto, CreatePostRequestDto, FeedQueryDto, UpdatePostRequestDto
 
 ### Community 22 - "store.ts"
-Cohesion: 0.09
-Nodes (6): CommunityStatus, CommunityVisibility, CreateCommunityDto, UpdateCommunityDto, CommunityEntity, CommunityRepository
+Cohesion: 0.11
+Nodes (7): CommunityVisibility, CommunityController, CreateCommunityDto, UpdateCommunityDto, CommunityEntity, CommunityRepository, CommunityService
 
 ### Community 23 - "Client App Module"
-Cohesion: 0.05
-Nodes (59): Companion, CompanionAvatarProps, CompanionProps, DEFAULT_CAMPFIRES, getIcebreakers(), INITIAL_MESSAGES, MobileChatPage(), ACTIVITY_FEED (+51 more)
+Cohesion: 0.14
+Nodes (18): ACTIVITY_FEED, Companion, CompanionAvatarProps, CompanionProps, DEFAULT_CAMPFIRES, FriendsPage(), FriendsPageProps, getIcebreakers() (+10 more)
 
 ### Community 24 - "Client Hooks Module"
-Cohesion: 0.18
-Nodes (4): PrivacyController, PrivacyRelationEntity, PrivacyRepository, PrivacyService
+Cohesion: 0.16
+Nodes (5): JwtAuthGuard, PrivacyController, PrivacyRelationEntity, PrivacyRepository, PrivacyService
 
 ### Community 25 - "Feed Backend Module"
-Cohesion: 0.19
-Nodes (13): RANKING_CONFIG, CreatePostRequestDto, UpdatePostRequestDto, PostAuthorType, PostStatus, PostVisibility, InteractionType, CreatePostParams (+5 more)
+Cohesion: 0.23
+Nodes (10): RANKING_CONFIG, PostAuthorType, PostStatus, PostVisibility, CreatePostParams, UpdatePostParams, RankingEngine, ScoringContext (+2 more)
 
 ### Community 26 - "Backend Src Module"
-Cohesion: 0.20
-Nodes (5): FriendController, FavoriteFriendEntity, FriendModule, FavoriteFriendRepository, FavoriteFriendService
+Cohesion: 0.11
+Nodes (7): FriendController, FavoriteFriendEntity, FriendModule, FavoriteFriendRepository, FavoriteFriendService, FriendService, FollowerPreviewDto
 
 ### Community 28 - "Client App Module"
-Cohesion: 0.12
-Nodes (3): MessageResponseDto, MessageRepository, ChatService
+Cohesion: 0.16
+Nodes (5): MessageResponseDto, MessageEntity, MessageRepository, PaginatedMessages, ChatService
 
 ### Community 29 - "Client Experiences Module"
-Cohesion: 0.12
-Nodes (22): ProfilePage(), ActiveSession, ADVENTURE_CATEGORIES_LIST, ADVENTURE_DNA_DNA_BADGES, INITIAL_SESSIONS, SessionDisplayItem, SETTINGS_SECTIONS, SettingsPage() (+14 more)
+Cohesion: 0.11
+Nodes (31): LoginPage(), ActiveSession, ADVENTURE_CATEGORIES_LIST, ADVENTURE_DNA_DNA_BADGES, INITIAL_SESSIONS, SessionDisplayItem, SETTINGS_SECTIONS, SettingsPage() (+23 more)
 
 ### Community 30 - "Backend Package Module"
 Cohesion: 0.15
@@ -252,15 +252,11 @@ Cohesion: 0.11
 Nodes (17): 1. Data Model & DTOs, 2. Optional Authentication & Relationship State, 3. Caching and Invalidation Strategy, 4. Image Rendering & Fail-safes, Admin, 💻 Client Dev Setup, 🔐 Enterprise Authentication & Multi-Tenant User Session Architecture, Experience Provider (+9 more)
 
 ### Community 32 - "Client App Module"
-Cohesion: 0.09
+Cohesion: 0.10
 Nodes (7): CommunityDiscoveryController, CommunityCategoryEntity, CommunityCoordinateEntity, CommunityCategoryRepository, CommunityCoordinateRepository, CommunityDiscoveryService, CommunityPresenceTracker
 
-### Community 33 - "Client App Module"
-Cohesion: 0.12
-Nodes (3): AuthController, AuthResponseDto, IAuthService
-
 ### Community 34 - "Campfires Client Module"
-Cohesion: 0.17
+Cohesion: 0.18
 Nodes (3): CommunityInviteEntity, CommunityInviteStatus, CommunityInviteRepository
 
 ### Community 35 - "Backend Package Module"
@@ -276,8 +272,8 @@ Cohesion: 0.29
 Nodes (6): author, description, license, name, private, version
 
 ### Community 38 - "community.controller.ts"
-Cohesion: 0.10
-Nodes (8): CurrentUser, AuthUser, CommunityController, GetUser, CommunityMembershipController, CommunityInviteService, CommunityMembershipService, CommunityService
+Cohesion: 0.11
+Nodes (6): CurrentUser, AuthUser, GetUser, CommunityMembershipController, CommunityInviteService, CommunityMembershipService
 
 ### Community 39 - "Client App Module"
 Cohesion: 0.29
@@ -288,12 +284,12 @@ Cohesion: 0.33
 Nodes (5): collection, compilerOptions, deleteOutDir, $schema, sourceRoot
 
 ### Community 41 - "ChatGateway"
-Cohesion: 0.11
-Nodes (5): ChatGateway, MarkReadDto, OpenConversationDto, TypingDto, ChatEventDispatcher
+Cohesion: 0.12
+Nodes (4): ChatGateway, MarkDeliveredDto, OpenConversationDto, ChatEventDispatcher
 
 ### Community 43 - "PostEntity"
-Cohesion: 0.14
-Nodes (3): PostEntity, FeedEventDispatcher, PostRepository
+Cohesion: 0.15
+Nodes (3): PostEntity, FeedEventDispatcher, PostService
 
 ### Community 51 - "📦 Centralized Media Storage Service Architecture"
 Cohesion: 0.14
@@ -324,8 +320,12 @@ Cohesion: 0.22
 Nodes (9): 📁 Database Relationships, 📢 Enterprise Feed & Recommendation Engine Service, 🧩 Future AI & Search Extension Points, 🌊 Infinite Scroll & Stable Cursors, 📐 Module Folder Structure, 🧮 Personalization & Scoring Formula, ⏱️ Post Lifecycle State Machine, 🔐 Security & Publishing Rules (+1 more)
 
 ### Community 58 - "ProfileRenderer.tsx"
-Cohesion: 0.10
-Nodes (4): IPresenceService, PresenceStatus, UserPresence, PresenceService
+Cohesion: 0.18
+Nodes (3): IPresenceService, PresenceStatus, UserPresence
+
+### Community 59 - "PresenceService"
+Cohesion: 0.11
+Nodes (3): ChatController, TypingDto, PresenceService
 
 ### Community 60 - "🏗️ Frontend State Management & Enterprise API Architecture"
 Cohesion: 0.22
@@ -344,32 +344,40 @@ Cohesion: 0.50
 Nodes (4): 1. Domain-Driven Design (DDD) Bounded Contexts, 2. Modular Monolith Evolving into Microservices, 3. Stateless Application & Scalability, 🎯 Architectural Philosophy & Core Principles
 
 ### Community 69 - "ConversationEntity"
-Cohesion: 0.15
-Nodes (9): ConversationResponseDto, ErrorAckDto, ParticipantDto, SendMessageAckDto, ConversationEntity, ConversationType, ConversationParticipantEntity, ConversationCreatedEvent (+1 more)
+Cohesion: 0.10
+Nodes (14): AppModule, AuthModule, ChatModule, ConversationResponseDto, ErrorAckDto, ParticipantDto, SendMessageAckDto, ConversationEntity (+6 more)
 
 ### Community 70 - "useChat.ts"
-Cohesion: 0.23
-Nodes (14): LoginPage(), SignupPage(), useGoogleAuthMutation(), useLoginMutation(), useLogoutMutation(), useResendVerificationMutation(), useSignupMutation(), useVerifyEmailMutation() (+6 more)
+Cohesion: 0.17
+Nodes (12): CHAT_QUERY_KEYS, SendMessageParams, useMessages(), usePresence(), ChatMessage, useChatConversation(), UseChatConversationOptions, chatService (+4 more)
+
+### Community 71 - "page.tsx"
+Cohesion: 0.17
+Nodes (16): Companion, CompanionAvatarProps, CompanionProps, DEFAULT_CAMPFIRES, getIcebreakers(), INITIAL_MESSAGES, MobileChatPage(), useAddFavoriteMutation() (+8 more)
 
 ### Community 72 - "community.service.ts"
-Cohesion: 0.15
-Nodes (6): CommunityMemberEntity, CommunityMemberStatus, CommunityStatisticsEntity, CommunityEvents, CommunityMemberRepository, CommunityStatisticsRepository
+Cohesion: 0.16
+Nodes (6): CommunityModule, CommunityMemberEntity, CommunityMemberStatus, CommunityStatisticsEntity, CommunityMemberRepository, CommunityStatisticsRepository
 
 ### Community 73 - "CommunitySettingsEntity"
-Cohesion: 0.09
-Nodes (11): AppModule, ChatModule, CommunityModule, CommunityBanEntity, CommunitySavedEntity, CommunitySettingsEntity, CommunityBanRepository, CommunitySavedRepository (+3 more)
+Cohesion: 0.19
+Nodes (5): CommunityJoinPolicy, CommunityStatus, UpdateCommunitySettingsDto, CommunitySettingsEntity, CommunitySettingsRepository
+
+### Community 74 - "CommunityRoleEntity"
+Cohesion: 0.15
+Nodes (3): PublicProfileResponseDto, RelationshipResponseDto, FollowService
 
 ### Community 75 - "chat.gateway.ts"
 Cohesion: 0.19
-Nodes (11): SOCKET_EVENTS, MarkDeliveredDto, ChatEvent, IChatEventDispatcher, MessageCreatedEvent, MessageDeletedEvent, MessageDeliveredEvent, MessageEditedEvent (+3 more)
+Nodes (11): SOCKET_EVENTS, MarkReadDto, ChatEvent, IChatEventDispatcher, MessageCreatedEvent, MessageDeletedEvent, MessageDeliveredEvent, MessageEditedEvent (+3 more)
 
 ### Community 76 - "chat.service.ts"
-Cohesion: 0.25
-Nodes (9): REDIS_KEYS, AuthUser, GetUser, AttachmentDto, SendMessageDto, MessageEntity, MessageStatus, MessageType (+1 more)
+Cohesion: 0.31
+Nodes (7): REDIS_KEYS, AuthUser, GetUser, AttachmentDto, SendMessageDto, MessageStatus, MessageType
 
 ### Community 77 - "page.tsx"
-Cohesion: 0.16
-Nodes (9): geistMono, geistSans, metadata, AUTH_ONLY_ROUTES, AuthGuard(), GUEST_ONLY_ROUTES, SmoothScroll(), SmoothScrollProps (+1 more)
+Cohesion: 0.18
+Nodes (10): AudioMessagePlayer(), Achievement, ActiveQuest, LadderStep, LeaderboardUser, QuestsPage(), QuestStory, Region (+2 more)
 
 ### Community 78 - "Community Core Architecture"
 Cohesion: 0.22
@@ -379,33 +387,49 @@ Nodes (8): Community Core Architecture, Entity Relationship Diagram (ERD), Event
 Cohesion: 0.13
 Nodes (9): ExperienceDetail, EXPERIENCES_DATABASE, FAQItem, HostProfile, ReviewComment, StoryBlock, TimelineStop, ExperienceItem (+1 more)
 
+### Community 81 - "useChatInbox.ts"
+Cohesion: 0.33
+Nodes (6): useConversations(), EMPTY_STATE, formatInboxTime(), formatMessagePreview(), FriendInboxState, useChatInbox()
+
+### Community 82 - "registry.ts"
+Cohesion: 0.40
+Nodes (4): getMessageRenderer(), MESSAGE_RENDERER_REGISTRY, MessageRenderer, MessageRendererProps
+
+### Community 83 - "Navbar.tsx"
+Cohesion: 0.50
+Nodes (3): authSlice, AuthState, initialState
+
+### Community 85 - "communityWizardSlice.ts"
+Cohesion: 0.50
+Nodes (3): communityWizardSlice, CommunityWizardState, initialState
+
 ### Community 87 - "community.controller.ts"
-Cohesion: 0.10
-Nodes (10): PrivacyModule, DISCOVERY_CONFIG, SearchController, UserRecommendationCacheEntity, UserSearchHistoryEntity, ExplorerCircleEdge, ExplorerCircleNode, ExplorerCirclesGraphResponse (+2 more)
+Cohesion: 0.09
+Nodes (11): UserInterestEntity, DISCOVERY_CONFIG, SearchController, UserRecommendationCacheEntity, UserSearchHistoryEntity, SearchModule, ExplorerCircleEdge, ExplorerCircleNode (+3 more)
 
 ### Community 95 - "CommunityDashboard"
-Cohesion: 0.06
-Nodes (50): CommunityDashboard(), CommunityNode, ALL_COMMUNITIES, CLUSTER_METADATA, ClusterMeta, CommunitiesPage(), CommunityNode, CommunityTrophy (+42 more)
+Cohesion: 0.07
+Nodes (46): CommunityDashboard(), CommunityNode, ALL_COMMUNITIES, CLUSTER_METADATA, ClusterMeta, CommunitiesPage(), CommunityNode, CommunityTrophy (+38 more)
 
 ## Knowledge Gaps
 - **428 isolated node(s):** `$schema`, `collection`, `sourceRoot`, `deleteOutDir`, `name` (+423 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **17 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `react` connect `Client Package Module` to `Client Booking Module`, `Client App Module`, `useChat.ts`, `CommunityDashboard`?**
-  _High betweenness centrality (0.030) - this node is a cross-community bridge._
-- **Why does `useAppSelector` connect `Client Components Module` to `Client App Module`, `useChat.ts`, `useUserMutations.ts`, `Client Feed Module`, `page.tsx`, `Client Store Module`, `page.tsx`, `Client App Module`, `Client Experiences Module`, `CommunityDashboard`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Why does `BookingSummary()` connect `Client Booking Module` to `Client Package Module`?**
-  _High betweenness centrality (0.018) - this node is a cross-community bridge._
+- **Why does `react` connect `page.tsx` to `Client Package Module`, `Client Experiences Module`, `page.tsx`, `CommunityDashboard`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
+- **Why does `useAppSelector` connect `Client Components Module` to `Client App Module`, `page.tsx`, `useChat.ts`, `useUserMutations.ts`, `Client Feed Module`, `Client Store Module`, `useChatInbox.ts`, `page.tsx`, `Client App Module`, `Client Experiences Module`, `CommunityDashboard`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `InteractionRepository` connect `Feed Backend Module` to `Feed Backend Module`, `User Backend Module`, `Feed Backend Module`, `Client Settings Module`, `user.service.ts`, `Feed Backend Module`, `Feed Backend Module`?**
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
 - **What connects `$schema`, `collection`, `sourceRoot` to the rest of the system?**
   _428 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Auth Backend Module` be split into smaller, more focused modules?**
-  _Cohesion score 0.1066066066066066 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05154639175257732 - nodes in this community are weakly interconnected._
 - **Should `Client Booking Module` be split into smaller, more focused modules?**
-  _Cohesion score 0.07482993197278912 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.07712765957446809 - nodes in this community are weakly interconnected._
 - **Should `Backend Package Module` be split into smaller, more focused modules?**
   _Cohesion score 0.045454545454545456 - nodes in this community are weakly interconnected._

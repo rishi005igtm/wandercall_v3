@@ -150,6 +150,7 @@ export function formatMessagePreview(
     EXPERIENCE_CARD: '🧭 Experience',
     PLAN_CARD: '📅 Adventure Plan',
     CAMPFIRE_INVITE: '🔥 Campfire Invite',
+    COMMUNITY_INVITE: '✨ Community Invite',
     SYSTEM: text ?? '',
   };
 

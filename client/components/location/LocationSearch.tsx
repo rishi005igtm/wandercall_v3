@@ -8,8 +8,9 @@ interface LocationSearchProps {
   onSelect: (location: {
     formatted_address: string;
     country: string;
-    state: string;
-    district: string;
+    state?: string;
+    district?: string;
+    region?: string;
     city: string;
     latitude: number;
     longitude: number;
@@ -70,7 +71,10 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
 
   const handleSelectSuggestion = (item: GeoapifyLocation) => {
     // Apply geocoding fallbacks requested: city -> town -> village -> suburb -> county
-    const city = item.city ?? item.town ?? item.village ?? item.suburb ?? item.county ?? "";
+    const commaIdx = item.formatted.indexOf(",");
+    const primary = commaIdx !== -1 ? item.formatted.substring(0, commaIdx) : item.formatted;
+    const secondary = commaIdx !== -1 ? item.formatted.substring(commaIdx + 1).trim() : "";
+    const city = item.city ?? item.town ?? item.village ?? item.suburb ?? item.county ?? primary;
     const district = item.county ?? "";
 
     const mappedLocation = {
@@ -78,7 +82,8 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
       country: item.country ?? "",
       state: item.state ?? "",
       district: district,
-      city: city,
+      region: secondary || item.country || "",
+      city: city || primary,
       latitude: item.lat,
       longitude: item.lon
     };

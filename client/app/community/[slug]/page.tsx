@@ -49,18 +49,26 @@ import {
   X,
   FileText,
   AlertTriangle,
+  AlertCircle,
   Info,
   Crown,
   Heart,
-  BarChart2
+  BarChart2,
+  Shield,
+  UserMinus,
+  VolumeX,
+  UserCheck
 } from "lucide-react";
 
 // =========================================================================
 // REDUX & NEW COMPONENTS
 // =========================================================================
-import { useAppDispatch } from "@/lib/store/store";
+import { useAppDispatch, useAppSelector } from "@/lib/store/store";
 import { setInviteModalOpen } from "@/lib/store/slices/communityMembershipSlice";
 import InviteModal from "@/components/community/InviteModal";
+import { CommunityMembersModal } from "@/components/community/CommunityMembersModal";
+import { useSocket } from "@/hooks/useSocket";
+import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
 
 // =========================================================================
 // MOCK DATABASE & STATIC METADATA
@@ -68,6 +76,7 @@ import InviteModal from "@/components/community/InviteModal";
 
 interface CommunityNode {
   id: string;
+  slug?: string;
   name: string;
   avatar: string;
   category: string;
@@ -80,12 +89,21 @@ interface CommunityNode {
 
 // =========================================================================
 
-import { useCommunity, useJoinCommunity, useLeaveCommunity, useSearchCommunityMembers } from "@/hooks/useCommunity";
+import { useCommunity, useMyCommunities, useJoinCommunity, useLeaveCommunity, useSearchCommunityMembers, useKickMember, useBanMember, useMuteMember, useTransferOwnership, useUpdateRole } from "@/hooks/useCommunity";
 
 export default function CommunityDashboard() {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const { slug: communityId } = useParams();
+  
+  const currentUserId = useAppSelector(state => state.auth.userId);
+  const kickMutation = useKickMember();
+  const banMutation = useBanMember();
+  const muteMutation = useMuteMember();
+  const transferOwnershipMutation = useTransferOwnership();
+  const updateRoleMutation = useUpdateRole();
+  const [modTargetUser, setModTargetUser] = useState<any>(null);
+  const [membersModalOpen, setMembersModalOpen] = useState(false);
   
   const { data: realCommunity, isLoading: isCommunityLoading } = useCommunity(communityId as string);
 
@@ -127,7 +145,11 @@ export default function CommunityDashboard() {
 
   // States
   const [activeTab, setActiveTab] = useState<string>("Chat");
-  const [isJoined, setIsJoined] = useState<boolean>(true);
+  const { data: myCommunities } = useMyCommunities();
+  const { socket } = useSocket();
+  const { data: currentUser } = useCurrentUserQuery();
+  const [activeCohortUsers, setActiveCohortUsers] = useState<any[]>([]);
+  const [isJoined, setIsJoined] = useState<boolean>(false);
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatInput, setChatInput] = useState<string>("");
@@ -468,6 +490,47 @@ export default function CommunityDashboard() {
     }
   };
 
+  useEffect(() => {
+    if (myCommunities && realCommunity) {
+      const joined = myCommunities.some((c: any) => c.id === realCommunity.id || c.slug === realCommunity.slug);
+      setIsJoined(joined);
+    }
+  }, [myCommunities, realCommunity]);
+
+  const isJoinedRef = useRef(isJoined);
+  useEffect(() => {
+    isJoinedRef.current = isJoined;
+  }, [isJoined]);
+
+  useEffect(() => {
+    if (!realCommunity?.id || !socket || !currentUser?.userId) return;
+    
+    socket.emit('community:join-lobby', { 
+      communityId: realCommunity.id, 
+      user: {
+        userId: currentUser.userId,
+        displayName: currentUser.displayName,
+        username: currentUser.username,
+        avatarUrl: currentUser.avatarUrl,
+        isOwner: realCommunity.ownerId === currentUser.userId,
+        isMember: isJoinedRef.current,
+      }
+    });
+
+    const handleActiveCohort = (data: any) => {
+      if (data.communityId === realCommunity.id) {
+        setActiveCohortUsers(data.activeCohort);
+      }
+    };
+
+    socket.on('community:active-cohort-updated', handleActiveCohort);
+
+    return () => {
+      socket.emit('community:leave-lobby', { communityId: realCommunity.id });
+      socket.off('community:active-cohort-updated', handleActiveCohort);
+    };
+  }, [realCommunity?.id, socket, currentUser?.userId]);
+
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
       setIsCopingLink(true);
@@ -488,14 +551,14 @@ export default function CommunityDashboard() {
   const filteredMembers = useMemo(() => {
     if (!searchFilter) return members;
     const query = searchFilter.toLowerCase();
-    return members.filter(m => m.name.toLowerCase().includes(query) || m.role.toLowerCase().includes(query) || m.dna.toLowerCase().includes(query));
+    return members.filter((m: any) => m.name.toLowerCase().includes(query) || m.role.toLowerCase().includes(query) || m.dna.toLowerCase().includes(query));
   }, [members, searchFilter]);
 
   // Filtered wiki
   const filteredWiki = useMemo(() => {
     if (!searchFilter) return knowledge;
     const query = searchFilter.toLowerCase();
-    return knowledge.filter(k => k.title.toLowerCase().includes(query) || k.category.toLowerCase().includes(query) || k.preview.toLowerCase().includes(query));
+    return knowledge.filter((k: any) => k.title.toLowerCase().includes(query) || k.category.toLowerCase().includes(query) || k.preview.toLowerCase().includes(query));
   }, [knowledge, searchFilter]);
 
   // Navigation Items
@@ -585,7 +648,13 @@ export default function CommunityDashboard() {
                 {community.description}
               </p>
               <div className="flex items-center gap-2 md:gap-3 text-[9px] md:text-[9.5px] font-mono text-zinc-500 mt-1.5 flex-wrap">
-                <span>{community.members.toLocaleString()} Explorers</span>
+                <button 
+                  onClick={() => setMembersModalOpen(true)}
+                  className="hover:text-cyan-400 transition-colors underline decoration-dotted underline-offset-4 cursor-pointer flex items-center gap-1 font-semibold"
+                  title="Manage Members"
+                >
+                  <span>{community.members.toLocaleString()} Explorers</span>
+                </button>
                 <span>•</span>
                 <span className="text-brand-emerald animate-pulse flex items-center gap-1 font-semibold">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-emerald" /> 84 Online
@@ -951,21 +1020,30 @@ export default function CommunityDashboard() {
                           <h3 className="text-xs font-black uppercase tracking-widest text-zinc-400">Explorer Directory</h3>
                           <p className="text-[9px] text-zinc-500 mt-0.5">Active coordinate guides and verified travelers.</p>
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl w-full sm:max-w-[200px]">
-                          <Search className="h-3.5 w-3.5 text-zinc-500" />
-                          <input
-                            type="text"
-                            placeholder="Filter members..."
-                            value={searchFilter}
-                            onChange={(e) => setSearchFilter(e.target.value)}
-                            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
-                          />
+                        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                          <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl w-full sm:max-w-[200px]">
+                            <Search className="h-3.5 w-3.5 text-zinc-500" />
+                            <input
+                              type="text"
+                              placeholder="Filter members..."
+                              value={searchFilter}
+                              onChange={(e) => setSearchFilter(e.target.value)}
+                              className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
+                            />
+                          </div>
+                          <button
+                            onClick={() => setMembersModalOpen(true)}
+                            className="px-3 py-1.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
+                          >
+                            <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                            <span className="hidden sm:inline">Manage</span>
+                          </button>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                        {filteredMembers.map(m => (
-                          <div key={m.id} className="bg-zinc-950/40 border border-white/5 p-4 rounded-3xl flex items-center justify-between gap-4 text-left shadow-lg">
+                        {filteredMembers.map((m: any) => (
+                          <div key={m.id} className="bg-zinc-950/40 border border-white/5 p-4 rounded-3xl flex items-center justify-between gap-4 text-left shadow-lg relative">
                             <div className="flex items-center gap-3 min-w-0">
                               <div className="h-9 w-9 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center font-black text-xs text-white border border-white/10 shrink-0">
                                 {(m.displayName || m.username || '?').charAt(0)}
@@ -984,8 +1062,16 @@ export default function CommunityDashboard() {
                               </div>
                             </div>
 
-                            <div className="flex flex-col text-right shrink-0">
-                              <span className="text-[8px] font-mono text-brand-cyan font-bold">{m.compatibility}% match</span>
+                            <div className="flex flex-col text-right shrink-0 items-end">
+                              {realCommunity?.ownerId === currentUserId && m.userId !== currentUserId && (
+                                <button 
+                                  onClick={(e) => { e.stopPropagation(); setModTargetUser(m); }}
+                                  className="text-red-500/50 hover:text-red-500 transition-colors cursor-pointer mb-1 p-1 hover:bg-white/5 rounded-full"
+                                  title="Moderation Actions"
+                                >
+                                  <AlertCircle className="w-4 h-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => router.push(`/profile/${m.username.replace(/^@/, "")}`)}
                                 className="mt-1.5 px-2.5 py-1 bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-[8.5px] font-black uppercase tracking-wider rounded-lg transition-all"
@@ -1115,23 +1201,27 @@ export default function CommunityDashboard() {
             {/* UPCOMING COMMUNITY CALENDAR SUMMARY */}
             <div className="glass-panel border border-white/5 p-4.5 rounded-3xl flex flex-col gap-3 relative overflow-hidden bg-zinc-950/60 shadow-lg flex-1">
               <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest pb-2 border-b border-white/5">
-                Active Cohorts ({[].length})
+                Active Cohorts ({activeCohortUsers.length})
               </h4>
               <div className="flex flex-col gap-2.5 overflow-y-auto no-scrollbar flex-1">
-                {[].map((f: any) => (
-                  <div key={f.id} className="flex items-center justify-between gap-3 text-xs">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <img src={f.avatar} alt="" className="h-6 w-6 rounded-full object-cover border border-white/10 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-[10px] font-bold text-zinc-200 truncate">{f.name}</p>
-                        <p className="text-[7.5px] text-zinc-500 font-mono truncate">{f.status}</p>
+                {activeCohortUsers.length === 0 ? (
+                  <p className="text-[10px] text-zinc-500 italic p-2 text-center">No active users currently in the lobby.</p>
+                ) : (
+                  activeCohortUsers.map((f: any) => (
+                    <div key={f.id || f.userId} className="flex items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <img src={f.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200"} alt="" className="h-6 w-6 rounded-full object-cover border border-white/10 shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold text-zinc-200 truncate">{f.displayName || f.username}</p>
+                          <p className="text-[7.5px] text-zinc-500 font-mono truncate">{f.roleName || (f.isOwner ? "OWNER" : "MEMBER")} • {f.status}</p>
+                        </div>
                       </div>
+                      <span className="text-[7.5px] font-mono text-brand-cyan shrink-0 bg-brand-cyan/10 px-1.5 py-0.5 rounded border border-brand-cyan/25 font-bold">
+                        LVL {f.level || 1}
+                      </span>
                     </div>
-                    <span className="text-[7.5px] font-mono text-brand-cyan shrink-0 bg-brand-cyan/10 px-1.5 py-0.5 rounded border border-brand-cyan/25 font-bold">
-                      {f.dna}
-                    </span>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
 
               <div className="mt-auto pt-3 border-t border-white/5">
@@ -1543,8 +1633,177 @@ export default function CommunityDashboard() {
         )}
       </AnimatePresence>
 
+      {/* Moderation / Role Management Modal */}
+      <AnimatePresence>
+        {modTargetUser && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none">
+            <div className="absolute inset-0 cursor-default" onClick={() => setModTargetUser(null)} />
+            
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 10 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 10 }}
+              className="glass-panel border border-white/10 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-2xl overflow-hidden flex flex-col text-left gap-5 bg-zinc-950"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+                    <ShieldAlert className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Member Moderation</h3>
+                    <p className="text-[10px] text-zinc-400 font-mono">@{modTargetUser.username}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModTargetUser(null)}
+                  className="p-1.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Role Management Section */}
+                <div className="space-y-2">
+                  <span className="text-[9px] font-mono text-brand-purple font-black uppercase tracking-widest block">Role Assignment</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={() => {
+                        updateRoleMutation.mutate({
+                          communityId: communityId as string,
+                          targetUserId: modTargetUser.userId,
+                          roleId: "ADMIN"
+                        });
+                        setModTargetUser(null);
+                      }}
+                      className="p-3 rounded-2xl bg-brand-purple/10 border border-brand-purple/20 hover:bg-brand-purple/20 text-brand-purple text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-purple/5"
+                    >
+                      <Shield className="w-4 h-4" />
+                      Promote Admin
+                    </button>
+                    <button
+                      onClick={() => {
+                        updateRoleMutation.mutate({
+                          communityId: communityId as string,
+                          targetUserId: modTargetUser.userId,
+                          roleId: "MEMBER"
+                        });
+                        setModTargetUser(null);
+                      }}
+                      className="p-3 rounded-2xl bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <UserCheck className="w-4 h-4" />
+                      Demote Member
+                    </button>
+                  </div>
+                  {realCommunity?.ownerId === currentUserId && (
+                    <button
+                      onClick={() => {
+                        if (confirm(`Are you sure you want to pass ownership of this community to @${modTargetUser.username}? This cannot be undone.`)) {
+                          transferOwnershipMutation.mutate({
+                            communityId: communityId as string,
+                            newOwnerId: modTargetUser.userId
+                          });
+                          setModTargetUser(null);
+                        }
+                      }}
+                      className="w-full mt-1 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/5"
+                    >
+                      <Crown className="w-4 h-4" />
+                      Pass Ownership
+                    </button>
+                  )}
+                </div>
+
+                {/* Punitive Actions Section */}
+                <div className="space-y-2 border-t border-white/10 pt-4">
+                  <span className="text-[9px] font-mono text-red-400 font-black uppercase tracking-widest block">Punitive Moderation</span>
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      onClick={() => {
+                        muteMutation.mutate({
+                          communityId: communityId as string,
+                          targetUserId: modTargetUser.userId,
+                          durationMinutes: 1440
+                        });
+                        setModTargetUser(null);
+                      }}
+                      className="p-3 rounded-2xl bg-zinc-900 border border-white/10 hover:border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between px-4 cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <VolumeX className="w-4 h-4" />
+                        Mute User (24h)
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-500">No Chat/Post</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (confirm(`Remove @${modTargetUser.username} from community?`)) {
+                          kickMutation.mutate({
+                            communityId: communityId as string,
+                            targetUserId: modTargetUser.userId
+                          });
+                          setModTargetUser(null);
+                        }
+                      }}
+                      className="p-3 rounded-2xl bg-zinc-900 border border-white/10 hover:border-red-500/30 text-red-400 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between px-4 cursor-pointer"
+                    >
+                      <span className="flex items-center gap-2">
+                        <UserMinus className="w-4 h-4" />
+                        Remove from Community
+                      </span>
+                      <span className="text-[10px] font-mono text-zinc-500">Kick</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        if (confirm(`Permanently ban @${modTargetUser.username} from this community? They will never be able to re-enter or join again.`)) {
+                          banMutation.mutate({
+                            communityId: communityId as string,
+                            targetUserId: modTargetUser.userId,
+                            reason: "Admin permanent ban"
+                          });
+                          setModTargetUser(null);
+                        }
+                      }}
+                      className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between px-4 cursor-pointer shadow-lg shadow-red-500/5"
+                    >
+                      <span className="flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4" />
+                        Ban Permanently
+                      </span>
+                      <span className="text-[10px] font-mono text-red-400">No Re-entry</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-white/10 mt-1 shrink-0">
+                <button
+                  onClick={() => setModTargetUser(null)}
+                  className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* New Redux Invite Modal */}
       <InviteModal communityId={communityId as string} />
+
+      {/* Community Members Operational Center Modal */}
+      <CommunityMembersModal
+        isOpen={membersModalOpen}
+        onClose={() => setMembersModalOpen(false)}
+        communityId={communityId as string}
+        currentUserRole={realCommunity?.myRole || 'MEMBER'}
+        isOwner={realCommunity?.isOwner || false}
+      />
 
       {/* Toast popup */}
       <AnimatePresence>

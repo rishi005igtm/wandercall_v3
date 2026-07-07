@@ -36,6 +36,11 @@ import { CommunityDiscoveryController } from './controllers/community-discovery.
 import { CommunityMembershipController } from './controllers/community-membership.controller';
 
 import { CommunityPresenceTracker } from './services/community-presence.tracker';
+import { CommunityRoleSeederService } from './services/community-role-seeder.service';
+
+import { CommunityStatisticsSubscriber } from './subscribers/community-statistics.subscriber';
+import { CommunitySearchSubscriber } from './subscribers/community-search.subscriber';
+import { CommunityGalaxySubscriber } from './subscribers/community-galaxy.subscriber';
 
 @Module({
   imports: [
@@ -77,6 +82,10 @@ import { CommunityPresenceTracker } from './services/community-presence.tracker'
     CommunityInviteService,
     CommunityDiscoveryService,
     CommunityPresenceTracker,
+    CommunityRoleSeederService,
+    CommunityStatisticsSubscriber,
+    CommunitySearchSubscriber,
+    CommunityGalaxySubscriber,
   ],
   exports: [
     CommunityRepository,
@@ -95,6 +104,7 @@ import { CommunityPresenceTracker } from './services/community-presence.tracker'
     CommunityInviteService,
     CommunityDiscoveryService,
     CommunityPresenceTracker,
+    CommunityRoleSeederService,
   ],
 })
 export class CommunityModule {}

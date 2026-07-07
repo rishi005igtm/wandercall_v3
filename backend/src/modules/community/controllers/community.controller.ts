@@ -15,6 +15,7 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CommunityService } from '../services/community.service';
 import { CommunityMembershipService } from '../services/community-membership.service';
+import { CommunityInviteService } from '../services/community-invite.service';
 import { CreateCommunityDto } from '../dto/create-community.dto';
 import { UpdateCommunityDto } from '../dto/update-community.dto';
 import { UpdateCommunitySettingsDto } from '../dto/update-community-settings.dto';
@@ -39,6 +40,7 @@ export class CommunityController {
   constructor(
     private readonly communityService: CommunityService,
     private readonly membershipService: CommunityMembershipService,
+    private readonly inviteService: CommunityInviteService,
   ) {}
 
   @Post()
@@ -49,6 +51,16 @@ export class CommunityController {
   @Get('me')
   async getMyCommunities(@GetUser() user: AuthUser) {
     return this.communityService.getUserCommunities(user.userId);
+  }
+
+  @Post('invites/:inviteId/accept')
+  async acceptInvite(@GetUser() user: AuthUser, @Param('inviteId') inviteId: string) {
+    return this.inviteService.acceptInvite(inviteId, user.userId);
+  }
+
+  @Post('invites/:inviteId/decline')
+  async declineInvite(@GetUser() user: AuthUser, @Param('inviteId') inviteId: string) {
+    return this.inviteService.declineInvite(inviteId, user.userId);
   }
 
   @Get(':slug')

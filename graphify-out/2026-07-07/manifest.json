@@ -320,9 +320,9 @@
     "semantic_hash": ""
   },
   "backend/src/modules/feed/services/recommendation.engine.spec.ts": {
-    "mtime": 1783434467.5533726,
-    "ast_hash": "5789cf75188f7cce0be41c197468652c",
-    "semantic_hash": ""
+    "mtime": 1782899601.024523,
+    "ast_hash": "a06cd556c972c2761ed32ae308a4400e",
+    "semantic_hash": "a06cd556c972c2761ed32ae308a4400e"
   },
   "backend/src/modules/feed/services/recommendation.engine.ts": {
     "mtime": 1783106193.7998004,
@@ -1120,8 +1120,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/chat/chat.gateway.ts": {
-    "mtime": 1783433697.938971,
-    "ast_hash": "c10194318b2bc4b089b98af00abbe62d",
+    "mtime": 1783278286.0678012,
+    "ast_hash": "96f58d6d57870419d7dbc1d03ad09a32",
     "semantic_hash": ""
   },
   "backend/src/modules/chat/chat.module.ts": {
@@ -1350,8 +1350,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-invite.service.ts": {
-    "mtime": 1783433631.6379037,
-    "ast_hash": "70171e13c6535124e8617ffaeea9e800",
+    "mtime": 1783431813.3777366,
+    "ast_hash": "d79a4efa019fc7ac709d4f48fda6261b",
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-membership.service.ts": {
@@ -1360,8 +1360,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-presence.tracker.ts": {
-    "mtime": 1783433725.299888,
-    "ast_hash": "c4e75675a42414259cd691e99d095534",
+    "mtime": 1783431859.3717668,
+    "ast_hash": "8f38abf1bbfc97b339d6a0e4443710a7",
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community.service.ts": {
@@ -1370,8 +1370,8 @@
     "semantic_hash": ""
   },
   "client/app/community/[slug]/page.tsx": {
-    "mtime": 1783434526.6108425,
-    "ast_hash": "82d52a131bca8ee10535b8541d66fa28",
+    "mtime": 1783431958.4658473,
+    "ast_hash": "79f4f6106fdbb6a96eed3630b08dc150",
     "semantic_hash": ""
   },
   "client/components/community/InviteModal.tsx": {
@@ -1445,8 +1445,8 @@
     "semantic_hash": ""
   },
   "client/providers/SocketProvider.tsx": {
-    "mtime": 1783434334.1834521,
-    "ast_hash": "654e57e4870457cef42e45d9b09a51d2",
+    "mtime": 1783431931.369067,
+    "ast_hash": "b3020ff5d0af2db770913a0a9062713e",
     "semantic_hash": ""
   },
   "backend/src/modules/community/COMMUNITY_ARCHITECTURE.md": {
@@ -1470,13 +1470,13 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/subscribers/community-statistics.subscriber.ts": {
-    "mtime": 1783433599.667571,
-    "ast_hash": "4954226a73fe516702ee8a8d538e99ed",
+    "mtime": 1783427563.204769,
+    "ast_hash": "5fdf40895c2c667afce7a9c37f613bfc",
     "semantic_hash": ""
   },
   "client/components/chat/renderers/CommunityInviteRenderer.tsx": {
-    "mtime": 1783434243.267229,
-    "ast_hash": "377e970a69780b565a5d5932d6203827",
+    "mtime": 1783429929.224501,
+    "ast_hash": "253359298ca40b87b591aca7b2d432a7",
     "semantic_hash": ""
   },
   "client/components/chat/renderers/registry.ts": {

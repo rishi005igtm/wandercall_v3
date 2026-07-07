@@ -157,6 +157,12 @@ export class UserSearchService {
     userId: string,
     dto: UserSearchQueryDto,
   ): Promise<{ items: any[]; nextCursor?: string }> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(communityId);
+    if (!isUuid) {
+      const comm = await this.dataSource.getRepository('communities').findOne({ where: { slug: communityId }, select: ['id'] });
+      if (!comm) return { items: [] };
+      communityId = comm.id;
+    }
     const searchQuery = (dto.q || dto.query || '').trim().toLowerCase();
     const limit = Number(dto.limit) || 20;
     const offset = dto.cursor ? parseInt(dto.cursor, 10) || 0 : 0;

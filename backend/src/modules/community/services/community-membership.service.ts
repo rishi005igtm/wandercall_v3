@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, ForbiddenException, Injectable,
 import { DataSource } from 'typeorm';
 import { CommunityEntity } from '../entities/community.entity';
 import { CommunityMemberEntity, CommunityMemberStatus } from '../entities/community-member.entity';
+import { CommunityStatisticsEntity } from '../entities/community-statistics.entity';
 import { CommunityRepository } from '../repositories/community.repository';
 import { CommunityMemberRepository } from '../repositories/community-member.repository';
 import { CommunityBanRepository } from '../repositories/community-ban.repository';
@@ -21,7 +22,14 @@ export class CommunityMembershipService {
     private readonly dataSource: DataSource,
   ) {}
 
+  private async resolveCommunityId(communityIdOrSlug: string): Promise<string> {
+    const id = await this.communityRepo.resolveId(communityIdOrSlug);
+    if (!id) throw new NotFoundException('Community not found');
+    return id;
+  }
+
   async joinCommunity(communityId: string, userId: string): Promise<CommunityMemberEntity> {
+    communityId = await this.resolveCommunityId(communityId);
     return this.dataSource.transaction(async manager => {
       const community = await manager.findOne(CommunityEntity, { where: { id: communityId }, lock: { mode: 'pessimistic_write' } });
       if (!community) {
@@ -66,6 +74,7 @@ export class CommunityMembershipService {
 
       community.currentMemberCount += 1;
       await manager.save(community);
+      await manager.update(CommunityStatisticsEntity, { communityId }, { memberCount: community.currentMemberCount });
 
       this.eventDispatcher.dispatchJoined(communityId, userId);
       return member;
@@ -73,6 +82,7 @@ export class CommunityMembershipService {
   }
 
   async leaveCommunity(communityId: string, userId: string): Promise<void> {
+    communityId = await this.resolveCommunityId(communityId);
     return this.dataSource.transaction(async manager => {
       const community = await manager.findOne(CommunityEntity, { where: { id: communityId }, lock: { mode: 'pessimistic_write' } });
       if (!community) {
@@ -93,12 +103,14 @@ export class CommunityMembershipService {
 
       community.currentMemberCount = Math.max(0, community.currentMemberCount - 1);
       await manager.save(community);
+      await manager.update(CommunityStatisticsEntity, { communityId }, { memberCount: community.currentMemberCount });
 
       this.eventDispatcher.dispatchLeft(communityId, userId);
     });
   }
 
   async kickMember(communityId: string, requesterId: string, targetUserId: string): Promise<void> {
+    communityId = await this.resolveCommunityId(communityId);
     return this.dataSource.transaction(async manager => {
       const requester = await manager.findOne(CommunityMemberEntity, { where: { communityId, userId: requesterId, status: CommunityMemberStatus.ACTIVE } });
       if (!requester) {
@@ -127,6 +139,7 @@ export class CommunityMembershipService {
       if (community) {
         community.currentMemberCount = Math.max(0, community.currentMemberCount - 1);
         await manager.save(community);
+        await manager.update(CommunityStatisticsEntity, { communityId }, { memberCount: community.currentMemberCount });
       }
 
       this.eventDispatcher.dispatchMemberKicked(communityId, targetUserId, requesterId);
@@ -134,6 +147,7 @@ export class CommunityMembershipService {
   }
 
   async banMember(communityId: string, requesterId: string, targetUserId: string, reason?: string, permanent: boolean = true, expiresAt?: Date): Promise<void> {
+    communityId = await this.resolveCommunityId(communityId);
     return this.dataSource.transaction(async manager => {
       const requester = await manager.findOne(CommunityMemberEntity, { where: { communityId, userId: requesterId, status: CommunityMemberStatus.ACTIVE } });
       if (!requester) {
@@ -158,6 +172,7 @@ export class CommunityMembershipService {
         if (community) {
           community.currentMemberCount = Math.max(0, community.currentMemberCount - 1);
           await manager.save(community);
+          await manager.update(CommunityStatisticsEntity, { communityId }, { memberCount: community.currentMemberCount });
         }
       }
 
@@ -175,6 +190,7 @@ export class CommunityMembershipService {
   }
 
   async muteMember(communityId: string, requesterId: string, targetUserId: string, durationMinutes: number): Promise<void> {
+    communityId = await this.resolveCommunityId(communityId);
     const requester = await this.memberRepo.findByUserAndCommunity(requesterId, communityId);
     if (!requester || requester.status !== CommunityMemberStatus.ACTIVE) {
       throw new ForbiddenException('You are not an active member');
@@ -203,6 +219,7 @@ export class CommunityMembershipService {
   }
 
   async transferOwnership(communityId: string, currentOwnerId: string, newOwnerId: string): Promise<void> {
+    communityId = await this.resolveCommunityId(communityId);
     if (currentOwnerId === newOwnerId) {
       throw new BadRequestException('Cannot transfer ownership to yourself');
     }
@@ -244,6 +261,7 @@ export class CommunityMembershipService {
   }
 
   async updateRole(communityId: string, requesterId: string, targetUserId: string, newRoleId: string): Promise<void> {
+    communityId = await this.resolveCommunityId(communityId);
     const requester = await this.memberRepo.findByUserAndCommunity(requesterId, communityId);
     const target = await this.memberRepo.findByUserAndCommunity(targetUserId, communityId);
 
@@ -260,7 +278,10 @@ export class CommunityMembershipService {
       throw new ForbiddenException('You do not have permission to manage roles');
     }
 
-    const roleToAssign = await this.roleRepo.findById(newRoleId);
+    let roleToAssign = await this.roleRepo.findById(newRoleId);
+    if (!roleToAssign) {
+      roleToAssign = await this.roleRepo.findByName(newRoleId.toUpperCase());
+    }
     if (!roleToAssign) {
       throw new NotFoundException('Role not found');
     }
@@ -268,6 +289,6 @@ export class CommunityMembershipService {
     target.roleId = roleToAssign.id;
     await this.memberRepo.create(target); // save
 
-    this.eventDispatcher.dispatchRoleChanged(communityId, targetUserId, newRoleId, requesterId);
+    this.eventDispatcher.dispatchRoleChanged(communityId, targetUserId, roleToAssign.id, requesterId);
   }
 }

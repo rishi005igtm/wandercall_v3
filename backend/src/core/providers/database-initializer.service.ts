@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
+import { CommunityRoleSeederService } from '../../modules/community/services/community-role-seeder.service';
 
 @Injectable()
 export class DatabaseInitializerService implements OnApplicationBootstrap {
@@ -9,6 +10,7 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
+    private readonly roleSeeder: CommunityRoleSeederService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -76,6 +78,17 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         this.logger.log('Enterprise Database: Community categories seeded.');
       } catch (err: any) {
         this.logger.warn(`Community category seed notice: ${err.message}`);
+      }
+
+      // ─────────────────────────────────────────────────────────────────────────
+      // COMMUNITY ROLE SEEDING
+      // Seed default system roles strictly after synchronize()
+      // ─────────────────────────────────────────────────────────────────────────
+      try {
+        await this.roleSeeder.seedSystemRoles();
+        this.logger.log('Enterprise Database: Community roles seeded.');
+      } catch (err: any) {
+        this.logger.warn(`Community role seed notice: ${err.message}`);
       }
 
       this.logger.log(

@@ -12,6 +12,7 @@ import {
 } from '@/lib/store/slices/chatSlice';
 import { useQueryClient } from '@tanstack/react-query';
 import { CHAT_QUERY_KEYS } from '@/hooks/api/useChat';
+import { QUERY_KEYS } from '@/lib/api/queryKeys';
 import { Message } from '@/lib/services/chat.service';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
@@ -249,6 +250,19 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     socket.on('presence:change', ({ userId, status, lastSeen }: any) => {
       dispatchRef.current(updatePresence({ userId, status, lastSeen }));
+    });
+
+    socket.on('conversation:updated', () => {
+      queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
+    });
+
+    socket.on('COMMUNITY_UPDATED', () => {
+      queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
+      queryClientRef.current.invalidateQueries({ queryKey: ['community', 'me'] });
+    });
+
+    socket.on('COMMUNITY_LIVE_STATE_CHANGED', () => {
+      queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
     });
 
     // Socket is intentionally kept alive across navigation.

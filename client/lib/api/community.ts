@@ -168,6 +168,16 @@ export const communityApi = {
   },
 
   // --- Membership endpoints ---
+  acceptInvite: async (inviteId: string) => {
+    const res = await httpClient.post(`/communities/invites/${inviteId}/accept`);
+    return res.data;
+  },
+
+  declineInvite: async (inviteId: string) => {
+    const res = await httpClient.post(`/communities/invites/${inviteId}/decline`);
+    return res.data;
+  },
+
   inviteMember: async (communityId: string, targetUserId: string) => {
     const res = await httpClient.post(`/communities/${communityId}/members/invite/${targetUserId}`);
     return res.data;

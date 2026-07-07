@@ -1,4 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
+import { store } from '../store/store';
+import { updateTokens, clearAuthSession } from '../store/slices/authSlice';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
 
@@ -41,6 +43,12 @@ httpClient.interceptors.response.use(
             if (data.refreshToken) {
               localStorage.setItem('wc_refresh_token', data.refreshToken);
             }
+            store.dispatch(
+              updateTokens({
+                accessToken: data.accessToken,
+                refreshToken: data.refreshToken || refreshToken,
+              })
+            );
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;
             }
@@ -52,9 +60,11 @@ httpClient.interceptors.response.use(
           localStorage.removeItem('wc_access_token');
           localStorage.removeItem('wc_refresh_token');
         }
+        store.dispatch(clearAuthSession());
       }
     }
 
     return Promise.reject(error);
   }
 );
+

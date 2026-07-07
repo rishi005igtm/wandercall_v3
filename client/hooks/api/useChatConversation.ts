@@ -128,6 +128,25 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
           m.status !== 'DELETED',
       );
 
+    const clearUnreadCache = () => {
+      queryClient.setQueryData(CHAT_QUERY_KEYS.CONVERSATIONS, (old: any) => {
+        if (!old || !Array.isArray(old)) return old;
+        return old.map((conv: any) => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              unreadCount: 0,
+              unreadCounts: {
+                ...(conv.unreadCounts || {}),
+                [currentUserId || '']: 0,
+              },
+            };
+          }
+          return conv;
+        });
+      });
+    };
+
     if (lastUnreadFromOther) {
       // Idempotency guard: only emit once per message per conversation
       if (
@@ -139,15 +158,24 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
       lastMarkedReadIdRef.current = lastUnreadFromOther.id;
       lastMarkedReadConvRef.current = conversationId;
       emit('mark-read', { conversationId, messageId: lastUnreadFromOther.id });
+      clearUnreadCache();
     } else {
       // No unread from other — just clear unread counter if needed
       // Only do this once per conversation open
       if (lastMarkedReadConvRef.current !== conversationId) {
         lastMarkedReadConvRef.current = conversationId;
         emit('mark-read', { conversationId, messageId: '' });
+        clearUnreadCache();
       }
     }
-  }, [conversationId, currentUserId, isConnected, messagesData, emit]);
+  }, [conversationId, currentUserId, isConnected, messagesData, emit, queryClient]);
+
+  // Auto-read when viewing conversation with messages
+  useEffect(() => {
+    if (conversationId && isConnected && messages.length > 0) {
+      markConversationRead();
+    }
+  }, [conversationId, isConnected, messages.length, markConversationRead]);
 
   /**
    * sendTextMessage
@@ -385,8 +413,24 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
     (messageId: string) => {
       if (!conversationId || !messageId || !isConnected) return;
       emit('mark-read', { conversationId, messageId });
+      queryClient.setQueryData(CHAT_QUERY_KEYS.CONVERSATIONS, (old: any) => {
+        if (!old || !Array.isArray(old)) return old;
+        return old.map((conv: any) => {
+          if (conv.id === conversationId) {
+            return {
+              ...conv,
+              unreadCount: 0,
+              unreadCounts: {
+                ...(conv.unreadCounts || {}),
+                [currentUserId || '']: 0,
+              },
+            };
+          }
+          return conv;
+        });
+      });
     },
-    [conversationId, isConnected, emit],
+    [conversationId, isConnected, emit, queryClient, currentUserId],
   );
 
   return {

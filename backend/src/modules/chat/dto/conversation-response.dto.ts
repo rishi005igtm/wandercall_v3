@@ -38,6 +38,7 @@ export class MessageResponseDto {
   reactions?: Record<string, string[]>;
   deliveredAt?: Date;
   readAt?: Date;
+  metadata?: Record<string, any>;
   createdAt: Date;
   updatedAt: Date;
 }

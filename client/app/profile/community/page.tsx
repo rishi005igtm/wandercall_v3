@@ -84,6 +84,7 @@ interface CommunityTrophy {
 
 interface CommunityNode {
   id: string;
+  slug?: string;
   name: string;
   avatar: string;
   category: string;
@@ -935,7 +936,7 @@ export default function CommunitiesPage() {
                     setHoveredDockIndex(null);
                     setHoveredDockRow(null);
                   }}
-                  onClick={() => router.push(`/community/${item.id}`)}
+                  onClick={() => router.push(`/community/${item.slug || item.id}`)}
                 >
                   {/* Radiation waves (subtle & small) */}
                   {isActive && (
@@ -1013,7 +1014,7 @@ export default function CommunitiesPage() {
                     setHoveredDockIndex(null);
                     setHoveredDockRow(null);
                   }}
-                  onClick={() => router.push(`/community/${item.id}`)}
+                  onClick={() => router.push(`/community/${item.slug || item.id}`)}
                 >
                   {/* Avatar block (no container scale, inner scale only, with active border highlight pulse animation) */}
                   <motion.div
@@ -1400,7 +1401,7 @@ export default function CommunitiesPage() {
                                   transition: "transform 1s cubic-bezier(0.4, 0, 0.2, 1)",
                                   transformOrigin: "center"
                                 }}
-                                onClick={() => router.push(`/community/${node.id}`)}
+                                onClick={() => router.push(`/community/${node.slug || node.id}`)}
                                 onMouseEnter={() => setHoveredClusterId(clusterMeta.id)}
                                 onMouseLeave={() => setHoveredClusterId(null)}
                               >

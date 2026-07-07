@@ -25,7 +25,20 @@ export class CommunityInviteRepository {
     });
   }
 
+  async findById(id: string): Promise<CommunityInviteEntity | null> {
+    return this.repo.findOne({ where: { id } });
+  }
+
+  async save(invite: CommunityInviteEntity): Promise<CommunityInviteEntity> {
+    return this.repo.save(invite);
+  }
+
   async updateStatus(id: string, status: CommunityInviteStatus): Promise<void> {
     await this.repo.update(id, { status });
   }
+
+  async delete(id: string): Promise<void> {
+    await this.repo.delete(id);
+  }
 }
+

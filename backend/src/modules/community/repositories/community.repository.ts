@@ -15,12 +15,27 @@ export class CommunityRepository {
     return this.repo.save(community);
   }
 
-  async findById(id: string): Promise<CommunityEntity | null> {
-    return this.repo.findOne({ where: { id } });
+  async findById(idOrSlug: string): Promise<CommunityEntity | null> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    if (isUuid) {
+      return this.repo.findOne({ where: { id: idOrSlug } });
+    }
+    return this.repo.findOne({ where: { slug: idOrSlug } });
   }
 
-  async findBySlug(slug: string): Promise<CommunityEntity | null> {
-    return this.repo.findOne({ where: { slug } });
+  async findBySlug(slugOrId: string): Promise<CommunityEntity | null> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    if (isUuid) {
+      return this.repo.findOne({ where: { id: slugOrId } });
+    }
+    return this.repo.findOne({ where: { slug: slugOrId } });
+  }
+
+  async resolveId(idOrSlug: string): Promise<string | null> {
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    if (isUuid) return idOrSlug;
+    const community = await this.repo.findOne({ where: { slug: idOrSlug }, select: ['id'] });
+    return community ? community.id : null;
   }
 
   async update(id: string, data: Partial<CommunityEntity>): Promise<void> {

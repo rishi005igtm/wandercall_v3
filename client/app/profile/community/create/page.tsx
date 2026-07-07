@@ -37,8 +37,9 @@ interface Friend {
 interface LocationData {
   formatted_address: string;
   country: string;
-  state: string;
-  district: string;
+  state?: string;
+  district?: string;
+  region?: string;
   city: string;
   latitude: number;
   longitude: number;
@@ -290,13 +291,17 @@ export default function CreateCommunityPage() {
         avatar: finalWallpaperUrl,
         cover: finalWallpaperUrl,
         invitedUserIds: invitedFriends.map(f => f.id),
+        coordinateName: selectedLocation ? (selectedLocation.city || selectedLocation.formatted_address.split(',')[0]) : title.trim(),
+        latitude: selectedLocation?.latitude || 0,
+        longitude: selectedLocation?.longitude || 0,
+        city: selectedLocation?.city || "",
+        region: selectedLocation?.region || "",
+        country: selectedLocation?.country || "",
       };
 
       createCommunity.mutate(payload, {
         onSuccess: (data: any) => {
-          if (data && data.slug) {
-            router.replace(`/community/${data.slug}`);
-          } else if (data && data.id) {
+          if (data && data.id) {
             router.replace(`/community/${data.id}`);
           } else {
             router.push("/profile/community");

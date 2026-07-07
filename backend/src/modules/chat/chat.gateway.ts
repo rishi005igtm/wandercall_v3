@@ -214,9 +214,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: MarkReadDto,
   ): Promise<void> {
     const userId = socket.data.userId;
-    if (!userId || !data?.conversationId || !data?.messageId) return;
+    if (!userId || !data?.conversationId) return;
     try {
-      await this.chatService.markRead(userId, data.conversationId, data.messageId);
+      if (data.messageId) {
+        await this.chatService.markRead(userId, data.conversationId, data.messageId);
+      } else {
+        await this.conversationRepository.clearUnreadCount(data.conversationId, userId);
+        this.server.to(`user:${userId}`).emit('conversation:updated', { conversationId: data.conversationId });
+      }
     } catch (_) { /* non-critical */ }
   }
 
@@ -236,6 +241,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
       // 2. Clear unread count and update lastReadAt
       await this.conversationRepository.clearUnreadCount(data.conversationId, userId);
+      
+      // Notify the user's sockets to update conversation list (e.g. unread count to 0)
+      this.server.to(`user:${userId}`).emit('conversation:updated', { conversationId: data.conversationId });
 
       // 3. Bulk-deliver any SENT messages the user hasn't received yet
       //    (covers messages sent while user was offline or not in the room)
@@ -253,6 +261,36 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.logger.error(`[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`);
       return this.ackError('OPEN_FAILED', error.message);
     }
+  }
+
+  @SubscribeMessage('community:join-lobby')
+  async handleJoinLobby(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { communityId: string; user: any },
+  ): Promise<any> {
+    const userId = socket.data.userId;
+    if (!userId || !data?.communityId) return;
+    await socket.join(`community:${data.communityId}`);
+    this.chatEventDispatcher.dispatch({
+      type: 'COMMUNITY_JOIN_LOBBY' as any,
+      payload: { communityId: data.communityId, userId, user: data.user, socketId: socket.id },
+    });
+    return { success: true };
+  }
+
+  @SubscribeMessage('community:leave-lobby')
+  async handleLeaveLobby(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { communityId: string },
+  ): Promise<any> {
+    const userId = socket.data.userId;
+    if (!userId || !data?.communityId) return;
+    await socket.leave(`community:${data.communityId}`);
+    this.chatEventDispatcher.dispatch({
+      type: 'COMMUNITY_LEAVE_LOBBY' as any,
+      payload: { communityId: data.communityId, userId, socketId: socket.id },
+    });
+    return { success: true };
   }
 
   // ─────────────────────────────────────────────────────────

@@ -8,6 +8,7 @@ import { useBlockedUsers, useBlockMutation } from '@/hooks/api/usePrivacy';
 import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
 import { useChatConversation } from '@/hooks/api/useChatConversation';
 import { useAppSelector } from '@/lib/store/store';
+import { getMessageRenderer } from '@/components/chat/renderers/registry';
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -641,20 +642,25 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           <div className="space-y-3">
             {realMessages.map((msg) => {
               const isMe = msg.senderId === currentUserId;
+              const CustomRenderer = getMessageRenderer(msg.type);
 
               return (
                 <div
                   key={msg.id}
                   className={`flex flex-col max-w-[85%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
                 >
-                  {(msg.type === "text" || msg.type === "TEXT") && (
-                    <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
-                        ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
-                        : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
-                      }`}>
-                      {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
-                    </div>
-                  )}
+                  {CustomRenderer ? (
+                    <CustomRenderer message={msg} currentUserId={currentUserId} />
+                  ) : (
+                    <>
+                      {(msg.type === "text" || msg.type === "TEXT") && (
+                        <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
+                            ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
+                            : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
+                          }`}>
+                          {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
+                        </div>
+                      )}
 
                   {(msg.type === "audio" || msg.type === "AUDIO") && (
                     <AudioMessagePlayer duration={msg.metadata?.duration ?? "0:30"} />
@@ -723,6 +729,8 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                       </button>
                     </div>
                   )}
+                </>
+              )}
 
                   {/* Status + timestamp */}
                   <span className="text-[8px] text-zinc-500 mt-1 font-mono flex items-center gap-1">
