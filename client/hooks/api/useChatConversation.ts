@@ -5,7 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { v4 as uuidv4 } from 'uuid';
 import { useAppSelector } from '@/lib/store/store';
 import { useSocketContext } from '@/providers/SocketProvider';
-import { useMessages, CHAT_QUERY_KEYS } from './useChat';
+import { useMessages, CHAT_QUERY_KEYS } from './useDirectChat';
 import { chatService, Message } from '@/lib/services/chat.service';
 
 interface UseChatConversationOptions {

@@ -80,6 +80,34 @@ export const chatService = {
   },
 
   /**
+   * Fetch paginated message history for a community conversation.
+   * Required because communities use CommunityMemberEntity for RBAC, not ConversationParticipantEntity.
+   */
+  async getCommunityMessages(
+    communityId: string,
+    conversationId: string,
+    limit: number = 30,
+    cursor?: string,
+  ): Promise<MessagesPage> {
+    const params = new URLSearchParams();
+    params.append('limit', limit.toString());
+    if (cursor) params.append('cursor', cursor);
+
+    const response = await httpClient.get(
+      `/chat/communities/${communityId}/conversations/${conversationId}/messages?${params.toString()}`,
+    );
+    return response.data;
+  },
+
+  /**
+   * Fetch default conversation for a community
+   */
+  async getCommunityDefaultConversation(communityId: string): Promise<any> {
+    const response = await httpClient.get(`/chat/communities/${communityId}/default-conversation`);
+    return response.data;
+  },
+
+  /**
    * Edit a message via HTTP (for non-realtime edits).
    */
   async editMessage(messageId: string, text: string): Promise<Message> {

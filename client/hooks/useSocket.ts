@@ -11,7 +11,8 @@ import {
   updatePresence,
 } from '@/lib/store/slices/chatSlice';
 import { useQueryClient } from '@tanstack/react-query';
-import { CHAT_QUERY_KEYS } from './api/useChat';
+import { CHAT_QUERY_KEYS } from './api/useDirectChat';
+import { COMMUNITY_CHAT_QUERY_KEYS } from './api/useCommunityChat';
 import { QUERY_KEYS } from '../lib/api/queryKeys';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
@@ -108,6 +109,24 @@ export function useSocket() {
 
       // Invalidate conversation list to update lastMessage + unread count
       queryClient.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
+    });
+
+    socket.on('community:message:new', ({ message, communityId, conversationId }: any) => {
+      queryClient.setQueryData(
+        COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId),
+        (old: any) => {
+          if (!old) return old;
+          const firstPage = old.pages?.[0];
+          if (!firstPage) return old;
+          return {
+            ...old,
+            pages: [
+              { ...firstPage, items: [message, ...firstPage.items] },
+              ...old.pages.slice(1),
+            ],
+          };
+        }
+      );
     });
 
     // ── Delivery receipt ───────────────────────────────────

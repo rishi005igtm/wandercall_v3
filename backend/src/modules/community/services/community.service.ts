@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CommunityEntity } from '../entities/community.entity';
 import { CommunitySettingsEntity } from '../entities/community-settings.entity';
@@ -15,6 +15,7 @@ import { CommunityInviteService } from './community-invite.service';
 import { CreateCommunityDto } from '../dto/create-community.dto';
 import { UpdateCommunityDto } from '../dto/update-community.dto';
 import { UpdateCommunitySettingsDto } from '../dto/update-community-settings.dto';
+import { CommunityChatService } from '../../chat/services/community-chat.service';
 
 @Injectable()
 export class CommunityService {
@@ -25,6 +26,8 @@ export class CommunityService {
     private readonly memberRepo: CommunityMemberRepository,
     private readonly eventDispatcher: CommunityEventDispatcher,
     private readonly inviteService: CommunityInviteService,
+    @Inject(forwardRef(() => CommunityChatService))
+    private readonly communityChatService: CommunityChatService,
     private readonly dataSource: DataSource,
   ) {}
 
@@ -94,7 +97,15 @@ export class CommunityService {
       await this.inviteService.createInitialInvites(savedCommunity, ownerId, dto.invitedUserIds);
     }
 
-    // 7. Dispatch Event
+    // 7. Create Base Conversation for the Community
+    try {
+      await this.communityChatService.createBaseConversation(savedCommunity.id, ownerId);
+    } catch (error) {
+      // Log the error but don't fail the community creation
+      console.error(`Failed to create base conversation for community ${savedCommunity.id}:`, error);
+    }
+
+    // 8. Dispatch Event
     this.eventDispatcher.dispatchCreated(savedCommunity.id, ownerId);
 
     return savedCommunity;

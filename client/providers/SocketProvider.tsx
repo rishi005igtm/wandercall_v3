@@ -11,7 +11,8 @@ import {
   updatePresence,
 } from '@/lib/store/slices/chatSlice';
 import { useQueryClient } from '@tanstack/react-query';
-import { CHAT_QUERY_KEYS } from '@/hooks/api/useChat';
+import { CHAT_QUERY_KEYS } from '@/hooks/api/useDirectChat';
+import { COMMUNITY_CHAT_QUERY_KEYS } from '@/hooks/api/useCommunityChat';
 import { QUERY_KEYS } from '@/lib/api/queryKeys';
 import { Message } from '@/lib/services/chat.service';
 
@@ -134,8 +135,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     // ── Message events ────────────────────────────────────────────────────
 
-    socket.on('message:new', ({ message, conversationId }: { message: Message; conversationId: string }) => {
-      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+    socket.on('message:new', ({ message, conversationId, communityId }: { message: Message; conversationId: string; communityId?: string }) => {
+      const updater = (old: any) => {
         if (!old) {
           // Receiver: no cache exists yet — create fresh
           return {
@@ -173,13 +174,18 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             { ...lastPage, items: [...lastPage.items, message] },
           ],
         };
-      });
+      };
 
-      queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
+      if (communityId) {
+        queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
+      } else {
+        queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
+        queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
+      }
     });
 
-    socket.on('message:delivered', ({ messageId, conversationId, deliveredAt }: any) => {
-      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+    socket.on('message:delivered', ({ messageId, conversationId, deliveredAt, communityId }: any) => {
+      const updater = (old: any) => {
         if (!old) return old;
         return {
           ...old,
@@ -190,11 +196,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             ),
           })),
         };
-      });
+      };
+      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
+      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
-    socket.on('message:read', ({ messageId, conversationId, readAt }: any) => {
-      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+    socket.on('message:read', ({ messageId, conversationId, readAt, communityId }: any) => {
+      const updater = (old: any) => {
         if (!old) return old;
         return {
           ...old,
@@ -205,11 +213,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             ),
           })),
         };
-      });
+      };
+      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
+      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
-    socket.on('message:edited', ({ messageId, conversationId, newText }: any) => {
-      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+    socket.on('message:edited', ({ messageId, conversationId, newText, communityId }: any) => {
+      const updater = (old: any) => {
         if (!old) return old;
         return {
           ...old,
@@ -220,11 +230,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             ),
           })),
         };
-      });
+      };
+      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
+      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
-    socket.on('message:deleted', ({ messageId, conversationId }: any) => {
-      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), (old: any) => {
+    socket.on('message:deleted', ({ messageId, conversationId, communityId }: any) => {
+      const updater = (old: any) => {
         if (!old) return old;
         return {
           ...old,
@@ -237,7 +249,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
             ),
           })),
         };
-      });
+      };
+      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
+      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
     socket.on('typing:start', ({ userId, conversationId }: any) => {
@@ -270,14 +284,19 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   }, [isAuthReady, isAuthenticated, accessToken]); // NOTE: isAuthReady added as critical guard
 
   const emit = useCallback(async <T = any>(event: string, data: any): Promise<T | null> => {
-    return new Promise((resolve) => {
+    try {
       const socket = socketRef.current;
       if (!socket?.connected) {
-        resolve(null);
-        return;
+        return null;
       }
-      socket.emit(event, data, (ack: T) => resolve(ack));
-    });
+      
+      // Implement robust Socket ACKs with a 5000ms timeout
+      const ack = await socket.timeout(5000).emitWithAck(event, data);
+      return ack as T;
+    } catch (err) {
+      console.error(`Socket timeout or error emitting ${event}:`, err);
+      return null;
+    }
   }, []);
 
   const joinConversation = useCallback(async (conversationId: string) => {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useConversations } from './useChat';
+import { useConversations } from './useDirectChat';
 import { useAppSelector } from '@/lib/store/store';
 
 export interface FriendInboxState {

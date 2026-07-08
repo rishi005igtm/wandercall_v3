@@ -15,6 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ChatService } from './services/chat.service';
+import { CommunityChatService } from './services/community-chat.service';
 import { PresenceService } from './services/presence.service';
 import { ChatEventDispatcher } from './services/chat-event.dispatcher';
 import { ConversationRepository } from './repositories/conversation.repository';
@@ -64,6 +65,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly chatService: ChatService,
+    private readonly communityChatService: CommunityChatService,
     private readonly presenceService: PresenceService,
     private readonly chatEventDispatcher: ChatEventDispatcher,
     private readonly conversationRepository: ConversationRepository,
@@ -246,7 +248,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.server.to(`user:${userId}`).emit('conversation:updated', { conversationId: data.conversationId });
 
       // 3. Bulk-deliver any SENT messages the user hasn't received yet
-      //    (covers messages sent while user was offline or not in the room)
       await this.chatService.markConversationDelivered(data.conversationId, userId);
 
       // 4. Load recent history
@@ -260,6 +261,57 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     } catch (error: any) {
       this.logger.error(`[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`);
       return this.ackError('OPEN_FAILED', error.message);
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────
+  // COMMUNITY CHAT EVENT HANDLERS
+  // ─────────────────────────────────────────────────────────
+
+  @SubscribeMessage('join_community')
+  async handleJoinCommunity(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { communityId: string },
+  ): Promise<any> {
+    const userId = socket.data.userId;
+    if (!userId || !data?.communityId) return this.ackError('VALIDATION_ERROR', 'communityId required.');
+
+    try {
+      await socket.join(`room:community:${data.communityId}`);
+      this.logger.log(`[JoinCommunity] socketId=${socket.id} userId=${userId} communityId=${data.communityId}`);
+      return { success: true };
+    } catch (error: any) {
+      return this.ackError('JOIN_FAILED', error.message);
+    }
+  }
+
+  @SubscribeMessage('community:send_message')
+  async handleCommunitySendMessage(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() rawData: any,
+  ): Promise<any> {
+    const userId = socket.data.userId;
+    if (!userId) return this.ackError('AUTH_REQUIRED', 'Not authenticated.');
+    if (!rawData.communityId) return this.ackError('VALIDATION_ERROR', 'communityId required.');
+
+    const dto = plainToInstance(SendMessageDto, rawData);
+    const errors = await validate(dto);
+    if (errors.length > 0) {
+      const detail = errors.map((e) => Object.values(e.constraints ?? {}).join(', ')).join('; ');
+      this.logger.error(`[CommSendMsg:ValidationFail] socketId=${socket.id} error=${detail} rawData=${JSON.stringify(rawData)}`);
+      return this.ackError('VALIDATION_ERROR', detail);
+    }
+
+    try {
+      const message = await this.communityChatService.sendMessage(userId, rawData.communityId, dto);
+      this.logger.log(
+        `[CommSendMsg:ACK] messageId=${message.serverMessageId} clientId=${dto.clientMessageId} ` +
+        `communityId=${rawData.communityId} socketId=${socket.id}`,
+      );
+      return message; // already typed as MessageResponseDto
+    } catch (error: any) {
+      this.logger.error(`[CommSendMsg:Fail] socketId=${socket.id} error=${error.message}`);
+      return this.ackError(error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED', error.message);
     }
   }
 
@@ -373,6 +425,17 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.chatEventDispatcher.subscribe<MessageDeletedEvent>('MESSAGE_DELETED', (payload) => {
       this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
       this.logger.debug(`[MESSAGE_DELETED] messageId=${payload.messageId} convId=${payload.conversationId}`);
+    });
+
+    /** COMMUNITY_MESSAGE_CREATED → broadcast to all sockets in the community room */
+    this.chatEventDispatcher.subscribe<any>('COMMUNITY_MESSAGE_CREATED', (payload) => {
+      const { communityId, message } = payload;
+      this.server.to(`room:community:${communityId}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
+        message,
+        conversationId: message.conversationId,
+        communityId,
+      });
+      this.logger.debug(`[COMMUNITY_MESSAGE_CREATED] messageId=${message.id} communityId=${communityId}`);
     });
 
     this.logger.log('ChatGateway: all event subscribers registered');

@@ -54,6 +54,13 @@ export class MessageEntity {
   @Column('uuid')
   conversationId: string;
 
+  /**
+   * Sequence number scoped to the conversationId.
+   * Ensures deterministic ordering of messages.
+   */
+  @Column({ type: 'int', default: 0 })
+  sequenceNumber: number;
+
   @Column('uuid')
   senderId: string;
 

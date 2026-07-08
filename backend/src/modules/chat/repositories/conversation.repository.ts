@@ -160,20 +160,25 @@ export class ConversationRepository {
   ): Promise<void> {
     const conversation = await this.convRepo.findOneOrFail({ where: { id: conversationId } });
 
-    const updatedUnreadCounts = { ...conversation.unreadCounts };
-    for (const recipientId of recipientIds) {
-      if (recipientId !== senderId) {
-        updatedUnreadCounts[recipientId] = (updatedUnreadCounts[recipientId] || 0) + 1;
-      }
-    }
-
-    await this.convRepo.update(conversationId, {
+    const updatePayload: any = {
       lastMessageId: messageId,
       lastMessageSenderId: senderId,
       lastMessageText: text.length > 100 ? text.slice(0, 100) + '…' : text,
       lastMessageAt: sentAt,
-      unreadCounts: updatedUnreadCounts,
-    });
+    };
+
+    // ONLY update JSONB unreadCounts for non-community conversations to avoid massive row locks.
+    if (conversation.type !== ConversationType.COMMUNITY) {
+      const updatedUnreadCounts = { ...conversation.unreadCounts };
+      for (const recipientId of recipientIds) {
+        if (recipientId !== senderId) {
+          updatedUnreadCounts[recipientId] = (updatedUnreadCounts[recipientId] || 0) + 1;
+        }
+      }
+      updatePayload.unreadCounts = updatedUnreadCounts;
+    }
+
+    await this.convRepo.update(conversationId, updatePayload);
   }
 
   /**
@@ -198,5 +203,28 @@ export class ConversationRepository {
   async getParticipantIds(conversationId: string): Promise<string[]> {
     const participants = await this.participantRepo.find({ where: { conversationId } });
     return participants.map((p) => p.userId);
+  }
+
+  async createCommunityConversation(communityId: string): Promise<ConversationEntity> {
+    const conversation = this.convRepo.create({
+      id: randomUUID(),
+      type: ConversationType.COMMUNITY,
+      metadata: {
+        communityId,
+        isDefault: true,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return this.convRepo.save(conversation);
+  }
+
+  async findDefaultCommunityConversation(communityId: string): Promise<ConversationEntity | null> {
+    return this.convRepo
+      .createQueryBuilder('conv')
+      .where("conv.type = :type", { type: ConversationType.COMMUNITY })
+      .andWhere("conv.metadata->>'communityId' = :communityId", { communityId })
+      .andWhere("conv.metadata->>'isDefault' = 'true'")
+      .getOne();
   }
 }

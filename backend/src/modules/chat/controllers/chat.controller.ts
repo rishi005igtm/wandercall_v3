@@ -49,13 +49,41 @@ export const GetUser = createParamDecorator(
  *
  * Real-time operations (send, typing, read receipts) go through the Socket gateway.
  */
+import { CommunityChatService } from '../services/community-chat.service';
+
 @UseGuards(JwtAuthGuard)
 @Controller('chat')
 export class ChatController {
   constructor(
     private readonly chatService: ChatService,
     private readonly presenceService: PresenceService,
+    private readonly communityChatService: CommunityChatService,
   ) {}
+
+  /**
+   * GET /api/v1/chat/communities/:communityId/conversations/:conversationId/messages
+   * Fetch messages for a community chat (validates via CommunityMemberEntity instead of ConversationParticipantEntity).
+   */
+  @Get('communities/:communityId/conversations/:conversationId/messages')
+  async getCommunityMessages(
+    @GetUser() user: AuthUser,
+    @Param('communityId') communityId: string,
+    @Param('conversationId') conversationId: string,
+    @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
+    @Query('cursor') cursor?: string,
+  ) {
+    const dateCursor = cursor && cursor.trim() !== '' && cursor !== 'undefined' ? new Date(cursor) : undefined;
+    return this.communityChatService.getMessages(user.userId, communityId, conversationId, dateCursor, limit);
+  }
+
+  /**
+   * GET /api/v1/chat/communities/:communityId/default-conversation
+   * Gets the default base conversation for a community
+   */
+  @Get('communities/:communityId/default-conversation')
+  async getCommunityDefaultConversation(@Param('communityId') communityId: string) {
+    return this.communityChatService.getDefaultConversation(communityId);
+  }
 
   @Post('conversations/:conversationId/messages')
   async sendMessage(

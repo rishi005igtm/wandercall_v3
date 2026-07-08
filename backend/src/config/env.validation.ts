@@ -69,22 +69,37 @@ export class EnvironmentVariables {
   DB_POOL_MAX: number;
 
   // --- Redis ---
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  REDIS_HOST: string;
+  REDIS_HOST?: string;
 
+  @IsOptional()
   @IsInt()
-  REDIS_PORT: number;
+  REDIS_PORT?: number;
 
   @IsOptional()
   @IsString()
   REDIS_PASSWORD?: string;
 
+  @IsOptional()
   @IsInt()
-  REDIS_DB: number;
+  REDIS_DB?: number;
 
+  @IsOptional()
   @IsBoolean()
-  REDIS_TLS: boolean;
+  REDIS_TLS?: boolean;
+
+  @IsOptional()
+  @IsString()
+  REDIS_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  UPSTASH_REDIS_REST_URL?: string;
+
+  @IsOptional()
+  @IsString()
+  UPSTASH_REDIS_REST_TOKEN?: string;
 
   // --- Kafka ---
   @IsString()

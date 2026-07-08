@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EventEmitter } from 'events';
+import { RedisService } from '../../redis';
 
 export const CommunityEvents = {
   CREATED: 'COMMUNITY_CREATED',
@@ -22,9 +23,20 @@ export const CommunityEvents = {
 export class CommunityEventDispatcher extends EventEmitter {
   private readonly logger = new Logger(CommunityEventDispatcher.name);
 
-  constructor() {
+  constructor(private readonly redisService: RedisService) {
     super();
     this.setMaxListeners(50);
+  }
+
+  emit(eventName: string | symbol, ...args: any[]): boolean {
+    const result = super.emit(eventName, ...args);
+    const payload = args[0];
+    if (payload && payload.communityId) {
+      const channel = `channel:events:community:${payload.communityId}`;
+      this.redisService.client.publish(channel, JSON.stringify({ event: eventName, payload }))
+        .catch(err => this.logger.error(`Redis publish failed for ${String(eventName)}`, err));
+    }
+    return result;
   }
 
   dispatchCreated(communityId: string, ownerId: string) {

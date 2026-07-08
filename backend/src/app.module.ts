@@ -40,9 +40,11 @@ import { CommunityMemberEntity } from './modules/community/entities/community-me
 import { CommunityRoleEntity } from './modules/community/entities/community-role.entity';
 import { CommunityInviteEntity } from './modules/community/entities/community-invite.entity';
 import { CommunityBanEntity } from './modules/community/entities/community-ban.entity';
+import { RedisModule } from './modules/redis';
 
 @Module({
   imports: [
+    RedisModule,
     AppConfigModule,
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
 import { ChatModule } from '../chat/chat.module';
@@ -45,7 +45,7 @@ import { CommunityGalaxySubscriber } from './subscribers/community-galaxy.subscr
 @Module({
   imports: [
     UserModule,
-    ChatModule,
+    forwardRef(() => ChatModule),
     SearchModule,
     TypeOrmModule.forFeature([
       CommunityEntity,
