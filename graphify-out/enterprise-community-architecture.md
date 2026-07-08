@@ -205,3 +205,55 @@ To prevent monolithic conditional clutter (`if (msg.type === '...')`) within cha
 
 1. **TypeScript Compile Safety**: Both `backend` and `client` codebases maintain strict type safety, verified via automated `npx tsc --noEmit` checks.
 2. **Knowledge Graph Synchronization**: This architecture document is continuously synchronized with the workspace Graphify knowledge graph (`graphify-out/`), enabling semantic queries, relationship tracing, and impact analysis across the entire full-stack ecosystem.
+
+---
+
+## 7. Modular Domain Services & Real-Time WebSocket Telemetry (Phase 7.5)
+
+To eliminate God-class anti-patterns inside `CommunityService`, all specialized capabilities are segregated into domain-specific services inside `backend/src/modules/community/services/`:
+
+### 7.1 Specialized Service Architecture
+```mermaid
+graph TD
+    CS[CommunityService (Monolith Facade / Core CRUD)] --> CRS[CommunityRoleService]
+    CS --> CMS[CommunityModerationService]
+    CS --> CAS[CommunityAuditService]
+    CS --> CSS[CommunityStoryService]
+    CS --> CST[CommunityStatsService]
+    
+    CMS --> CAS
+    CRS --> CAS
+    CSS --> CAS
+    
+    CMS --> Bus[CommunityEventDispatcher]
+    CRS --> Bus
+    
+    Bus --> GW[ChatGateway WebSocket Lobbies]
+```
+
+1. **`CommunityRoleService`**:
+   - Manages custom community roles, display badges (`displayColor`, `displayName`), and granular capability arrays (`post.create`, `chat.send`, `member.mute`, `member.kick`, `member.ban`, `role.assign`, `role.manage`, `admin.access`).
+   - Enforces hierarchy invariants: An actor can only assign or modify roles whose `priority` rank number is strictly greater than their own rank (`actor.priority < target.priority`).
+2. **`CommunityModerationService`**:
+   - Implements `muteMember(communityId, targetUserId, durationMinutes, reason, actorId)`, setting `isMuted` and computing `mutedUntil`.
+   - Implements `banMember` and `kickMember`, immediately revoking room memberships and emitting real-time WebSocket events.
+3. **`CommunityAuditService` & `CommunityAuditLogEntity`**:
+   - Persists an immutable ledger of administrative actions (`ROLE_CREATED`, `MUTE`, `BAN`, `STORY_PINNED`, etc.), capturing `actorId`, `targetId`, `reason`, and `metadata`.
+4. **`CommunityEventDispatcher` & WebSocket Telemetry**:
+   - When a moderation action occurs, `CommunityEventDispatcher` broadcasts `community:moderation:action` and `community:role:updated` directly to `room:community:${communityId}` via `ChatGateway`.
+   - Connected clients instantly reflect muted states, rank updates, or removals without requiring manual page refreshes.
+
+---
+
+## 8. Enterprise Admin Command OS (Phase 7.6)
+
+The frontend features a luxury, OS-grade moderation center accessible to Level 1 Owners and verified Administrators:
+
+1. **`CommunityAdminDashboard` (`components/community/admin/CommunityAdminDashboard.tsx`)**:
+   - **Overview KPIs**: Live telemetry for total members, 24h active pulse, story broadcasts, and chat throughput.
+   - **Members Directory**: Searchable index of all community coordinates with one-click access to moderation tools.
+   - **Role Matrix Editor (`RoleMatrixEditor.tsx`)**: Interactive UI for creating custom ranks, setting display colors, and toggling capability checkboxes.
+   - **Policies & Gatekeeping**: Configure `joinPolicy` (`OPEN`, `INVITE_ONLY`, `APPROVAL_REQUIRED`) and galaxy discoverability.
+   - **Audit Ledger (`AuditLogsTable.tsx`)**: Real-time tabular history of all administrative actions with text and type filtering.
+2. **`MemberDetailsControlCenter` (`components/community/moderation/MemberDetailsControlCenter.tsx`)**:
+   - An interactive command modal providing instant trust score metrics, role upgrades/demotions, timed mutes (`15m`, `1h`, `24h`), kicks, and permanent bans with mandatory audit logs.

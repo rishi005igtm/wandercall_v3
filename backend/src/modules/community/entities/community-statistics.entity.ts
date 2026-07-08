@@ -29,6 +29,18 @@ export class CommunityStatisticsEntity {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  get totalMessageCount(): number {
+    return this.chatCount || 0;
+  }
+
+  get totalPostCount(): number {
+    return this.postCount || this.storyCount || 0;
+  }
+
+  get onlineMemberCount(): number {
+    return this.onlineMembers || 1;
+  }
+
   constructor(partial: Partial<CommunityStatisticsEntity>) {
     Object.assign(this, partial);
   }

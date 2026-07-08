@@ -207,6 +207,12 @@ export class UserSearchService {
         isMuted: m.cm_isMuted,
         status: m.cm_status,
         joinedAt: m.cm_joinedAt,
+        user: {
+          id: m.up_userId,
+          username: m.up_username,
+          displayName: m.up_displayName,
+          avatarUrl: m.up_avatarUrl,
+        },
       })),
       nextCursor: hasMore ? (offset + limit).toString() : undefined,
     };

@@ -15,6 +15,18 @@ export class CommunityMemberRepository {
     return this.repo.save(member);
   }
 
+  async save(member: CommunityMemberEntity | Partial<CommunityMemberEntity>): Promise<CommunityMemberEntity> {
+    return this.repo.save(member as any);
+  }
+
+  async find(options?: any): Promise<CommunityMemberEntity[]> {
+    return this.repo.find(options);
+  }
+
+  async findOne(options?: any): Promise<CommunityMemberEntity | null> {
+    return this.repo.findOne(options);
+  }
+
   async findByUserAndCommunity(userId: string, communityId: string): Promise<CommunityMemberEntity | null> {
     return this.repo.findOne({ where: { userId, communityId } });
   }
@@ -23,7 +35,11 @@ export class CommunityMemberRepository {
     return this.repo.find({ where: { userId } });
   }
 
-  async remove(userId: string, communityId: string): Promise<void> {
-    await this.repo.delete({ userId, communityId });
+  async remove(userIdOrEntity: string | CommunityMemberEntity, communityId?: string): Promise<void> {
+    if (typeof userIdOrEntity === 'object') {
+      await this.repo.remove(userIdOrEntity);
+    } else if (communityId) {
+      await this.repo.delete({ userId: userIdOrEntity, communityId });
+    }
   }
 }

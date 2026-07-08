@@ -21,4 +21,29 @@ export class CommunityRoleRepository {
   async findAll(): Promise<CommunityRoleEntity[]> {
     return this.repo.find();
   }
+
+  async find(options?: any): Promise<CommunityRoleEntity[]> {
+    return this.repo.find(options);
+  }
+
+  async findOne(options?: any): Promise<CommunityRoleEntity | null> {
+    return this.repo.findOne(options);
+  }
+
+  async create(data: Partial<CommunityRoleEntity>): Promise<CommunityRoleEntity> {
+    const role = this.repo.create(data);
+    return this.repo.save(role);
+  }
+
+  async createRole(data: Partial<CommunityRoleEntity>): Promise<CommunityRoleEntity> {
+    return this.create(data);
+  }
+
+  async save(role: CommunityRoleEntity | Partial<CommunityRoleEntity>): Promise<CommunityRoleEntity> {
+    return this.repo.save(role as any);
+  }
+
+  async remove(role: CommunityRoleEntity): Promise<CommunityRoleEntity> {
+    return this.repo.remove(role);
+  }
 }

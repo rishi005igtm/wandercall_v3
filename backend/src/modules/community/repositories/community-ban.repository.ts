@@ -26,4 +26,24 @@ export class CommunityBanRepository {
   async removeBan(communityId: string, userId: string): Promise<void> {
     await this.repo.delete({ communityId, userId });
   }
+
+  get target() {
+    return this.repo.target;
+  }
+
+  async delete(criteria: any) {
+    return this.repo.delete(criteria);
+  }
+
+  async save(ban: CommunityBanEntity | Partial<CommunityBanEntity>): Promise<CommunityBanEntity> {
+    return this.repo.save(ban as any);
+  }
+
+  async find(options?: any): Promise<CommunityBanEntity[]> {
+    return this.repo.find(options);
+  }
+
+  async findOne(options?: any): Promise<CommunityBanEntity | null> {
+    return this.repo.findOne(options);
+  }
 }

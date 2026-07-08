@@ -86,8 +86,19 @@ export function useSendCommunityMessage(
         });
 
         if (response && response.success === false) {
-          console.error('Server rejected message:', response);
-          throw new Error(response.message || 'Server returned an error');
+          queryClient.setQueryData(queryKey, (oldData: any) => {
+            if (!oldData || !oldData.pages) return oldData;
+            const newPages = oldData.pages.map((page: any) => ({
+              ...page,
+              items: page.items.map((msg: Message) =>
+                msg.clientMessageId === clientMessageId
+                  ? { ...msg, status: 'FAILED' }
+                  : msg
+              ),
+            }));
+            return { ...oldData, pages: newPages };
+          });
+          return response;
         }
 
         queryClient.setQueryData(queryKey, (oldData: any) => {
@@ -117,7 +128,7 @@ export function useSendCommunityMessage(
           }));
           return { ...oldData, pages: newPages };
         });
-        throw error;
+        return { success: false, message: error instanceof Error ? error.message : 'Message send failed' };
       }
     },
     [emit, currentUserId, queryClient]

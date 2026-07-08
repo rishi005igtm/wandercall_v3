@@ -56,7 +56,7 @@ export class CommunityRepository {
 
   async findJoinedByUser(userId: string): Promise<CommunityEntity[]> {
     return this.repo.createQueryBuilder('c')
-      .innerJoin('community_members', 'cm', 'cm."communityId" = c.id AND cm."userId" = :userId', { userId })
+      .innerJoin('community_members', 'cm', 'cm."communityId" = c.id AND cm."userId" = :userId AND cm.status = :status', { userId, status: 'ACTIVE' })
       .orderBy('cm."joinedAt"', 'DESC')
       .getMany();
   }

@@ -270,10 +270,23 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
     });
 
-    socket.on('COMMUNITY_UPDATED', () => {
+    const handleCommunitySync = (payload?: any) => {
       queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
       queryClientRef.current.invalidateQueries({ queryKey: ['community', 'me'] });
-    });
+      if (payload?.communityId) {
+        queryClientRef.current.invalidateQueries({ queryKey: ['communities', payload.communityId] });
+        queryClientRef.current.invalidateQueries({ queryKey: ['communities', payload.communityId, 'members'] });
+      }
+    };
+
+    socket.on('COMMUNITY_UPDATED', handleCommunitySync);
+    socket.on('community:role:updated', handleCommunitySync);
+    socket.on('community:moderation:action', handleCommunitySync);
+    socket.on('community:member:joined', handleCommunitySync);
+    socket.on('community:member:left', handleCommunitySync);
+    socket.on('community:ownership:transferred', handleCommunitySync);
+    socket.on('community:updated', handleCommunitySync);
+    socket.on('community:settings:updated', handleCommunitySync);
 
     socket.on('COMMUNITY_LIVE_STATE_CHANGED', () => {
       queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });

@@ -44,57 +44,6 @@ export const SYSTEM_ROLES = [
     ],
   },
   {
-    name: 'MODERATOR',
-    displayName: 'Moderator',
-    displayColor: '#EAB308',
-    priority: 20,
-    systemRole: true,
-    editable: false,
-    protected: true,
-    permissions: [
-      'INVITE_USERS', 'BAN_USERS',
-      'member.invite', 'member.kick', 'member.mute',
-      'post.create', 'post.delete',
-      'chat.send', 'chat.moderate',
-      'story.create', 'story.delete',
-      'event.create'
-    ],
-  },
-  {
-    name: 'GUIDE',
-    displayName: 'Community Guide',
-    displayColor: '#10B981',
-    priority: 30,
-    systemRole: true,
-    editable: false,
-    protected: true,
-    permissions: [
-      'INVITE_USERS',
-      'member.invite',
-      'post.create', 'post.pin',
-      'chat.send',
-      'story.create',
-      'event.create'
-    ],
-  },
-  {
-    name: 'VERIFIED_EXPLORER',
-    displayName: 'Verified Explorer',
-    displayColor: '#06B6D4',
-    priority: 50,
-    systemRole: true,
-    editable: false,
-    protected: true,
-    permissions: [
-      'INVITE_USERS',
-      'member.invite',
-      'post.create',
-      'chat.send',
-      'story.create',
-      'event.create'
-    ],
-  },
-  {
     name: 'MEMBER',
     displayName: 'Member',
     displayColor: '#3B82F6',

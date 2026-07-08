@@ -203,8 +203,8 @@ export const communityApi = {
     return res.data;
   },
 
-  updateRole: async (communityId: string, targetUserId: string, roleId: string) => {
-    const res = await httpClient.put(`/communities/${communityId}/members/${targetUserId}/role`, { roleId });
+  updateRole: async (communityId: string, targetUserId: string, roleId: string, reason?: string) => {
+    const res = await httpClient.put(`/communities/${communityId}/members/${targetUserId}/role`, { roleId, reason });
     return res.data;
   },
 
@@ -212,6 +212,71 @@ export const communityApi = {
     const res = await httpClient.get(`/communities/${communityId}/members/search`, {
       params: { q: query, limit, cursor },
     });
+    return res.data;
+  },
+
+  warnMember: async (communityId: string, targetUserId: string, reason: string) => {
+    const res = await httpClient.post(`/communities/${communityId}/members/${targetUserId}/warn`, { reason });
+    return res.data;
+  },
+
+  unmuteMember: async (communityId: string, targetUserId: string, reason?: string) => {
+    const res = await httpClient.post(`/communities/${communityId}/members/${targetUserId}/unmute`, { reason });
+    return res.data;
+  },
+
+  unbanMember: async (communityId: string, targetUserId: string, reason?: string) => {
+    const res = await httpClient.post(`/communities/${communityId}/members/${targetUserId}/unban`, { reason });
+    return res.data;
+  },
+
+  getMemberHistory: async (communityId: string, targetUserId: string) => {
+    const res = await httpClient.get(`/communities/${communityId}/members/${targetUserId}/history`);
+    return res.data;
+  },
+
+  getAuditLogs: async (communityId: string, params?: { actorId?: string; targetUserId?: string; action?: string; limit?: number; cursor?: string }) => {
+    const res = await httpClient.get(`/communities/${communityId}/audit-logs`, { params });
+    return res.data;
+  },
+
+  getAnalytics: async (communityId: string) => {
+    const res = await httpClient.get(`/communities/${communityId}/analytics`);
+    return res.data;
+  },
+
+  getAllRoles: async () => {
+    const res = await httpClient.get('/communities/roles/all');
+    return res.data;
+  },
+
+  createRole: async (data: { name: string; displayName: string; displayColor?: string; priority?: number; permissions?: string[] }) => {
+    const res = await httpClient.post('/communities/roles', data);
+    return res.data;
+  },
+
+  updateCustomRole: async (roleId: string, data: { displayName?: string; displayColor?: string; priority?: number; permissions?: string[] }) => {
+    const res = await httpClient.patch(`/communities/roles/${roleId}`, data);
+    return res.data;
+  },
+
+  deleteRole: async (roleId: string) => {
+    const res = await httpClient.delete(`/communities/roles/${roleId}`);
+    return res.data;
+  },
+
+  pinStory: async (communityId: string, storyId: string, isPinned = true) => {
+    const res = await httpClient.patch(`/communities/${communityId}/stories/${storyId}/pin`, { isPinned });
+    return res.data;
+  },
+
+  featureStory: async (communityId: string, storyId: string, isFeatured = true) => {
+    const res = await httpClient.patch(`/communities/${communityId}/stories/${storyId}/feature`, { isFeatured });
+    return res.data;
+  },
+
+  deleteStory: async (communityId: string, storyId: string, reason?: string) => {
+    const res = await httpClient.delete(`/communities/${communityId}/stories/${storyId}`, { data: { reason } });
     return res.data;
   },
 };

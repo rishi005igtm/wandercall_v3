@@ -14,7 +14,10 @@ export const CommunityEvents = {
   MEMBER_INVITED: 'MEMBER_INVITED',
   MEMBER_KICKED: 'MEMBER_KICKED',
   MEMBER_BANNED: 'MEMBER_BANNED',
+  MEMBER_UNBANNED: 'MEMBER_UNBANNED',
   MEMBER_MUTED: 'MEMBER_MUTED',
+  MEMBER_UNMUTED: 'MEMBER_UNMUTED',
+  MEMBER_WARNED: 'MEMBER_WARNED',
   OWNER_TRANSFERRED: 'OWNER_TRANSFERRED',
   ROLE_CHANGED: 'ROLE_CHANGED',
 };
@@ -37,6 +40,11 @@ export class CommunityEventDispatcher extends EventEmitter {
         .catch(err => this.logger.error(`Redis publish failed for ${String(eventName)}`, err));
     }
     return result;
+  }
+
+  dispatch(event: { type: string; payload: any }): void {
+    this.logger.debug(`Dispatching event: ${event.type}`);
+    this.emit(event.type, event.payload);
   }
 
   dispatchCreated(communityId: string, ownerId: string) {
@@ -94,9 +102,24 @@ export class CommunityEventDispatcher extends EventEmitter {
     this.emit(CommunityEvents.MEMBER_BANNED, { communityId, userId, bannedBy });
   }
 
+  dispatchMemberUnbanned(communityId: string, userId: string, unbannedBy: string, reason?: string) {
+    this.logger.debug(`Dispatching event: ${CommunityEvents.MEMBER_UNBANNED}`);
+    this.emit(CommunityEvents.MEMBER_UNBANNED, { communityId, userId, unbannedBy, reason });
+  }
+
   dispatchMemberMuted(communityId: string, userId: string, mutedBy: string, mutedUntil: Date) {
     this.logger.debug(`Dispatching event: ${CommunityEvents.MEMBER_MUTED}`);
     this.emit(CommunityEvents.MEMBER_MUTED, { communityId, userId, mutedBy, mutedUntil });
+  }
+
+  dispatchMemberUnmuted(communityId: string, userId: string, unmutedBy: string, reason?: string) {
+    this.logger.debug(`Dispatching event: ${CommunityEvents.MEMBER_UNMUTED}`);
+    this.emit(CommunityEvents.MEMBER_UNMUTED, { communityId, userId, unmutedBy, reason });
+  }
+
+  dispatchMemberWarned(communityId: string, userId: string, warnedBy: string, reason?: string) {
+    this.logger.debug(`Dispatching event: ${CommunityEvents.MEMBER_WARNED}`);
+    this.emit(CommunityEvents.MEMBER_WARNED, { communityId, userId, warnedBy, reason });
   }
 
   dispatchOwnerTransferred(communityId: string, oldOwnerId: string, newOwnerId: string) {

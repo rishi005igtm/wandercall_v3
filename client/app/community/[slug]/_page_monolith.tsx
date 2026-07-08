@@ -92,7 +92,9 @@ interface CommunityNode {
 
 import { useCommunity, useMyCommunities, useJoinCommunity, useLeaveCommunity, useSearchCommunityMembers, useKickMember, useBanMember, useMuteMember, useTransferOwnership, useUpdateRole } from "@/hooks/useCommunity";
 import { useCommunityMessages, useSendCommunityMessage, useCommunityDefaultConversation } from "@/hooks/api/useCommunityChat";
+import { MemberDetailsControlCenter } from "@/components/community/moderation/MemberDetailsControlCenter";
 import { useSocketContext } from "@/providers/SocketProvider";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CommunityDashboard({ initialTab = "Chat", children }: { initialTab?: string, children?: React.ReactNode }) {
   const router = useRouter();
@@ -100,6 +102,7 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
   const { slug: communityId } = useParams();
   
   const currentUserId = useAppSelector(state => state.auth.userId);
+  const queryClient = useQueryClient();
   const kickMutation = useKickMember();
   const banMutation = useBanMember();
   const muteMutation = useMuteMember();
@@ -170,8 +173,31 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
   const chatMessages = useMemo(() => {
     if (!messagePages) return [];
     const allItems = messagePages.pages.flatMap((page: any) => page.items || []);
+    
+    // STRICT DEDUPLICATION: ensure optimistic messages and socket broadcasts never double up
+    const uniqueMap = new globalThis.Map<string, any>();
+    for (const msg of allItems) {
+      if (!msg) continue;
+      // Use clientMessageId or server id as unique key
+      const key = msg.clientMessageId || msg.id;
+      if (!key) continue;
+      
+      const existing = uniqueMap.get(key);
+      if (!existing) {
+        uniqueMap.set(key, msg);
+      } else {
+        // If one is DELIVERED/confirmed and one is SENDING, keep DELIVERED (merging properties)
+        if (existing.status === 'SENDING' && msg.status !== 'SENDING') {
+          uniqueMap.set(key, { ...existing, ...msg });
+        } else if (msg.id && !existing.id) {
+          uniqueMap.set(key, { ...existing, ...msg });
+        }
+      }
+    }
+
+    const uniqueItems = Array.from(uniqueMap.values());
     // Sort ascending for VirtualizedMessageList which renders top-to-bottom
-    const sorted = [...allItems].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    const sorted = uniqueItems.sort((a: any, b: any) => new Date(a?.createdAt || 0).getTime() - new Date(b?.createdAt || 0).getTime());
     
     return sorted.map((msg: any) => {
       const member = members.find((m: any) => m.userId === msg.senderId);
@@ -284,6 +310,10 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
       triggerToast("Message cannot be empty.");
       return;
     }
+    if (myMember?.isMuted) {
+      triggerToast("You are currently muted in this community.");
+      return;
+    }
     if (!realCommunity?.id) {
       triggerToast("Error: Community ID is missing.");
       return;
@@ -308,15 +338,23 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
       channelId: defaultChannelId,
       text: chatInput,
       type: "TEXT"
+    }).then((res: any) => {
+      if (res && res.success === false) {
+        triggerToast(res.message || "You are currently muted in this community.");
+      }
     }).catch((err) => {
       console.error("SendMessage Error:", err);
-      triggerToast("Failed to send message: " + err.message);
+      triggerToast("Failed to send message: " + (err.message || "Unknown error"));
     });
 
     setChatInput("");
   };
 
   const handleSendSpecialMessage = (type: "experience" | "campfire" | "quest") => {
+    if (myMember?.isMuted) {
+      triggerToast("You cannot share items while muted in this community.");
+      return;
+    }
     let newMsg: any;
     if (type === "experience") {
       newMsg = {
@@ -527,11 +565,12 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
   };
 
   useEffect(() => {
-    if (myCommunities && realCommunity) {
-      const joined = myCommunities.some((c: any) => c.id === realCommunity.id || c.slug === realCommunity.slug);
-      setIsJoined(joined);
+    if (realCommunity && currentUser?.userId) {
+      const joinedInMy = myCommunities?.some((c: any) => c.id === realCommunity.id || c.slug === realCommunity.slug) ?? false;
+      const joinedInMembers = members.some((m: any) => m.userId === currentUser.userId && m.status !== 'KICKED' && m.status !== 'LEFT');
+      setIsJoined(joinedInMy || joinedInMembers);
     }
-  }, [myCommunities, realCommunity]);
+  }, [myCommunities, realCommunity, members, currentUser?.userId]);
 
   const isJoinedRef = useRef(isJoined);
   useEffect(() => {
@@ -559,13 +598,90 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
       }
     };
 
+    const handleModerationAction = (data: any) => {
+      if (data?.communityId === realCommunity.id) {
+        queryClient.invalidateQueries({ queryKey: ['communities'] });
+        queryClient.invalidateQueries({ queryKey: ['community', 'me'] });
+        
+        // Instantly reflect state on open modTargetUser modal right without waiting for refetch
+        setModTargetUser((prev: any) => {
+          if (!prev || prev.userId !== data.userId) return prev;
+          if (data.action === 'MUTE') {
+            return { ...prev, isMuted: true, mutedUntil: data.mutedUntil || new Date(Date.now() + 60*60000) };
+          }
+          if (data.action === 'UNMUTE') {
+            return { ...prev, isMuted: false, mutedUntil: null };
+          }
+          if (data.action === 'BAN') {
+            return { ...prev, status: 'BANNED' };
+          }
+          if (data.action === 'UNBAN') {
+            return { ...prev, status: 'ACTIVE' };
+          }
+          if (data.action === 'KICK') {
+            return null; // Close modal
+          }
+          return prev;
+        });
+
+        if (data.userId === currentUser?.userId) {
+          if (data.action === 'MUTE') {
+            triggerToast("You have been muted in this community.");
+          } else if (data.action === 'UNMUTE') {
+            triggerToast("Your mute has been lifted in this community.");
+          } else if (data.action === 'KICK' || data.action === 'BAN') {
+            triggerToast(`You have been ${data.action.toLowerCase()}ed from this community.`);
+            router.push('/profile/community');
+          }
+        }
+      }
+    };
+
+    const handleCommunityUpdate = (data: any) => {
+      if (data?.communityId === realCommunity.id) {
+        queryClient.invalidateQueries({ queryKey: ['communities'] });
+        queryClient.invalidateQueries({ queryKey: ['community', 'me'] });
+        if (data.userId && data.roleId) {
+          setModTargetUser((prev: any) => {
+            if (!prev || prev.userId !== data.userId) return prev;
+            return { ...prev, roleId: data.roleId };
+          });
+        }
+      }
+    };
+
     socket.on('community:active-cohort-updated', handleActiveCohort);
+    socket.on('community:moderation:action', handleModerationAction);
+    socket.on('community:role:updated', handleCommunityUpdate);
+    socket.on('community:settings:updated', handleCommunityUpdate);
+    socket.on('community:member:joined', handleCommunityUpdate);
+    socket.on('community:member:left', handleCommunityUpdate);
+    socket.on('community:ownership:transferred', handleCommunityUpdate);
+    socket.on('community:updated', handleCommunityUpdate);
+    socket.on('COMMUNITY_UPDATED', handleCommunityUpdate);
 
     return () => {
       socket.emit('community:leave-lobby', { communityId: realCommunity.id });
       socket.off('community:active-cohort-updated', handleActiveCohort);
+      socket.off('community:moderation:action', handleModerationAction);
+      socket.off('community:role:updated', handleCommunityUpdate);
+      socket.off('community:settings:updated', handleCommunityUpdate);
+      socket.off('community:member:joined', handleCommunityUpdate);
+      socket.off('community:member:left', handleCommunityUpdate);
+      socket.off('community:ownership:transferred', handleCommunityUpdate);
+      socket.off('community:updated', handleCommunityUpdate);
+      socket.off('COMMUNITY_UPDATED', handleCommunityUpdate);
     };
   }, [realCommunity?.id, socket, currentUser?.userId]);
+
+  useEffect(() => {
+    if (modTargetUser && members && members.length > 0) {
+      const updatedMember = members.find((m: any) => m.userId === modTargetUser.userId);
+      if (updatedMember && JSON.stringify(updatedMember) !== JSON.stringify(modTargetUser)) {
+        setModTargetUser(updatedMember);
+      }
+    }
+  }, [members, modTargetUser]);
 
   const handleCopyLink = () => {
     if (typeof window !== "undefined") {
@@ -597,6 +713,20 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
     return knowledge.filter((k: any) => k.title.toLowerCase().includes(query) || k.category.toLowerCase().includes(query) || k.preview.toLowerCase().includes(query));
   }, [knowledge, searchFilter]);
 
+  const myMember = useMemo(() => {
+    const foundInMembers = members.find((m: any) => m.userId === currentUserId);
+    if (foundInMembers) return foundInMembers;
+    if (modTargetUser && modTargetUser.userId === currentUserId) return modTargetUser;
+    return {
+      id: "current-user-mem",
+      userId: currentUserId || "",
+      isOwner: realCommunity?.ownerId === currentUserId,
+      isMuted: false,
+      roleId: null,
+      role: { priority: realCommunity?.ownerId === currentUserId ? 1 : 100, permissions: [] }
+    };
+  }, [members, currentUserId, realCommunity?.ownerId, modTargetUser]);
+
   // Navigation Items
   const navItems = [
     { name: "Chat", icon: MessageSquare },
@@ -604,7 +734,7 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
     { name: "Experiences", icon: Compass },
     { name: "Members", icon: Users },
     { name: "Gallery", icon: ImageIcon },
-    { name: "Leaderboard", icon: Trophy }
+    { name: "Leaderboard", icon: Trophy },
   ];
 
   return (
@@ -684,13 +814,9 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
                 {community.description}
               </p>
               <div className="flex items-center gap-2 md:gap-3 text-[9px] md:text-[9.5px] font-mono text-zinc-500 mt-1.5 flex-wrap">
-                <button 
-                  onClick={() => setMembersModalOpen(true)}
-                  className="hover:text-cyan-400 transition-colors underline decoration-dotted underline-offset-4 cursor-pointer flex items-center gap-1 font-semibold"
-                  title="Manage Members"
-                >
-                  <span>{community.members.toLocaleString()} Explorers</span>
-                </button>
+                <span className="font-semibold text-zinc-400">
+                  {community.members.toLocaleString()} Explorers
+                </span>
                 <span>•</span>
                 <span className="text-brand-emerald animate-pulse flex items-center gap-1 font-semibold">
                   <span className="h-1.5 w-1.5 rounded-full bg-brand-emerald" /> 84 Online
@@ -824,39 +950,58 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
 
                       {/* Fixed Chat controls (independent of scrolling) */}
                       <div className="p-2 md:p-3 bg-zinc-950/95 border border-white/10 rounded-xl md:rounded-2xl flex flex-col gap-1.5 md:gap-2 z-20 shadow-xl shrink-0 mt-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleSendSpecialMessage("experience")}
-                            className="px-2 py-1 bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[8px] md:text-[9px] font-black uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
-                          >
-                            <Compass className="h-3 w-3 text-brand-cyan" /> Share Experience
-                          </button>
-                          <button
-                            onClick={() => handleSendSpecialMessage("campfire")}
-                            className="px-2 py-1 bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[8px] md:text-[9px] font-black uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
-                          >
-                            <Flame className="h-3 w-3 text-brand-purple" /> Share Campfire
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-1.5 md:gap-2 bg-zinc-900 border border-white/5 p-1 md:p-1.5 rounded-xl">
-                          <button onClick={() => triggerToast("Voice recorder placeholder")} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-zinc-300 shrink-0">
-                            <Mic className="h-3.5 w-3.5" />
-                          </button>
-                          <input
-                            type="text"
-                            placeholder="Message group..."
-                            value={chatInput}
-                            onChange={(e) => setChatInput(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold px-1 md:px-2"
-                          />
-                          <button onClick={() => triggerToast("GIF/Emoji list placeholder")} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-zinc-300 shrink-0">
-                            <Smile className="h-3.5 w-3.5" />
-                          </button>
-                          <button onClick={handleSendMessage} className="p-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 rounded-lg transition-all flex items-center justify-center shrink-0">
-                            <Send className="h-3.5 w-3.5 fill-current" />
-                          </button>
-                        </div>
+                        {myMember?.isMuted ? (
+                          <div className="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/20 p-3 md:p-3.5 rounded-xl">
+                            <div className="flex items-center gap-3 text-red-400">
+                              <span className="p-2 bg-red-500/15 border border-red-500/20 rounded-xl flex items-center justify-center shrink-0">
+                                <VolumeX className="h-4 w-4 text-red-400" />
+                              </span>
+                              <div className="flex flex-col">
+                                <span className="text-xs font-black uppercase tracking-wider text-red-300">Chat & Actions Restricted (Muted)</span>
+                                <span className="text-[11px] text-red-400/80 font-medium mt-0.5">You are currently muted in this community. Chat messaging and story creation are temporarily disabled.</span>
+                              </div>
+                            </div>
+                            <span className="px-3 py-1 rounded-lg bg-red-500/20 border border-red-500/30 text-[10px] font-black text-red-300 uppercase tracking-widest shrink-0">
+                              Muted
+                            </span>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleSendSpecialMessage("experience")}
+                                className="px-2 py-1 bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[8px] md:text-[9px] font-black uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
+                              >
+                                <Compass className="h-3 w-3 text-brand-cyan" /> Share Experience
+                              </button>
+                              <button
+                                onClick={() => handleSendSpecialMessage("campfire")}
+                                className="px-2 py-1 bg-white/[0.02] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[8px] md:text-[9px] font-black uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white transition-all flex items-center gap-1 shrink-0"
+                              >
+                                <Flame className="h-3 w-3 text-brand-purple" /> Share Campfire
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-1.5 md:gap-2 bg-zinc-900 border border-white/5 p-1 md:p-1.5 rounded-xl">
+                              <button onClick={() => triggerToast("Voice recorder placeholder")} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-zinc-300 shrink-0">
+                                <Mic className="h-3.5 w-3.5" />
+                              </button>
+                              <input
+                                type="text"
+                                placeholder="Message group..."
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                                className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold px-1 md:px-2"
+                              />
+                              <button onClick={() => triggerToast("GIF/Emoji list placeholder")} className="p-1.5 rounded-lg hover:bg-white/5 text-zinc-500 hover:text-zinc-300 shrink-0">
+                                <Smile className="h-3.5 w-3.5" />
+                              </button>
+                              <button onClick={handleSendMessage} className="p-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 rounded-lg transition-all flex items-center justify-center shrink-0">
+                                <Send className="h-3.5 w-3.5 fill-current" />
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   )}
@@ -870,7 +1015,13 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
                           <p className="text-[9px] text-zinc-500 mt-0.5">Image-first immersive journals & travel diaries.</p>
                         </div>
                         <button
-                          onClick={() => setShowStoryCreator(true)}
+                          onClick={() => {
+                            if (myMember?.isMuted) {
+                              triggerToast("You are currently muted and cannot share stories.");
+                              return;
+                            }
+                            setShowStoryCreator(true);
+                          }}
                           className="px-3.5 py-1.5 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 text-[10px] font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center gap-1"
                         >
                           <Plus className="h-3.5 w-3.5" /> Share Story
@@ -1004,13 +1155,6 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
                               className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
                             />
                           </div>
-                          <button
-                            onClick={() => setMembersModalOpen(true)}
-                            className="px-3 py-1.5 bg-gradient-to-r from-cyan-500/20 to-blue-500/20 border border-cyan-500/30 text-cyan-300 hover:text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer shrink-0"
-                          >
-                            <Shield className="w-3.5 h-3.5 text-cyan-400" />
-                            <span className="hidden sm:inline">Manage</span>
-                          </button>
                         </div>
                       </div>
 
@@ -1112,6 +1256,8 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
                       </div>
                     </div>
                   )}
+
+
 
                 </motion.div>
               </AnimatePresence>
@@ -1609,160 +1755,16 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
       {/* Moderation / Role Management Modal */}
       <AnimatePresence>
         {modTargetUser && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md select-none">
-            <div className="absolute inset-0 cursor-default" onClick={() => setModTargetUser(null)} />
-            
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 10 }}
-              className="glass-panel border border-white/10 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-2xl overflow-hidden flex flex-col text-left gap-5 bg-zinc-950"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-white/10 shrink-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-8 w-8 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
-                    <ShieldAlert className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Member Moderation</h3>
-                    <p className="text-[10px] text-zinc-400 font-mono">@{modTargetUser.username}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setModTargetUser(null)}
-                  className="p-1.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* Role Management Section */}
-                <div className="space-y-2">
-                  <span className="text-[9px] font-mono text-brand-purple font-black uppercase tracking-widest block">Role Assignment</span>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => {
-                        updateRoleMutation.mutate({
-                          communityId: communityId as string,
-                          targetUserId: modTargetUser.userId,
-                          roleId: "ADMIN"
-                        });
-                        setModTargetUser(null);
-                      }}
-                      className="p-3 rounded-2xl bg-brand-purple/10 border border-brand-purple/20 hover:bg-brand-purple/20 text-brand-purple text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-purple/5"
-                    >
-                      <Shield className="w-4 h-4" />
-                      Promote Admin
-                    </button>
-                    <button
-                      onClick={() => {
-                        updateRoleMutation.mutate({
-                          communityId: communityId as string,
-                          targetUserId: modTargetUser.userId,
-                          roleId: "MEMBER"
-                        });
-                        setModTargetUser(null);
-                      }}
-                      className="p-3 rounded-2xl bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-300 hover:text-white text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <UserCheck className="w-4 h-4" />
-                      Demote Member
-                    </button>
-                  </div>
-                  {realCommunity?.ownerId === currentUserId && (
-                    <button
-                      onClick={() => {
-                        if (confirm(`Are you sure you want to pass ownership of this community to @${modTargetUser.username}? This cannot be undone.`)) {
-                          transferOwnershipMutation.mutate({
-                            communityId: communityId as string,
-                            newOwnerId: modTargetUser.userId
-                          });
-                          setModTargetUser(null);
-                        }
-                      }}
-                      className="w-full mt-1 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 text-amber-500 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/5"
-                    >
-                      <Crown className="w-4 h-4" />
-                      Pass Ownership
-                    </button>
-                  )}
-                </div>
-
-                {/* Punitive Actions Section */}
-                <div className="space-y-2 border-t border-white/10 pt-4">
-                  <span className="text-[9px] font-mono text-red-400 font-black uppercase tracking-widest block">Punitive Moderation</span>
-                  <div className="grid grid-cols-1 gap-2">
-                    <button
-                      onClick={() => {
-                        muteMutation.mutate({
-                          communityId: communityId as string,
-                          targetUserId: modTargetUser.userId,
-                          durationMinutes: 1440
-                        });
-                        setModTargetUser(null);
-                      }}
-                      className="p-3 rounded-2xl bg-zinc-900 border border-white/10 hover:border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between px-4 cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2">
-                        <VolumeX className="w-4 h-4" />
-                        Mute User (24h)
-                      </span>
-                      <span className="text-[10px] font-mono text-zinc-500">No Chat/Post</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (confirm(`Remove @${modTargetUser.username} from community?`)) {
-                          kickMutation.mutate({
-                            communityId: communityId as string,
-                            targetUserId: modTargetUser.userId
-                          });
-                          setModTargetUser(null);
-                        }
-                      }}
-                      className="p-3 rounded-2xl bg-zinc-900 border border-white/10 hover:border-red-500/30 text-red-400 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between px-4 cursor-pointer"
-                    >
-                      <span className="flex items-center gap-2">
-                        <UserMinus className="w-4 h-4" />
-                        Remove from Community
-                      </span>
-                      <span className="text-[10px] font-mono text-zinc-500">Kick</span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        if (confirm(`Permanently ban @${modTargetUser.username} from this community? They will never be able to re-enter or join again.`)) {
-                          banMutation.mutate({
-                            communityId: communityId as string,
-                            targetUserId: modTargetUser.userId,
-                            reason: "Admin permanent ban"
-                          });
-                          setModTargetUser(null);
-                        }
-                      }}
-                      className="p-3 rounded-2xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 text-red-500 text-xs font-black uppercase tracking-wider transition-all flex items-center justify-between px-4 cursor-pointer shadow-lg shadow-red-500/5"
-                    >
-                      <span className="flex items-center gap-2">
-                        <ShieldAlert className="w-4 h-4" />
-                        Ban Permanently
-                      </span>
-                      <span className="text-[10px] font-mono text-red-400">No Re-entry</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2 border-t border-white/10 mt-1 shrink-0">
-                <button
-                  onClick={() => setModTargetUser(null)}
-                  className="w-full py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all cursor-pointer"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
-          </div>
+          <MemberDetailsControlCenter
+            communityId={realCommunity?.id || (communityId as string)}
+            member={modTargetUser}
+            currentUserRole={{
+              priority: realCommunity?.ownerId === currentUserId ? 1 : myMember?.role?.priority ?? 100,
+              permissions: myMember?.role?.permissions || [],
+              isOwner: realCommunity?.ownerId === currentUserId
+            }}
+            onClose={() => setModTargetUser(null)}
+          />
         )}
       </AnimatePresence>
 

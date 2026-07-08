@@ -1,10 +1,11 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { GetUser, AuthUser } from './community.controller';
 import { CurrentUser } from '../../auth/decorators/current-user.decorator';
 import { CommunityMembershipService } from '../services/community-membership.service';
 import { CommunityInviteService } from '../services/community-invite.service';
 import { UserSearchService } from '../../search/services/user-search.service';
+import { CommunityModerationService } from '../services/community-moderation.service';
+import { CommunityRoleService } from '../services/community-role.service';
 
 @Controller('communities/:communityId/members')
 @UseGuards(JwtAuthGuard)
@@ -13,6 +14,8 @@ export class CommunityMembershipController {
     private readonly membershipService: CommunityMembershipService,
     private readonly inviteService: CommunityInviteService,
     private readonly userSearchService: UserSearchService,
+    private readonly moderationService: CommunityModerationService,
+    private readonly roleService: CommunityRoleService,
   ) {}
 
   @Post('join')
@@ -38,36 +41,82 @@ export class CommunityMembershipController {
   async kickMember(
     @Param('communityId') communityId: string,
     @Param('targetUserId') targetUserId: string,
-    @CurrentUser('userId') requesterId: string,
+    @Query('reason') reason?: string,
+    @CurrentUser('userId') requesterId?: string,
   ) {
-    return this.membershipService.kickMember(communityId, requesterId, targetUserId);
+    return this.moderationService.kickMember(communityId, requesterId!, targetUserId, reason || 'Kicked from community');
+  }
+
+  @Post(':targetUserId/warn')
+  async warnMember(
+    @Param('communityId') communityId: string,
+    @Param('targetUserId') targetUserId: string,
+    @Body() body?: { reason?: string },
+    @CurrentUser('userId') requesterId?: string,
+  ) {
+    return this.moderationService.warnMember(communityId, requesterId!, targetUserId, body?.reason || 'Community guideline warning');
   }
 
   @Post(':targetUserId/ban')
   async banMember(
     @Param('communityId') communityId: string,
     @Param('targetUserId') targetUserId: string,
-    @Body() body: { reason?: string; permanent?: boolean; expiresAt?: string },
-    @CurrentUser('userId') requesterId: string,
+    @Body() body?: { reason?: string; permanent?: boolean; durationMinutes?: number; expiresAt?: string },
+    @CurrentUser('userId') requesterId?: string,
   ) {
-    return this.membershipService.banMember(
+    let durationMinutes = body?.durationMinutes;
+    if (!durationMinutes && body?.expiresAt) {
+      durationMinutes = Math.round((new Date(body.expiresAt).getTime() - Date.now()) / 60000);
+    }
+    return this.moderationService.banMember(
       communityId,
-      requesterId,
+      requesterId!,
       targetUserId,
-      body.reason,
-      body.permanent ?? true,
-      body.expiresAt ? new Date(body.expiresAt) : undefined,
+      body?.reason || 'Banned from community',
+      body?.permanent ?? true,
+      durationMinutes,
     );
+  }
+
+  @Post(':targetUserId/unban')
+  async unbanMember(
+    @Param('communityId') communityId: string,
+    @Param('targetUserId') targetUserId: string,
+    @Body() body?: { reason?: string },
+    @CurrentUser('userId') requesterId?: string,
+  ) {
+    return this.moderationService.unbanMember(communityId, requesterId!, targetUserId, body?.reason || 'Ban lifted');
   }
 
   @Post(':targetUserId/mute')
   async muteMember(
     @Param('communityId') communityId: string,
     @Param('targetUserId') targetUserId: string,
-    @Body() body: { durationMinutes: number },
-    @CurrentUser('userId') requesterId: string,
+    @Body() body?: { durationMinutes?: number; reason?: string },
+    @CurrentUser('userId') requesterId?: string,
   ) {
-    return this.membershipService.muteMember(communityId, requesterId, targetUserId, body.durationMinutes);
+    return this.moderationService.muteMember(
+      communityId,
+      requesterId!,
+      targetUserId,
+      body?.durationMinutes || 15,
+      body?.reason || 'Temporarily muted',
+    );
+  }
+
+  @Post(':targetUserId/unmute')
+  async unmuteMember(
+    @Param('communityId') communityId: string,
+    @Param('targetUserId') targetUserId: string,
+    @Body() body?: { reason?: string },
+    @CurrentUser('userId') requesterId?: string,
+  ) {
+    return this.moderationService.unmuteMember(communityId, requesterId!, targetUserId, body?.reason || 'Mute lifted');
+  }
+
+  @Get(':targetUserId/history')
+  async getMemberHistory(@Param('communityId') communityId: string, @Param('targetUserId') targetUserId: string) {
+    return this.moderationService.getMemberHistory(communityId, targetUserId);
   }
 
   @Put('transfer-ownership')
@@ -83,10 +132,10 @@ export class CommunityMembershipController {
   async updateRole(
     @Param('communityId') communityId: string,
     @Param('targetUserId') targetUserId: string,
-    @Body() body: { roleId: string },
-    @CurrentUser('userId') requesterId: string,
+    @Body() body?: { roleId?: string; reason?: string },
+    @CurrentUser('userId') requesterId?: string,
   ) {
-    return this.membershipService.updateRole(communityId, requesterId, targetUserId, body.roleId);
+    return this.roleService.assignRole(communityId, requesterId!, targetUserId, body?.roleId || 'MEMBER', body?.reason);
   }
 
   @Get('search')

@@ -9,7 +9,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
@@ -18,6 +18,7 @@ import { ChatService } from './services/chat.service';
 import { CommunityChatService } from './services/community-chat.service';
 import { PresenceService } from './services/presence.service';
 import { ChatEventDispatcher } from './services/chat-event.dispatcher';
+import { CommunityEventDispatcher, CommunityEvents } from '../community/events/community-event.dispatcher';
 import { ConversationRepository } from './repositories/conversation.repository';
 import {
   SendMessageDto,
@@ -68,6 +69,8 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     private readonly communityChatService: CommunityChatService,
     private readonly presenceService: PresenceService,
     private readonly chatEventDispatcher: ChatEventDispatcher,
+    @Inject(forwardRef(() => CommunityEventDispatcher))
+    private readonly communityEventDispatcher: CommunityEventDispatcher,
     private readonly conversationRepository: ConversationRepository,
   ) {}
 
@@ -282,6 +285,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     try {
       await socket.join(`room:community:${data.communityId}`);
+      await socket.join(`community:${data.communityId}`);
       this.logger.log(`[JoinCommunity] socketId=${socket.id} userId=${userId} communityId=${data.communityId}`);
       return { success: true };
     } catch (error: any) {
@@ -299,6 +303,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     try {
       await socket.leave(`room:community:${data.communityId}`);
+      await socket.leave(`community:${data.communityId}`);
       this.logger.log(`[LeaveCommunity] socketId=${socket.id} userId=${userId} communityId=${data.communityId}`);
       return { success: true };
     } catch (error: any) {
@@ -344,6 +349,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const userId = socket.data.userId;
     if (!userId || !data?.communityId) return { success: false };
     await socket.join(`community:${data.communityId}`);
+    await socket.join(`room:community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
       type: 'COMMUNITY_JOIN_LOBBY' as any,
       payload: { communityId: data.communityId, userId, user: data.user, socketId: socket.id },
@@ -359,6 +365,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     const userId = socket.data.userId;
     if (!userId || !data?.communityId) return { success: false };
     await socket.leave(`community:${data.communityId}`);
+    await socket.leave(`room:community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
       type: 'COMMUNITY_LEAVE_LOBBY' as any,
       payload: { communityId: data.communityId, userId, socketId: socket.id },
@@ -451,12 +458,66 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     /** COMMUNITY_MESSAGE_CREATED → broadcast to all sockets in the community room */
     this.chatEventDispatcher.subscribe<any>('COMMUNITY_MESSAGE_CREATED', (payload) => {
       const { communityId, message } = payload;
-      this.server.to(`room:community:${communityId}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
+      this.server.to(`room:community:${communityId}`).to(`community:${communityId}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
+        message,
+        conversationId: message.conversationId,
+        communityId,
+      });
+      this.server.to(`room:community:${communityId}`).to(`community:${communityId}`).emit('community:message:new', {
         message,
         conversationId: message.conversationId,
         communityId,
       });
       this.logger.debug(`[COMMUNITY_MESSAGE_CREATED] messageId=${message.id} communityId=${communityId}`);
+    });
+
+    this.communityEventDispatcher.on(CommunityEvents.MEMBER_MUTED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'MUTE' });
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.MEMBER_UNMUTED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'UNMUTE' });
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.MEMBER_BANNED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'BAN' });
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.MEMBER_UNBANNED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'UNBAN' });
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.MEMBER_WARNED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'WARN' });
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.MEMBER_KICKED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'KICK' });
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.ROLE_CHANGED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:role:updated', payload);
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.SETTINGS_UPDATED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:settings:updated', payload);
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.JOINED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:member:joined', payload);
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.LEFT, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:member:left', payload);
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.OWNER_TRANSFERRED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:ownership:transferred', payload);
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
+    });
+    this.communityEventDispatcher.on(CommunityEvents.UPDATED, (payload: any) => {
+      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:updated', payload);
+      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
     });
 
     this.logger.log('ChatGateway: all event subscribers registered');

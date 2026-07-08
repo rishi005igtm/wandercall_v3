@@ -860,8 +860,8 @@
     "semantic_hash": "21ea8087ff3b1b33000148a371c079fb"
   },
   "client/next-env.d.ts": {
-    "mtime": 1783544404.102404,
-    "ast_hash": "29f60a376e12bf72b67d4994fcc84214",
+    "mtime": 1783544294.6435454,
+    "ast_hash": "b698cdd97fe8e3bd16dcd74899ad7cef",
     "semantic_hash": ""
   },
   "client/next.config.ts": {
@@ -1120,8 +1120,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/chat/chat.gateway.ts": {
-    "mtime": 1783546370.2825458,
-    "ast_hash": "3fa893bb16a985e8eb5745cb6818a216",
+    "mtime": 1783544150.5421617,
+    "ast_hash": "0c6dd4931f2decec5926b12dd972efb8",
     "semantic_hash": ""
   },
   "backend/src/modules/chat/chat.module.ts": {
@@ -1290,8 +1290,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/events/community-event.dispatcher.ts": {
-    "mtime": 1783546301.8595378,
-    "ast_hash": "b29285e245e40ff0fb0aa9290affe163",
+    "mtime": 1783538443.742025,
+    "ast_hash": "0b84d5b0528883260eb29bc46d27cb45",
     "semantic_hash": ""
   },
   "backend/src/modules/community/repositories/community-ban.repository.ts": {
@@ -1400,8 +1400,8 @@
     "semantic_hash": ""
   },
   "client/hooks/useCommunity.ts": {
-    "mtime": 1783545378.4199643,
-    "ast_hash": "47cfb151ad9e8babf84d8d466c52f326",
+    "mtime": 1783542919.6630561,
+    "ast_hash": "a8058c590fdcfa678efa6f8bf75a3c2d",
     "semantic_hash": ""
   },
   "client/hooks/useSocket.ts": {
@@ -1530,8 +1530,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-moderation.service.ts": {
-    "mtime": 1783546352.0063994,
-    "ast_hash": "aca2163a87615d259567ef99014afdac",
+    "mtime": 1783539347.0249653,
+    "ast_hash": "727a64dd56bd4f25cac01079918f7881",
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-permission.service.ts": {
@@ -1575,8 +1575,8 @@
     "semantic_hash": ""
   },
   "client/app/community/[slug]/_page_monolith.tsx": {
-    "mtime": 1783546762.8953526,
-    "ast_hash": "3ede00b0683e42aee9b10c0d6924e82e",
+    "mtime": 1783544245.3522465,
+    "ast_hash": "eecb3a2e54afbb993daf570d156841ae",
     "semantic_hash": ""
   },
   "client/app/community/[slug]/chat/page.tsx": {
@@ -1610,13 +1610,13 @@
     "semantic_hash": ""
   },
   "client/components/community/moderation/MemberDetailsControlCenter.tsx": {
-    "mtime": 1783546704.3398736,
-    "ast_hash": "273cf163dcf66637f2a4bcee83069182",
+    "mtime": 1783544219.7576182,
+    "ast_hash": "55f60c318bb8c71d6aef8d0cfbcd9610",
     "semantic_hash": ""
   },
   "client/hooks/api/useCommunityChat.ts": {
-    "mtime": 1783545341.653158,
-    "ast_hash": "ca7db3295829f42c60fd25b89d04c3b6",
+    "mtime": 1783514679.3968914,
+    "ast_hash": "536cfdb172cc558ba2dc1cfb7fd6f1e8",
     "semantic_hash": ""
   },
   "client/hooks/api/useDirectChat.ts": {
