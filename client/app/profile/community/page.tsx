@@ -36,7 +36,7 @@ import { useAppSelector, useAppDispatch } from "@/lib/store/store";
 import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useGalaxy, useDiscoverCommunities, useMyCommunities } from "@/hooks/useCommunity";
-import { toggleClusterSelection, setSearchQuery as setDiscoverySearchQuery, setMapLoaded, clearFilters } from "@/lib/store/slices/communityDiscoverySlice";
+import { toggleClusterSelection, setSearchQuery as setDiscoverySearchQuery, setMapLoaded, clearFilters, setClusters } from "@/lib/store/slices/communityDiscoverySlice";
 
 // Mock Data Interfaces
 interface JoinedCommunity {
@@ -474,8 +474,25 @@ export default function CommunitiesPage() {
   };
 
   useEffect(() => {
-    // Local storage cleanups if any
-  }, []);
+    const stored = localStorage.getItem('wandercall_selected_clusters');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const validIds = ["c-adventure", "c-food", "c-photography", "c-storytelling", "c-travel", "c-fitness", "c-learning", "c-nightlife"];
+          const sanitized = parsed.filter(id => validIds.includes(id));
+          if (sanitized.length > 0) {
+            dispatch(setClusters(sanitized));
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to parse selected clusters", e);
+      }
+    }
+    // Default fallback: Top 3 Clusters if nothing is stored or array is empty
+    dispatch(setClusters(["c-adventure", "c-food", "c-photography"]));
+  }, [dispatch]);
 
 
   const allDockCommunities = useMemo(() => {
@@ -510,20 +527,23 @@ export default function CommunitiesPage() {
     if (galaxyData) {
       // Map real backend galaxy clusters to frontend nodes
       const realNodes: CommunityNode[] = [];
-      Object.values(galaxyData).forEach((cluster: any) => {
-        cluster.forEach((c: any) => {
-          realNodes.push({
-            id: c.id,
-            name: c.name,
-            avatar: c.avatar || "🌌",
-            category: c.primaryCategory?.name || "Adventure",
-            members: c.currentMemberCount || 0,
-            activeEvents: c.isLive ? 1 : 0,
-            friendsInside: c.onlineMemberCount || 0,
-            description: c.description || "",
-            energyScore: c.isLive ? 100 : 75
+      const targetData = galaxyData.legacy || galaxyData;
+      Object.values(targetData).forEach((cluster: any) => {
+        if (Array.isArray(cluster)) {
+          cluster.forEach((c: any) => {
+            realNodes.push({
+              id: c.id,
+              name: c.name,
+              avatar: c.avatar || "🌌",
+              category: c.primaryCategory?.name || "Adventure",
+              members: c.currentMemberCount || 0,
+              activeEvents: c.isLive ? 1 : 0,
+              friendsInside: c.onlineMemberCount || 0,
+              description: c.description || "",
+              energyScore: c.isLive ? 100 : 75
+            });
           });
-        });
+        }
       });
       return realNodes;
     }

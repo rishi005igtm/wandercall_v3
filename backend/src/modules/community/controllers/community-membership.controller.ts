@@ -18,6 +18,11 @@ export class CommunityMembershipController {
     private readonly roleService: CommunityRoleService,
   ) {}
 
+  @Get()
+  async getMembers(@Param('communityId') communityId: string, @Query('includeGuests') includeGuests?: boolean) {
+    return this.membershipService.getMembers(communityId, includeGuests !== false);
+  }
+
   @Post('join')
   async joinCommunity(@Param('communityId') communityId: string, @CurrentUser('userId') userId: string) {
     return this.membershipService.joinCommunity(communityId, userId);

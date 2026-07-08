@@ -602,6 +602,7 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
       if (data?.communityId === realCommunity.id) {
         queryClient.invalidateQueries({ queryKey: ['communities'] });
         queryClient.invalidateQueries({ queryKey: ['community', 'me'] });
+        queryClient.invalidateQueries({ queryKey: ['communitySearchMembers'] });
         
         // Instantly reflect state on open modTargetUser modal right without waiting for refetch
         setModTargetUser((prev: any) => {

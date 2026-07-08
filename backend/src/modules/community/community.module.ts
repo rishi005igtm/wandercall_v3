@@ -47,6 +47,10 @@ import { CommunityMembershipController } from './controllers/community-membershi
 import { CommunityPresenceTracker } from './services/community-presence.tracker';
 import { CommunityRoleSeederService } from './services/community-role-seeder.service';
 
+import { RedisModule } from '../redis/redis.module';
+import { CommunityRedisPresenceService } from './services/community-redis-presence.service';
+import { CommunityRankingEngine } from './services/community-ranking.engine';
+
 import { CommunityStatisticsSubscriber } from './subscribers/community-statistics.subscriber';
 import { CommunitySearchSubscriber } from './subscribers/community-search.subscriber';
 import { CommunityGalaxySubscriber } from './subscribers/community-galaxy.subscriber';
@@ -56,6 +60,7 @@ import { CommunityGalaxySubscriber } from './subscribers/community-galaxy.subscr
     UserModule,
     forwardRef(() => ChatModule),
     SearchModule,
+    RedisModule,
     TypeOrmModule.forFeature([
       CommunityEntity,
       CommunitySettingsEntity,
@@ -101,6 +106,8 @@ import { CommunityGalaxySubscriber } from './subscribers/community-galaxy.subscr
     CommunityStatisticsService,
     CommunityPresenceTracker,
     CommunityRoleSeederService,
+    CommunityRedisPresenceService,
+    CommunityRankingEngine,
     CommunityStatisticsSubscriber,
     CommunitySearchSubscriber,
     CommunityGalaxySubscriber,
@@ -130,6 +137,8 @@ import { CommunityGalaxySubscriber } from './subscribers/community-galaxy.subscr
     CommunityStatisticsService,
     CommunityPresenceTracker,
     CommunityRoleSeederService,
+    CommunityRedisPresenceService,
+    CommunityRankingEngine,
   ],
 })
 export class CommunityModule {}

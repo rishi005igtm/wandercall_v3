@@ -118,6 +118,11 @@ export function useSocket() {
           if (!old) return old;
           const firstPage = old.pages?.[0];
           if (!firstPage) return old;
+          
+          // STRICT DEDUPLICATION
+          const alreadyExists = firstPage.items.some((m: any) => m.id === message.id || (m.clientMessageId && m.clientMessageId === message.clientMessageId));
+          if (alreadyExists) return old;
+
           return {
             ...old,
             pages: [

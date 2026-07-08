@@ -18,8 +18,12 @@ export class CommunityDiscoveryController {
   }
 
   @Get('galaxy')
-  async getGalaxy(@Query('categoryId') categoryId?: string) {
-    return this.discoveryService.getGalaxyClusters(categoryId);
+  async getGalaxy(
+    @Query('categoryId') categoryId?: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit', new DefaultValuePipe(5), ParseIntPipe) limit?: number,
+  ) {
+    return this.discoveryService.getGalaxyClusters(categoryId, cursor, limit);
   }
 
   @Get('categories')

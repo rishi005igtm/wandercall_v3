@@ -23,6 +23,9 @@ export const communityDiscoverySlice = createSlice({
       } else {
         state.selectedClusters.push(clusterId);
       }
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('wandercall_selected_clusters', JSON.stringify(state.selectedClusters));
+      }
     },
     setSearchQuery: (state, action: PayloadAction<string>) => {
       state.searchQuery = action.payload;
@@ -30,9 +33,15 @@ export const communityDiscoverySlice = createSlice({
     setMapLoaded: (state, action: PayloadAction<boolean>) => {
       state.isMapLoaded = action.payload;
     },
+    setClusters: (state, action: PayloadAction<string[]>) => {
+      state.selectedClusters = action.payload;
+    },
     clearFilters: (state) => {
       state.selectedClusters = [];
       state.searchQuery = '';
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('wandercall_selected_clusters');
+      }
     }
   },
 });
@@ -42,6 +51,7 @@ export const {
   setSearchQuery,
   setMapLoaded,
   clearFilters,
+  setClusters,
 } = communityDiscoverySlice.actions;
 
 export default communityDiscoverySlice.reducer;

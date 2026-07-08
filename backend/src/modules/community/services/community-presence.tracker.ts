@@ -4,6 +4,8 @@ import { ChatGateway } from '../../chat/chat.gateway';
 import { CommunityMemberRepository } from '../repositories/community-member.repository';
 import { CommunityMemberStatus } from '../entities/community-member.entity';
 import { CommunityEventDispatcher, CommunityEvents } from '../events/community-event.dispatcher';
+import { CommunityRedisPresenceService } from './community-redis-presence.service';
+import { COMMUNITY_RANKING_CONFIG } from '../config/community-ranking.config';
 
 @Injectable()
 export class CommunityPresenceTracker implements OnModuleInit {
@@ -31,6 +33,7 @@ export class CommunityPresenceTracker implements OnModuleInit {
     private readonly chatGateway: ChatGateway,
     private readonly memberRepo: CommunityMemberRepository,
     private readonly communityDispatcher: CommunityEventDispatcher,
+    private readonly redisPresence: CommunityRedisPresenceService,
   ) {}
 
   onModuleInit() {
@@ -91,14 +94,21 @@ export class CommunityPresenceTracker implements OnModuleInit {
     if (!this.lobbyCohorts.has(communityId)) {
       this.lobbyCohorts.set(communityId, new Map());
     }
-    this.lobbyCohorts.get(communityId)!.set(userId, {
+    const cohortUser = {
       userId,
       displayName: user?.displayName || user?.username || 'Traveler',
       username: user?.username || 'traveler',
       avatarUrl: user?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200",
       roleName: user?.roleName || (user?.isOwner ? 'OWNER' : (user?.isMember ? 'MEMBER' : 'GUEST')),
+      isGuest: user?.roleName === 'GUEST' || (!user?.isOwner && !user?.isMember),
       status: user?.status || 'Active Now',
+      joinTime: Date.now(),
+      connectionQuality: 'Excellent' as const,
       level: user?.level || 1,
+    };
+    this.lobbyCohorts.get(communityId)!.set(userId, cohortUser);
+    this.redisPresence.enterPresenceSession(communityId, cohortUser, socketId).then(count => {
+      this.checkAndBroadcastLiveState(communityId, count);
     });
     this.broadcastActiveCohort(communityId);
   }
@@ -134,12 +144,26 @@ export class CommunityPresenceTracker implements OnModuleInit {
             this.lobbyCohorts.get(communityId)!.delete(userId);
             this.broadcastActiveCohort(communityId);
           }
+          this.redisPresence.leavePresenceSession(communityId, userId).then(count => {
+            this.checkAndBroadcastLiveState(communityId, count);
+          });
         }
         this.disconnectTimers.delete(timerId);
       }, 3000);
 
       this.disconnectTimers.set(timerId, timer);
     }
+  }
+
+  async getActiveCohorts(communityId: string) {
+    const redisCohorts = await this.redisPresence.getActiveCohorts(communityId);
+    if (redisCohorts && redisCohorts.length > 0) return redisCohorts;
+    const cohortMap = this.lobbyCohorts.get(communityId);
+    return cohortMap ? Array.from(cohortMap.values()) : [];
+  }
+
+  async pulseHeartbeat(communityId: string, userId: string) {
+    return this.redisPresence.pulseHeartbeat(communityId, userId);
   }
 
   private broadcastActiveCohort(communityId: string) {
@@ -217,30 +241,42 @@ export class CommunityPresenceTracker implements OnModuleInit {
   }
 
   private checkAndBroadcastLiveState(communityId: string, onlineCount: number) {
-    const isLive = onlineCount >= 2;
+    const minActive = COMMUNITY_RANKING_CONFIG.thresholds.minOnlineForActive;
+    const isLive = onlineCount >= minActive;
     const previouslyLive = this.communityLiveState.get(communityId) || false;
 
-    // We emit if the live status toggled OR if it's already live but the count changed.
-    // To avoid spamming, we could only emit on toggle, but the frontend might want updated counts.
-    // For now, emit whenever onlineCount changes to keep UI perfectly in sync.
     this.communityLiveState.set(communityId, isLive);
-
     this.logger.debug(`Community ${communityId} online count: ${onlineCount} (isLive: ${isLive})`);
 
-    this.chatGateway.server.emit('COMMUNITY_LIVE_STATE_CHANGED', {
+    this.chatGateway.server?.emit('COMMUNITY_LIVE_STATE_CHANGED', {
       communityId,
       isLive,
       onlineMemberCount: onlineCount
     });
+
+    this.chatGateway.server?.emit('community:online:count', {
+      communityId,
+      onlineMemberCount: onlineCount,
+      isLive
+    });
+
+    if (!previouslyLive && isLive) {
+      this.chatGateway.server?.emit('community:activated', { communityId, onlineMemberCount: onlineCount });
+      this.chatGateway.server?.emit('discovery:cluster:changed', { communityId, isLive: true });
+    } else if (previouslyLive && !isLive) {
+      this.chatGateway.server?.emit('community:deactivated', { communityId, onlineMemberCount: onlineCount });
+      this.chatGateway.server?.emit('discovery:cluster:changed', { communityId, isLive: false });
+    }
   }
 
   /**
    * Used by CommunityDiscoveryService to inject live stats into query results
    */
   getCommunityLiveStats(communityId: string): { isLive: boolean; onlineMemberCount: number } {
+    const minActive = COMMUNITY_RANKING_CONFIG.thresholds.minOnlineForActive;
     const count = this.communityOnlineMap.get(communityId)?.size || 0;
     return {
-      isLive: count >= 2,
+      isLive: count >= minActive,
       onlineMemberCount: count
     };
   }

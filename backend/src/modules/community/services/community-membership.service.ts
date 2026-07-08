@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CommunityEntity } from '../entities/community.entity';
 import { CommunityMemberEntity, CommunityMemberStatus } from '../entities/community-member.entity';
@@ -13,6 +13,7 @@ import { CommunityModerationService } from './community-moderation.service';
 import { CommunityRoleService } from './community-role.service';
 import { CommunityAuditService } from './community-audit.service';
 import { CommunityAuditAction } from '../entities/community-audit-log.entity';
+import { CommunityPresenceTracker } from './community-presence.tracker';
 
 @Injectable()
 export class CommunityMembershipService {
@@ -29,12 +30,72 @@ export class CommunityMembershipService {
     private readonly roleService: CommunityRoleService,
     private readonly auditService: CommunityAuditService,
     private readonly dataSource: DataSource,
+    @Inject(forwardRef(() => CommunityPresenceTracker))
+    private readonly presenceTracker: CommunityPresenceTracker,
   ) {}
 
   private async resolveCommunityId(communityIdOrSlug: string): Promise<string> {
     const id = await this.communityRepo.resolveId(communityIdOrSlug);
     if (!id) throw new NotFoundException('Community not found');
     return id;
+  }
+
+  async getMembers(communityIdOrSlug: string, includeGuests = true) {
+    const communityId = await this.resolveCommunityId(communityIdOrSlug);
+    
+    const members = await this.memberRepo['repo'].createQueryBuilder('m')
+      .leftJoinAndSelect('users', 'u', 'u.id = m.userId')
+      .leftJoinAndSelect('community_roles', 'r', 'r.id = m.roleId')
+      .where('m.communityId = :communityId', { communityId })
+      .andWhere('m.status = :status', { status: CommunityMemberStatus.ACTIVE })
+      .orderBy('m.joinedAt', 'ASC')
+      .getRawAndEntities();
+
+    // Map raw results back to the desired output structure
+    const mappedMembers = members.entities.map((m, idx) => {
+      const raw = members.raw[idx];
+      return {
+        id: m.id,
+        userId: m.userId,
+        username: raw.u_username,
+        displayName: raw.u_displayName,
+        avatarUrl: raw.u_avatarUrl,
+        level: raw.u_level,
+        roleId: m.roleId,
+        roleName: raw.r_name || (m.isOwner ? 'OWNER' : 'MEMBER'),
+        isOwner: m.isOwner,
+        isMuted: m.isMuted,
+        status: m.status,
+        joinedAt: m.joinedAt,
+        isGuest: false,
+      };
+    });
+
+    if (includeGuests && this.presenceTracker) {
+      const activeCohorts = await this.presenceTracker.getActiveCohorts(communityId);
+      const guestCohorts = activeCohorts.filter(c => c.isGuest);
+      for (const guest of guestCohorts) {
+        if (!mappedMembers.some(m => m.userId === guest.userId)) {
+          mappedMembers.push({
+            id: `guest-${guest.userId}`,
+            userId: guest.userId,
+            username: guest.username,
+            displayName: guest.displayName,
+            avatarUrl: guest.avatarUrl,
+            level: guest.level,
+            roleId: 'GUEST',
+            roleName: 'GUEST',
+            isOwner: false,
+            isMuted: false,
+            status: 'ACTIVE' as any,
+            joinedAt: new Date(guest.joinTime || Date.now()),
+            isGuest: true,
+          });
+        }
+      }
+    }
+
+    return mappedMembers;
   }
 
   async joinCommunity(communityId: string, userId: string): Promise<CommunityMemberEntity> {
