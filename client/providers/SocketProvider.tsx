@@ -279,8 +279,15 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
     });
 
-    // Socket is intentionally kept alive across navigation.
-    // Only destroyed above when auth state changes (logout or token rotation).
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off();
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        connectedTokenRef.current = null;
+        dispatchRef.current(setSocketConnected(false));
+      }
+    };
   }, [isAuthReady, isAuthenticated, accessToken]); // NOTE: isAuthReady added as critical guard
 
   const emit = useCallback(async <T = any>(event: string, data: any): Promise<T | null> => {

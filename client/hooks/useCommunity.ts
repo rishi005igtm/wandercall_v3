@@ -38,6 +38,7 @@ export const useJoinCommunity = () => {
     mutationFn: (id: string) => communityApi.join(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
+      queryClient.invalidateQueries({ queryKey: ['community', 'me'] });
     },
   });
 };
@@ -77,6 +78,7 @@ export const useLeaveCommunity = () => {
     mutationFn: (id: string) => communityApi.leave(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
+      queryClient.invalidateQueries({ queryKey: ['community', 'me'] });
     },
   });
 };

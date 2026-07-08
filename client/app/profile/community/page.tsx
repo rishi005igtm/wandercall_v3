@@ -491,9 +491,20 @@ export default function CommunitiesPage() {
       unreadCount: 0,
       energyScore: "Active",
       recentActivity: c.description || "Community joined",
-      upcomingEvent: ""
+      upcomingEvent: "",
+      ownerId: c.ownerId
     }));
   }, [myCommunities]);
+
+  const createdCommunities = useMemo(() => {
+    if (!currentUser?.userId) return [];
+    return allDockCommunities.filter((c: any) => c.ownerId === currentUser.userId);
+  }, [allDockCommunities, currentUser?.userId]);
+
+  const joinedCommunities = useMemo(() => {
+    if (!currentUser?.userId) return [];
+    return allDockCommunities.filter((c: any) => c.ownerId !== currentUser.userId);
+  }, [allDockCommunities, currentUser?.userId]);
 
   const allGalaxyNodes = useMemo(() => {
     if (galaxyData) {
@@ -912,7 +923,7 @@ export default function CommunitiesPage() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <h3 className="text-xs font-black uppercase tracking-widest text-brand-purple flex items-center gap-1.5">
-              <Plus className="h-3.5 w-3.5 text-brand-purple" /> My Created Coordinates ({myCommunities?.length || 0})
+              <Plus className="h-3.5 w-3.5 text-brand-purple" /> My Created Coordinates ({createdCommunities.length})
             </h3>
             <span className="text-[8px] font-mono text-zinc-500">
               Coordinates you established and manage
@@ -920,7 +931,7 @@ export default function CommunitiesPage() {
           </div>
 
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
-            {allDockCommunities.map((item: any, index: number) => {
+            {createdCommunities.map((item: any, index: number) => {
               const isActive = item.liveStatus === "Campfire Active" || item.liveStatus === "Event Live" || item.liveStatus === "Active Now";
               return (
                 <div
@@ -990,7 +1001,7 @@ export default function CommunitiesPage() {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
             <h3 className="text-xs font-black uppercase tracking-widest text-brand-cyan flex items-center gap-1.5">
-                  <Compass className="h-3.5 w-3.5 text-brand-cyan" /> Saved Communities ({allDockCommunities.length})
+                  <Compass className="h-3.5 w-3.5 text-brand-cyan" /> Saved Communities ({joinedCommunities.length})
             </h3>
             <span className="text-[8px] font-mono text-zinc-500">
               Communities you joined and explore
@@ -998,7 +1009,7 @@ export default function CommunitiesPage() {
           </div>
 
           <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2 pt-1 w-full min-w-0">
-            {allDockCommunities.map((item: any, index: number) => {
+            {joinedCommunities.map((item: any, index: number) => {
               const isActive = item.liveStatus === "Campfire Active" || item.liveStatus === "Event Live" || item.liveStatus === "Active Now";
               return (
                 <div

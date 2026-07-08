@@ -172,51 +172,54 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   handleTypingStart(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: TypingDto,
-  ): void {
+  ): any {
     const userId = socket.data.userId;
-    if (!userId || !data?.conversationId) return;
+    if (!userId || !data?.conversationId) return { success: false };
 
     this.presenceService.startTyping(userId, data.conversationId);
     socket.to(`conv:${data.conversationId}`).emit(SOCKET_EVENTS.TYPING_START_BROADCAST, {
       userId,
       conversationId: data.conversationId,
     });
+    return { success: true };
   }
 
   @SubscribeMessage(SOCKET_EVENTS.TYPING_STOP)
   handleTypingStop(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: TypingDto,
-  ): void {
+  ): any {
     const userId = socket.data.userId;
-    if (!userId || !data?.conversationId) return;
+    if (!userId || !data?.conversationId) return { success: false };
 
     this.presenceService.stopTyping(userId, data.conversationId);
     socket.to(`conv:${data.conversationId}`).emit(SOCKET_EVENTS.TYPING_STOP_BROADCAST, {
       userId,
       conversationId: data.conversationId,
     });
+    return { success: true };
   }
 
   @SubscribeMessage(SOCKET_EVENTS.MARK_DELIVERED)
   async handleMarkDelivered(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: MarkDeliveredDto,
-  ): Promise<void> {
+  ): Promise<any> {
     const userId = socket.data.userId;
-    if (!userId || !data?.messageId) return;
+    if (!userId || !data?.messageId) return { success: false };
     try {
       await this.chatService.markDelivered(data.messageId, userId);
     } catch (_) { /* non-critical */ }
+    return { success: true };
   }
 
   @SubscribeMessage(SOCKET_EVENTS.MARK_READ)
   async handleMarkRead(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: MarkReadDto,
-  ): Promise<void> {
+  ): Promise<any> {
     const userId = socket.data.userId;
-    if (!userId || !data?.conversationId) return;
+    if (!userId || !data?.conversationId) return { success: false };
     try {
       if (data.messageId) {
         await this.chatService.markRead(userId, data.conversationId, data.messageId);
@@ -225,6 +228,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         this.server.to(`user:${userId}`).emit('conversation:updated', { conversationId: data.conversationId });
       }
     } catch (_) { /* non-critical */ }
+    return { success: true };
   }
 
   @SubscribeMessage(SOCKET_EVENTS.OPEN_CONVERSATION)
@@ -285,6 +289,23 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     }
   }
 
+  @SubscribeMessage('leave_community')
+  async handleLeaveCommunity(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { communityId: string },
+  ): Promise<any> {
+    const userId = socket.data.userId;
+    if (!userId || !data?.communityId) return this.ackError('VALIDATION_ERROR', 'communityId required.');
+
+    try {
+      await socket.leave(`room:community:${data.communityId}`);
+      this.logger.log(`[LeaveCommunity] socketId=${socket.id} userId=${userId} communityId=${data.communityId}`);
+      return { success: true };
+    } catch (error: any) {
+      return this.ackError('LEAVE_FAILED', error.message);
+    }
+  }
+
   @SubscribeMessage('community:send_message')
   async handleCommunitySendMessage(
     @ConnectedSocket() socket: Socket,
@@ -321,7 +342,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { communityId: string; user: any },
   ): Promise<any> {
     const userId = socket.data.userId;
-    if (!userId || !data?.communityId) return;
+    if (!userId || !data?.communityId) return { success: false };
     await socket.join(`community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
       type: 'COMMUNITY_JOIN_LOBBY' as any,
@@ -336,7 +357,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     @MessageBody() data: { communityId: string },
   ): Promise<any> {
     const userId = socket.data.userId;
-    if (!userId || !data?.communityId) return;
+    if (!userId || !data?.communityId) return { success: false };
     await socket.leave(`community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
       type: 'COMMUNITY_LEAVE_LOBBY' as any,
