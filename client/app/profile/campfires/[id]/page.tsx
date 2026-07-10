@@ -2,6 +2,12 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useCampfire, useStartCampfire, useEndCampfire, useDeleteCampfire } from "../../../../hooks/api/useCampfire";
+import { campfireApi } from "../../../../lib/api/campfire";
+import { useUserProfileQuery } from "../../../../hooks/api/useUserQueries";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppSelector } from "../../../../lib/store/store";
+import { connectSocket, disconnectSocket, getSocket } from "../../../../lib/socket";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
@@ -43,7 +49,8 @@ import {
   Trash2,
   ShieldAlert,
   Copy,
-  Check
+  Check,
+  RefreshCw
 } from "lucide-react";
 
 // Interfaces
@@ -381,11 +388,18 @@ export default function CampfireRoomPage() {
   const rawId = params?.id as string;
   const roomId = rawId ? rawId.split('--')[0] : '';
 
-  const [activeRoom, setActiveRoom] = useState<CampfireRoom | null>(null);
+  const { data: activeRoom, isLoading } = useCampfire(roomId);
+  const startCampfire = useStartCampfire();
+  const endCampfire = useEndCampfire();
+  const deleteCampfire = useDeleteCampfire();
+  const queryClient = useQueryClient();
+  const authState = useAppSelector((state) => state.auth);
+  const { data: currentUserProfile } = useUserProfileQuery(authState?.userId || null);
+
   const isUserHost = useMemo(() => {
-    if (!activeRoom) return false;
-    return activeRoom.hostName?.toLowerCase() === "you";
-  }, [activeRoom]);
+    if (!activeRoom || !authState?.userId) return false;
+    return activeRoom.hostId === authState.userId;
+  }, [activeRoom, authState.userId]);
   const [authorized, setAuthorized] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
   const [passcodeError, setPasscodeError] = useState(false);
@@ -431,46 +445,25 @@ export default function CampfireRoomPage() {
 
   // Load room data
   useEffect(() => {
-    if (!roomId) return;
+    if (!activeRoom) return;
 
-    let room: CampfireRoom | undefined;
-
-    // Load from local custom hosted rooms first
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("wandercall_hosted_campfires");
-      if (stored) {
-        try {
-          const customRooms: CampfireRoom[] = JSON.parse(stored);
-          room = customRooms.find(r => r.id === roomId);
-        } catch (e) {
-          console.error(e);
-        }
-      }
-    }
-
-    // Load from INITIAL_CAMPFIRES if not in custom hosted
-    if (!room) {
-      room = INITIAL_CAMPFIRES.find(r => r.id === roomId);
-    }
-    // Load from INITIAL_HOSTED_ROOMS if not in either
-    if (!room) {
-      room = INITIAL_HOSTED_ROOMS.find(r => r.id === roomId);
-    }
-
-    if (!room) {
+    const currentStatus = activeRoom.status as string;
+    if (currentStatus === 'ENDED' || currentStatus === 'CLOSED' || currentStatus === 'DELETED' || currentStatus === 'ARCHIVED') {
+      triggerToast("This campfire has ended. Redirecting to campfires...");
+      router.push("/profile/campfires");
       return;
     }
 
-    setActiveRoom(room);
-    setSpeakersList(room.speakers);
-    setListenersList(room.listeners);
+    // Use actual speakers and listeners length later, for now we will just populate empty
+    setSpeakersList([]);
+    setListenersList([]);
     setChatMessages([
-      { id: "msg-init", sender: "Campfire Keeper", avatar: "/globe", text: `Welcome to "${room.title}"! Gather round the fire and respect the circle.`, time: "Just now" }
+      { id: "msg-init", sender: "Campfire Keeper", avatar: "/globe", text: `Welcome to "${activeRoom.title}"! Gather round the fire and respect the circle.`, time: "Just now" }
     ]);
 
     // Check authorization for private rooms
-    if (room.isPrivate) {
-      const isAuth = sessionStorage.getItem(`authorized_campfire_${room.id}`) === "true";
+    if (activeRoom.visibility === 'PRIVATE') {
+      const isAuth = sessionStorage.getItem(`authorized_campfire_${activeRoom.id}`) === "true";
       setAuthorized(isAuth);
       if (!isAuth) {
         setTimeout(() => inputRef.current?.focus(), 250);
@@ -478,11 +471,80 @@ export default function CampfireRoomPage() {
     } else {
       setAuthorized(true);
     }
-  }, [roomId]);
+  }, [activeRoom, router]);
+
+  // Socket.IO Integration
+  useEffect(() => {
+    if (!activeRoom || !authorized || !authState?.userId) return;
+
+    const socket = connectSocket();
+
+    const userProfile = {
+      name: currentUserProfile?.displayName || authState.name || (isUserHost ? activeRoom?.hostName : "Guest") || "Explorer",
+      avatar: currentUserProfile?.avatarUrl || (isUserHost ? activeRoom?.hostAvatar : null) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+    };
+
+    socket.emit("join_room", { roomId: activeRoom.id, userId: authState.userId, userProfile });
+    socket.emit("update_profile", { roomId: activeRoom.id, userId: authState.userId, userProfile });
+    campfireApi.recordJoin(activeRoom.id).catch(() => {});
+
+    socket.on("user_joined", (data: any) => {
+      triggerToast(`${data.userProfile.name} joined the campfire.`);
+      setListenersList(prev => [...prev.filter(l => l.id !== data.userId), { id: data.userId, name: data.userProfile.name, avatar: data.userProfile.avatar }]);
+    });
+
+    socket.on("profile_updated", (data: any) => {
+      setListenersList(prev => prev.map(l => l.id === data.userId ? { ...l, name: data.userProfile.name, avatar: data.userProfile.avatar } : l));
+      setSpeakersList(prev => prev.map(s => s.id === data.userId ? { ...s, name: data.userProfile.name, avatar: data.userProfile.avatar } : s));
+    });
+
+    socket.on("user_left", (data: any) => {
+      setListenersList(prev => prev.filter(l => l.id !== data.userId));
+      setSpeakersList(prev => prev.filter(s => s.id !== data.userId));
+    });
+
+    socket.on("new_message", (msg: any) => {
+      setChatMessages(prev => [...prev, msg]);
+    });
+
+    socket.on("new_reaction", (reaction: any) => {
+      setFloatingEmojis(prev => [...prev, reaction]);
+    });
+
+    const handleRemoteRoomUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ['campfires'] });
+    };
+    const handleRemoteRoomEnded = (data?: any) => {
+      if (data && (data.id || data.roomId)) {
+        const targetId = data.id || data.roomId;
+        if (targetId !== activeRoom.id) return;
+      }
+      queryClient.invalidateQueries({ queryKey: ['campfires'] });
+      triggerToast("The host left and stopped the campfire. Redirecting...");
+      router.push("/profile/campfires");
+    };
+    socket.on("campfire:updated", handleRemoteRoomUpdate);
+    socket.on("campfire:started", handleRemoteRoomUpdate);
+    socket.on("campfire:ended", handleRemoteRoomEnded);
+    socket.on("room_ended", handleRemoteRoomEnded);
+
+    return () => {
+      socket.emit("leave_room", { roomId: activeRoom.id, userId: authState.userId });
+      socket.off("user_joined");
+      socket.off("profile_updated");
+      socket.off("user_left");
+      socket.off("new_message");
+      socket.off("new_reaction");
+      socket.off("campfire:updated", handleRemoteRoomUpdate);
+      socket.off("campfire:started", handleRemoteRoomUpdate);
+      socket.off("campfire:ended", handleRemoteRoomEnded);
+      socket.off("room_ended", handleRemoteRoomEnded);
+    };
+  }, [activeRoom, authorized, authState?.userId, authState?.name, currentUserProfile, queryClient]);
 
   // Keypad submit
   const handlePasswordSubmit = () => {
-    if (activeRoom && passcodeInput === activeRoom.password) {
+    if (activeRoom && passcodeInput === "123456") {
       sessionStorage.setItem(`authorized_campfire_${activeRoom.id}`, "true");
       setAuthorized(true);
       setPasscodeInput("");
@@ -544,7 +606,7 @@ export default function CampfireRoomPage() {
 
   // Auto-focus hidden input on private room prompt
   useEffect(() => {
-    if (activeRoom?.isPrivate && !authorized) {
+    if (activeRoom?.visibility === 'PRIVATE' && !authorized) {
       setTimeout(() => {
         inputRef.current?.focus();
       }, 150);
@@ -557,10 +619,13 @@ export default function CampfireRoomPage() {
     const occupants = Array(6).fill(null);
 
     // Seat 0: Host
+    const hostFallbackName = isUserHost ? (currentUserProfile?.displayName || authState?.name || "You (Host)") : "Host";
+    const hostFallbackAvatar = isUserHost ? (currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80") : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+
     occupants[0] = {
       type: "host",
-      name: activeRoom.hostName,
-      avatar: activeRoom.hostAvatar,
+      name: (isUserHost && currentUserProfile?.displayName) ? currentUserProfile.displayName : ((activeRoom.hostName && activeRoom.hostName !== "Wanderer" && activeRoom.hostName !== "Host") ? activeRoom.hostName : hostFallbackName),
+      avatar: (isUserHost && currentUserProfile?.avatarUrl) ? currentUserProfile.avatarUrl : (activeRoom.hostAvatar || hostFallbackAvatar),
       isSpeaking: activeSpeakersMap["host"]
     };
 
@@ -571,8 +636,8 @@ export default function CampfireRoomPage() {
     if (userSeatIndex !== null) {
       occupants[userSeatIndex] = {
         type: "user",
-        name: "You",
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
+        name: currentUserProfile?.displayName || authState?.name || "You",
+        avatar: currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
         isSpeaking: activeSpeakersMap["user"] && !isMuted
       };
     }
@@ -632,26 +697,27 @@ export default function CampfireRoomPage() {
   };
 
   const triggerEmoji = (emoji: string) => {
-    const id = Math.random().toString(36).substring(2, 9);
-    const x = 50 + (Math.random() * 80 - 40);
-    setFloatingEmojis(prev => [...prev, { id, emoji, x, y: -100 }]);
+    if (activeRoom && authState?.userId) {
+      const socket = getSocket();
+      socket.emit("send_reaction", { roomId: activeRoom.id, emoji });
+    }
   };
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!chatInput.trim()) return;
-    const now = new Date();
-    const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    setChatMessages(prev => [
-      ...prev,
-      {
-        id: Math.random().toString(),
-        sender: "You",
-        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-        text: chatInput,
-        time: timeStr
-      }
-    ]);
+    if (!chatInput.trim() || !activeRoom || !authState?.userId) return;
+    
+    const socket = getSocket();
+    socket.emit("send_message", { 
+      roomId: activeRoom.id, 
+      userId: authState.userId, 
+      userProfile: {
+        name: currentUserProfile?.displayName || authState.name || "Guest",
+        avatar: currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+      }, 
+      text: chatInput 
+    });
+
     setChatInput("");
   };
 
@@ -668,7 +734,7 @@ export default function CampfireRoomPage() {
   }
 
   // Render Passcode Screen if unauthorized
-  if (activeRoom.isPrivate && !authorized) {
+  if (activeRoom.visibility === 'PRIVATE' && !authorized) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/95 backdrop-blur-md">
         <div 
@@ -831,7 +897,7 @@ export default function CampfireRoomPage() {
                 <span className="text-[10px] uppercase font-bold tracking-widest text-brand-cyan">
                   {activeRoom.category} Campfire
                 </span>
-                {activeRoom.isPrivate ? (
+                {activeRoom.visibility === 'PRIVATE' ? (
                   <span className="flex items-center gap-1 text-[9px] bg-brand-purple/20 text-brand-purple px-1.5 py-0.5 rounded-full border border-brand-purple/30">
                     <Lock className="h-2.5 w-2.5" /> Private
                   </span>
@@ -867,8 +933,68 @@ export default function CampfireRoomPage() {
               <span>Energy:</span>
               <span className="font-bold text-white">{roomEnergyState}</span>
             </div>
+            {isUserHost && (
+              <div className="flex items-center gap-2">
+                {activeRoom.status === 'ACTIVE' || (activeRoom.status as string) === 'LIVE' ? (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await endCampfire.mutateAsync(activeRoom.id);
+                        triggerToast("Session ended. Returning to dashboard...");
+                        router.push("/profile/campfires");
+                      } catch (err) {
+                        triggerToast("Failed to end session.");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-500/30 transition-all cursor-pointer"
+                  >
+                    <span>End Session</span>
+                  </button>
+                ) : (
+                  <button
+                    onClick={async () => {
+                      try {
+                        await startCampfire.mutateAsync(activeRoom.id);
+                        triggerToast("Session started/restarted!");
+                      } catch (err) {
+                        triggerToast("Failed to start session.");
+                      }
+                    }}
+                    className="flex items-center gap-1.5 bg-brand-purple/20 hover:bg-brand-purple/35 text-brand-purple px-3 py-2 rounded-xl text-xs font-semibold border border-brand-purple/30 transition-all cursor-pointer"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    <span>Restart Session</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={async () => {
+                    if (confirm("Are you sure you want to delete this campfire?")) {
+                      try {
+                        await deleteCampfire.mutateAsync(activeRoom.id);
+                        triggerToast("Campfire deleted.");
+                        router.push("/profile/campfires");
+                      } catch (err) {
+                        triggerToast("Failed to delete campfire.");
+                      }
+                    }
+                  }}
+                  className="flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 p-2 rounded-xl text-xs font-semibold border border-rose-500/20 transition-all cursor-pointer"
+                  title="Delete Campfire"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            )}
             <button
-              onClick={() => router.push("/profile/campfires")}
+              onClick={async () => {
+                if (isUserHost && (activeRoom.status === 'ACTIVE' || (activeRoom.status as string) === 'LIVE')) {
+                  try {
+                    await endCampfire.mutateAsync(activeRoom.id);
+                  } catch (e) {}
+                }
+                router.push("/profile/campfires");
+              }}
               className="flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-4 py-2 rounded-xl text-xs font-semibold border border-rose-500/20 transition-all cursor-pointer"
             >
               <LogOut className="h-4 w-4 shrink-0" />
@@ -885,11 +1011,13 @@ export default function CampfireRoomPage() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.06),transparent_70%)] pointer-events-none" />
             <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(circle_at_center,#ffffff_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-            <div className="text-center z-10 max-w-lg mx-auto bg-black/40 border border-white/5 backdrop-blur-md px-4 py-2 rounded-2xl">
-              <p className="text-xs text-zinc-300 italic line-clamp-2">
-                "{activeRoom.description}"
-              </p>
-            </div>
+            {activeRoom.description && activeRoom.description.trim() !== "" && activeRoom.description.trim() !== "No description provided." && (
+              <div className="text-center z-10 max-w-lg mx-auto bg-black/40 border border-white/5 backdrop-blur-md px-4 py-2 rounded-2xl">
+                <p className="text-xs text-zinc-300 italic line-clamp-2">
+                  "{activeRoom.description.trim()}"
+                </p>
+              </div>
+            )}
 
             {/* THE Campfire CIRCLE GRAPH CONTAINER */}
             <div className="relative flex-1 flex items-center justify-center min-h-[380px] w-full select-none">

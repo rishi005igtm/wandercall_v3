@@ -52,7 +52,7 @@ import { PresenceStatus } from './interfaces/presence.interface';
  */
 @Injectable()
 @WebSocketGateway({
-  cors: { origin: '*', credentials: true },
+  cors: { origin: true, credentials: true },
   transports: ['websocket', 'polling'],
   path: '/socket.io/',
 })

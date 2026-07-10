@@ -48,4 +48,17 @@ export const QUERY_KEYS = {
     MESSAGES: (conversationId: string) => ['chat', 'messages', conversationId] as const,
     PRESENCE: (userId: string) => ['chat', 'presence', userId] as const,
   },
+  CAMPFIRES: {
+    ALL: ['campfires'] as const,
+    DETAIL: (id: string) => ['campfires', 'detail', id] as const,
+    SEARCH: (params: any) => ['campfires', 'search', params] as const,
+    TRENDING: (params: any) => ['campfires', 'trending', params] as const,
+    LIVE: (params: any) => ['campfires', 'live', params] as const,
+    RECOMMENDED: (params: any) => ['campfires', 'recommended', params] as const,
+    CATEGORY: (category: string) => ['campfires', 'category', category] as const,
+    USER: (userId: string) => ['campfires', 'user', userId] as const,
+    HOST: (hostId: string) => ['campfires', 'host', hostId] as const,
+    WORKSPACE: (tab: string) => ['campfires', 'workspace', tab] as const,
+  },
 } as const;
+

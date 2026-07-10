@@ -2,6 +2,17 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { connectSocket } from "../../../lib/socket";
+import {
+  useCampfireSearch,
+  useStartCampfire,
+  useDeleteCampfire,
+  useToggleReminder,
+  useWorkspaceCampfires,
+} from "../../../hooks/api/useCampfire";
+import { useUserProfileQuery } from "../../../hooks/api/useUserQueries";
+import { useAppSelector } from "../../../lib/store/store";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Flame,
@@ -121,198 +132,12 @@ interface FloatingEmoji {
 }
 
 // ==========================================
-// Mock Datasets
+// Mock Datasets & Fallbacks
 // ==========================================
 
-const INITIAL_CAMPFIRES: CampfireRoom[] = [
-  {
-    id: "camp-himalayas",
-    title: "Under the Himalayan Stars",
-    description: "Sharing stories about trekking around Everest, scaling high altitudes, and the spiritual aura of Nepal's peaks. Join our Sherpa stories.",
-    hostName: "Tenzing Norgay",
-    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 18,
-    speakers: [
-      { id: "spk-1", name: "Tenzing N.", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", role: "host" },
-      { id: "spk-2", name: "Ang Doma", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", role: "speaker" },
-      { id: "spk-3", name: "Alex Honnold", avatar: "https://images.unsplash.com/photo-1628157582853-a796fa650a6a?w=150&auto=format&fit=crop&q=80", role: "speaker" }
-    ],
-    listeners: [
-      { id: "lis-1", name: "Sarah J.", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80" },
-      { id: "lis-2", name: "Rishi R.", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80" },
-      { id: "lis-3", name: "Keiko T.", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80" },
-      { id: "lis-4", name: "Omar S.", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80" }
-    ],
-    energyLevel: "Legendary",
-    energyScore: 92,
-    category: "Adventure",
-    mood: "Deep Discussion",
-    isPrivate: false,
-    duration: "1h 45m",
-    x: 220,
-    y: 130,
-    size: "large"
-  },
-  {
-    id: "camp-penang",
-    title: "Street Food Secrets of Penang",
-    description: "A culinary exploration of George Town's heritage cafes, Char Kway Teow, and night food markets. Virtual taste buds unite!",
-    hostName: "Mei Ling",
-    hostAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 29,
-    speakers: [
-      { id: "spk-4", name: "Mei Ling", avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80", role: "host" },
-      { id: "spk-5", name: "Chef David", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150&auto=format&fit=crop&q=80", role: "speaker" }
-    ],
-    listeners: [
-      { id: "lis-5", name: "Marcus", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80" },
-      { id: "lis-6", name: "Elena R.", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80" }
-    ],
-    energyLevel: "Exciting",
-    energyScore: 78,
-    category: "Food",
-    mood: "Casual",
-    isPrivate: false,
-    duration: "42m",
-    x: 580,
-    y: 110,
-    size: "large"
-  },
-  {
-    id: "camp-backpacking",
-    title: "Solo Backpacking Europe 101",
-    description: "Eurail hacks, cheap hostels, meeting locals, and avoiding tourist traps in Spain, Italy, and Hungary. Secret passwords inside.",
-    hostName: "Lucas Green",
-    hostAvatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 9,
-    speakers: [
-      { id: "spk-6", name: "Lucas Green", avatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80", role: "host" },
-      { id: "spk-7", name: "Emma Watson", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80", role: "speaker" }
-    ],
-    listeners: [
-      { id: "lis-7", name: "Carlos", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" }
-    ],
-    energyLevel: "Active",
-    energyScore: 54,
-    category: "Travel",
-    mood: "Storytelling",
-    isPrivate: true,
-    password: "123456",
-    duration: "15m",
-    x: 390,
-    y: 290,
-    size: "medium"
-  },
-  {
-    id: "camp-astrophoto",
-    title: "Astro-photography Basics & Gear",
-    description: "Capturing the Milky Way. We talk exposure times, lens distortion, star trackers, and dark sky sanctuaries around the globe.",
-    hostName: "Elena Rostova",
-    hostAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 6,
-    speakers: [
-      { id: "spk-8", name: "Elena R.", avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80", role: "host" }
-    ],
-    listeners: [
-      { id: "lis-8", name: "Kenji", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80" },
-      { id: "lis-9", name: "Sophie", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=150&auto=format&fit=crop&q=80" }
-    ],
-    energyLevel: "Quiet",
-    energyScore: 32,
-    category: "Photography",
-    mood: "Learning",
-    isPrivate: false,
-    duration: "1h 10m",
-    x: 130,
-    y: 270,
-    size: "small"
-  },
-  {
-    id: "camp-wilderness",
-    title: "Wilderness Survival Stories",
-    description: "From encounters with grizzly bears to purifying swamp water. Learn primitive fire building and emergency signaling.",
-    hostName: "Bear Grylls",
-    hostAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 46,
-    speakers: [
-      { id: "spk-9", name: "Bear G.", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80", role: "host" },
-      { id: "spk-10", name: "Survival Dave", avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80", role: "speaker" },
-      { id: "spk-11", name: "Cody L.", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80", role: "speaker" }
-    ],
-    listeners: [
-      { id: "lis-10", name: "Mike", avatar: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=150&auto=format&fit=crop&q=80" },
-      { id: "lis-11", name: "Jasmine", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&auto=format&fit=crop&q=80" }
-    ],
-    energyLevel: "Legendary",
-    energyScore: 98,
-    category: "Adventure",
-    mood: "Storytelling",
-    isPrivate: true,
-    password: "987654",
-    duration: "2h 5m",
-    x: 690,
-    y: 250,
-    size: "large"
-  }
-];
-
-const SCHEDULED_CAMPFIRES: ScheduledCampfire[] = [
-  {
-    id: "sched-1",
-    title: "Stories from the Amazon Canopy",
-    description: "Deep dive expedition stories tracking pink river dolphins and night treks in Brazil.",
-    hostName: "Daniel Silva",
-    hostAvatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
-    category: "Adventure",
-    dateTime: "Today at 6:30 PM (IST)",
-    dayGroup: "Today",
-    interestedCount: 142
-  },
-  {
-    id: "sched-2",
-    title: "Vanlife Cooking Hacks",
-    description: "How to prepare gourmet meals using only one single burner and local roadside ingredients.",
-    hostName: "Chloe Nomad",
-    hostAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    category: "Food",
-    dateTime: "Today at 9:00 PM (IST)",
-    dayGroup: "Today",
-    interestedCount: 88
-  },
-  {
-    id: "sched-3",
-    title: "Astro-photography under Dark Skies",
-    description: "Milky way editing, stack exposures, and finding dark zones in Asia.",
-    hostName: "Elena Rostova",
-    hostAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    category: "Photography",
-    dateTime: "Tomorrow at 8:00 PM (IST)",
-    dayGroup: "Tomorrow",
-    interestedCount: 165
-  },
-  {
-    id: "sched-4",
-    title: "Backpacking across Southeast Asia on $15/day",
-    description: "Route planning through Vietnam, Laos, and Cambodia without breaking the bank.",
-    hostName: "Lucas Green",
-    hostAvatar: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=150&auto=format&fit=crop&q=80",
-    category: "Travel",
-    dateTime: "Friday, June 26 at 6:00 PM (IST)",
-    dayGroup: "This Week",
-    interestedCount: 310
-  },
-  {
-    id: "sched-5",
-    title: "Trekking Peaks of Patagonia",
-    description: "Navigating Torres del Paine, essential gear, weather prep, and solo guides.",
-    hostName: "Markus Vane",
-    hostAvatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
-    category: "Adventure",
-    dateTime: "Next Tuesday, June 30 at 7:30 PM (IST)",
-    dayGroup: "This Month",
-    interestedCount: 220
-  }
-];
+const WORKSPACE_JOINED: any[] = [];
+const WORKSPACE_SAVED: any[] = [];
+const WORKSPACE_BLOCKED: any[] = [];
 
 const REPLAY_LOGS: ReplayLog[] = [
   {
@@ -370,189 +195,6 @@ const CATEGORIES = [
   { id: "storytelling", label: "🖋️ Storytelling" },
   { id: "travel", label: "✈️ Travel" },
   { id: "learning", label: "🎒 Learning" }
-];
-
-// Workspace Section Mock Datasets
-const WORKSPACE_JOINED = [
-  {
-    id: "wj-1",
-    title: "Under the Himalayan Stars",
-    date: "Joined June 24",
-    hostName: "Tenzing N.",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    category: "Adventure"
-  },
-  {
-    id: "wj-2",
-    title: "Wilderness Survival Hacks",
-    date: "Joined June 20",
-    hostName: "Bear G.",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    category: "Adventure"
-  },
-  {
-    id: "wj-3",
-    title: "Solo Camping in Sweden",
-    date: "Joined June 15",
-    hostName: "Nils S.",
-    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
-    category: "Travel"
-  },
-  {
-    id: "wj-4",
-    title: "Tokyo Street Ramen Hunt",
-    date: "Joined June 10",
-    hostName: "Kenji S.",
-    avatar: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
-    category: "Food"
-  }
-];
-
-const WORKSPACE_SAVED = [
-  {
-    id: "ws-1",
-    title: "Astro-photography Basics",
-    info: "Starts Tomorrow • Host: Elena",
-    category: "Photography",
-    cover: "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?w=150&auto=format&fit=crop&q=80",
-    status: "Scheduled"
-  },
-  {
-    id: "ws-2",
-    title: "Deep Dive in Amazon Canopy",
-    info: "Starts June 27 • Host: Daniel",
-    category: "Adventure",
-    cover: "https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80",
-    status: "Scheduled"
-  },
-  {
-    id: "ws-3",
-    title: "Vanlife Cooking Secrets",
-    info: "Starts June 29 • Host: Chloe",
-    category: "Food",
-    cover: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80",
-    status: "Scheduled"
-  }
-];
-
-const WORKSPACE_BLOCKED = [
-  {
-    id: "wb-1",
-    name: "Dianne Russell",
-    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-    reason: "Disruptive microphone noise",
-    blockedAt: "Blocked June 22"
-  },
-  {
-    id: "wb-2",
-    name: "Cody Fisher",
-    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
-    reason: "Spamming music in chat",
-    blockedAt: "Blocked June 18"
-  }
-];
-
-const FEATURED_EVENTS = [
-  {
-    id: "event-1",
-    tag: "Epic Adventure",
-    tagBg: "bg-brand-indigo",
-    gradientTo: "to-brand-indigo/10",
-    time: "June 24 at 10:30 PM (IST)",
-    title: "Summiting Mount Everest Solo",
-    description: "Discussing hypoxic training, frostbite recovery, and standard safety rules on the Death Zone.",
-    hostName: "Tenzing N.",
-    hostAvatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "event-2",
-    tag: "Culinary Tour",
-    tagBg: "bg-brand-purple",
-    gradientTo: "to-brand-purple/10",
-    time: "June 25 at 5:00 PM (IST)",
-    title: "Sardine Spices of Lisbon",
-    description: "Portuguese canned fish history, tasting guides, and culinary secrets of Lisbon's Alfama.",
-    hostName: "Chef Joao",
-    hostAvatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "event-3",
-    tag: "Photography Masterclass",
-    tagBg: "bg-brand-cyan text-zinc-950",
-    gradientTo: "to-brand-cyan/10",
-    time: "June 27 at 9:00 PM (IST)",
-    title: "Chasing Polar Lights in Norway",
-    description: "How to position tripods in snow, battery temperature maintenance, and camera settings.",
-    hostName: "Elena Rostova",
-    hostAvatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80"
-  }
-];
-
-const INITIAL_HOSTED_ROOMS: CampfireRoom[] = [
-  {
-    id: "hosted-1",
-    title: "Alpine Winter Gear Choices",
-    description: "My personal review of synthetic vs down jackets, double-wall tents, and heating canisters for high-altitude trekking.",
-    hostName: "You",
-    hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 14,
-    speakers: [{ id: "user", name: "You (Host)", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80", role: "host" }],
-    listeners: [],
-    energyLevel: "Active",
-    energyScore: 60,
-    category: "Adventure",
-    mood: "Learning",
-    isPrivate: false,
-    duration: "45m",
-    x: 100,
-    y: 100,
-    size: "medium",
-    status: "Live",
-    coverUrl: "https://images.unsplash.com/photo-1518098268026-4e43a1a009de?w=600&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "hosted-2",
-    title: "Vlog Sound Design Masterclass",
-    description: "Capturing wind buffers, choosing the right lavalier, and layering campfire crackle behind ambient storytelling.",
-    hostName: "You",
-    hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 0,
-    speakers: [],
-    listeners: [],
-    energyLevel: "Quiet",
-    energyScore: 0,
-    category: "Photography",
-    mood: "Learning",
-    isPrivate: false,
-    duration: "1h 15m",
-    x: 200,
-    y: 200,
-    size: "small",
-    status: "Ended",
-    coverUrl: "https://images.unsplash.com/photo-1478737270239-2f02b77fc618?w=600&auto=format&fit=crop&q=80"
-  },
-  {
-    id: "hosted-3",
-    title: "Backpacking across Spiti Valley",
-    description: "How to survive high passes, find shared homestays, and handle lack of network signals in Key and Kaza.",
-    hostName: "You",
-    hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-    participantsCount: 0,
-    speakers: [],
-    listeners: [],
-    energyLevel: "Quiet",
-    energyScore: 0,
-    category: "Travel",
-    mood: "Adventure",
-    isPrivate: true,
-    password: "555555",
-    duration: "2h 0m",
-    x: 300,
-    y: 300,
-    size: "medium",
-    status: "Scheduled",
-    coverUrl: "https://images.unsplash.com/photo-1528164344705-47542687000d?w=600&auto=format&fit=crop&q=80"
-  }
 ];
 
 const CARD_GRADIENTS = [
@@ -676,10 +318,72 @@ const getProfileUsername = (name: string): string => {
 
 export default function CampfiresPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const authState = useAppSelector((state) => state.auth);
+  const { data: currentUserProfile } = useUserProfileQuery(authState?.userId || null);
+
+  const { data: searchResults, isLoading: isSearchLoading } = useCampfireSearch({ hostId: authState.userId, limit: 100 }, { enabled: !!authState.userId });
+  const { data: allDiscoveryResp } = useCampfireSearch({ status: "ACTIVE", limit: 100 });
+  const { data: scheduledResp } = useCampfireSearch({ status: "SCHEDULED", limit: 20 });
+  const { data: joinedWorkspaceResp } = useWorkspaceCampfires("joined", { enabled: !!authState.userId });
+  const { data: savedWorkspaceResp } = useWorkspaceCampfires("saved", { enabled: !!authState.userId });
+
+  const startCampfire = useStartCampfire();
+  const deleteCampfire = useDeleteCampfire();
+  const toggleReminder = useToggleReminder();
+
   // ==========================================
   // States
   // ==========================================
-  const [campfires, setCampfires] = useState<CampfireRoom[]>(INITIAL_CAMPFIRES);
+  const [campfires, setCampfires] = useState<CampfireRoom[]>([]);
+
+  useEffect(() => {
+    if (allDiscoveryResp?.items) {
+      const mapped: CampfireRoom[] = allDiscoveryResp.items.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        description: item.description || "",
+        hostName: item.hostName || "Host",
+        hostAvatar: item.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        participantsCount: item.currentListeners || 0,
+        speakers: [{ id: item.hostId, name: item.hostName || "Host", avatar: item.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", role: "host" as const }],
+        listeners: [],
+        energyLevel: (item.energyLevel || "Active") as any,
+        energyScore: item.energyScore || 65,
+        category: (item.category || "Adventure") as any,
+        mood: (item.mood || "Storytelling") as any,
+        isPrivate: item.visibility === "PRIVATE",
+        password: item.settings?.password,
+        duration: "Live",
+        x: 300,
+        y: 200,
+        size: "medium" as const,
+        status: item.status || "Live"
+      }));
+      setCampfires(mapped);
+    } else {
+      setCampfires([]);
+    }
+  }, [allDiscoveryResp]);
+
+  useEffect(() => {
+    const socket = connectSocket();
+    const handleRemoteUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ["campfires"] });
+    };
+    socket.on("campfire:created", handleRemoteUpdate);
+    socket.on("campfire:started", handleRemoteUpdate);
+    socket.on("campfire:ended", handleRemoteUpdate);
+    socket.on("campfire:updated", handleRemoteUpdate);
+
+    return () => {
+      socket.off("campfire:created", handleRemoteUpdate);
+      socket.off("campfire:started", handleRemoteUpdate);
+      socket.off("campfire:ended", handleRemoteUpdate);
+      socket.off("campfire:updated", handleRemoteUpdate);
+    };
+  }, [queryClient]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
 
@@ -688,7 +392,6 @@ export default function CampfiresPage() {
   const [joiningRoom, setJoiningRoom] = useState<CampfireRoom | null>(null);
   const [passcodeInput, setPasscodeInput] = useState("");
   const [passcodeError, setPasscodeError] = useState(false);
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [remindedEvents, setRemindedEvents] = useState<Record<string, boolean>>({});
@@ -718,16 +421,23 @@ export default function CampfiresPage() {
     return `${room.id}--${cleanTitle}`;
   };
 
-  const handleRemindMe = (eventId: string, title: string) => {
-    const isAlreadyReminded = remindedEvents[eventId];
-    if (isAlreadyReminded) {
-      setRemindedEvents(prev => ({ ...prev, [eventId]: false }));
-      triggerToast(`Cancelled reminder for "${title}"`);
-    } else {
-      setRemindedEvents(prev => ({ ...prev, [eventId]: true }));
-      triggerToast(`Reminder set! You will be notified when "${title}" starts.`);
+  const handleRemindMe = async (eventId: string, title: string) => {
+    try {
+      const res = await toggleReminder.mutateAsync(eventId);
+      if (res.reminded) {
+        setRemindedEvents(prev => ({ ...prev, [eventId]: true }));
+        triggerToast(`Reminder set! You will be notified when "${title}" starts.`);
+      } else {
+        setRemindedEvents(prev => ({ ...prev, [eventId]: false }));
+        triggerToast(`Cancelled reminder for "${title}"`);
+      }
+    } catch (err) {
+      const isAlreadyReminded = remindedEvents[eventId];
+      setRemindedEvents(prev => ({ ...prev, [eventId]: !isAlreadyReminded }));
+      triggerToast(!isAlreadyReminded ? `Reminder set for "${title}"` : `Cancelled reminder for "${title}"`);
     }
   };
+
 
   useEffect(() => {
     if (joiningRoom) {
@@ -740,35 +450,38 @@ export default function CampfiresPage() {
   // Dashboard Workspace sub-states (hosted, joined, saved, blocked)
   const [myCampfiresTab, setMyCampfiresTab] = useState<"hosted" | "joined" | "saved" | "blocked">("joined");
   const [workspacePage, setWorkspacePage] = useState(1);
-  const [hostedRooms, setHostedRooms] = useState<CampfireRoom[]>(INITIAL_HOSTED_ROOMS);
   const [zoomedAvatar, setZoomedAvatar] = useState<{ url: string; name: string } | null>(null);
+  const hostedRooms = useMemo(() => {
+    if (!searchResults?.items) return [];
+    return searchResults.items;
+  }, [searchResults]);
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const stored = localStorage.getItem("wandercall_hosted_campfires");
-      if (stored) {
-        try {
-          setHostedRooms(JSON.parse(stored));
-        } catch (e) {
-          console.error(e);
-        }
-      }
+  const featuredEventsList = useMemo(() => {
+    if (scheduledResp?.items && scheduledResp.items.length > 0) {
+      return scheduledResp.items.map((s: any) => ({
+        id: s.id,
+        tag: "SCHEDULED CAMPFIRE",
+        tagBg: "bg-brand-cyan",
+        time: s.scheduledStartAt ? new Date(s.scheduledStartAt).toLocaleString([], { dateStyle: "short", timeStyle: "short" }) : "Upcoming",
+        title: s.title,
+        description: s.description || "",
+        hostName: s.hostName || "Host",
+        hostAvatar: s.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        remindersCount: s.participantIds?.length || 0,
+        gradientFrom: "from-brand-cyan/20",
+        gradientTo: "to-blue-600/10",
+      }));
     }
-  }, []);
-
-  const saveHostedRooms = (rooms: CampfireRoom[]) => {
-    setHostedRooms(rooms);
-    localStorage.setItem("wandercall_hosted_campfires", JSON.stringify(rooms));
-  };
+    return [];
+  }, [scheduledResp]);
 
   // Featured Events Active Slide Index (Mobile Only)
   const [activeEventIndex, setActiveEventIndex] = useState(0);
   const handlePrevEvent = () => {
-    setActiveEventIndex(prev => (prev === 0 ? FEATURED_EVENTS.length - 1 : prev - 1));
+    setActiveEventIndex(prev => (prev === 0 ? featuredEventsList.length - 1 : prev - 1));
   };
   const handleNextEvent = () => {
-    setActiveEventIndex(prev => (prev === FEATURED_EVENTS.length - 1 ? 0 : prev + 1));
+    setActiveEventIndex(prev => (prev === featuredEventsList.length - 1 ? 0 : prev + 1));
   };
 
   // Voice Room States
@@ -785,13 +498,7 @@ export default function CampfiresPage() {
   const [chatInput, setChatInput] = useState("");
   const [roomEnergyState, setRoomEnergyState] = useState<"Quiet" | "Active" | "Exciting" | "Legendary">("Active");
 
-  // Create Room Form State
-  const [newTitle, setNewTitle] = useState("");
-  const [newDescription, setNewDescription] = useState("");
-  const [newCategory, setNewCategory] = useState<CampfireRoom["category"]>("Adventure");
-  const [newMood, setNewMood] = useState<CampfireRoom["mood"]>("Storytelling");
-  const [newVisibility, setNewVisibility] = useState<"public" | "private">("public");
-  const [newPassword, setNewPassword] = useState("");
+
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -918,61 +625,17 @@ export default function CampfiresPage() {
     setChatInput("");
   };
 
-  // Create room flow
-  const handleCreateRoomSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTitle.trim()) return;
 
-    const newId = `camp-${Date.now()}`;
-    const createdRoom: CampfireRoom = {
-      id: newId,
-      title: newTitle,
-      description: newDescription || "Gather round the fire and share stories.",
-      hostName: "You",
-      hostAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-      participantsCount: 1,
-      speakers: [
-        { id: "user", name: "You (Host)", avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80", role: "host" }
-      ],
-      listeners: [],
-      energyLevel: "Quiet",
-      energyScore: 10,
-      category: newCategory,
-      mood: newMood,
-      isPrivate: newVisibility === "private",
-      password: newPassword,
-      duration: "0m",
-      x: 100 + Math.random() * 600,
-      y: 80 + Math.random() * 240,
-      size: "small",
-      status: "Live",
-      coverUrl: "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?w=600&auto=format&fit=crop&q=80"
-    };
 
-    const updatedHosted = [createdRoom, ...hostedRooms];
-    saveHostedRooms(updatedHosted);
-    setShowCreateModal(false);
-
-    if (createdRoom.isPrivate) {
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem(`authorized_campfire_${createdRoom.id}`, "true");
-      }
-    }
-
-    // reset fields
-    setNewTitle("");
-    setNewDescription("");
-    setNewPassword("");
-    setNewVisibility("public");
-
-    // Redirect to nested page
-    router.push(`/profile/campfires/${getRoomSlug(createdRoom)}`);
-  };
 
   // Delete Hosted Room
-  const handleDeleteHosted = (id: string) => {
-    const updated = hostedRooms.filter(r => r.id !== id);
-    saveHostedRooms(updated);
+  const handleDeleteHosted = async (id: string) => {
+    try {
+      await deleteCampfire.mutateAsync(id);
+      triggerToast("Campfire deleted successfully.");
+    } catch (e) {
+      triggerToast("Failed to delete campfire.");
+    }
   };
 
   // Discovery Filtered Campfires
@@ -991,10 +654,11 @@ export default function CampfiresPage() {
   // Paginated Items calculations for the workspace section
   const currentItems = useMemo(() => {
     if (myCampfiresTab === "hosted") return hostedRooms;
-    if (myCampfiresTab === "joined") return WORKSPACE_JOINED;
+    if (myCampfiresTab === "joined") return (joinedWorkspaceResp as any) || WORKSPACE_JOINED;
     if (myCampfiresTab === "blocked") return WORKSPACE_BLOCKED;
-    return WORKSPACE_SAVED;
-  }, [myCampfiresTab, hostedRooms]);
+    return (savedWorkspaceResp as any) || WORKSPACE_SAVED;
+  }, [myCampfiresTab, hostedRooms, joinedWorkspaceResp, savedWorkspaceResp]);
+
 
   const itemsPerPage = 3;
 
@@ -1034,7 +698,7 @@ export default function CampfiresPage() {
                     <span className="text-[10px] uppercase font-bold tracking-widest text-brand-cyan">
                       {activeRoom.category} Campfire
                     </span>
-                    {activeRoom.isPrivate && (
+                    {(('visibility' in activeRoom && activeRoom.visibility === "PRIVATE") || ('isPrivate' in activeRoom && activeRoom.isPrivate)) && (
                       <span className="flex items-center gap-1 text-[9px] bg-brand-purple/20 text-brand-purple px-1.5 py-0.5 rounded-full border border-brand-purple/30">
                         <Lock className="h-2.5 w-2.5" /> Private
                       </span>
@@ -1072,11 +736,13 @@ export default function CampfiresPage() {
                 <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(circle_at_center,#ffffff_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
                 {/* Subtitle / Topic Description Banner */}
-                <div className="text-center z-10 max-w-lg mx-auto bg-black/40 border border-white/5 backdrop-blur-md px-4 py-2 rounded-2xl">
-                  <p className="text-xs text-zinc-300 italic line-clamp-2">
-                    "{activeRoom.description}"
-                  </p>
-                </div>
+                {activeRoom.description && activeRoom.description.trim() !== "" && activeRoom.description.trim() !== "No description provided." && activeRoom.description.trim() !== "Join us for an exciting conversation around the digital fire." && (
+                  <div className="text-center z-10 max-w-lg mx-auto bg-black/40 border border-white/5 backdrop-blur-md px-4 py-2 rounded-2xl">
+                    <p className="text-xs text-zinc-300 italic line-clamp-2">
+                      "{activeRoom.description.trim()}"
+                    </p>
+                  </div>
+                )}
 
                 {/* THE SOCIAL CIRCLE GRAPH CONTAINER */}
                 <div className="relative flex-1 flex items-center justify-center min-h-[360px] w-full">
@@ -1212,32 +878,42 @@ export default function CampfiresPage() {
                       left: "50%"
                     }}
                   >
-                    <div className="flex flex-col items-center">
-                      <div className="relative">
-                        {/* Audio Wave Glow if Speaking */}
-                        {activeSpeakersMap["host"] && (
-                          <div className="absolute -inset-2 rounded-full bg-brand-cyan/20 border border-brand-cyan/40 animate-ping" />
-                        )}
-                        <div
-                          onClick={() => setZoomedAvatar({ url: activeRoom.hostAvatar, name: activeRoom.hostName })}
-                          className={`h-16 w-16 rounded-full border-2 cursor-pointer hover:scale-105 active:scale-95 shrink-0 overflow-hidden select-none ${
-                            activeSpeakersMap["host"] ? "border-brand-cyan shadow-[0_0_15px_rgba(6,182,212,0.6)]" : "border-brand-purple"
-                          }`}
-                        >
-                          <CompanionAvatar
-                            avatar={activeRoom.hostAvatar}
-                            name={activeRoom.hostName}
-                            className="h-full w-full text-2xl"
-                          />
+                    {(() => {
+                      const isUserHostRoom = activeRoom && ('hostId' in activeRoom ? activeRoom.hostId === authState?.userId : false);
+                      const hostFallbackName = isUserHostRoom ? (currentUserProfile?.displayName || authState?.name || "You (Host)") : "Host";
+                      const hostFallbackAvatar = isUserHostRoom ? (currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80") : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+                      const finalHostName = (isUserHostRoom && currentUserProfile?.displayName) ? currentUserProfile.displayName : ((activeRoom.hostName && activeRoom.hostName !== "Wanderer" && activeRoom.hostName !== "Host") ? activeRoom.hostName : hostFallbackName);
+                      const finalHostAvatar = (isUserHostRoom && currentUserProfile?.avatarUrl) ? currentUserProfile.avatarUrl : (activeRoom.hostAvatar || hostFallbackAvatar);
+
+                      return (
+                        <div className="flex flex-col items-center">
+                          <div className="relative">
+                            {/* Audio Wave Glow if Speaking */}
+                            {activeSpeakersMap["host"] && (
+                              <div className="absolute -inset-2 rounded-full bg-brand-cyan/20 border border-brand-cyan/40 animate-ping" />
+                            )}
+                            <div
+                              onClick={() => setZoomedAvatar({ url: finalHostAvatar, name: finalHostName })}
+                              className={`h-16 w-16 rounded-full border-2 cursor-pointer hover:scale-105 active:scale-95 shrink-0 overflow-hidden select-none ${
+                                activeSpeakersMap["host"] ? "border-brand-cyan shadow-[0_0_15px_rgba(6,182,212,0.6)]" : "border-brand-purple"
+                              }`}
+                            >
+                              <CompanionAvatar
+                                avatar={finalHostAvatar}
+                                name={finalHostName}
+                                className="h-full w-full text-2xl"
+                              />
+                            </div>
+                            <div className="absolute -bottom-1 -right-1 bg-brand-purple text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded border border-zinc-950">
+                              Host
+                            </div>
+                          </div>
+                          <span className="text-[10px] text-zinc-300 mt-2 font-bold max-w-[80px] truncate text-center bg-black/40 px-1.5 py-0.5 rounded">
+                            {finalHostName}
+                          </span>
                         </div>
-                        <div className="absolute -bottom-1 -right-1 bg-brand-purple text-[8px] uppercase tracking-wider font-extrabold px-1 py-0.5 rounded border border-zinc-950">
-                          Host
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-zinc-300 mt-2 font-bold max-w-[80px] truncate text-center bg-black/40 px-1.5 py-0.5 rounded">
-                        {activeRoom.hostName}
-                      </span>
-                    </div>
+                      );
+                    })()}
                   </div>
 
                   {/* SPEAKERS (Inner Ring, radius=100px) */}
@@ -1585,7 +1261,7 @@ export default function CampfiresPage() {
                   <Radio className="h-4 w-4 text-brand-cyan animate-pulse" /> My Campfires
                 </button>
                 <button
-                  onClick={() => setShowCreateModal(true)}
+                  onClick={() => router.push("/profile/campfires/create")}
                   className="flex items-center gap-2 bg-gradient-to-r from-brand-indigo to-brand-purple text-white px-5 py-2.5 rounded-xl text-xs font-semibold hover:shadow-lg hover:shadow-brand-indigo/20 transition-all cursor-pointer"
                 >
                   <Plus className="h-4 w-4" /> Light a Campfire
@@ -1693,127 +1369,137 @@ export default function CampfiresPage() {
               </div>
 
               {/* Carousel Container */}
-              {/* Mobile View: Shows one card at a time with full width */}
-              <div className="block md:hidden">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={activeEventIndex}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.2 }}
-                    className={`w-full glass-panel rounded-3xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[190px] bg-gradient-to-br from-zinc-950/60 ${FEATURED_EVENTS[activeEventIndex].gradientTo}`}
-                  >
-                    <div className={`absolute top-0 right-0 ${FEATURED_EVENTS[activeEventIndex].tagBg} text-white text-[9px] uppercase tracking-widest font-extrabold px-3 py-1 rounded-bl-2xl`}>
-                      {FEATURED_EVENTS[activeEventIndex].tag}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="text-[9px] text-brand-cyan uppercase tracking-widest font-bold">
-                        {FEATURED_EVENTS[activeEventIndex].time}
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-white line-clamp-1">
-                          {FEATURED_EVENTS[activeEventIndex].title}
-                        </h3>
-                        <p className="text-[11px] text-zinc-400 line-clamp-2">
-                          {FEATURED_EVENTS[activeEventIndex].description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
-                      <div className="flex items-center gap-2">
-                        <div
-                          onClick={() => setZoomedAvatar({ url: FEATURED_EVENTS[activeEventIndex].hostAvatar, name: FEATURED_EVENTS[activeEventIndex].hostName })}
-                          className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
-                        >
-                          <CompanionAvatar
-                            avatar={FEATURED_EVENTS[activeEventIndex].hostAvatar}
-                            name={FEATURED_EVENTS[activeEventIndex].hostName}
-                            className="h-full w-full text-xs"
-                          />
-                        </div>
-                        <div>
-                          <p className="text-[8px] text-zinc-500">Host</p>
-                          <p className="text-[10px] font-bold text-white">{FEATURED_EVENTS[activeEventIndex].hostName}</p>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleRemindMe(FEATURED_EVENTS[activeEventIndex].id, FEATURED_EVENTS[activeEventIndex].title)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center border ${
-                          remindedEvents[FEATURED_EVENTS[activeEventIndex].id]
-                            ? "bg-brand-cyan/15 hover:bg-brand-cyan/20 text-brand-cyan border-brand-cyan/35"
-                            : "bg-white/5 hover:bg-white/15 text-white border-white/10"
-                        }`}
+              {featuredEventsList.length === 0 ? (
+                <div className="bg-white/[0.01] border border-white/5 rounded-3xl p-8 text-center text-zinc-500">
+                  <Compass className="h-8 w-8 mx-auto text-zinc-600 mb-2" />
+                  <p className="text-sm font-semibold text-zinc-400">No scheduled campfires upcoming</p>
+                  <p className="text-xs text-zinc-500 mt-1">Be the first to schedule a campfire session for the community!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Mobile View: Shows one card at a time with full width */}
+                  <div className="block md:hidden">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={activeEventIndex}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.2 }}
+                        className={`w-full glass-panel rounded-3xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between min-h-[190px] bg-gradient-to-br from-zinc-950/60 ${(featuredEventsList[activeEventIndex] || featuredEventsList[0]).gradientTo}`}
                       >
-                        {remindedEvents[FEATURED_EVENTS[activeEventIndex].id] && <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
-                        {remindedEvents[FEATURED_EVENTS[activeEventIndex].id] ? "Reminded" : "Remind Me"}
-                      </button>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* Desktop View: Shows all cards in scrolling container */}
-              <div className="hidden md:flex items-stretch gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory">
-                {FEATURED_EVENTS.map((event) => (
-                  <div
-                    key={event.id}
-                    className={`snap-start min-w-[340px] max-w-[340px] glass-panel rounded-3xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between bg-gradient-to-br from-zinc-950/60 ${event.gradientTo}`}
-                  >
-                    <div className={`absolute top-0 right-0 ${event.tagBg} text-white text-[9px] uppercase tracking-widest font-extrabold px-3 py-1 rounded-bl-2xl`}>
-                      {event.tag}
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="text-[9px] text-brand-cyan uppercase tracking-widest font-bold">
-                        {event.time}
-                      </div>
-                      <div className="space-y-1">
-                        <h3 className="text-sm font-bold text-white line-clamp-1">
-                          {event.title}
-                        </h3>
-                        <p className="text-[11px] text-zinc-400 line-clamp-2">
-                          {event.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
-                      <div className="flex items-center gap-2">
-                        <div
-                          onClick={() => setZoomedAvatar({ url: event.hostAvatar, name: event.hostName })}
-                          className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
-                        >
-                          <CompanionAvatar
-                            avatar={event.hostAvatar}
-                            name={event.hostName}
-                            className="h-full w-full text-xs"
-                          />
+                        <div className={`absolute top-0 right-0 ${(featuredEventsList[activeEventIndex] || featuredEventsList[0]).tagBg} text-white text-[9px] uppercase tracking-widest font-extrabold px-3 py-1 rounded-bl-2xl`}>
+                          {(featuredEventsList[activeEventIndex] || featuredEventsList[0]).tag}
                         </div>
-                        <div>
-                          <p className="text-[8px] text-zinc-500">Host</p>
-                          <p className="text-[10px] font-bold text-white">{event.hostName}</p>
-                        </div>
-                      </div>
 
-                      <button
-                        onClick={() => handleRemindMe(event.id, event.title)}
-                        className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center border ${
-                          remindedEvents[event.id]
-                            ? "bg-brand-cyan/15 hover:bg-brand-cyan/20 text-brand-cyan border-brand-cyan/35"
-                            : "bg-white/5 hover:bg-white/15 text-white border-white/10"
-                        }`}
-                      >
-                        {remindedEvents[event.id] && <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
-                        {remindedEvents[event.id] ? "Reminded" : "Remind Me"}
-                      </button>
-                    </div>
+                        <div className="space-y-4">
+                          <div className="text-[9px] text-brand-cyan uppercase tracking-widest font-bold">
+                            {(featuredEventsList[activeEventIndex] || featuredEventsList[0]).time}
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-white line-clamp-1">
+                              {(featuredEventsList[activeEventIndex] || featuredEventsList[0]).title}
+                            </h3>
+                            <p className="text-[11px] text-zinc-400 line-clamp-2">
+                              {(featuredEventsList[activeEventIndex] || featuredEventsList[0]).description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() => setZoomedAvatar({ url: (featuredEventsList[activeEventIndex] || featuredEventsList[0]).hostAvatar, name: (featuredEventsList[activeEventIndex] || featuredEventsList[0]).hostName })}
+                              className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                            >
+                              <CompanionAvatar
+                                avatar={(featuredEventsList[activeEventIndex] || featuredEventsList[0]).hostAvatar}
+                                name={(featuredEventsList[activeEventIndex] || featuredEventsList[0]).hostName}
+                                className="h-full w-full text-xs"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[8px] text-zinc-500">Host</p>
+                              <p className="text-[10px] font-bold text-white">{(featuredEventsList[activeEventIndex] || featuredEventsList[0]).hostName}</p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleRemindMe((featuredEventsList[activeEventIndex] || featuredEventsList[0]).id, (featuredEventsList[activeEventIndex] || featuredEventsList[0]).title)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center border ${
+                              remindedEvents[(featuredEventsList[activeEventIndex] || featuredEventsList[0]).id]
+                                ? "bg-brand-cyan/15 hover:bg-brand-cyan/20 text-brand-cyan border-brand-cyan/35"
+                                : "bg-white/5 hover:bg-white/15 text-white border-white/10"
+                            }`}
+                          >
+                            {remindedEvents[(featuredEventsList[activeEventIndex] || featuredEventsList[0]).id] && <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                            {remindedEvents[(featuredEventsList[activeEventIndex] || featuredEventsList[0]).id] ? "Reminded" : "Remind Me"}
+                          </button>
+                        </div>
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
-                ))}
-              </div>
+
+                  {/* Desktop View: Shows all cards in scrolling container */}
+                  <div className="hidden md:flex items-stretch gap-6 overflow-x-auto pb-4 no-scrollbar scroll-smooth snap-x snap-mandatory">
+                    {featuredEventsList.map((event) => (
+                      <div
+                        key={event.id}
+                        className={`snap-start min-w-[340px] max-w-[340px] glass-panel rounded-3xl p-5 border border-white/5 relative overflow-hidden flex flex-col justify-between bg-gradient-to-br from-zinc-950/60 ${event.gradientTo}`}
+                      >
+                        <div className={`absolute top-0 right-0 ${event.tagBg} text-white text-[9px] uppercase tracking-widest font-extrabold px-3 py-1 rounded-bl-2xl`}>
+                          {event.tag}
+                        </div>
+
+                        <div className="space-y-4">
+                          <div className="text-[9px] text-brand-cyan uppercase tracking-widest font-bold">
+                            {event.time}
+                          </div>
+                          <div className="space-y-1">
+                            <h3 className="text-sm font-bold text-white line-clamp-1">
+                              {event.title}
+                            </h3>
+                            <p className="text-[11px] text-zinc-400 line-clamp-2">
+                              {event.description}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="mt-5 flex items-center justify-between border-t border-white/5 pt-4">
+                          <div className="flex items-center gap-2">
+                            <div
+                              onClick={() => setZoomedAvatar({ url: event.hostAvatar, name: event.hostName })}
+                              className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
+                            >
+                              <CompanionAvatar
+                                avatar={event.hostAvatar}
+                                name={event.hostName}
+                                className="h-full w-full text-xs"
+                              />
+                            </div>
+                            <div>
+                              <p className="text-[8px] text-zinc-500">Host</p>
+                              <p className="text-[10px] font-bold text-white">{event.hostName}</p>
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => handleRemindMe(event.id, event.title)}
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center border ${
+                              remindedEvents[event.id]
+                                ? "bg-brand-cyan/15 hover:bg-brand-cyan/20 text-brand-cyan border-brand-cyan/35"
+                                : "bg-white/5 hover:bg-white/15 text-white border-white/10"
+                            }`}
+                          >
+                            {remindedEvents[event.id] && <CheckCircle2 className="h-3.5 w-3.5 mr-1" />}
+                            {remindedEvents[event.id] ? "Reminded" : "Remind Me"}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* SECTION 4: CAMPFIRE DISCOVERY (Modern Search + Category filter tags) */}
@@ -2046,8 +1732,8 @@ export default function CampfiresPage() {
                       {(["hosted", "joined", "saved", "blocked"] as const).map((tab) => {
                         const count =
                           tab === "hosted" ? hostedRooms.length :
-                            tab === "joined" ? WORKSPACE_JOINED.length :
-                              tab === "saved" ? WORKSPACE_SAVED.length :
+                            tab === "joined" ? ((joinedWorkspaceResp as any[])?.length || 0) :
+                              tab === "saved" ? ((savedWorkspaceResp as any[])?.length || 0) :
                                 WORKSPACE_BLOCKED.length;
 
                         const Icon =
@@ -2110,38 +1796,59 @@ export default function CampfiresPage() {
                                     >
                                       <div className="flex items-center gap-3 min-w-0">
                                         <div className="h-10 w-10 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shrink-0 relative">
-                                          {item.coverUrl && <img src={item.coverUrl} className="h-full w-full object-cover opacity-80" alt="" />}
-                                          {item.status === "Live" && (
+                                          {item.hostAvatar ? (
+                                            <img src={item.hostAvatar} className="h-full w-full object-cover opacity-80" alt="" />
+                                          ) : (
+                                            <div className="h-full w-full bg-brand-indigo/20 flex items-center justify-center text-xs font-bold text-white uppercase">{item.hostName?.charAt(0) || '?'}</div>
+                                          )}
+                                          {item.status === "ACTIVE" && (
                                             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
                                           )}
                                         </div>
                                         <div className="min-w-0">
                                           <h4 className="text-xs font-bold text-zinc-250 truncate group-hover:text-brand-cyan transition-colors">{item.title}</h4>
-                                          <p className="text-[9px] text-zinc-500 mt-0.5">{item.category} • {item.duration}</p>
+                                          <p className="text-[9px] text-zinc-500 mt-0.5">{item.category} • {new Date(item.createdAt).toLocaleDateString()}</p>
                                         </div>
                                       </div>
 
                                       <div className="flex items-center gap-2 shrink-0">
-                                        {item.status === "Live" ? (
+                                        {item.status === "ACTIVE" ? (
                                           <button
                                             onClick={() => handleJoinRoom(item)}
                                             className="workspace-action-btn bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
                                           >
                                             Resume
                                           </button>
-                                        ) : item.status === "Scheduled" ? (
+                                        ) : item.status === "SCHEDULED" ? (
                                           <button
-                                            onClick={() => {
-                                              const updated = hostedRooms.map(r => r.id === item.id ? { ...r, status: "Live" as const } : r);
-                                              saveHostedRooms(updated);
-                                              triggerToast(`Started live session for "${item.title}"!`);
+                                            onClick={async () => {
+                                              try {
+                                                await startCampfire.mutateAsync(item.id);
+                                                triggerToast(`Started live session for "${item.title}"!`);
+                                                handleJoinRoom(item);
+                                              } catch (e) {
+                                                triggerToast("Failed to start campfire.");
+                                              }
                                             }}
                                             className="workspace-action-btn bg-brand-purple/20 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
                                           >
                                             Start
                                           </button>
                                         ) : (
-                                          <span className="text-[9px] text-zinc-500 border border-white/5 bg-white/[0.01] px-2 py-0.5 rounded font-mono">Ended</span>
+                                          <button
+                                            onClick={async () => {
+                                              try {
+                                                await startCampfire.mutateAsync(item.id);
+                                                triggerToast(`Restarted live session for "${item.title}"!`);
+                                                handleJoinRoom(item);
+                                              } catch (e) {
+                                                triggerToast("Failed to restart campfire.");
+                                              }
+                                            }}
+                                            className="workspace-action-btn bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                                          >
+                                            Restart
+                                          </button>
                                         )}
 
                                         <button
@@ -2162,22 +1869,24 @@ export default function CampfiresPage() {
                                     >
                                       <div className="flex items-center gap-3 min-w-0">
                                         <div
-                                          onClick={() => setZoomedAvatar({ url: item.avatar, name: item.hostName })}
+                                          onClick={() => setZoomedAvatar({ url: item.avatar || item.hostAvatar, name: item.hostName })}
                                           className="h-9 w-9 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
                                         >
-                                          <CompanionAvatar avatar={item.avatar} name={item.hostName} className="h-full w-full text-xs" />
+                                          <CompanionAvatar avatar={item.avatar || item.hostAvatar} name={item.hostName} className="h-full w-full text-xs" />
                                         </div>
                                         <div className="min-w-0">
                                           <h4 className="text-xs font-bold text-zinc-200 truncate">{item.title}</h4>
-                                          <p className="text-[9px] text-zinc-500 mt-0.5">{item.date} • Host: {item.hostName}</p>
+                                          <p className="text-[9px] text-zinc-500 mt-0.5">{item.date || (item.createdAt ? new Date(item.createdAt).toLocaleDateString() : 'Recent')} • Host: {item.hostName}</p>
                                         </div>
                                       </div>
 
                                       <button
                                         onClick={() => {
-                                          const found = campfires.find(c => c.hostName === item.hostName);
-                                          if (found) handleJoinRoom(found);
-                                          else triggerToast("Quick connecting to historical room orbit...");
+                                          if (item.status !== "ACTIVE" && item.status !== "LIVE") {
+                                            triggerToast("This campfire is currently not live. Waiting for the host to start it again.");
+                                            return;
+                                          }
+                                          handleJoinRoom(item);
                                         }}
                                         className="workspace-action-btn bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer shrink-0"
                                       >
@@ -2358,193 +2067,7 @@ export default function CampfiresPage() {
         )}
       </AnimatePresence>
 
-      {/* =======================================================
-          MODAL A: LIGHT CAMPFIRE CREATOR FORM
-          ======================================================= */}
-      <AnimatePresence>
-        {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowCreateModal(false)}
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
-            />
 
-            {/* Card Panel */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative z-10 w-full max-w-lg glass-panel rounded-3xl border border-white/10 px-4 py-6 md:p-8 max-h-[90vh] overflow-y-auto no-scrollbar shadow-2xl"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-white/5">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 bg-brand-cyan/20 border border-brand-cyan/35 text-brand-cyan rounded-xl flex items-center justify-center shrink-0">
-                    <Flame className="h-5 w-5 animate-pulse" />
-                  </div>
-                  <div>
-                    <h3 className="text-md font-bold text-white">Light a Digital Campfire</h3>
-                    <p className="text-[10px] text-zinc-400">Configure parameters to host your space.</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/15 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Form fields */}
-              <form onSubmit={handleCreateRoomSubmit} className="space-y-4 pt-6 text-xs">
-
-                {/* Title */}
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-300 block">Campfire Title *</label>
-                  <input
-                    type="text"
-                    required
-                    value={newTitle}
-                    onChange={(e) => setNewTitle(e.target.value)}
-                    placeholder="e.g., Surviving solo hikes in the Alps"
-                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan/50"
-                  />
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1">
-                  <label className="font-bold text-zinc-300 block">Description / Topic Guidelines</label>
-                  <textarea
-                    value={newDescription}
-                    onChange={(e) => setNewDescription(e.target.value)}
-                    placeholder="What stories will we share? Add any rules for the mic..."
-                    rows={3}
-                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan/50 resize-none"
-                  />
-                </div>
-
-                {/* Category & Mood side by side */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="font-bold text-zinc-300 block">Adventure Category</label>
-                    <select
-                      value={newCategory}
-                      onChange={(e) => setNewCategory(e.target.value as CampfireRoom["category"])}
-                      className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan/50"
-                    >
-                      <option value="Adventure">🏔️ Adventure</option>
-                      <option value="Food">🍛 Food</option>
-                      <option value="Photography">📸 Photography</option>
-                      <option value="Storytelling">🖋️ Storytelling</option>
-                      <option value="Travel">✈️ Travel</option>
-                      <option value="Learning">🎒 Learning</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="font-bold text-zinc-300 block">Campfire Mood</label>
-                    <select
-                      value={newMood}
-                      onChange={(e) => setNewMood(e.target.value as CampfireRoom["mood"])}
-                      className="w-full bg-zinc-950 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-cyan/50"
-                    >
-                      <option value="Storytelling">Storytelling</option>
-                      <option value="Deep Discussion">Deep Discussion</option>
-                      <option value="Learning">Learning</option>
-                      <option value="Casual">Casual</option>
-                      <option value="Adventure">Adventure</option>
-                      <option value="Travel">Travel</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Visibility Type selection */}
-                <div className="space-y-2">
-                  <label className="font-bold text-zinc-300 block">Campfire Visibility</label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div
-                      onClick={() => setNewVisibility("public")}
-                      className={`p-3 rounded-2xl border cursor-pointer transition-all ${newVisibility === "public"
-                        ? "bg-brand-cyan/10 border-brand-cyan"
-                        : "bg-white/[0.01] border-white/5 hover:border-white/10"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Radio className="h-4 w-4 text-brand-cyan" />
-                        <span className="font-bold text-white">Public Space</span>
-                      </div>
-                      <p className="text-[10px] text-zinc-500 mt-1">Open for anyone in the Wandercall network.</p>
-                    </div>
-
-                    <div
-                      onClick={() => setNewVisibility("private")}
-                      className={`p-3 rounded-2xl border cursor-pointer transition-all ${newVisibility === "private"
-                        ? "bg-brand-purple/10 border-brand-purple"
-                        : "bg-white/[0.01] border-white/5 hover:border-white/10"
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Lock className="h-4 w-4 text-brand-purple" />
-                        <span className="font-bold text-white">Private Space</span>
-                      </div>
-                      <p className="text-[10px] text-zinc-500 mt-1">Password protected. Invite only.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Password field shown if private */}
-                {newVisibility === "private" && (
-                  <div className="space-y-1">
-                    <label className="font-bold text-zinc-300 block">Set Room Passcode *</label>
-                    <div className="relative">
-                      <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-                      <input
-                        type="password"
-                        required
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        maxLength={6}
-                        value={newPassword}
-                        onChange={(e) => {
-                          const val = e.target.value.replace(/[^0-9]/g, "").slice(0, 6);
-                          setNewPassword(val);
-                        }}
-                        placeholder="Enter 6-digit numeric passcode..."
-                        className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-brand-purple/50"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Rules Agreement checkbox info */}
-                <div className="bg-zinc-950 border border-white/5 p-3 rounded-2xl text-[10px] text-zinc-500">
-                  ⚠️ By lighting a campfire, you agree to respect others, moderate your circle, and keep conversations safe and helpful for explorers.
-                </div>
-
-                {/* Actions */}
-                <div className="pt-4 border-t border-white/5 flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setShowCreateModal(false)}
-                    className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white rounded-xl font-bold cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2.5 bg-brand-cyan text-zinc-950 hover:bg-brand-cyan/90 font-extrabold rounded-xl shadow-lg shadow-brand-cyan/15 cursor-pointer"
-                  >
-                    Light & Join Campfire
-                  </button>
-                </div>
-
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* =======================================================
           MODAL B: SECURE PASSWORD INPUT OVERLAY FOR PRIVATE ROOMS

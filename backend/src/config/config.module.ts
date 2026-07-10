@@ -17,6 +17,7 @@ import { securityConfig } from './security/security.config';
 import { socketConfig } from './socket/socket.config';
 import { storageConfig } from './storage/storage.config';
 import { voiceConfig } from './voice/voice.config';
+import campfireConfig from './campfire/campfire.config';
 
 @Global()
 @Module({
@@ -41,6 +42,7 @@ import { voiceConfig } from './voice/voice.config';
         securityConfig,
         socketConfig,
         analyticsConfig,
+        campfireConfig,
       ],
       validate,
     }),

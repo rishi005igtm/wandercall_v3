@@ -16,3 +16,4 @@ export * from './security/security.config';
 export * from './socket/socket.config';
 export * from './analytics/analytics.config';
 export * from './config.module';
+export { default as campfireConfig } from './campfire/campfire.config';

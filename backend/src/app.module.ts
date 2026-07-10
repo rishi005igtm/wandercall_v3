@@ -42,6 +42,9 @@ import { CommunityInviteEntity } from './modules/community/entities/community-in
 import { CommunityBanEntity } from './modules/community/entities/community-ban.entity';
 import { RedisModule } from './modules/redis';
 
+// Campfire Platform
+import { CampfireModule } from './modules/campfire/campfire.module';
+import { CampfireEntity } from './modules/campfire/entities/campfire.entity';
 @Module({
   imports: [
     RedisModule,
@@ -84,6 +87,8 @@ import { RedisModule } from './modules/redis';
             CommunityRoleEntity,
             CommunityInviteEntity,
             CommunityBanEntity,
+            // Campfire Platform entities
+            CampfireEntity,
           ],
           synchronize: false, // Handled on startup via DatabaseInitializerService
           autoLoadEntities: true,
@@ -107,6 +112,7 @@ import { RedisModule } from './modules/redis';
     SearchModule,
     ChatModule,
     CommunityModule,
+    CampfireModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],

@@ -93,7 +93,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   };
 
   const isChatRoute = pathname?.includes('/profile/friends/chat:');
-  const isCampfireActiveRoute = pathname?.startsWith('/profile/campfires/') && pathname !== '/profile/campfires' && pathname !== '/profile/campfires/';
+  const isCampfireActiveRoute = pathname?.startsWith('/profile/campfires/') && pathname !== '/profile/campfires' && pathname !== '/profile/campfires/' && pathname !== '/profile/campfires/create';
   
   const staticSubPaths = ['wishlist', 'bookings', 'quests', 'community', 'campfires', 'friends', 'settings'];
   const isDynamicProfileRoute = pathname?.startsWith('/profile/') && 
@@ -209,7 +209,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
               type="button"
               onClick={(e) => {
                 e.preventDefault();
-                router.back();
+                if (pathname.startsWith("/profile/campfires/") && pathname !== "/profile/campfires") {
+                  router.push("/profile/campfires");
+                } else {
+                  router.back();
+                }
               }}
               className="h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
               aria-label="Go Back"

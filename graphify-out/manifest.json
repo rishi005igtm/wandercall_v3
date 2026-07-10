@@ -10,13 +10,13 @@
     "semantic_hash": "fa439650fa28a1a7aa8c2b6d81c8cc20"
   },
   "backend/package.json": {
-    "mtime": 1783507439.157292,
-    "ast_hash": "43c9d8ef0e941af3bfdf6aa0520230c2",
+    "mtime": 1783589271.7376575,
+    "ast_hash": "178961dfba1b03663fd48851ab84db9f",
     "semantic_hash": ""
   },
   "backend/src/app.module.ts": {
-    "mtime": 1783508164.923309,
-    "ast_hash": "f884abf71efed5c6866df98110e1dd41",
+    "mtime": 1783580864.4172406,
+    "ast_hash": "92a99c4e49b03ee7b2d7682609ab715d",
     "semantic_hash": ""
   },
   "backend/src/config/ai/ai.config.ts": {
@@ -40,9 +40,9 @@
     "semantic_hash": "6871560730d84be9905048be2a436c1f"
   },
   "backend/src/config/config.module.ts": {
-    "mtime": 1782899600.6694293,
-    "ast_hash": "1320cbb2f2ad0aa5ffcf51990272e379",
-    "semantic_hash": "1320cbb2f2ad0aa5ffcf51990272e379"
+    "mtime": 1783580617.71004,
+    "ast_hash": "c452f4566d21aa0ff1a0ef35e6c0fe48",
+    "semantic_hash": ""
   },
   "backend/src/config/database/database.config.ts": {
     "mtime": 1782899600.67144,
@@ -55,9 +55,9 @@
     "semantic_hash": ""
   },
   "backend/src/config/index.ts": {
-    "mtime": 1782899600.67144,
-    "ast_hash": "e045bcc610fd025bad3a6bf361bf3760",
-    "semantic_hash": "e045bcc610fd025bad3a6bf361bf3760"
+    "mtime": 1783580625.6042187,
+    "ast_hash": "a602e6b915e23cae1044c5cd27c85cd5",
+    "semantic_hash": ""
   },
   "backend/src/config/jwt/jwt.config.ts": {
     "mtime": 1782899600.6777234,
@@ -550,14 +550,14 @@
     "semantic_hash": "c703a1d2b2d9c909858558bb9c948485"
   },
   "client/app/profile/campfires/[id]/page.tsx": {
-    "mtime": 1782899601.367175,
-    "ast_hash": "dc7c92bdc33e6cb71eb5d9c0d71da440",
-    "semantic_hash": "dc7c92bdc33e6cb71eb5d9c0d71da440"
+    "mtime": 1783669085.7399406,
+    "ast_hash": "dda6b47cb5675e3718267eec972d8857",
+    "semantic_hash": ""
   },
   "client/app/profile/campfires/page.tsx": {
-    "mtime": 1782899601.367175,
-    "ast_hash": "1fc73c30a50d0a1b67b29b7e6d03e1db",
-    "semantic_hash": "1fc73c30a50d0a1b67b29b7e6d03e1db"
+    "mtime": 1783666605.5373962,
+    "ast_hash": "8259c5eeece9aaa5e9c769ad58ed14bb",
+    "semantic_hash": ""
   },
   "client/app/profile/community/create/page.tsx": {
     "mtime": 1783451756.8562574,
@@ -565,8 +565,8 @@
     "semantic_hash": ""
   },
   "client/app/profile/community/page.tsx": {
-    "mtime": 1783519560.6416314,
-    "ast_hash": "39eb9e7ed8d90b542cbf70c849727dd2",
+    "mtime": 1783549806.4579637,
+    "ast_hash": "0b5df3bae10ee2434edb1012257c5844",
     "semantic_hash": ""
   },
   "client/app/profile/friends/[chatId]/page.tsx": {
@@ -580,9 +580,9 @@
     "semantic_hash": ""
   },
   "client/app/profile/layout.tsx": {
-    "mtime": 1782899601.3840957,
-    "ast_hash": "d809b5bc1afe510e6e520e5a9dd9a62f",
-    "semantic_hash": "d809b5bc1afe510e6e520e5a9dd9a62f"
+    "mtime": 1783625612.051824,
+    "ast_hash": "30f35f31f4f8ac34bc2850ff098293d0",
+    "semantic_hash": ""
   },
   "client/app/profile/memories/[username]/page.tsx": {
     "mtime": 1782972987.306647,
@@ -820,8 +820,8 @@
     "semantic_hash": ""
   },
   "client/lib/api/queryKeys.ts": {
-    "mtime": 1783277199.2147326,
-    "ast_hash": "07519d48c6eb0d0552c419a712a9d814",
+    "mtime": 1783668950.1945946,
+    "ast_hash": "e363cd70169cc43d89a60793d7d26e2e",
     "semantic_hash": ""
   },
   "client/lib/services/auth.service.ts": {
@@ -860,8 +860,8 @@
     "semantic_hash": "21ea8087ff3b1b33000148a371c079fb"
   },
   "client/next-env.d.ts": {
-    "mtime": 1783544404.102404,
-    "ast_hash": "29f60a376e12bf72b67d4994fcc84214",
+    "mtime": 1783669049.5622318,
+    "ast_hash": "b698cdd97fe8e3bd16dcd74899ad7cef",
     "semantic_hash": ""
   },
   "client/next.config.ts": {
@@ -1120,8 +1120,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/chat/chat.gateway.ts": {
-    "mtime": 1783546370.2825458,
-    "ast_hash": "3fa893bb16a985e8eb5745cb6818a216",
+    "mtime": 1783596026.671423,
+    "ast_hash": "ce12f965b9de13ab0088c4a2258ac13b",
     "semantic_hash": ""
   },
   "backend/src/modules/chat/chat.module.ts": {
@@ -1200,8 +1200,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/community.module.ts": {
-    "mtime": 1783537312.1701488,
-    "ast_hash": "f63baea1357bf51d71c1a2c2cf1cf149",
+    "mtime": 1783548220.9040382,
+    "ast_hash": "1aa42e4e6fc07ebd00a03170153adc8b",
     "semantic_hash": ""
   },
   "backend/src/modules/community/constants/community.constant.ts": {
@@ -1210,13 +1210,13 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/controllers/community-discovery.controller.ts": {
-    "mtime": 1783275773.9307644,
-    "ast_hash": "7a6a68790dcf66e3c82c847405272ab3",
+    "mtime": 1783548356.4248614,
+    "ast_hash": "957062bb47154a3156d24189a03b059e",
     "semantic_hash": ""
   },
   "backend/src/modules/community/controllers/community-membership.controller.ts": {
-    "mtime": 1783539397.9906995,
-    "ast_hash": "ceb5da278b5352bf7d02741f477438e7",
+    "mtime": 1783548827.7613301,
+    "ast_hash": "1b6fa7e69e9467185fa5641d291cdbde",
     "semantic_hash": ""
   },
   "backend/src/modules/community/controllers/community.controller.ts": {
@@ -1345,8 +1345,8 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-discovery.service.ts": {
-    "mtime": 1783423717.3208237,
-    "ast_hash": "c2107a9118d3e099c7fc40308b1d7b1c",
+    "mtime": 1783549058.7346232,
+    "ast_hash": "c1702f567af997123cbe8560cb4b350c",
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-invite.service.ts": {
@@ -1355,13 +1355,13 @@
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-membership.service.ts": {
-    "mtime": 1783537287.4787757,
-    "ast_hash": "a3457b0195f67c166d657109f486dc8a",
+    "mtime": 1783549035.4376342,
+    "ast_hash": "45b62e3adcd6c2429daaf217c8a79d58",
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community-presence.tracker.ts": {
-    "mtime": 1783452552.6684387,
-    "ast_hash": "88e6daeb06189d78bb119521c6c6c1b4",
+    "mtime": 1783548303.0836718,
+    "ast_hash": "f759d1e0e25fa3a81c8773150a7c895a",
     "semantic_hash": ""
   },
   "backend/src/modules/community/services/community.service.ts": {
@@ -1405,8 +1405,8 @@
     "semantic_hash": ""
   },
   "client/hooks/useSocket.ts": {
-    "mtime": 1783512401.8877285,
-    "ast_hash": "9981e0b3911726488f5d5b038deab9d6",
+    "mtime": 1783548756.3790498,
+    "ast_hash": "2e7b1d62e443a55c706b003267c84356",
     "semantic_hash": ""
   },
   "client/lib/api/community.ts": {
@@ -1425,8 +1425,8 @@
     "semantic_hash": ""
   },
   "client/lib/store/slices/communityDiscoverySlice.ts": {
-    "mtime": 1783278593.9140675,
-    "ast_hash": "b44c10d0daf24cb2e305f2fd3b910c73",
+    "mtime": 1783549627.425176,
+    "ast_hash": "c8db062614186f7aeb5fd049b853c8ab",
     "semantic_hash": ""
   },
   "client/lib/store/slices/communityMembershipSlice.ts": {
@@ -1575,8 +1575,8 @@
     "semantic_hash": ""
   },
   "client/app/community/[slug]/_page_monolith.tsx": {
-    "mtime": 1783546762.8953526,
-    "ast_hash": "3ede00b0683e42aee9b10c0d6924e82e",
+    "mtime": 1783549046.7975388,
+    "ast_hash": "d80c79fa30b0e66b2e3fe9e6c4f73397",
     "semantic_hash": ""
   },
   "client/app/community/[slug]/chat/page.tsx": {
@@ -1622,6 +1622,216 @@
   "client/hooks/api/useDirectChat.ts": {
     "mtime": 1783509352.5417423,
     "ast_hash": "6dd3e3b47cae0f46a069d013fea6597e",
+    "semantic_hash": ""
+  },
+  "backend/src/config/campfire/campfire.config.ts": {
+    "mtime": 1783580602.109786,
+    "ast_hash": "c3165395fbd9772da03ffeac5afb5f88",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/campfire.module.ts": {
+    "mtime": 1783589227.1382976,
+    "ast_hash": "01105c8951ac009c1ba16362c21b1f66",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/constants/campfire.constant.ts": {
+    "mtime": 1783580649.4064412,
+    "ast_hash": "b3228de8e445083683aa52a49f913916",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/constants/campfire.redis-keys.ts": {
+    "mtime": 1783580659.159995,
+    "ast_hash": "3f7ace00b4618bc3f9b8353ecbc3b92c",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/controllers/campfire-discovery.controller.ts": {
+    "mtime": 1783582877.5551662,
+    "ast_hash": "1cbf1b4b32c09fb340e38081be44ca47",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/controllers/campfire.controller.ts": {
+    "mtime": 1783663763.9101477,
+    "ast_hash": "8eeb2fcf67e13724b8a81eb2a45b40d1",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/dto/campfire-discovery.dto.ts": {
+    "mtime": 1783582754.3044305,
+    "ast_hash": "7c043e017adf25e2bdfafeb75092562d",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/dto/campfire-query.dto.ts": {
+    "mtime": 1783594309.2217555,
+    "ast_hash": "227bb2586491753b1017088fab7cafd5",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/dto/create-campfire.dto.ts": {
+    "mtime": 1783624905.4919274,
+    "ast_hash": "bc06137499ec1517a87624cee5c75b15",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/dto/update-campfire.dto.ts": {
+    "mtime": 1783580928.3796625,
+    "ast_hash": "ba783fb330d3b75e9a8d198b95c36e1c",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/entities/campfire.entity.ts": {
+    "mtime": 1783663717.6873622,
+    "ast_hash": "6d12fc47e54b0ad2f09b2a4f0b6ccda3",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/events/campfire-discovery.subscriber.ts": {
+    "mtime": 1783582901.014812,
+    "ast_hash": "518c607751378bd11ea49ea1b77e23e8",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/events/campfire-event.dispatcher.ts": {
+    "mtime": 1783580940.7301319,
+    "ast_hash": "c01f85f4072b8364a7692283e32c931d",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/events/campfire.events.ts": {
+    "mtime": 1783580733.454915,
+    "ast_hash": "408750c1ebb90d7df291ca676f368c76",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/gateways/campfire.gateway.ts": {
+    "mtime": 1783668937.523774,
+    "ast_hash": "a5efed56c14f709aa09ff317bdbd2b8d",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/repositories/campfire-discovery.repository.ts": {
+    "mtime": 1783667617.9565191,
+    "ast_hash": "d5102ff11971ff21cfd2559acb717426",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/repositories/campfire.repository.ts": {
+    "mtime": 1783666131.6821716,
+    "ast_hash": "a385122abf52cc70522ad0930500d194",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire-cache.service.ts": {
+    "mtime": 1783582737.1233132,
+    "ast_hash": "b53a6a731371dbedf6888e52dfc4915c",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire-discovery-cache.service.ts": {
+    "mtime": 1783582838.9095438,
+    "ast_hash": "c73d52fb9fe0dbdf3e16b5796335ad43",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire-discovery.service.ts": {
+    "mtime": 1783583032.6055272,
+    "ast_hash": "69fa427d725a8d7fa452cce2c99156ce",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire-policy.service.ts": {
+    "mtime": 1783595613.7574956,
+    "ast_hash": "cc73068abdfe454de1e6e6092ff60123",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire-ranking.service.ts": {
+    "mtime": 1783582795.5189514,
+    "ast_hash": "b34cf6bc8ae42c8290d7ae79885e88ba",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire-recommendation.service.ts": {
+    "mtime": 1783582813.6415343,
+    "ast_hash": "1b49fdb662049fb7ad19cbe77cc3452b",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/campfire/services/campfire.service.ts": {
+    "mtime": 1783667655.2090034,
+    "ast_hash": "e9c9a02f86e3e0ff2d03a240095befe9",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/community/config/community-ranking.config.ts": {
+    "mtime": 1783548162.5288765,
+    "ast_hash": "61714c578057447a8e64376ce5795492",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/community/services/community-ranking.engine.ts": {
+    "mtime": 1783548174.9444034,
+    "ast_hash": "393f3b47933d7abe986a1332e2da545d",
+    "semantic_hash": ""
+  },
+  "backend/src/modules/community/services/community-redis-presence.service.ts": {
+    "mtime": 1783548192.3134377,
+    "ast_hash": "832d1c25b6ce06045827e900c54aaaec",
+    "semantic_hash": ""
+  },
+  "client/hooks/api/useCampfire.ts": {
+    "mtime": 1783594503.162092,
+    "ast_hash": "fb0d91d2439bf450b711fadc84e9cb6f",
+    "semantic_hash": ""
+  },
+  "client/hooks/api/useCampfireDiscovery.ts": {
+    "mtime": 1783582976.592454,
+    "ast_hash": "91044bcbabd52bfbcbd07e0f3909c8eb",
+    "semantic_hash": ""
+  },
+  "client/lib/api/campfire.ts": {
+    "mtime": 1783663825.7574182,
+    "ast_hash": "ff2a64b24b94888c1e8e65c411c65d64",
+    "semantic_hash": ""
+  },
+  "client/lib/socket.ts": {
+    "mtime": 1783589291.14935,
+    "ast_hash": "1483cff8af17acef59d9c41841c6588e",
+    "semantic_hash": ""
+  },
+  "client/scripts/finalUpdatePage.js": {
+    "mtime": 1783584823.1362438,
+    "ast_hash": "f0cb45152218f5896bf01ae8284bc4ec",
+    "semantic_hash": ""
+  },
+  "client/scripts/fixPageTS.js": {
+    "mtime": 1783584032.1575427,
+    "ast_hash": "920af416bd718de01f963b8674b567ac",
+    "semantic_hash": ""
+  },
+  "client/scripts/updateCampfireDetail.js": {
+    "mtime": 1783583689.5156658,
+    "ast_hash": "2993e0b9591563b9c9b5ca9a64e6cdd3",
+    "semantic_hash": ""
+  },
+  "client/scripts/updateCampfiresPage.js": {
+    "mtime": 1783584205.0890045,
+    "ast_hash": "13743caec36932ae50b116e097308313",
+    "semantic_hash": ""
+  },
+  "client/scripts/updatePageProperly.js": {
+    "mtime": 1783584472.575864,
+    "ast_hash": "efa0e5b3d8632c42245776bd7c9571f7",
+    "semantic_hash": ""
+  },
+  "ENTERPRISE_ARCHITECTURE_SUMMARY.md": {
+    "mtime": 1783548856.106274,
+    "ast_hash": "9139f92928d4200461b6f232d7eb9242",
+    "semantic_hash": ""
+  },
+  "client/app/profile/campfires/create/components/CampfireInfoPanel.tsx": {
+    "mtime": 1783666049.843812,
+    "ast_hash": "3204396d105d573d790059eaec93d37e",
+    "semantic_hash": ""
+  },
+  "client/app/profile/campfires/create/components/LivePreviewPanel.tsx": {
+    "mtime": 1783621851.5610337,
+    "ast_hash": "cd59fb0f6dc45e6219d6edc9ed1a1299",
+    "semantic_hash": ""
+  },
+  "client/app/profile/campfires/create/components/SmartSchedulerPanel.tsx": {
+    "mtime": 1783624363.2376964,
+    "ast_hash": "919fdb2b7d25903629cd035ce5698e75",
+    "semantic_hash": ""
+  },
+  "client/app/profile/campfires/create/hooks/useCampfireDraft.ts": {
+    "mtime": 1783624791.355144,
+    "ast_hash": "0490028acf40712f665215cf6d86f386",
+    "semantic_hash": ""
+  },
+  "client/app/profile/campfires/create/page.tsx": {
+    "mtime": 1783666060.4404867,
+    "ast_hash": "27aa7a0ada6852a1c41a01a4a24b0ffe",
     "semantic_hash": ""
   }
 }
