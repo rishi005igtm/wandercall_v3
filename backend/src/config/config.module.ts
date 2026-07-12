@@ -24,6 +24,7 @@ import campfireConfig from './campfire/campfire.config';
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
       envFilePath: ['.env.local', '.env'],
       load: [
         appConfig,

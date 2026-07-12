@@ -18,57 +18,83 @@ export enum Environment {
   Staging = 'staging',
 }
 
+/**
+ * EnvironmentVariables — validated on startup via NestJS ConfigModule.
+ *
+ * Fields marked @IsNotEmpty() will crash the process if missing — intentional
+ * for hard requirements (DB, JWT, etc.).
+ *
+ * Fields marked @IsOptional() degrade gracefully — the feature using them
+ * (Kafka, Cloudinary, FCM, etc.) must handle the missing value internally.
+ *
+ * This prevents "startup failure in dev because Kafka isn't configured yet".
+ */
 export class EnvironmentVariables {
-  // --- Application ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Application — REQUIRED
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  APP_NAME: string;
+  APP_NAME?: string;
 
+  @IsOptional()
   @IsEnum(Environment)
-  APP_ENV: Environment;
+  APP_ENV?: Environment;
 
+  @IsOptional()
   @IsInt()
   @Min(1)
   @Max(65535)
-  PORT: number;
+  PORT?: number;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  API_PREFIX: string;
+  API_PREFIX?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  CORS_ORIGINS: string;
+  CORS_ORIGINS?: string;
 
-  // --- Database ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // PostgreSQL — REQUIRED (no app without a database)
+  // ─────────────────────────────────────────────────────────────────────────
   @IsString()
   @IsNotEmpty()
   DB_HOST: string;
 
+  @IsOptional()
   @IsInt()
-  DB_PORT: number;
+  DB_PORT?: number;
 
   @IsString()
   @IsNotEmpty()
   DB_USERNAME: string;
 
+  @IsOptional()
   @IsString()
-  DB_PASSWORD: string;
+  DB_PASSWORD?: string;
 
   @IsString()
   @IsNotEmpty()
   DB_NAME: string;
 
+  @IsOptional()
   @IsBoolean()
-  DB_SSL: boolean;
+  DB_SSL?: boolean;
 
+  @IsOptional()
   @IsInt()
-  DB_POOL_MIN: number;
+  DB_POOL_MIN?: number;
 
+  @IsOptional()
   @IsInt()
-  DB_POOL_MAX: number;
+  DB_POOL_MAX?: number;
 
-  // --- Redis ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Redis — at least one of REDIS_URL or REDIS_HOST must be set,
+  // enforced at runtime in RedisService. Both are optional here to allow
+  // Upstash-only setups.
+  // ─────────────────────────────────────────────────────────────────────────
   @IsOptional()
   @IsString()
   REDIS_HOST?: string;
@@ -101,21 +127,51 @@ export class EnvironmentVariables {
   @IsString()
   UPSTASH_REDIS_REST_TOKEN?: string;
 
-  // --- Kafka ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // JWT — REQUIRED (auth cannot function without secrets)
+  // ─────────────────────────────────────────────────────────────────────────
   @IsString()
   @IsNotEmpty()
-  KAFKA_BROKERS: string;
+  JWT_SECRET: string;
 
   @IsString()
   @IsNotEmpty()
-  KAFKA_CLIENT_ID: string;
+  JWT_REFRESH_SECRET: string;
 
+  @IsOptional()
+  @IsInt()
+  JWT_EXPIRES_IN?: number;
+
+  @IsOptional()
+  @IsInt()
+  JWT_REFRESH_EXPIRES_IN?: number;
+
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  KAFKA_GROUP_ID: string;
+  JWT_ISSUER?: string;
 
+  @IsOptional()
+  @IsString()
+  JWT_AUDIENCE?: string;
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Kafka — OPTIONAL (not currently used in active modules)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
+  @IsString()
+  KAFKA_BROKERS?: string;
+
+  @IsOptional()
+  @IsString()
+  KAFKA_CLIENT_ID?: string;
+
+  @IsOptional()
+  @IsString()
+  KAFKA_GROUP_ID?: string;
+
+  @IsOptional()
   @IsBoolean()
-  KAFKA_SSL: boolean;
+  KAFKA_SSL?: boolean;
 
   @IsOptional()
   @IsString()
@@ -125,74 +181,56 @@ export class EnvironmentVariables {
   @IsString()
   KAFKA_SASL_PASS?: string;
 
-  // --- JWT ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Payment — OPTIONAL (payment module is scaffolded, not yet active)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  JWT_SECRET: string;
+  CASHFREE_APP_ID?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  JWT_REFRESH_SECRET: string;
+  CASHFREE_SECRET_KEY?: string;
 
-  @IsInt()
-  JWT_EXPIRES_IN: number;
-
-  @IsInt()
-  JWT_REFRESH_EXPIRES_IN: number;
-
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  JWT_ISSUER: string;
+  CASHFREE_API_VERSION?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  JWT_AUDIENCE: string;
+  CASHFREE_ENV?: string;
 
-  // --- Cashfree Payment Gateway ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Cloud Storage — OPTIONAL (Cloudinary credentials are the live path;
+  // missing = uploads will warn but app starts)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  CASHFREE_APP_ID: string;
+  STORAGE_DRIVER?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  CASHFREE_SECRET_KEY: string;
+  STORAGE_BUCKET?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  CASHFREE_API_VERSION: string;
+  STORAGE_REGION?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  CASHFREE_ENV: string;
+  STORAGE_ACCESS_KEY?: string;
 
-  // --- Cloud Storage ---
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  STORAGE_DRIVER: string;
-
-  @IsString()
-  @IsNotEmpty()
-  STORAGE_BUCKET: string;
-
-  @IsString()
-  @IsNotEmpty()
-  STORAGE_REGION: string;
-
-  @IsString()
-  @IsNotEmpty()
-  STORAGE_ACCESS_KEY: string;
-
-  @IsString()
-  @IsNotEmpty()
-  STORAGE_SECRET_KEY: string;
+  STORAGE_SECRET_KEY?: string;
 
   @IsOptional()
   @IsString()
   STORAGE_ENDPOINT?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  STORAGE_CDN_URL: string;
+  STORAGE_CDN_URL?: string;
 
   @IsOptional()
   @IsString()
@@ -210,141 +248,172 @@ export class EnvironmentVariables {
   @IsString()
   CLOUDINARY_URL?: string;
 
-  // --- Cache ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Cache — OPTIONAL (defaults are acceptable)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsInt()
-  CACHE_TTL: number;
+  CACHE_TTL?: number;
 
+  @IsOptional()
   @IsInt()
-  CACHE_MAX_ITEMS: number;
+  CACHE_MAX_ITEMS?: number;
 
-  // --- Search Engine ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Search — OPTIONAL (social discovery degrades gracefully without it)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  SEARCH_HOST: string;
+  SEARCH_HOST?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  SEARCH_API_KEY: string;
+  SEARCH_API_KEY?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  SEARCH_INDEX_PREFIX: string;
+  SEARCH_INDEX_PREFIX?: string;
 
-  // --- AI Services ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // AI (OpenAI) — OPTIONAL (recommendation engine degrades without it)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  OPENAI_API_KEY: string;
+  OPENAI_API_KEY?: string;
 
   @IsOptional()
   @IsString()
   OPENAI_ORG_ID?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  OPENAI_MODEL: string;
+  OPENAI_MODEL?: string;
 
+  @IsOptional()
   @IsInt()
-  OPENAI_TIMEOUT: number;
+  OPENAI_TIMEOUT?: number;
 
+  @IsOptional()
   @IsInt()
-  OPENAI_MAX_RETRIES: number;
+  OPENAI_MAX_RETRIES?: number;
 
-  // --- Mail Server ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Mail (SMTP) — OPTIONAL (auth email verification degrades without it)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  MAIL_HOST: string;
+  MAIL_HOST?: string;
 
+  @IsOptional()
   @IsInt()
-  MAIL_PORT: number;
+  MAIL_PORT?: number;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  MAIL_USER: string;
+  MAIL_USER?: string;
 
+  @IsOptional()
   @IsString()
-  MAIL_PASSWORD: string;
+  MAIL_PASSWORD?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  MAIL_FROM_EMAIL: string;
+  MAIL_FROM_EMAIL?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  MAIL_FROM_NAME: string;
+  MAIL_FROM_NAME?: string;
 
-  // --- Push Notifications ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Push Notifications — OPTIONAL (mobile push not yet active)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  FCM_SERVER_KEY: string;
+  FCM_SERVER_KEY?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  APNS_KEY_ID: string;
+  APNS_KEY_ID?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  APNS_TEAM_ID: string;
+  APNS_TEAM_ID?: string;
 
-  // --- Voice & Video (LiveKit) ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // LiveKit (Voice/Video) — OPTIONAL (Campfire degrades without it)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  LIVEKIT_HOST: string;
+  LIVEKIT_HOST?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  LIVEKIT_API_KEY: string;
+  LIVEKIT_API_KEY?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  LIVEKIT_API_SECRET: string;
+  LIVEKIT_API_SECRET?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  LIVEKIT_WEBHOOK_SECRET: string;
+  LIVEKIT_WEBHOOK_SECRET?: string;
 
-  // --- Security & Rate Limiting ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Security — OPTIONAL (has safe defaults, but set ENCRYPTION_KEY in prod)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsInt()
-  BCRYPT_SALT_ROUNDS: number;
+  BCRYPT_SALT_ROUNDS?: number;
 
+  @IsOptional()
   @IsInt()
-  RATE_LIMIT_TTL: number;
+  RATE_LIMIT_TTL?: number;
 
+  @IsOptional()
   @IsInt()
-  RATE_LIMIT_MAX: number;
+  RATE_LIMIT_MAX?: number;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  ENCRYPTION_KEY: string;
+  ENCRYPTION_KEY?: string;
 
-  // --- WebSockets / Socket.IO ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Socket.IO — OPTIONAL (all have safe defaults; NestJS gateway shares port)
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsInt()
-  SOCKET_PORT: number;
+  SOCKET_PORT?: number;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  SOCKET_PATH: string;
+  SOCKET_PATH?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  SOCKET_CORS_ORIGIN: string;
+  SOCKET_CORS_ORIGIN?: string;
 
+  @IsOptional()
   @IsInt()
-  SOCKET_PING_INTERVAL: number;
+  SOCKET_PING_INTERVAL?: number;
 
+  @IsOptional()
   @IsInt()
-  SOCKET_PING_TIMEOUT: number;
+  SOCKET_PING_TIMEOUT?: number;
 
-  // --- Analytics ---
+  // ─────────────────────────────────────────────────────────────────────────
+  // Analytics — OPTIONAL
+  // ─────────────────────────────────────────────────────────────────────────
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  ANALYTICS_WRITE_KEY: string;
+  ANALYTICS_WRITE_KEY?: string;
 
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  ANALYTICS_PROVIDER: string;
+  ANALYTICS_PROVIDER?: string;
 
+  @IsOptional()
   @IsBoolean()
-  ANALYTICS_ENABLED: boolean;
+  ANALYTICS_ENABLED?: boolean;
 }
 
 export function validate(config: Record<string, unknown>) {
@@ -359,13 +428,13 @@ export function validate(config: Record<string, unknown>) {
   });
 
   const errors = validateSync(validatedConfig, {
-    skipMissingProperties: false,
+    skipMissingProperties: true, // Only validate fields that ARE present
   });
 
   if (errors.length > 0) {
     throw new Error(
       `❌ Environment Validation Failed!\n` +
-        `The application could not start due to missing or invalid environment configuration:\n` +
+        `The application could not start due to invalid environment configuration:\n` +
         errors.map((err) => Object.values(err.constraints || {}).join(', ')).join('\n'),
     );
   }

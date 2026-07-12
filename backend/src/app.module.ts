@@ -49,6 +49,8 @@ import { LiveSessionEntity } from './modules/campfire/entities/live-session.enti
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
+import { HealthModule } from './health/health.module';
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
@@ -65,7 +67,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           host: configService.get<string>('database.host', 'localhost'),
           port: configService.get<number>('database.port', 5432),
           username: configService.get<string>('database.username', 'postgres'),
-          password: configService.get<string>('database.password', 'anmol162004'),
+          password: configService.get<string>('database.password'),
           database: configService.get<string>('database.name', 'postgres'),
           entities: [
             UserAuthEntity,
@@ -99,6 +101,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
           ],
           synchronize: false, // Handled on startup via DatabaseInitializerService
           autoLoadEntities: true,
+          uuidExtension: 'pgcrypto',
         };
 
         if (isSsl) {
@@ -120,6 +123,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     ChatModule,
     CommunityModule,
     CampfireModule,
+    HealthModule,
   ],
   controllers: [],
   providers: [DatabaseInitializerService],

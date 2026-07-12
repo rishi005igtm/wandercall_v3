@@ -1,0 +1,22 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wandercall API — Kubernetes Service
+# ClusterIP: internal cluster access only.
+# An Ingress or LoadBalancer sits in front of this for external traffic.
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: Service
+metadata:
+  name: wandercall-api
+  namespace: wandercall
+  labels:
+    app.kubernetes.io/name: wandercall-api
+    app.kubernetes.io/component: backend
+spec:
+  type: ClusterIP
+  selector:
+    app: wandercall-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5000
+      protocol: TCP

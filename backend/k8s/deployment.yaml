@@ -1,0 +1,208 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wandercall API — Kubernetes Deployment
+# Rolling update strategy for zero-downtime deploys on EKS.
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wandercall-api
+  namespace: wandercall
+  labels:
+    app.kubernetes.io/name: wandercall-api
+    app.kubernetes.io/component: backend
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: wandercall-api
+  # Zero-downtime rolling update: bring up new pod before killing old one
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # 1 extra pod allowed during rollout
+      maxUnavailable: 0  # never take a pod offline before replacement is ready
+
+  template:
+    metadata:
+      labels:
+        app: wandercall-api
+        app.kubernetes.io/name: wandercall-api
+        app.kubernetes.io/version: "1.0.0"
+      annotations:
+        # Force pod restart when ConfigMap changes (checksum-based reload)
+        configmap-checksum: "REPLACE_WITH_CONFIGMAP_CHECKSUM"
+
+    spec:
+      # ── Security context: non-root user ────────────────────────────────────
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000      # 'node' user from node:22-alpine
+        runAsGroup: 1000
+        fsGroup: 1000
+
+      # ── Graceful shutdown: 60s drain window ────────────────────────────────
+      terminationGracePeriodSeconds: 60
+
+      containers:
+        - name: api
+          image: YOUR_ECR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/wandercall-backend:IMAGE_TAG
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 5000
+              protocol: TCP
+
+          # ── Environment: non-sensitive from ConfigMap ─────────────────────
+          envFrom:
+            - configMapRef:
+                name: wandercall-config
+
+          # ── Environment: sensitive from Secret ───────────────────────────
+          env:
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: DB_HOST
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: DB_PASSWORD
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: DB_NAME
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: JWT_SECRET
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: JWT_REFRESH_SECRET
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: REDIS_PASSWORD
+                  optional: true
+            - name: LIVEKIT_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: LIVEKIT_API_KEY
+                  optional: true
+            - name: LIVEKIT_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: LIVEKIT_API_SECRET
+                  optional: true
+            - name: CLOUDINARY_CLOUD_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: CLOUDINARY_CLOUD_NAME
+                  optional: true
+            - name: CLOUDINARY_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: CLOUDINARY_API_KEY
+                  optional: true
+            - name: CLOUDINARY_API_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: CLOUDINARY_API_SECRET
+                  optional: true
+            - name: OPENAI_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: OPENAI_API_KEY
+                  optional: true
+            - name: MAIL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: MAIL_USER
+                  optional: true
+            - name: MAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: MAIL_PASSWORD
+                  optional: true
+            - name: ENCRYPTION_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: wandercall-secrets
+                  key: ENCRYPTION_KEY
+                  optional: true
+
+          # ── Liveness probe: is the Node process alive? ───────────────────
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+
+          # ── Readiness probe: is the app ready to receive traffic? ─────────
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health/ready
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 10
+            failureThreshold: 3
+            successThreshold: 1
+
+          # ── Resource requests/limits — tune per load testing ──────────────
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "512Mi"
+
+          # ── Container security hardening ──────────────────────────────────
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false  # NestJS needs to write ts incremental cache
+            capabilities:
+              drop:
+                - ALL
+
+          # ── Graceful termination: ensure Socket.IO drains connections ─────────
+          # NestJS enableShutdownHooks() handles SIGTERM. 60s drain matches
+          # terminationGracePeriodSeconds above.
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+
+      # ── Topology: spread pods across AZs for HA ──────────────────────────
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: wandercall-api

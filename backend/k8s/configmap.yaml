@@ -1,0 +1,80 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wandercall — Kubernetes ConfigMap (non-sensitive runtime config)
+# Secrets (DB_PASSWORD, JWT_SECRET, API keys) go in secret.yaml, NOT here.
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wandercall-config
+  namespace: wandercall
+  labels:
+    app.kubernetes.io/name: wandercall-api
+    app.kubernetes.io/component: config
+data:
+  APP_NAME: "Wandercall-Backend"
+  APP_ENV: "production"
+  PORT: "5000"
+  API_PREFIX: "api/v1"
+  # In EKS: set to your ALB/Ingress domain
+  CORS_ORIGINS: "https://app.wandercall.com"
+
+  # Database (non-secret fields only)
+  DB_PORT: "5432"
+  DB_SSL: "true"
+  DB_POOL_MIN: "2"
+  DB_POOL_MAX: "10"
+
+  # Redis (host injected from Service name; password in Secret)
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  REDIS_TLS: "false"
+
+  # JWT (non-secret config)
+  JWT_EXPIRES_IN: "3600"
+  JWT_REFRESH_EXPIRES_IN: "604800"
+  JWT_ISSUER: "wandercall-auth-service"
+  JWT_AUDIENCE: "wandercall-clients"
+
+  # LiveKit (non-secret)
+  LIVEKIT_HOST: "wss://your-project.livekit.cloud"
+
+  # Storage
+  STORAGE_DRIVER: "cloudinary"
+
+  # Cache
+  CACHE_TTL: "300"
+  CACHE_MAX_ITEMS: "1000"
+
+  # Security
+  BCRYPT_SALT_ROUNDS: "10"
+  RATE_LIMIT_TTL: "60000"
+  RATE_LIMIT_MAX: "100"
+
+  # Socket.IO
+  SOCKET_PATH: "/socket.io/"
+  SOCKET_CORS_ORIGIN: "https://app.wandercall.com"
+  SOCKET_PING_INTERVAL: "25000"
+  SOCKET_PING_TIMEOUT: "50000"
+
+  # OpenAI
+  OPENAI_MODEL: "gpt-4o"
+  OPENAI_TIMEOUT: "30000"
+  OPENAI_MAX_RETRIES: "3"
+
+  # Mail
+  MAIL_HOST: "smtp.gmail.com"
+  MAIL_PORT: "587"
+  MAIL_FROM_EMAIL: "noreply@wandercall.com"
+  MAIL_FROM_NAME: "Wandercall"
+
+  # Campfire
+  CAMPFIRE_DEFAULT_CAPACITY: "50"
+  CAMPFIRE_MAX_CAPACITY: "1000"
+  CAMPFIRE_DEFAULT_SPEAKER_LIMIT: "10"
+  CAMPFIRE_DEFAULT_LISTENER_LIMIT: "50"
+  CAMPFIRE_CACHE_TTL: "3600"
+  CAMPFIRE_PRESENCE_TTL: "300"
+
+  # Analytics
+  ANALYTICS_PROVIDER: "segment"
+  ANALYTICS_ENABLED: "true"

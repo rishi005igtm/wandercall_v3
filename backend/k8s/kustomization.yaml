@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Kustomize entry point — apply all manifests in the correct order.
+# Usage:
+#   kubectl apply -k k8s/               (from backend/ root)
+#   kubectl apply -k .                  (from inside k8s/)
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: wandercall
+
+resources:
+  # 1. Namespace first — everything else lives inside it
+  - namespace.yaml
+  # 2. Non-sensitive config (env vars, feature flags)
+  - configmap.yaml
+  # 3. Secrets template — replace placeholders with real values via CI/CD
+  - secret.yaml
+  # 4. Deployment (references ConfigMap + Secret)
+  - deployment.yaml
+  # 5. Service (exposes Deployment internally)
+  - service.yaml
+  # 6. Ingress (external traffic routing via AWS ALB)
+  - ingress.yaml
+  # 7. HPA (autoscaling — applied last so Deployment exists first)
+  - hpa.yaml
+
+# Common labels applied to all resources
+commonLabels:
+  app.kubernetes.io/part-of: wandercall
+  app.kubernetes.io/managed-by: kustomize

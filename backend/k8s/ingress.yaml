@@ -1,0 +1,44 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wandercall API — Kubernetes Ingress (AWS ALB)
+# Requires: AWS Load Balancer Controller installed in EKS cluster.
+# Replace YOUR_DOMAIN and YOUR_ACM_CERT_ARN before applying.
+# ═══════════════════════════════════════════════════════════════════════════════
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: wandercall-api-ingress
+  namespace: wandercall
+  labels:
+    app.kubernetes.io/name: wandercall-api
+    app.kubernetes.io/component: ingress
+  annotations:
+    # AWS ALB Ingress Controller annotations
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: "443"
+    # Replace with your ACM certificate ARN
+    alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:YOUR_REGION:YOUR_ACCOUNT_ID:certificate/YOUR_CERT_ID
+    # Health check — matches our /api/v1/health/ready readiness endpoint
+    alb.ingress.kubernetes.io/healthcheck-path: /api/v1/health/ready
+    alb.ingress.kubernetes.io/healthcheck-interval-seconds: "30"
+    alb.ingress.kubernetes.io/healthcheck-timeout-seconds: "10"
+    alb.ingress.kubernetes.io/healthy-threshold-count: "2"
+    alb.ingress.kubernetes.io/unhealthy-threshold-count: "3"
+    # WebSocket support (required for Socket.IO)
+    alb.ingress.kubernetes.io/load-balancer-attributes: idle_timeout.timeout_seconds=3600
+    # Sticky sessions for Socket.IO (ensures a client always hits the same pod)
+    alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=86400
+spec:
+  ingressClassName: alb
+  rules:
+    - host: api.wandercall.com   # Replace with your actual domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: wandercall-api
+                port:
+                  name: http

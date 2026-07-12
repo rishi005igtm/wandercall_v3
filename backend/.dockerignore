@@ -1,0 +1,56 @@
+# ─── Node modules ────────────────────────────────────────────────────────────
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── Build artifacts ──────────────────────────────────────────────────────────
+dist/
+
+# ─── TypeScript incremental cache ─────────────────────────────────────────────
+*.tsbuildinfo
+
+# ─── Test & coverage ──────────────────────────────────────────────────────────
+coverage/
+**/*.spec.ts
+**/*.e2e-spec.ts
+test/
+
+# ─── Environment & secrets ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+.env.production
+*.pem
+*.key
+*.cert
+
+# ─── Development tooling ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.eslintcache
+.prettierrc
+
+# ─── Documentation ────────────────────────────────────────────────────────────
+docs/
+*.md
+!README.md
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
+logs/
+*.log
+
+# ─── OS artifacts ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Git ──────────────────────────────────────────────────────────────────────
+.git/
+.gitignore
+
+# ─── Scratch / scripts ────────────────────────────────────────────────────────
+scratch_query.js
+scripts/

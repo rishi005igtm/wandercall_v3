@@ -1,0 +1,34 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wandercall Backend — Development Override
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+# ═══════════════════════════════════════════════════════════════════════════════
+version: "3.9"
+
+services:
+  api:
+    build:
+      target: deps            # Use the deps stage — mounts src as volume for hot-reload
+    image: wandercall-backend:dev
+    command: ["node", "node_modules/.bin/nest", "start", "--watch"]
+    environment:
+      NODE_ENV: development
+      DB_HOST: postgres
+      REDIS_HOST: redis
+    volumes:
+      # Mount source for live reload — node_modules stays in the container layer
+      - ./src:/app/src:delegated
+      - ./nest-cli.json:/app/nest-cli.json:ro
+      - ./tsconfig.json:/app/tsconfig.json:ro
+    ports:
+      - "${PORT:-5000}:5000"
+    # No healthcheck delay in dev — faster feedback
+    healthcheck:
+      start_period: 30s
+
+  postgres:
+    ports:
+      - "5432:5432"           # Expose locally for dev tools (DBeaver, pgAdmin)
+
+  redis:
+    ports:
+      - "6379:6379"           # Expose locally for redis-cli / RedisInsight

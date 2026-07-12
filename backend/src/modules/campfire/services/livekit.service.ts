@@ -19,16 +19,18 @@ export class LivekitService {
     @InjectRepository(CampfireEntity)
     private readonly campfireRepository: Repository<CampfireEntity>,
   ) {
-    const apiKey = this.configService.get<string>('LIVEKIT_API_KEY') || 'devkey';
-    const apiSecret = this.configService.get<string>('LIVEKIT_API_SECRET') || 'secret';
-    const wsUrl = this.configService.get<string>('LIVEKIT_HOST') || 'ws://localhost:7880';
+    // Use namespaced voice.* config — consistent with the rest of the config layer
+    const apiKey = this.configService.get<string>('voice.livekitApiKey');
+    const apiSecret = this.configService.get<string>('voice.livekitApiSecret');
+    const wsUrl = this.configService.get<string>('voice.livekitHost') || 'ws://localhost:7880';
     
-    this.roomService = new RoomServiceClient(wsUrl, apiKey, apiSecret);
+    this.roomService = new RoomServiceClient(wsUrl, apiKey ?? '', apiSecret ?? '');
   }
 
   async generateToken(campfireId: string, userId: string, role: string, name: string): Promise<{ token: string, roomName: string }> {
-    const apiKey = this.configService.get<string>('LIVEKIT_API_KEY') || 'devkey';
-    const apiSecret = this.configService.get<string>('LIVEKIT_API_SECRET') || 'secret';
+    // Use namespaced config — consistent with config layer, no direct env access
+    const apiKey = this.configService.get<string>('voice.livekitApiKey') ?? '';
+    const apiSecret = this.configService.get<string>('voice.livekitApiSecret') ?? '';
     
     // Find or create an active LiveSession for this Campfire
     let activeSession = await this.liveSessionRepository.findOne({
@@ -89,9 +91,8 @@ export class LivekitService {
         throw new Error(`No active LiveSession found for campfire ${campfireId}`);
       }
 
-      // --- ENTERPRISE AUDIT LOG (Phase 9) ---
-      const wsUrl = this.configService.get<string>('LIVEKIT_HOST') || 'ws://localhost:7880';
-      // -------------------------------------
+      // Use namespaced config
+      const wsUrl = this.configService.get<string>('voice.livekitHost') || 'ws://localhost:7880';
       await this.roomService.updateParticipant(roomName, userId, undefined, {
         canPublish: canPublish,
         canSubscribe: true,
@@ -103,7 +104,7 @@ export class LivekitService {
   }
 
   getWsUrl(): string {
-    return this.configService.get<string>('LIVEKIT_HOST') || 'ws://localhost:7880';
+    return this.configService.get<string>('voice.livekitHost') || 'ws://localhost:7880';
   }
 
   async endLiveSession(campfireId: string): Promise<void> {
