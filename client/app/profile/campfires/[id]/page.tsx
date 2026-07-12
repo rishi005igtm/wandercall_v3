@@ -542,6 +542,29 @@ export default function CampfireRoomPage() {
   const queryClientRef = useRef(queryClient);
   const authStateRef = useRef(authState);
 
+  // Intent to publish
+  const [isIntentToPublish, setIsIntentToPublish] = useState(false);
+
+  const localParticipantRef = useRef(localParticipant);
+  useEffect(() => {
+    localParticipantRef.current = localParticipant;
+  }, [localParticipant]);
+
+  // Effect to handle intent to publish and auto-publishing when seat is granted
+  useEffect(() => {
+    if (isIntentToPublish && localParticipant?.permissions?.canPublish) {
+      setIsIntentToPublish(false);
+      localParticipant.setMicrophoneEnabled(true).then(() => {
+        setIsMuted(false);
+        triggerToast("Speaking live!");
+      }).catch(e => {
+        console.error("Failed to enable mic:", e);
+      });
+    }
+  }, [isIntentToPublish, localParticipant, localParticipant?.permissions?.canPublish]);
+
+
+
   useEffect(() => {
     enqueueToastRef.current = enqueueToast;
     queryClientRef.current = queryClient;
@@ -655,16 +678,16 @@ export default function CampfireRoomPage() {
       }
     };
 
-    const onRoomSeatsSnapshot = (snapshot: Record<number, string | null>) => {
-      // snapshot is {1: userId, 2: null, ...}
+    const onRoomSeatsSnapshot = (snapshot: Record<number, { userId: string, profile?: any } | null>) => {
+      // snapshot is {1: {userId, profile}, 2: null, ...}
       setGlobalSeatOccupants(prev => {
         const next = { ...prev };
-        for (const [seatStr, userId] of Object.entries(snapshot)) {
+        for (const [seatStr, data] of Object.entries(snapshot)) {
           const idx = parseInt(seatStr);
-          if (userId === null) {
+          if (data === null || !data.userId) {
             delete next[idx];
           } else {
-            next[idx] = { userId };
+            next[idx] = { userId: data.userId, profile: data.profile };
           }
         }
         return next;
@@ -672,8 +695,8 @@ export default function CampfireRoomPage() {
       
       // Update local userSeatIndex if we are in the snapshot
       let foundSeat: number | null = null;
-      for (const [seatStr, userId] of Object.entries(snapshot)) {
-        if (userId === authState.userId) {
+      for (const [seatStr, data] of Object.entries(snapshot)) {
+        if (data && data.userId === authState.userId) {
           foundSeat = parseInt(seatStr);
           break;
         }
@@ -856,6 +879,8 @@ export default function CampfireRoomPage() {
       return;
     }
     
+    setIsIntentToPublish(true); // Intend to publish once seated
+    
     // Emit to backend instead of local mutate
     socket?.emit("take_seat", {
       roomId: activeRoom?.id,
@@ -897,18 +922,7 @@ export default function CampfireRoomPage() {
         if (emptyIdx !== -1) {
           handleTakeSeat(emptyIdx);
           triggerToast("Requesting seat...");
-          // LiveKit will update localParticipant.permissions.canPublish via WebSocket,
-          // but we still need to wait for it before setting microphone enabled.
-          // The most reliable way is an effect listening to `permissions.canPublish`,
-          // but here we can just set an intent state or just use a small poll.
-          let attempts = 0;
-          const pollPermissions = setInterval(async () => {
-            if (localParticipant?.permissions?.canPublish) {
-              clearInterval(pollPermissions);
-              try { await localParticipant.setMicrophoneEnabled(true); setIsMuted(false); } catch(e){}
-            }
-            if (++attempts > 20) clearInterval(pollPermissions); // 10 second timeout
-          }, 500);
+          // isIntentToPublish is set by handleTakeSeat, so the effect will auto-publish when permissions arrive.
         } else {
           triggerToast("All speaking seats are full! Wait for a seat to empty.");
         }

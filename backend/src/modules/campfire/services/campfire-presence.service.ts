@@ -388,18 +388,27 @@ export class CampfirePresenceService implements OnModuleInit {
     return { success: true };
   }
 
-  async getRoomSeatsSnapshot(campfireId: string): Promise<Record<number, string | null>> {
-    const snapshot: Record<number, string | null> = { 1: null, 2: null, 3: null, 4: null, 5: null };
+  async getRoomSeatsSnapshot(campfireId: string): Promise<Record<number, { userId: string; profile?: any } | null>> {
+    const snapshot: Record<number, { userId: string; profile?: any } | null> = { 1: null, 2: null, 3: null, 4: null, 5: null };
     const client = this.redisService?.client;
     
     if (client && client.status === 'ready') {
       try {
         const seatsKey = `presence:campfire:${campfireId}:seats`;
+        const cohortHashKey = `presence:room:campfire:${campfireId}:cohorts`;
         const currentSeats = await client.hgetall(seatsKey);
+        
         for (const [seatIdx, occupantId] of Object.entries(currentSeats)) {
           const idx = parseInt(seatIdx);
           if (idx >= 1 && idx <= 5) {
-            snapshot[idx] = occupantId;
+            let profile = undefined;
+            const rawData = await client.hget(cohortHashKey, occupantId);
+            if (rawData) {
+              try {
+                profile = JSON.parse(rawData);
+              } catch {}
+            }
+            snapshot[idx] = { userId: occupantId, profile };
           }
         }
         return snapshot;
@@ -408,9 +417,11 @@ export class CampfirePresenceService implements OnModuleInit {
 
     const roomSeats = this.fallbackSeats.get(campfireId);
     if (roomSeats) {
+      const cohortMap = this.fallbackParticipants.get(campfireId);
       for (const [seatIdx, occupantId] of roomSeats.entries()) {
         if (seatIdx >= 1 && seatIdx <= 5) {
-          snapshot[seatIdx] = occupantId;
+          const profile = cohortMap?.get(occupantId);
+          snapshot[seatIdx] = { userId: occupantId, profile };
         }
       }
     }
