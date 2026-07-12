@@ -19,7 +19,6 @@ async function checkMetadata() {
     LIMIT 5;
   `);
 
-  console.log(JSON.stringify(res.rows, null, 2));
 
   await client.end();
 }

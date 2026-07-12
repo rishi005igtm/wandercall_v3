@@ -35,7 +35,6 @@ export class InterestEngine {
     
     const category = categoryMap[categoryRaw.toLowerCase()] || categoryRaw;
 
-    this.logger.log(`Recording interaction: user=${userId}, post=${postId}, author=${authorId}, type=${type}, category=${category}`);
 
     // 1. Determine interaction raw weight based on configuration
     let baseWeight = RANKING_CONFIG.engagementMultipliers.view;

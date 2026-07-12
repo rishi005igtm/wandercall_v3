@@ -30,7 +30,6 @@ export class CampfirePresenceService implements OnModuleInit {
 
   onModuleInit() {
     if (this.redisService?.client) {
-      this.logger.log('CampfirePresenceService initialized with Enterprise Redis Storage (Sets, Cohort Hash, TTL)');
     } else {
       this.logger.warn('RedisService not injected or unavailable. Using high-performance in-memory presence fallback.');
     }
@@ -112,7 +111,6 @@ export class CampfirePresenceService implements OnModuleInit {
       isNewJoin = res.isNew;
     }
 
-    this.logger.log(`[Presence] Participant ${userId} (${displayName}) registered in room ${campfireId}. Online count: ${participantCount}`);
 
     // Always emit domain event so gateways broadcast reliable real-time presence updates to all room participants
     const payload: CampfireParticipantEventPayload = {
@@ -168,7 +166,6 @@ export class CampfirePresenceService implements OnModuleInit {
         for (const [seatIdx, occupantId] of Object.entries(currentSeats)) {
           if (occupantId === userId) {
             await client.hdel(seatsKey, seatIdx);
-            this.logger.log(`[Presence] Auto-removed participant ${userId} from seat ${seatIdx} in room ${campfireId}`);
           }
         }
 
@@ -189,7 +186,6 @@ export class CampfirePresenceService implements OnModuleInit {
       this.fallbackLeaveSeatAuto(campfireId, userId);
     }
 
-    this.logger.log(`[Presence] Participant ${userId} left room ${campfireId}. Online count: ${participantCount}`);
 
     // Always emit left payload so clients immediately remove top seat or guest avatar and display toast
     const payload: CampfireParticipantEventPayload = {
@@ -434,7 +430,6 @@ export class CampfirePresenceService implements OnModuleInit {
       for (const [seatIdx, occupantId] of roomSeats.entries()) {
         if (occupantId === userId) {
           roomSeats.delete(seatIdx);
-          this.logger.log(`[Presence] Auto-removed participant ${userId} from seat ${seatIdx} in room ${campfireId} (fallback)`);
         }
       }
     }

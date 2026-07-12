@@ -63,7 +63,6 @@ export class SocialDiscoveryService {
     limit = 20,
     cursor?: string,
   ): Promise<{ items: any[]; nextCursor?: string }> {
-    this.logger.log(`Generating AI recommendations for user ${userId}`);
 
     // 1. Fetch viewer profile and interests
     const viewer = await this.userRepository.findByUserId(userId);
@@ -228,7 +227,6 @@ export class SocialDiscoveryService {
    * Never generates fake edges; connects only actual friends and mutual connections.
    */
   async getExplorerCirclesGraph(userId: string): Promise<ExplorerCirclesGraphResponse> {
-    this.logger.log(`Building live Explorer Circles graph for user ${userId}`);
 
     // 1. Get recommendations to populate the graph nodes
     const recommendations = await this.getFriendRecommendations(userId, DISCOVERY_CONFIG.thresholds.circleNodesCount);

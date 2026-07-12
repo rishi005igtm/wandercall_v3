@@ -43,6 +43,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
   const isAuthReady = useAppSelector((state) => state.auth.isAuthReady);
   const isConnected = useAppSelector((state) => state.chat.isSocketConnected);
+  const currentUserId = useAppSelector((state) => state.auth.userId);
 
   const socketRef = useRef<Socket | null>(null);
   // Track which token the current socket was created with
@@ -133,7 +134,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       socket.disconnect();
     });
 
-    // ── Message events ────────────────────────────────────────────────────
+    // ── Community message events ─────────────────────────────────────────────
 
     socket.on('message:new', ({ message, conversationId, communityId }: { message: Message; conversationId: string; communityId?: string }) => {
       const updater = (old: any) => {
@@ -182,6 +183,38 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
         queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
       }
+    });
+
+    // Community-specific event (deprecated, but kept for backwards compatibility)
+    socket.on('community:message:new', ({ message, conversationId, communityId }: any) => {
+      if (!communityId) return;
+      queryClientRef.current.setQueryData(
+        COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId),
+        (old: any) => {
+          if (!old) {
+            return {
+              pages: [{ items: [message], nextCursor: undefined, hasMore: false }],
+              pageParams: [undefined],
+            };
+          }
+
+          // STRICT DEDUPLICATION
+          const allItems: Message[] = old.pages.flatMap((p: any) => p.items);
+          const alreadyExists = allItems.some(
+            (m: any) => m.id === message.id || (m.clientMessageId && m.clientMessageId === message.clientMessageId)
+          );
+          if (alreadyExists) return old;
+
+          const lastPage = old.pages[old.pages.length - 1];
+          return {
+            ...old,
+            pages: [
+              ...old.pages.slice(0, -1),
+              { ...lastPage, items: [...lastPage.items, message] },
+            ],
+          };
+        }
+      );
     });
 
     socket.on('message:delivered', ({ messageId, conversationId, deliveredAt, communityId }: any) => {

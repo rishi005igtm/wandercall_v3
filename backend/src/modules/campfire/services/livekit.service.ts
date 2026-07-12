@@ -68,7 +68,6 @@ export class LivekitService {
     });
     
     // --- ENTERPRISE AUDIT LOG (Phase 8) ---
-    console.log(`[AUDIT - Phase 8] generateToken(): Granted permissions for ${userId} (Role: ${role}): canPublish=${canPublish}, canSubscribe=true`);
     // -------------------------------------
     
     
@@ -92,18 +91,14 @@ export class LivekitService {
 
       // --- ENTERPRISE AUDIT LOG (Phase 9) ---
       const wsUrl = this.configService.get<string>('LIVEKIT_HOST') || 'ws://localhost:7880';
-      console.log(`[AUDIT - Phase 9] updateParticipantPermissions(): Attempting to reach LiveKit Server at ${wsUrl} to update permissions for ${userId} in ${roomName} (canPublish=${canPublish})`);
       // -------------------------------------
       await this.roomService.updateParticipant(roomName, userId, undefined, {
         canPublish: canPublish,
         canSubscribe: true,
         canPublishData: true,
       });
-      this.logger.debug(`Updated LiveKit permissions for ${userId} in room ${roomName}: canPublish=${canPublish}`);
-      console.log(`[AUDIT - Phase 9] SUCCESS: Reached LiveKit Server and updated permissions for ${userId}`);
     } catch (error: any) {
       this.logger.warn(`Failed to update LiveKit permissions for ${userId} in campfire ${campfireId}: ${error.message}`);
-      console.log(`[AUDIT - Phase 9] FAILED: Could not reach LiveKit Server. Fetch failed. Error:`, error.message);
     }
   }
 

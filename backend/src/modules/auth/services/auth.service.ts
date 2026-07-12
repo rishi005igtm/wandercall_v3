@@ -63,7 +63,6 @@ export class AuthService implements IAuthService {
     });
 
     await this.authRepository.create(newAuthUser);
-    this.logger.log(`Account registered for ${dto.email} (ID: ${userId}), status set to PROFILE_INCOMPLETE`);
 
     await this.mailService.sendVerificationCode(dto.email, dto.name, verificationCode);
 
@@ -93,7 +92,6 @@ export class AuthService implements IAuthService {
     user.verificationCode = undefined;
     user.verificationCodeExpiresAt = undefined;
     await this.authRepository.updateUser(user);
-    this.logger.log(`Email verification successful for ${email}! Account marked isEmailVerified = true`);
 
     return { verified: true, message: 'Email successfully verified.' };
   }
@@ -114,7 +112,6 @@ export class AuthService implements IAuthService {
     user.updatedAt = new Date();
 
     await this.authRepository.updateUser(user);
-    this.logger.log(`Verification code resent for ${email}`);
 
     const displayName = user.displayName || 'Explorer';
     await this.mailService.sendVerificationCode(email, displayName, verificationCode);

@@ -16,7 +16,8 @@ import { CampfireChatService } from '../services/campfire-chat.service';
 import { LivekitService } from '../services/livekit.service';
 
 @WebSocketGateway({
-  namespace: '/campfires',
+  // REMOVED namespace: '/campfires' — now uses default '/' namespace like chat
+  // This allows single socket connection for all features
   path: '/socket.io/',
   cors: { origin: true, credentials: true },
   transports: ['websocket', 'polling'],
@@ -68,42 +69,34 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     });
 
     this.eventDispatcher.on(CampfireEvents.PARTICIPANT_JOINED, (payload: CampfireParticipantEventPayload) => {
-      this.logger.log(`[Gateway Broadcast] CAMPFIRE_PARTICIPANT_JOINED -> room ${payload.campfireId} (user: ${payload.userId})`);
       this.server.to(payload.campfireId).emit('CAMPFIRE_PARTICIPANT_JOINED', payload);
     });
 
     this.eventDispatcher.on(CampfireEvents.PARTICIPANT_LEFT, (payload: CampfireParticipantEventPayload) => {
-      this.logger.log(`[Gateway Broadcast] CAMPFIRE_PARTICIPANT_LEFT -> room ${payload.campfireId} (user: ${payload.userId})`);
       this.server.to(payload.campfireId).emit('CAMPFIRE_PARTICIPANT_LEFT', payload);
     });
   }
 
   afterInit(server: Server) {
-    this.logger.log('CampfireGateway Initialized');
   }
 
   handleConnection(client: Socket) {
     client.data = { userId: null, roomId: null, userProfile: null };
-    this.logger.debug(`Client connected to /campfires: ${client.id}`);
   }
 
   // In-memory map to track room participants for presence
   private roomParticipants = new Map<string, Set<string>>();
 
   async handleDisconnect(client: Socket) {
-    this.logger.debug(`Client disconnected from /campfires: ${client.id}`);
     
     const { roomId, userId, userProfile } = client.data || {};
     if (roomId && userId) {
-      this.logger.log(`[Presence] Participant ${userId} disconnected unexpectedly from room ${roomId}`);
       await this.presenceService.registerParticipantLeave(roomId, userId, client.id);
       const snapshot = await this.presenceService.getRoomPresenceSnapshot(roomId, userProfile?.hostId);
       this.server.to(roomId).emit('room_presence_snapshot', snapshot);
       
       if (userId === userProfile?.hostId) {
-        this.logger.log(`[Lifecycle] Host disconnected from Campfire ${roomId}. Starting 60s grace period.`);
         const timeout = setTimeout(async () => {
-          this.logger.log(`[Lifecycle] Host did not return to Campfire ${roomId} within 60s. Ending LiveSession.`);
           await this.livekitService.endLiveSession(roomId);
           this.hostDisconnectTimeouts.delete(roomId);
         }, 60000);
@@ -121,7 +114,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     });
   }
 
-  @SubscribeMessage('join_room')
+  @SubscribeMessage('campfire:join_room')
   async handleJoinRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string; userProfile: any }
@@ -146,7 +139,6 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     // Store identity in socket session
     client.data = { userId, roomId, userProfile };
 
-    this.logger.log(`[Presence] Participant ${userId} joined room ${roomId}`);
     await this.presenceService.registerParticipantJoin(roomId, userId, userProfile, client.id);
     
     if (userId === userProfile?.hostId) {
@@ -154,7 +146,6 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       if (existingTimeout) {
         clearTimeout(existingTimeout);
         this.hostDisconnectTimeouts.delete(roomId);
-        this.logger.log(`[Lifecycle] Host reconnected to Campfire ${roomId}. Grace period cancelled.`);
       }
     }
 
@@ -183,7 +174,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     return { success: true, snapshot };
   }
 
-  @SubscribeMessage('leave_room')
+  @SubscribeMessage('campfire:leave_room')
   async handleLeaveRoom(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string; userProfile?: any }
@@ -198,9 +189,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       
       const up = client.data?.userProfile || data.userProfile;
       if (userId === up?.hostId) {
-        this.logger.log(`[Lifecycle] Host left Campfire ${roomId}. Starting 60s grace period.`);
         const timeout = setTimeout(async () => {
-          this.logger.log(`[Lifecycle] Host did not return to Campfire ${roomId} within 60s. Ending LiveSession.`);
           await this.livekitService.endLiveSession(roomId);
           this.hostDisconnectTimeouts.delete(roomId);
         }, 60000);
@@ -212,7 +201,6 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       client.data.roomId = null;
     }
 
-    this.logger.log(`[Presence] Participant ${userId} left room ${roomId}`);
     await this.presenceService.registerParticipantLeave(roomId, userId, client.id);
 
     // After leaving, the auto-evict from seat already ran. We should broadcast a seat update to be safe, 
@@ -229,7 +217,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     return { success: true };
   }
 
-  @SubscribeMessage('take_seat')
+  @SubscribeMessage('campfire:take_seat')
   async handleTakeSeat(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string; seatIndex: number; userProfile: any }
@@ -250,7 +238,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
   }
 
-  @SubscribeMessage('leave_seat')
+  @SubscribeMessage('campfire:leave_seat')
   async handleLeaveSeatEvent(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string }
@@ -265,7 +253,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     return { success: true };
   }
 
-  @SubscribeMessage('update_profile')
+  @SubscribeMessage('campfire:update_profile')
   handleUpdateProfile(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string; userProfile: any }
@@ -274,7 +262,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     this.server.to(roomId).emit('profile_updated', { userId: client.id, userProfile });
   }
 
-  @SubscribeMessage('send_message')
+  @SubscribeMessage('campfire:send_message')
   async handleSendMessage(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; userId: string; userProfile: any; text: string }
@@ -282,7 +270,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     const { roomId, userId, userProfile, text } = data;
     try {
       const savedMessage = await this.chatService.saveMessage(roomId, userId, userProfile, text);
-      this.server.to(roomId).emit('new_message', {
+      this.server.to(roomId).emit('campfire:new_message', {
         id: savedMessage.id,
         userId: savedMessage.senderId,
         userProfile: {
@@ -298,19 +286,19 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     }
   }
 
-  @SubscribeMessage('send_reaction')
+  @SubscribeMessage('campfire:send_reaction')
   handleSendReaction(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: { roomId: string; emoji: string }
   ) {
     const { roomId, emoji } = data;
-    this.server.to(roomId).emit('new_reaction', { 
+    this.server.to(roomId).emit('campfire:new_reaction', { 
       userId: client.id, 
       emoji 
     });
   }
 
-  @SubscribeMessage('heartbeat')
+  @SubscribeMessage('campfire:heartbeat')
   handleHeartbeat(@ConnectedSocket() client: Socket) {
     // Basic keep-alive
     return { success: true };

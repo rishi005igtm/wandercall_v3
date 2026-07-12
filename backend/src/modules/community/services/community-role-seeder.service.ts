@@ -85,13 +85,11 @@ export class CommunityRoleSeederService {
 
   async seedSystemRoles(): Promise<void> {
     try {
-      this.logger.log('Checking and seeding system community roles...');
       for (const roleDef of SYSTEM_ROLES) {
         const existing = await this.roleRepo.findOne({ where: { name: roleDef.name } });
         if (!existing) {
           const newRole = this.roleRepo.create(roleDef);
           await this.roleRepo.save(newRole);
-          this.logger.log(`Seeded system role: ${roleDef.name}`);
         } else {
           existing.displayName = roleDef.displayName;
           existing.displayColor = roleDef.displayColor;
@@ -103,7 +101,6 @@ export class CommunityRoleSeederService {
           await this.roleRepo.save(existing);
         }
       }
-      this.logger.log('Successfully completed seeding system community roles.');
     } catch (error) {
       this.logger.error(`Failed to seed system community roles: ${error.message}`, error.stack);
     }

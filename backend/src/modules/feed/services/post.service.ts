@@ -57,7 +57,6 @@ export class PostService {
     params: CreatePostParams,
     files?: { images?: Express.Multer.File[]; audio?: Express.Multer.File },
   ): Promise<PostEntity> {
-    this.logger.log(`Beginning Post creation lifecycle for user ${userId} (${userRole})`);
 
     const postId = randomUUID();
 
@@ -84,11 +83,9 @@ export class PostService {
       audioDuration: 0,
       aiQualityScore: 1.0,
     });
-    this.logger.log(`[Lifecycle - Step 1: Draft] Created draft entity for ${postId}`);
 
     // --- PHASE 2: VALIDATION ---
     post.status = PostStatus.VALIDATING;
-    this.logger.log(`[Lifecycle - Step 2: Validation] Validating input parameters`);
     if (!post.title || post.title.trim() === '') {
       throw new BadRequestException('Adventure title is required.');
     }
@@ -101,7 +98,6 @@ export class PostService {
 
     // --- PHASE 3: METADATA GENERATION ---
     post.status = PostStatus.METADATA_GENERATED;
-    this.logger.log(`[Lifecycle - Step 3: Metadata Generation] Generating initial metadata placeholder`);
     post.aiQualityScore = 1.0; 
     post.searchMetadata = {
       tags: [post.category, 'wandercall', 'explore'],
@@ -111,10 +107,8 @@ export class PostService {
     // --- PHASE 4: INITIAL SAVE & ASYNC DELEGATION ---
     post.status = PostStatus.VALIDATING; // Setting to validating to show skeleton in feed initially
     post.publishedAt = new Date();
-    this.logger.log(`[Lifecycle - Step 4: Publish] Saving provisional post to database immediately.`);
     const savedPost = await this.postRepository.save(post);
 
-    this.logger.log(`[Lifecycle - Step 5: Processing] Uploading assets before publishing`);
     
     try {
       const imageUrls: string[] = [];
@@ -148,7 +142,6 @@ export class PostService {
       await this.postRepository.save(savedPost);
       this.eventDispatcher.dispatchPostCreated(savedPost);
       this.eventDispatcher.dispatchPostPublished(savedPost);
-      this.logger.log(`[Lifecycle - Step 5: Processing] Successfully published post ${postId}`);
     } catch (err) {
       this.logger.error(`[Lifecycle - Step 5: Processing] Failed processing for post ${postId}: ${err}`);
       savedPost.status = PostStatus.FAILED;

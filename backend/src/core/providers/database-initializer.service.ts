@@ -14,7 +14,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
-    this.logger.log('Executing Enterprise Database Initialization check on server startup...');
     
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -26,7 +25,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         await queryRunner.query(`DROP TABLE IF EXISTS "interaction_events" CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS "user_interactions" CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS "feed_impressions" CASCADE`);
-        this.logger.log('Enterprise Database: Cleaned up legacy tables for recommendation engine refactor.');
       } catch (err: any) {}
 
       // Synchronize database schema once on server boot if needed
@@ -37,7 +35,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         await queryRunner.query(
           `UPDATE users_auth SET role = 'INDIVIDUAL' WHERE role IS NULL`
         );
-        this.logger.log('Enterprise Database: Assigned default INDIVIDUAL role to any null records.');
       } catch (err: any) {
         this.logger.warn(`Database backfill notice: ${err.message}`);
       }
@@ -51,7 +48,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
           WHERE "hasSaved" = true
           ON CONFLICT ("postId", "userId") DO NOTHING;
         `);
-        this.logger.log('Enterprise Database: Backfilled missing saves from user_post_state.');
       } catch (err: any) {
         this.logger.warn(`Database backfill notice for relational logs: ${err.message}`);
       }
@@ -68,7 +64,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // ─────────────────────────────────────────────────────────────────────────
       try {
         await this.runChatIntegrityMigration();
-        this.logger.log('Enterprise Database: Chat integrity migration completed.');
       } catch (err: any) {
         this.logger.warn(`Chat integrity migration notice: ${err.message}`);
       }
@@ -79,7 +74,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // ─────────────────────────────────────────────────────────────────────────
       try {
         await this.seedCommunityCategories();
-        this.logger.log('Enterprise Database: Community categories seeded.');
       } catch (err: any) {
         this.logger.warn(`Community category seed notice: ${err.message}`);
       }
@@ -90,14 +84,10 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // ─────────────────────────────────────────────────────────────────────────
       try {
         await this.roleSeeder.seedSystemRoles();
-        this.logger.log('Enterprise Database: Community roles seeded.');
       } catch (err: any) {
         this.logger.warn(`Community role seed notice: ${err.message}`);
       }
 
-      this.logger.log(
-        'Enterprise Database Initialization Completed: All tables verified and ready.',
-      );
     } catch (error) {
       this.logger.error('Failed to initialize database tables on startup:', error);
       throw error;
@@ -215,7 +205,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
           );
         deletedCount++;
 
-        this.logger.log(`Chat migration: Merged orphan conversation ${orphan.id} → canonical ${canonical.id} (key: ${participantKey})`);
       }
 
         // Recalculate lastMessage summary on canonical after merge
@@ -236,16 +225,12 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
           ON chat_conversations ("participantKey")
           WHERE "participantKey" IS NOT NULL
         `);
-        this.logger.log('Enterprise Database: Unique index on participantKey created.');
       } catch (err: any) {
         // Index may already exist — that's fine
-        this.logger.debug(`participantKey index: ${err.message}`);
       }
 
       if (deletedCount > 0) {
-        this.logger.log(`Chat migration: Deleted ${deletedCount} duplicate conversations, merged ${mergedCount} messages.`);
       } else {
-        this.logger.log('Chat migration: No duplicate conversations found. Database is clean.');
       }
     } finally {
       await queryRunner.release();

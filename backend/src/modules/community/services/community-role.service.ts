@@ -59,7 +59,6 @@ export class CommunityRoleService {
       permissions: params.permissions || ['post.create', 'chat.send', 'story.create'],
     });
 
-    this.logger.log(`Created custom role: ${newRole.name} (${newRole.id})`);
     return newRole;
   }
 
@@ -118,7 +117,6 @@ export class CommunityRoleService {
     }
 
     await this.roleRepo.remove(role);
-    this.logger.log(`Deleted role ${role.name} (${roleId})`);
   }
 
   async assignRole(

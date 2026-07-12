@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { Socket } from 'socket.io-client';
 import { useRouter, usePathname } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { getSocket } from '@/lib/socket';
+import { useSocketContext } from '@/providers/SocketProvider';
 import { QUERY_KEYS } from '@/lib/api/queryKeys';
 import { PersistentCampfireBar } from '@/components/PersistentCampfireBar';
 
@@ -32,52 +32,43 @@ export function CampfireSessionProvider({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const [socket, setSocket] = useState<Socket | null>(null);
+
+  // Use the centralized socket from SocketProvider — no separate connection needed
+  const { socket, isConnected: socketConnected } = useSocketContext();
   const [isConnected, setIsConnected] = useState(false);
   const [isSessionTerminated, setIsSessionTerminated] = useState(false);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const activeSessionRef = useRef<string | null>(null);
   const activeUserRef = useRef<string | null>(null);
-
   const heartbeatInterval = useRef<NodeJS.Timeout | null>(null);
 
+  // Mirror the centralized socket connected state
   useEffect(() => {
-    const s = getSocket();
-    setSocket(s);
+    setIsConnected(socketConnected);
+  }, [socketConnected]);
 
-    if (!s.connected) {
-      s.connect();
-    } else {
-      setIsConnected(true);
+  // Subscribe to campfire lifecycle events on the shared socket
+  useEffect(() => {
+    if (!socket) return;
+
+    // If we reconnected and have an active room, send a heartbeat to re-confirm presence
+    if (socketConnected && activeSessionRef.current) {
+      socket.emit('campfire:heartbeat', { roomId: activeSessionRef.current });
     }
 
-    let hasRunConnect = false;
-
-    const onConnect = () => {
-      if (hasRunConnect) return;
-      hasRunConnect = true;
-      console.log("[CampfireSessionManager] Connected to Live Socket");
-      // If we reconnected and have an active room, re-join seamlessly
-      if (activeSessionRef.current) {
-        console.log(`[CampfireSessionManager] Re-joining active room ${activeSessionRef.current} after connect`);
-        s.emit('heartbeat', { roomId: activeSessionRef.current });
-      }
-      setIsConnected(true);
-    };
-    const onDisconnect = (reason: string) => {
-      console.log("[CampfireSessionManager] Socket disconnected!", reason);
+    const onDisconnect = (_reason: string) => {
       setIsConnected(false);
     };
 
     const onDiscoveryUpdated = (data: any) => {
-      console.log("[CampfireSessionManager] DISCOVERY_FEED_UPDATED received, invalidating queries...");
       queryClient.invalidateQueries({
         predicate: (query) => {
           const isCampfireQuery = query.queryKey[0] === 'campfires';
           const isDetailQuery = query.queryKey[1] === 'detail';
-          const isCurrentSession = activeSessionRef.current && query.queryKey[2] === activeSessionRef.current;
+          const isCurrentSession =
+            activeSessionRef.current && query.queryKey[2] === activeSessionRef.current;
           return isCampfireQuery && !(isDetailQuery && isCurrentSession);
-        }
+        },
       });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
     };
@@ -86,18 +77,13 @@ export function CampfireSessionProvider({ children }: { children: React.ReactNod
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
     };
 
-    // Terminal Lifecycle Event - Centralized Cleanup Pipeline
     const onSessionTerminated = (data: any) => {
-      console.log("[CampfireSessionManager] SESSION_TERMINATED received globally", data);
-      
       const targetRoomId = data?.id || data?.roomId;
-      
       if (targetRoomId) {
         queryClient.removeQueries({ queryKey: QUERY_KEYS.CAMPFIRES.DETAIL(targetRoomId) });
       }
-      
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
-      if (data && data.id) {
+      if (data?.id) {
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.DETAIL(data.id) });
         if (activeSessionRef.current === data.id) {
           setIsSessionTerminated(true);
@@ -105,80 +91,81 @@ export function CampfireSessionProvider({ children }: { children: React.ReactNod
       }
     };
 
-    s.on('connect', onConnect);
-    s.on('disconnect', onDisconnect);
-    s.on('CAMPFIRE_CREATED', onLifecycleSync);
-    s.on('CAMPFIRE_STARTED', onLifecycleSync);
-    s.on('CAMPFIRE_RESTARTED', onLifecycleSync);
-    s.on('CAMPFIRE_DELETED', onSessionTerminated);
-    s.on('CAMPFIRE_ENDED', onSessionTerminated);
-    s.on('DISCOVERY_FEED_UPDATED', onDiscoveryUpdated);
+    socket.on('disconnect', onDisconnect);
+    socket.on('CAMPFIRE_CREATED', onLifecycleSync);
+    socket.on('CAMPFIRE_STARTED', onLifecycleSync);
+    socket.on('CAMPFIRE_RESTARTED', onLifecycleSync);
+    socket.on('CAMPFIRE_DELETED', onSessionTerminated);
+    socket.on('CAMPFIRE_ENDED', onSessionTerminated);
+    socket.on('DISCOVERY_FEED_UPDATED', onDiscoveryUpdated);
 
     return () => {
-      s.off('connect', onConnect);
-      s.off('disconnect', onDisconnect);
-      s.off('CAMPFIRE_CREATED', onLifecycleSync);
-      s.off('CAMPFIRE_STARTED', onLifecycleSync);
-      s.off('CAMPFIRE_RESTARTED', onLifecycleSync);
-      s.off('CAMPFIRE_DELETED', onSessionTerminated);
-      s.off('CAMPFIRE_ENDED', onSessionTerminated);
-      s.off('DISCOVERY_FEED_UPDATED', onDiscoveryUpdated);
+      socket.off('disconnect', onDisconnect);
+      socket.off('CAMPFIRE_CREATED', onLifecycleSync);
+      socket.off('CAMPFIRE_STARTED', onLifecycleSync);
+      socket.off('CAMPFIRE_RESTARTED', onLifecycleSync);
+      socket.off('CAMPFIRE_DELETED', onSessionTerminated);
+      socket.off('CAMPFIRE_ENDED', onSessionTerminated);
+      socket.off('DISCOVERY_FEED_UPDATED', onDiscoveryUpdated);
       if (heartbeatInterval.current) {
         clearInterval(heartbeatInterval.current);
       }
     };
-  }, [queryClient, router]);
+  }, [socket, socketConnected, queryClient]);
 
-  // The persistent session no longer forcefully terminates on route change.
-  // The user remains in the voice room (and the global PersistentCampfireBar displays)
-  // until they explicitly click "Leave Campfire".
-  const joinRoom = useCallback((roomId: string, userId: string, userProfile: any) => {
-    if (!socket) return;
-    if (activeSessionRef.current === roomId && activeUserRef.current === userId) {
-      console.log(`[CampfireSessionManager] Already joined ${roomId}. Emitting update_profile.`);
-      socket.emit('update_profile', { roomId, userId, userProfile });
-      return;
-    }
-    setIsSessionTerminated(false);
-    setActiveSessionId(roomId);
-    activeSessionRef.current = roomId;
-    activeUserRef.current = userId;
-    
-    console.log(`[CampfireSessionManager] Emitting join_room for ${roomId}`);
-    socket.emit('join_room', { roomId, userId, userProfile });
-    socket.emit('update_profile', { roomId, userId, userProfile });
-    
-    if (heartbeatInterval.current) {
-      clearInterval(heartbeatInterval.current);
-    }
-    
-    heartbeatInterval.current = setInterval(() => {
-      if (socket.connected && activeSessionRef.current === roomId) {
-        socket.emit('heartbeat', { roomId, userId });
+  const joinRoom = useCallback(
+    (roomId: string, userId: string, userProfile: any) => {
+      if (!socket) return;
+
+      if (activeSessionRef.current === roomId && activeUserRef.current === userId) {
+        socket.emit('campfire:update_profile', { roomId, userId, userProfile });
+        return;
       }
-    }, 10000);
-  }, [socket]);
 
-  const leaveRoom = useCallback((roomId: string, userId: string) => {
-    if (!socket) return;
-    console.log(`[CampfireSessionManager] Emitting leave_room for ${roomId}`);
-    console.trace(`[AUDIT - Phase 4] leaveRoom stack trace`);
-    socket.emit('leave_room', { roomId, userId });
-    
-    if (activeSessionRef.current === roomId) {
-      setActiveSessionId(null);
-      activeSessionRef.current = null;
-      activeUserRef.current = null;
-    }
-    
-    if (heartbeatInterval.current) {
-      clearInterval(heartbeatInterval.current);
-      heartbeatInterval.current = null;
-    }
-  }, [socket]);
+      setIsSessionTerminated(false);
+      setActiveSessionId(roomId);
+      activeSessionRef.current = roomId;
+      activeUserRef.current = userId;
+
+      socket.emit('campfire:join_room', { roomId, userId, userProfile });
+      socket.emit('campfire:update_profile', { roomId, userId, userProfile });
+
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+      }
+
+      heartbeatInterval.current = setInterval(() => {
+        if (socket.connected && activeSessionRef.current === roomId) {
+          socket.emit('campfire:heartbeat', { roomId, userId });
+        }
+      }, 10000);
+    },
+    [socket],
+  );
+
+  const leaveRoom = useCallback(
+    (roomId: string, userId: string) => {
+      if (!socket) return;
+      socket.emit('campfire:leave_room', { roomId, userId });
+
+      if (activeSessionRef.current === roomId) {
+        setActiveSessionId(null);
+        activeSessionRef.current = null;
+        activeUserRef.current = null;
+      }
+
+      if (heartbeatInterval.current) {
+        clearInterval(heartbeatInterval.current);
+        heartbeatInterval.current = null;
+      }
+    },
+    [socket],
+  );
 
   return (
-    <CampfireSessionContext.Provider value={{ socket, isConnected, joinRoom, leaveRoom, isSessionTerminated, activeSessionId }}>
+    <CampfireSessionContext.Provider
+      value={{ socket, isConnected, joinRoom, leaveRoom, isSessionTerminated, activeSessionId }}
+    >
       {children}
       <PersistentCampfireBar />
     </CampfireSessionContext.Provider>

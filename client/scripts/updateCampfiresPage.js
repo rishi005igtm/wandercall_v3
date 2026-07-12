@@ -81,4 +81,3 @@ content = content.replaceAll('createdRoom.isPrivate', 'createdRoom.visibility ==
 content = content.replaceAll('activeRoom.isPrivate', 'activeRoom.visibility === "PRIVATE"');
 
 fs.writeFileSync(filePath, content, 'utf8');
-console.log('File updated successfully');

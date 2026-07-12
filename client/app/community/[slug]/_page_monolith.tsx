@@ -68,7 +68,6 @@ import { setInviteModalOpen } from "@/lib/store/slices/communityMembershipSlice"
 import InviteModal from "@/components/community/InviteModal";
 import { CommunityMembersModal } from "@/components/community/CommunityMembersModal";
 import { VirtualizedMessageList } from "@/components/chat/VirtualizedMessageList";
-import { useSocket } from "@/hooks/useSocket";
 import { useCurrentUserQuery } from "@/hooks/api/useUserQueries";
 
 // =========================================================================
@@ -155,7 +154,6 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
     if (initialTab) setActiveTab(initialTab);
   }, [initialTab]);
   const { data: myCommunities } = useMyCommunities();
-  const { socket } = useSocket();
   const { data: currentUser } = useCurrentUserQuery();
   const [activeCohortUsers, setActiveCohortUsers] = useState<any[]>([]);
   const [isJoined, setIsJoined] = useState<boolean>(false);
@@ -167,7 +165,7 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
   const { data: defaultConversation } = useCommunityDefaultConversation(realCommunity?.id || null);
   const defaultChannelId = defaultConversation?.id || null;
   const { data: messagePages, fetchNextPage, hasNextPage, isFetchingNextPage } = useCommunityMessages(realCommunity?.id || "", defaultChannelId);
-  const { emit } = useSocketContext();
+  const { emit, socket } = useSocketContext();
   const { sendMessage } = useSendCommunityMessage(emit, currentUserId);
   
   const chatMessages = useMemo(() => {
@@ -300,12 +298,6 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
   // Auto-scrolling is now handled directly inside VirtualizedMessageList.tsx
   // Handlers
   const handleSendMessage = () => {
-    console.log("handleSendMessage triggered", {
-      chatInput,
-      realCommunityId: realCommunity?.id,
-      defaultChannelId,
-    });
-
     if (!chatInput.trim()) {
       triggerToast("Message cannot be empty.");
       return;
@@ -330,8 +322,6 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
       triggerToast("AI Moderation: Message flagged for review.");
       return;
     }
-
-    console.log("Emitting message:", chatInput);
 
     sendMessage({
       communityId: realCommunity.id,
@@ -650,6 +640,8 @@ export default function CommunityDashboard({ initialTab = "Chat", children }: { 
         }
       }
     };
+
+    if (!socket) return;
 
     socket.on('community:active-cohort-updated', handleActiveCohort);
     socket.on('community:moderation:action', handleModerationAction);

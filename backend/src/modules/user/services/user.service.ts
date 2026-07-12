@@ -116,7 +116,6 @@ export class UserService {
         },
       });
       await this.userRepository.saveSettings(settings);
-      this.logger.log(`Automatically provisioned default user settings for userId ${userId}`);
     }
     return settings;
   }
@@ -135,7 +134,6 @@ export class UserService {
         paymentCard: null,
       });
       await this.userRepository.savePlan(plan);
-      this.logger.log(`Automatically provisioned default user plan for userId ${userId}`);
     }
     return plan;
   }
@@ -193,7 +191,6 @@ export class UserService {
     await this.ensureDefaultPlan(dto.userId);
 
     await this.authRepository.updateStatus(dto.userId, AccountStatus.ACTIVE);
-    this.logger.log(`Profile setup complete for user ${dto.userId} (@${profile.username}). Account status transitioned to ACTIVE!`);
 
     return this.mapProfileToDto(profile, AccountStatus.ACTIVE);
   }
@@ -214,7 +211,6 @@ export class UserService {
   }
 
   private async _getProfileByUserId(userId: string): Promise<UserProfileResponseDto> {
-    this.logger.log(`Profile fetch: Requesting profile for userId '${userId}'`);
     let profile = await this.userRepository.findByUserId(userId);
     const authUser = await this.authRepository.findById(userId);
 
@@ -257,11 +253,9 @@ export class UserService {
       throw new NotFoundException(`User profile with username '${username}' not found.`);
     }
 
-    this.logger.log(`Username resolution: Resolved username '${username}' to userId '${profile.userId}'`);
 
     const relationship = await this.relationshipService.resolveRelationship(currentUserId || null, profile.userId);
 
-    this.logger.log(`Profile fetch: Checked relationship between requesting user ${currentUserId || 'anonymous'} and target ${profile.userId} (State: ${relationship.state})`);
 
     return {
       userId: profile.userId,
@@ -328,7 +322,6 @@ export class UserService {
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
-    this.logger.log(`Avatar loading: Successfully uploaded and updated avatar URL to ${metadata.secureUrl} for userId ${userId}`);
 
     const authUser = await this.authRepository.findById(userId);
     return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
@@ -354,7 +347,6 @@ export class UserService {
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
-    this.logger.log(`Banner loading: Successfully uploaded and updated cover image URL to ${metadata.secureUrl} for userId ${userId}`);
 
     const authUser = await this.authRepository.findById(userId);
     return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);

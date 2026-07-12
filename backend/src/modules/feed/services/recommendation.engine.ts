@@ -68,7 +68,6 @@ export class RecommendationEngine {
     }
 
     const currentSessionId = query.feedSessionId || cursor.feedSessionId;
-    this.logger.log(`Generating feed: type=${feedType}, viewer=${viewerId}, offset=${cursor.offset}, session=${currentSessionId}`);
 
     // 2. Fetch context information (follows, interests, impressions)
     let followedCreatorIds: string[] = [];

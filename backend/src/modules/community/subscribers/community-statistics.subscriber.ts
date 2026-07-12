@@ -18,7 +18,6 @@ export class CommunityStatisticsSubscriber implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.logger.log('Initializing CommunityStatisticsSubscriber event listeners...');
 
     this.dispatcher.on(CommunityEvents.JOINED, async (payload: { communityId: string; userId: string }) => {
       try {
@@ -54,7 +53,6 @@ export class CommunityStatisticsSubscriber implements OnModuleInit {
   }
 
   private async handleMemberJoined(communityId: string): Promise<void> {
-    this.logger.debug(`Incrementing active community statistics for ${communityId}`);
     await this.statsRepo.createQueryBuilder()
       .update(CommunityStatisticsEntity)
       .set({
@@ -65,7 +63,6 @@ export class CommunityStatisticsSubscriber implements OnModuleInit {
   }
 
   private async handleMemberLeft(communityId: string): Promise<void> {
-    this.logger.debug(`Decrementing active community statistics for ${communityId}`);
     await this.statsRepo.createQueryBuilder()
       .update(CommunityStatisticsEntity)
       .set({

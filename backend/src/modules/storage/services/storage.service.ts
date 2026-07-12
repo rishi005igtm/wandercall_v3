@@ -139,12 +139,10 @@ export class StorageService implements IStorageService {
       throw new BadRequestException(`Unknown or unsupported upload intent: ${intent}`);
     }
 
-    this.logger.log(`Upload started: intent=${intent}, entityId=${entityId}, size=${file?.size} bytes`);
     this.validateFile(file, rule);
 
     // Enterprise test/mock bypass for minimal/placeholder audio buffers to prevent Cloudinary upload failures
     if (intent === UploadIntent.FEED_AUDIO && file.size < 1000) {
-      this.logger.log(`Detected mock/test audio file (${file.size} bytes). Bypassing Cloudinary upload and returning placeholder asset metadata.`);
       return {
         publicId: `mock_audio_${entityId}`,
         secureUrl: 'https://res.cloudinary.com/drfndqoql/video/upload/v1782851411/wandercall/feed/audio/mock_placeholder.mp3',
@@ -166,7 +164,6 @@ export class StorageService implements IStorageService {
       rule.transformationPreset || {},
     );
 
-    this.logger.log(`Upload completed: publicId=${result.publicId}, url=${result.secureUrl}`);
     return result;
   }
 
@@ -179,7 +176,6 @@ export class StorageService implements IStorageService {
     intent: UploadIntent,
     entityId: string,
   ): Promise<IStorageAssetMetadata> {
-    this.logger.log(`Replace started: oldPublicId=${oldPublicId}, intent=${intent}`);
     
     // 1. Upload new asset
     const newAsset = await this.uploadFile(file, intent, entityId);
@@ -189,7 +185,6 @@ export class StorageService implements IStorageService {
       try {
         const rule = this.intentRules[intent];
         await this.cloudinaryProvider.deleteAsset(oldPublicId, rule.resourceType);
-        this.logger.log(`Replace completed: Old asset ${oldPublicId} deleted successfully.`);
       } catch (err: any) {
         this.logger.warn(`Failed to delete old asset ${oldPublicId} during replace flow: ${err.message}`);
       }
@@ -202,9 +197,7 @@ export class StorageService implements IStorageService {
    * Delete File Workflow
    */
   async deleteFile(publicId: string): Promise<boolean> {
-    this.logger.log(`Delete started for asset publicId=${publicId}`);
     const success = await this.cloudinaryProvider.deleteAsset(publicId);
-    this.logger.log(`Delete completed for asset publicId=${publicId}`);
     return success;
   }
 

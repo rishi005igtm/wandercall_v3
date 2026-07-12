@@ -71,9 +71,6 @@ export class CampfireController {
     const wsUrl = this.livekitService.getWsUrl();
     
     // --- TEMPORARY AUDIT LOG (Phase 2) ---
-    console.log(`[AUDIT - Phase 2] Generated Token for room: ${roomName}, user: ${userId}, role: ${role}`);
-    console.log(`[AUDIT - Phase 2] LiveKit WS URL: ${wsUrl}`);
-    console.log(`[AUDIT - Phase 2] Token string: ${token.substring(0, 30)}...`);
     // -------------------------------------
 
     return {

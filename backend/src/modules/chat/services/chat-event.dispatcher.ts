@@ -24,7 +24,6 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
       if (err) {
         this.logger.error('Failed to subscribe to Redis community events pattern', err);
       } else {
-        this.logger.log(`Subscribed to Redis community events pattern (count: ${count})`);
       }
     });
 
@@ -43,7 +42,6 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
   }
 
   dispatch<T extends ChatEvent>(event: T): void {
-    this.logger.debug(`Dispatching event: ${event.type}`);
     this.emit(event.type, event.payload);
     this.emit('*', event); 
   }
@@ -53,7 +51,6 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
     handler: (payload: T['payload']) => void,
   ): void {
     this.on(eventType, handler);
-    this.logger.debug(`Subscriber registered for ${eventType}`);
   }
 
   dispatchUserConnected(userId: string, socketId: string) {

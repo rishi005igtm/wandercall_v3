@@ -75,7 +75,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   ) {}
 
   afterInit(_server: Server): void {
-    this.logger.log('ChatGateway initialized — Socket.IO server ready');
     this.registerEventSubscribers();
   }
 
@@ -106,8 +105,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       status: PresenceStatus.ONLINE,
     });
 
-    this.logger.log(`[Connect] socketId=${socket.id} userId=${userId} totalSockets=${this.presenceService.getSocketIds(userId).size}`);
-
     this.chatEventDispatcher.dispatchUserConnected(userId, socket.id);
   }
 
@@ -128,8 +125,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         lastSeen: presence?.lastSeen,
       });
     }
-
-    this.logger.log(`[Disconnect] socketId=${socket.id} userId=${userId} stillOnline=${isStillOnline}`);
   }
 
   // ─────────────────────────────────────────────────────────
@@ -154,10 +149,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     try {
       const message = await this.chatService.sendMessage(userId, dto);
-      this.logger.log(
-        `[SendMsg:ACK] messageId=${message.id} clientId=${dto.clientMessageId} ` +
-        `convId=${dto.conversationId} socketId=${socket.id}`,
-      );
       return {
         success: true,
         clientMessageId: dto.clientMessageId,
@@ -260,10 +251,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       // 4. Load recent history
       const { items } = await this.chatService.getMessages(userId, data.conversationId, 30);
 
-      this.logger.log(
-        `[OpenConv] convId=${data.conversationId} userId=${userId} socketId=${socket.id} msgs=${items.length}`,
-      );
-
       return { success: true, conversationId: data.conversationId, messages: items };
     } catch (error: any) {
       this.logger.error(`[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`);
@@ -286,7 +273,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       await socket.join(`room:community:${data.communityId}`);
       await socket.join(`community:${data.communityId}`);
-      this.logger.log(`[JoinCommunity] socketId=${socket.id} userId=${userId} communityId=${data.communityId}`);
       return { success: true };
     } catch (error: any) {
       return this.ackError('JOIN_FAILED', error.message);
@@ -304,7 +290,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       await socket.leave(`room:community:${data.communityId}`);
       await socket.leave(`community:${data.communityId}`);
-      this.logger.log(`[LeaveCommunity] socketId=${socket.id} userId=${userId} communityId=${data.communityId}`);
       return { success: true };
     } catch (error: any) {
       return this.ackError('LEAVE_FAILED', error.message);
@@ -330,11 +315,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     try {
       const message = await this.communityChatService.sendMessage(userId, rawData.communityId, dto);
-      this.logger.log(
-        `[CommSendMsg:ACK] messageId=${message.serverMessageId} clientId=${dto.clientMessageId} ` +
-        `communityId=${rawData.communityId} socketId=${socket.id}`,
-      );
-      return message; // already typed as MessageResponseDto
+      return message;
     } catch (error: any) {
       this.logger.error(`[CommSendMsg:Fail] socketId=${socket.id} error=${error.message}`);
       return this.ackError(error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED', error.message);
@@ -406,17 +387,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         if (recipientId !== message.senderId && this.presenceService.isOnline(recipientId)) {
           try {
             await this.chatService.markDelivered(message.id, recipientId);
-            this.logger.log(
-              `[AutoDeliver] messageId=${message.id} recipientId=${recipientId} convId=${message.conversationId}`,
-            );
           } catch (_) { /* non-critical — status stays SENT if this fails */ }
         }
       }
 
-      this.logger.debug(
-        `[MESSAGE_CREATED] messageId=${message.id} convId=${message.conversationId} ` +
-        `recipients=${recipientIds.length}`,
-      );
     });
 
     /** MESSAGE_DELIVERED → notify the sender their message was received */
@@ -426,9 +400,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         conversationId: payload.conversationId,
         deliveredAt: payload.deliveredAt,
       });
-      this.logger.debug(
-        `[MESSAGE_DELIVERED] messageId=${payload.messageId} senderId=${payload.senderId}`,
-      );
     });
 
     /** MESSAGE_READ → notify the sender their message was read */
@@ -438,21 +409,16 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         conversationId: payload.conversationId,
         readAt: payload.readAt,
       });
-      this.logger.debug(
-        `[MESSAGE_READ] messageId=${payload.messageId} senderId=${payload.senderId} readerId=${payload.readerId}`,
-      );
     });
 
     /** MESSAGE_EDITED → broadcast to all sockets in the conversation room */
     this.chatEventDispatcher.subscribe<MessageEditedEvent>('MESSAGE_EDITED', (payload) => {
       this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_EDITED, payload);
-      this.logger.debug(`[MESSAGE_EDITED] messageId=${payload.messageId} convId=${payload.conversationId}`);
     });
 
     /** MESSAGE_DELETED → broadcast to all sockets in the conversation room */
     this.chatEventDispatcher.subscribe<MessageDeletedEvent>('MESSAGE_DELETED', (payload) => {
       this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
-      this.logger.debug(`[MESSAGE_DELETED] messageId=${payload.messageId} convId=${payload.conversationId}`);
     });
 
     /** COMMUNITY_MESSAGE_CREATED → broadcast to all sockets in the community room */
@@ -463,12 +429,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         conversationId: message.conversationId,
         communityId,
       });
-      this.server.to(`room:community:${communityId}`).to(`community:${communityId}`).emit('community:message:new', {
-        message,
-        conversationId: message.conversationId,
-        communityId,
-      });
-      this.logger.debug(`[COMMUNITY_MESSAGE_CREATED] messageId=${message.id} communityId=${communityId}`);
     });
 
     this.communityEventDispatcher.on(CommunityEvents.MEMBER_MUTED, (payload: any) => {
@@ -520,7 +480,6 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
     });
 
-    this.logger.log('ChatGateway: all event subscribers registered');
   }
 
   // ─────────────────────────────────────────────────────────

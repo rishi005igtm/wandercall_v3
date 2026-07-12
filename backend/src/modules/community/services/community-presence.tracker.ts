@@ -62,12 +62,10 @@ export class CommunityPresenceTracker implements OnModuleInit {
     this.communityDispatcher.on(CommunityEvents.UPDATED, (payload) => this.broadcastCommunityUpdate(payload.communityId));
     this.communityDispatcher.on(CommunityEvents.MEMBER_INVITED, (payload) => this.broadcastCommunityUpdate(payload.communityId));
 
-    this.logger.log('Initialized and subscribed to Chat & Community presence events');
   }
 
   private broadcastCommunityUpdate(communityId: string) {
     if (!communityId) return;
-    this.logger.debug(`Broadcasting real-time COMMUNITY_UPDATED for community ${communityId}`);
     this.chatGateway.server?.emit('COMMUNITY_UPDATED', { communityId });
   }
 
@@ -169,7 +167,6 @@ export class CommunityPresenceTracker implements OnModuleInit {
   private broadcastActiveCohort(communityId: string) {
     const cohortMap = this.lobbyCohorts.get(communityId);
     const activeCohort = cohortMap ? Array.from(cohortMap.values()) : [];
-    this.logger.debug(`Broadcasting active cohort for community ${communityId}: ${activeCohort.length} users`);
     this.chatGateway.server?.to(`community:${communityId}`).emit('community:active-cohort-updated', {
       communityId,
       activeCohort,
@@ -246,7 +243,6 @@ export class CommunityPresenceTracker implements OnModuleInit {
     const previouslyLive = this.communityLiveState.get(communityId) || false;
 
     this.communityLiveState.set(communityId, isLive);
-    this.logger.debug(`Community ${communityId} online count: ${onlineCount} (isLive: ${isLive})`);
 
     this.chatGateway.server?.emit('COMMUNITY_LIVE_STATE_CHANGED', {
       communityId,

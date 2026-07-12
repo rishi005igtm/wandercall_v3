@@ -20,7 +20,6 @@ export class CloudinaryProvider {
         api_secret: apiSecret,
         secure: true,
       });
-      this.logger.log('Cloudinary SDK successfully initialized.');
     } else {
       const cloudinaryUrl = this.configService.get<string>('storage.cloudinary.url');
       if (cloudinaryUrl) {
@@ -28,7 +27,6 @@ export class CloudinaryProvider {
           cloudinary_url: cloudinaryUrl,
           secure: true,
         });
-        this.logger.log('Cloudinary SDK initialized using CLOUDINARY_URL.');
       } else {
         this.logger.warn('Cloudinary credentials not found in configuration. Cloud storage operations will fail.');
       }
@@ -66,7 +64,6 @@ export class CloudinaryProvider {
             return reject(new InternalServerErrorException('Cloud storage upload failed.'));
           }
 
-          this.logger.log(`Cloudinary upload completed for ${result.public_id} in ${latency}ms`);
           
           const metadata: IStorageAssetMetadata = {
             publicId: result.public_id,
@@ -98,10 +95,8 @@ export class CloudinaryProvider {
     try {
       const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType, invalidate: true });
       const latency = Date.now() - startTime;
-      this.logger.log(`Cloudinary delete for ${publicId} returned status=${result.result} in ${latency}ms`);
       return result.result === 'ok' || result.result === 'not found';
     } catch (error: any) {
-      this.logger.error(`Cloudinary delete error for publicId=${publicId}: ${error.message}`);
       throw new InternalServerErrorException('Cloud storage asset deletion failed.');
     }
   }

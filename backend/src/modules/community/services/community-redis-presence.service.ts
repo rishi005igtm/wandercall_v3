@@ -28,7 +28,6 @@ export class CommunityRedisPresenceService implements OnModuleInit {
 
   onModuleInit() {
     if (this.redisService) {
-      this.logger.log('CommunityRedisPresenceService initialized with Enterprise Redis Storage (Sorted Sets, Sets, TTL)');
     } else {
       this.logger.warn('RedisService not injected. Using high-performance in-memory presence fallback.');
     }

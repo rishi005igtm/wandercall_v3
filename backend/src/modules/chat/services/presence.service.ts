@@ -52,8 +52,6 @@ export class PresenceService implements IPresenceService {
       typingIn: existing?.typingIn ?? [],
       socketIds: this.socketMap.get(userId)!,
     });
-
-    this.logger.debug(`User ${userId} connected via socket ${socketId}. Total sockets: ${this.socketMap.get(userId)!.size}`);
   }
 
   disconnect(userId: string, socketId: string): void {
@@ -69,9 +67,6 @@ export class PresenceService implements IPresenceService {
           typingIn: [],
           socketIds: new Set(),
         });
-        this.logger.debug(`User ${userId} went offline (last socket disconnected)`);
-      } else {
-        this.logger.debug(`User ${userId} disconnected socket ${socketId}. Remaining: ${sockets.size}`);
       }
     }
   }

@@ -82,9 +82,6 @@ export class ChatService {
       targetUserId,
     );
 
-    this.logger.log(
-      `[ConvResolve] conversationId=${conversation.id} userA=${requesterId} userB=${targetUserId}`,
-    );
     return { conversationId: conversation.id };
   }
 
@@ -211,11 +208,6 @@ export class ChatService {
       return savedMsg;
     });
 
-    this.logger.log(
-      `[MessageSent] messageId=${saved.id} clientId=${dto.clientMessageId} ` +
-      `convId=${dto.conversationId} senderId=${senderId}`,
-    );
-
     // 7. Dispatch — gateway picks this up and broadcasts
     const conversation = await this.conversationRepository.findById(dto.conversationId);
     this.chatEventDispatcher.dispatch({
@@ -254,11 +246,6 @@ export class ChatService {
     const updated = await this.messageRepository.markDelivered(messageId);
     if (!updated) return;
 
-    this.logger.log(
-      `[Delivered] messageId=${messageId} recipientId=${recipientId} ` +
-      `convId=${updated.conversationId} senderId=${updated.senderId}`,
-    );
-
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_DELIVERED',
       payload: {
@@ -282,9 +269,6 @@ export class ChatService {
       const updated = await this.messageRepository.markDelivered(msg.id);
       if (!updated) continue;
 
-      this.logger.log(
-        `[BulkDeliver] messageId=${msg.id} convId=${conversationId} recipientId=${recipientId}`,
-      );
 
       this.chatEventDispatcher.dispatch({
         type: 'MESSAGE_DELIVERED',
@@ -321,9 +305,6 @@ export class ChatService {
       const updated = await this.messageRepository.markRead(msg.id);
       if (!updated) continue;
 
-      this.logger.log(
-        `[Read] messageId=${msg.id} convId=${conversationId} readerId=${userId} senderId=${updated.senderId}`,
-      );
 
       this.chatEventDispatcher.dispatch({
         type: 'MESSAGE_READ',
@@ -353,7 +334,6 @@ export class ChatService {
     const updated = await this.messageRepository.edit(messageId, newText);
     if (!updated) throw new NotFoundException('Message not found or already deleted.');
 
-    this.logger.log(`[Edited] messageId=${messageId} convId=${updated.conversationId} userId=${userId}`);
 
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_EDITED',
@@ -375,7 +355,6 @@ export class ChatService {
 
     await this.messageRepository.softDelete(messageId);
 
-    this.logger.log(`[Deleted] messageId=${messageId} convId=${message.conversationId} userId=${userId}`);
 
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_DELETED',

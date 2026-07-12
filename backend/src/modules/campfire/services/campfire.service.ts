@@ -30,7 +30,6 @@ export class CampfireService {
       scheduledStartAt: scheduledStartAt ? new Date(scheduledStartAt) : null,
     });
 
-    this.logger.debug(`Campfire created: ${campfire.id}`);
     this.eventDispatcher.emitCreated(campfire);
 
     if (!isScheduled) {
@@ -65,7 +64,6 @@ export class CampfireService {
     }
 
     await this.repository.softDelete(id);
-    this.logger.debug(`Campfire deleted: ${id}`);
     
     this.eventDispatcher.emitDeleted(id);
   }
@@ -85,7 +83,6 @@ export class CampfireService {
       endedAt: new Date(),
     });
 
-    this.logger.debug(`Campfire ended: ${id}`);
     this.eventDispatcher.emitEnded(updated);
     
     return updated;
@@ -104,7 +101,6 @@ export class CampfireService {
       endedAt: null, // Reset ended at
     });
 
-    this.logger.debug(`Campfire restarted: ${id}`);
     this.eventDispatcher.emitRestarted(updated);
     
     return updated;

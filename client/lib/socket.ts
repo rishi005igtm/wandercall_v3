@@ -4,9 +4,14 @@ const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC
 
 let socket: Socket | null = null;
 
+/**
+ * Get Socket.IO connection for campfire features.
+ * IMPORTANT: Now uses DEFAULT namespace (/) instead of /campfires
+ * This allows ONE socket connection to handle chat, community, and campfire.
+ */
 export const getSocket = (): Socket => {
   if (!socket) {
-    socket = io(`${SOCKET_URL}/campfires`, {
+    socket = io(SOCKET_URL, {
       autoConnect: false,
       withCredentials: true,
       transports: ["websocket", "polling"],

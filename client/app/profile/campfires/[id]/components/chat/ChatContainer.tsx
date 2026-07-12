@@ -84,17 +84,17 @@ export function ChatContainer({ roomId, socket, campfireTitle, participantCount 
     };
 
     socket.on('chat_history', onChatHistory);
-    socket.on('new_message', onNewMessage);
+    socket.on('campfire:new_message', onNewMessage);
 
     return () => {
       socket.off('chat_history', onChatHistory);
-      socket.off('new_message', onNewMessage);
+      socket.off('campfire:new_message', onNewMessage);
     };
   }, [socket, currentUser.id, currentUser.role]);
 
   const handleSendMessage = (text: string) => {
     if (socket && text.trim()) {
-      socket.emit('send_message', {
+      socket.emit('campfire:send_message', {
         roomId,
         userId: currentUser.id,
         userProfile: {

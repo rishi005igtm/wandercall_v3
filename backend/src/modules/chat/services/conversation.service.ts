@@ -27,7 +27,6 @@ export class ConversationService {
       requesterId,
       targetUserId,
     );
-    this.logger.log(`[ConvResolve] conversationId=${conversation.id} userA=${requesterId} userB=${targetUserId}`);
     return { conversationId: conversation.id };
   }
 

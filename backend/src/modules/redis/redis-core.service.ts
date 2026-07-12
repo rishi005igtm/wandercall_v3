@@ -17,7 +17,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly configService: ConfigService) {}
 
   async onModuleInit() {
-    this.logger.log('Initializing Enterprise Redis Integration (Upstash)...');
     
     const redisUrl = this.configService.get<string>('redis.url');
     const upstashUrl = this.configService.get<string>('redis.upstashUrl');
@@ -56,7 +55,6 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         url: upstashUrl,
         token: upstashToken,
       });
-      this.logger.log('Upstash REST client initialized.');
     } else {
       this.logger.warn('Upstash REST configuration missing. Falling back to TCP client for REST methods if needed.');
     }

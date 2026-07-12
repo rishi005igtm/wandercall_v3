@@ -44,7 +44,6 @@ export class MailService {
 
     try {
       await this.transporter.sendMail(mailOptions);
-      this.logger.log(`Verification code email successfully sent to ${email}`);
     } catch (error) {
       this.logger.error(`Failed to send verification code email to ${email}`, error);
     }

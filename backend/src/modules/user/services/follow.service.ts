@@ -61,9 +61,6 @@ export class FollowService {
       });
 
       const duration = Date.now() - startTime;
-      this.logger.log(
-        `User ${currentUserId} followed target user @${targetUsername} (${targetProfile.userId}) successfully in ${duration}ms. Counters synchronized.`,
-      );
 
       return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
     } catch (error) {
@@ -97,9 +94,6 @@ export class FollowService {
       });
 
       const duration = Date.now() - startTime;
-      this.logger.log(
-        `User ${currentUserId} unfollowed target user @${targetUsername} (${targetProfile.userId}) successfully in ${duration}ms. Counters synchronized.`,
-      );
 
       return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
     } catch (error) {

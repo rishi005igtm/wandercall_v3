@@ -47,12 +47,10 @@ export class UserSearchService {
       const now = Date.now();
       const cached = this.queryCache.get(cacheKey);
       if (cached && now - cached.timestamp < this.CACHE_TTL_MS) {
-        this.logger.debug(`Cache HIT for query "${searchQuery}" (${cacheKey})`);
         return cached.data;
       }
     }
 
-    this.logger.log(`User ${userId} searching for "${searchQuery}" (limit=${limit}, offset=${offset})`);
 
     // Record search history if query is meaningful
     if (searchQuery.length >= 2 && offset === 0) {

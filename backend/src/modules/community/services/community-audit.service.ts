@@ -35,9 +35,6 @@ export class CommunityAuditService {
         durationMinutes: params.durationMinutes,
         metadata: params.metadata || {},
       });
-      this.logger.log(
-        `[Audit] action=${params.action} communityId=${params.communityId} actorId=${params.actorId} targetUserId=${params.targetUserId || 'none'}`,
-      );
       return log;
     } catch (error: any) {
       this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);

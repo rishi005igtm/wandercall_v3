@@ -524,12 +524,10 @@ export default function CampfireRoomPage() {
     if (isUserHost && roomState === 'connected' && localParticipant && isMuted && !hasAutoPublishedRef.current) {
       if (localParticipant.permissions?.canPublish) {
         hasAutoPublishedRef.current = true;
-        console.log("[AUDIT - Phase 3] Host detected and canPublish=true, attempting to auto-publish mic...");
         localParticipant.setMicrophoneEnabled(true).then(() => {
-          console.log("[AUDIT - Phase 3] SUCCESS: Host mic published.");
           setIsMuted(false);
         }).catch((e: any) => {
-          console.error("[AUDIT - Phase 3] FAILED: Could not auto-publish host mic:", e);
+          console.error("[Campfire] Could not auto-publish host mic:", e);
           if (e.name === 'NotAllowedError') {
             triggerToast("Microphone permission denied. Please allow mic access to speak.");
           }
@@ -741,7 +739,7 @@ export default function CampfireRoomPage() {
     socket.on("profile_updated", onProfileUpdated);
     socket.on("room_stats_update", onRoomStatsUpdate);
     socket.on("user_left", onUserLeft);
-    socket.on("new_reaction", onNewReaction);
+    socket.on("campfire:new_reaction", onNewReaction);
     socket.on("room_presence_snapshot", onPresenceSnapshot);
     socket.on("room_seats_snapshot", onRoomSeatsSnapshot);
     socket.on("seat_taken", onSeatTaken);
@@ -754,7 +752,7 @@ export default function CampfireRoomPage() {
       socket.off("profile_updated", onProfileUpdated);
       socket.off("room_stats_update", onRoomStatsUpdate);
       socket.off("user_left", onUserLeft);
-      socket.off("new_reaction", onNewReaction);
+      socket.off("campfire:new_reaction", onNewReaction);
       socket.off("room_presence_snapshot", onPresenceSnapshot);
       socket.off("room_seats_snapshot", onRoomSeatsSnapshot);
       socket.off("seat_taken", onSeatTaken);
@@ -882,7 +880,7 @@ export default function CampfireRoomPage() {
     setIsIntentToPublish(true); // Intend to publish once seated
     
     // Emit to backend instead of local mutate
-    socket?.emit("take_seat", {
+    socket?.emit("campfire:take_seat", {
       roomId: activeRoom?.id,
       userId: authState.userId,
       seatIndex: index,
@@ -896,7 +894,7 @@ export default function CampfireRoomPage() {
 
   const handleLeaveSeat = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    socket?.emit("leave_seat", {
+    socket?.emit("campfire:leave_seat", {
       roomId: activeRoom?.id,
       userId: authState.userId
     });
@@ -940,7 +938,7 @@ export default function CampfireRoomPage() {
 
   const triggerEmoji = (emoji: string) => {
     if (activeRoom && authState?.userId && socket) {
-      socket.emit("send_reaction", { roomId: activeRoom.id, emoji });
+      socket.emit("campfire:send_reaction", { roomId: activeRoom.id, emoji });
     }
   };
 
