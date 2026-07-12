@@ -1,6 +1,6 @@
 import { io, Socket } from "socket.io-client";
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "") || "http://localhost:5000";
 
 let socket: Socket | null = null;
 
@@ -9,6 +9,8 @@ export const getSocket = (): Socket => {
     socket = io(`${SOCKET_URL}/campfires`, {
       autoConnect: false,
       withCredentials: true,
+      transports: ["websocket", "polling"],
+      path: "/socket.io/",
     });
   }
   return socket;

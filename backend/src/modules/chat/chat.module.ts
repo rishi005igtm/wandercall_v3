@@ -77,6 +77,6 @@ import { CommunityChatService } from './services/community-chat.service';
     // Socket Gateway
     ChatGateway,
   ],
-  exports: [ChatService, CommunityChatService, PresenceService, ChatEventDispatcher, ChatGateway],
+  exports: [ChatService, CommunityChatService, PresenceService, ChatEventDispatcher, ChatGateway, MessageService, ConversationRepository],
 })
 export class ChatModule {}

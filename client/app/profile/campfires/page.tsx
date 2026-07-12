@@ -7,10 +7,13 @@ import { connectSocket } from "../../../lib/socket";
 import {
   useCampfireSearch,
   useStartCampfire,
+  useRestartCampfire,
   useDeleteCampfire,
   useToggleReminder,
   useWorkspaceCampfires,
 } from "../../../hooks/api/useCampfire";
+import { useCampfireSessionManager } from "../../../providers/CampfireSessionProvider";
+import { QUERY_KEYS } from "../../../lib/api/queryKeys";
 import { useUserProfileQuery } from "../../../hooks/api/useUserQueries";
 import { useAppSelector } from "../../../lib/store/store";
 import { motion, AnimatePresence } from "framer-motion";
@@ -225,8 +228,8 @@ const CARD_GRADIENTS = [
 ];
 
 interface CompanionAvatarProps {
-  avatar: string;
-  name: string;
+  avatar?: string | null;
+  name?: string | null;
   className?: string;
 }
 
@@ -251,13 +254,13 @@ function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: Compan
     return colors[index];
   };
 
-  const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
+  const initials = name && name.trim().length > 0 ? name.trim().charAt(0).toUpperCase() : "W";
 
   if (isUrl && !hasError) {
     return (
       <img
-        src={avatar}
-        alt={name}
+        src={avatar || undefined}
+        alt={name || "Explorer"}
         onError={() => setHasError(true)}
         className={`${className} rounded-full object-cover shrink-0`}
       />
@@ -267,7 +270,7 @@ function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: Compan
   return (
     <div
       className={`${className} rounded-full flex items-center justify-center font-bold shrink-0 select-none ${getHashColor(
-        name
+        name || "Wanderer"
       )}`}
     >
       {initials}
@@ -320,6 +323,7 @@ export default function CampfiresPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const authState = useAppSelector((state) => state.auth);
+  const { activeSessionId, leaveRoom } = useCampfireSessionManager();
   const { data: currentUserProfile } = useUserProfileQuery(authState?.userId || null);
 
   const { data: searchResults, isLoading: isSearchLoading } = useCampfireSearch({ hostId: authState.userId, limit: 100 }, { enabled: !!authState.userId });
@@ -329,6 +333,7 @@ export default function CampfiresPage() {
   const { data: savedWorkspaceResp } = useWorkspaceCampfires("saved", { enabled: !!authState.userId });
 
   const startCampfire = useStartCampfire();
+  const restartCampfire = useRestartCampfire();
   const deleteCampfire = useDeleteCampfire();
   const toggleReminder = useToggleReminder();
 
@@ -344,9 +349,9 @@ export default function CampfiresPage() {
         title: item.title,
         description: item.description || "",
         hostName: item.hostName || "Host",
-        hostAvatar: item.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        hostAvatar: item.hostAvatar || null,
         participantsCount: item.currentListeners || 0,
-        speakers: [{ id: item.hostId, name: item.hostName || "Host", avatar: item.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80", role: "host" as const }],
+        speakers: [{ id: item.hostId, name: item.hostName || "Host", avatar: item.hostAvatar || null, role: "host" as const }],
         listeners: [],
         energyLevel: (item.energyLevel || "Active") as any,
         energyScore: item.energyScore || 65,
@@ -368,21 +373,59 @@ export default function CampfiresPage() {
 
   useEffect(() => {
     const socket = connectSocket();
-    const handleRemoteUpdate = () => {
-      queryClient.invalidateQueries({ queryKey: ["campfires"] });
+
+    const handleCampfireEvent = (eventData: any) => {
+      queryClient.setQueryData(
+        QUERY_KEYS.CAMPFIRES.SEARCH({ status: "ACTIVE", limit: 100 }), 
+        (oldData: any) => {
+          if (!oldData || !oldData.items) return oldData;
+          let items = [...oldData.items];
+          
+        if (eventData.status === "DELETED" || eventData.status === "ENDED" || eventData.status === "ARCHIVED" || eventData.status === "ENDING" || eventData.type === "DELETED" || eventData.type === "ENDED") {
+          const removeId = eventData.id || eventData.data?.id;
+          items = items.filter(c => c.id !== removeId);
+        } else if (eventData.status === "LIVE" || eventData.status === "ACTIVE" || eventData.type === "STARTED" || eventData.type === "RESTARTED") {
+          const dataObj = eventData.data || eventData;
+          const index = items.findIndex(c => c.id === dataObj.id);
+          if (index > -1) {
+            items[index] = { ...items[index], ...dataObj };
+          } else {
+            items.unshift(dataObj);
+          }
+        }
+        return { ...oldData, items };
+      });
+      // Invalidate the entire campfire query domain to ensure all workspace lists, counts, and search results refetch automatically
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
     };
-    socket.on("campfire:created", handleRemoteUpdate);
-    socket.on("campfire:started", handleRemoteUpdate);
-    socket.on("campfire:ended", handleRemoteUpdate);
-    socket.on("campfire:updated", handleRemoteUpdate);
+    
+    const events = [
+      "campfire:created",
+      "campfire:scheduled",
+      "campfire:waiting",
+      "campfire:started",
+      "campfire:ending",
+      "campfire:ended",
+      "campfire:archived",
+      "campfire:updated",
+      "room_ended",
+      "CAMPFIRE_CREATED",
+      "CAMPFIRE_STARTED",
+      "CAMPFIRE_ENDED",
+      "CAMPFIRE_RESTARTED",
+      "CAMPFIRE_DELETED",
+      "DISCOVERY_FEED_UPDATED"
+    ];
+
+    events.forEach(event => socket.on(event, handleCampfireEvent));
 
     return () => {
-      socket.off("campfire:created", handleRemoteUpdate);
-      socket.off("campfire:started", handleRemoteUpdate);
-      socket.off("campfire:ended", handleRemoteUpdate);
-      socket.off("campfire:updated", handleRemoteUpdate);
+      events.forEach(event => socket.off(event, handleCampfireEvent));
     };
   }, [queryClient]);
+
+  const [localSearch, setLocalSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -466,7 +509,7 @@ export default function CampfiresPage() {
         title: s.title,
         description: s.description || "",
         hostName: s.hostName || "Host",
-        hostAvatar: s.hostAvatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        hostAvatar: s.hostAvatar || null,
         remindersCount: s.participantIds?.length || 0,
         gradientFrom: "from-brand-cyan/20",
         gradientTo: "to-blue-600/10",
@@ -568,6 +611,10 @@ export default function CampfiresPage() {
 
   // Initialize room participants when joining
   const handleJoinRoom = (room: CampfireRoom) => {
+    if (activeSessionId && activeSessionId !== room.id && authState?.userId) {
+      leaveRoom(activeSessionId, authState.userId);
+    }
+
     if (room.isPrivate) {
       setJoiningRoom(room);
       setPasscodeInput("");
@@ -641,6 +688,9 @@ export default function CampfiresPage() {
   // Discovery Filtered Campfires
   const filteredCampfires = useMemo(() => {
     return campfires.filter(c => {
+      if ((c as any).status === "ENDED" || (c as any).status === "ARCHIVED" || (c as any).status === "DELETED" || (c as any).duration === "Ended") {
+        return false;
+      }
       const matchQuery = c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.hostName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         c.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -1653,10 +1703,21 @@ export default function CampfiresPage() {
                         </div>
 
                         <button
-                          onClick={() => handleJoinRoom(room)}
-                          className="bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5"
+                          onClick={() => {
+                            if (activeSessionId === room.id) {
+                              router.push(`/profile/campfires/${getRoomSlug(room)}`);
+                            } else {
+                              handleJoinRoom(room);
+                            }
+                          }}
+                          className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                            activeSessionId === room.id 
+                              ? "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-450 border-emerald-500/30" 
+                              : "bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border-brand-cyan/20"
+                          }`}
                         >
-                          {room.isPrivate && <Lock className="h-3.5 w-3.5" />} Join Circle
+                          {room.isPrivate && <Lock className="h-3.5 w-3.5" />} 
+                          {activeSessionId === room.id ? "Joined" : "Join Circle"}
                         </button>
                       </div>
                     </div>
@@ -1796,12 +1857,12 @@ export default function CampfiresPage() {
                                     >
                                       <div className="flex items-center gap-3 min-w-0">
                                         <div className="h-10 w-10 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shrink-0 relative">
-                                          {item.hostAvatar ? (
-                                            <img src={item.hostAvatar} className="h-full w-full object-cover opacity-80" alt="" />
-                                          ) : (
-                                            <div className="h-full w-full bg-brand-indigo/20 flex items-center justify-center text-xs font-bold text-white uppercase">{item.hostName?.charAt(0) || '?'}</div>
-                                          )}
-                                          {item.status === "ACTIVE" && (
+                                          <CompanionAvatar
+                                            avatar={item.hostAvatar || (item.hostId === authState.userId ? currentUserProfile?.avatarUrl : null)}
+                                            name={item.hostName || item.title || "Wanderer"}
+                                            className="h-full w-full text-xs font-bold"
+                                          />
+                                          {(item.status === "ACTIVE" || item.status === "LIVE") && (
                                             <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-rose-500 animate-pulse" />
                                           )}
                                         </div>
@@ -1812,12 +1873,13 @@ export default function CampfiresPage() {
                                       </div>
 
                                       <div className="flex items-center gap-2 shrink-0">
-                                        {item.status === "ACTIVE" ? (
+                                        {item.status === "ACTIVE" || item.status === "LIVE" ? (
                                           <button
                                             onClick={() => handleJoinRoom(item)}
-                                            className="workspace-action-btn bg-brand-cyan/15 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                                            className="workspace-action-btn bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-zinc-950 border border-emerald-500/30 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 px-3 py-1.5 shadow-sm shadow-emerald-500/20"
                                           >
-                                            Resume
+                                            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                                            Active (Resume)
                                           </button>
                                         ) : item.status === "SCHEDULED" ? (
                                           <button
@@ -1825,12 +1887,12 @@ export default function CampfiresPage() {
                                               try {
                                                 await startCampfire.mutateAsync(item.id);
                                                 triggerToast(`Started live session for "${item.title}"!`);
-                                                handleJoinRoom(item);
+                                                handleJoinRoom({ ...item, status: "LIVE" });
                                               } catch (e) {
                                                 triggerToast("Failed to start campfire.");
                                               }
                                             }}
-                                            className="workspace-action-btn bg-brand-purple/20 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                                            className="workspace-action-btn bg-brand-purple/20 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer px-3 py-1.5"
                                           >
                                             Start
                                           </button>
@@ -1838,14 +1900,14 @@ export default function CampfiresPage() {
                                           <button
                                             onClick={async () => {
                                               try {
-                                                await startCampfire.mutateAsync(item.id);
+                                                await restartCampfire.mutateAsync(item.id);
                                                 triggerToast(`Restarted live session for "${item.title}"!`);
-                                                handleJoinRoom(item);
+                                                handleJoinRoom({ ...item, status: "LIVE" });
                                               } catch (e) {
                                                 triggerToast("Failed to restart campfire.");
                                               }
                                             }}
-                                            className="workspace-action-btn bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                                            className="workspace-action-btn bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-zinc-700 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer px-3 py-1.5"
                                           >
                                             Restart
                                           </button>

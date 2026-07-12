@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 
 interface CompanionAvatarProps {
-  avatar: string;
-  name: string;
+  avatar?: string | null;
+  name?: string | null;
   className?: string;
 }
 
@@ -31,13 +31,13 @@ export function CompanionAvatar({ avatar, name, className = 'h-8 w-8 text-xs' }:
     avatar &&
     (avatar.startsWith('http://') || avatar.startsWith('https://') || avatar.startsWith('/'));
 
-  const initials = name ? name.trim().charAt(0).toUpperCase() : '?';
+  const initials = name && name.trim().length > 0 ? name.trim().charAt(0).toUpperCase() : 'W';
 
   if (isUrl && !hasError) {
     return (
       <img
-        src={avatar}
-        alt={name}
+        src={avatar || undefined}
+        alt={name || 'Explorer'}
         onError={() => setHasError(true)}
         className={`${className} rounded-full object-cover shrink-0`}
       />
@@ -46,7 +46,7 @@ export function CompanionAvatar({ avatar, name, className = 'h-8 w-8 text-xs' }:
 
   return (
     <div
-      className={`${className} rounded-full flex items-center justify-center font-bold shrink-0 select-none ${getHashColor(name)}`}
+      className={`${className} rounded-full flex items-center justify-center font-bold shrink-0 select-none ${getHashColor(name || 'Wanderer')}`}
     >
       {initials}
     </div>

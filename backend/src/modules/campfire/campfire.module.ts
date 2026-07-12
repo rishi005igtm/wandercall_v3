@@ -1,47 +1,33 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CampfireEntity } from './entities/campfire.entity';
+import { CampfireMessageEntity } from './entities/campfire-message.entity';
 import { CampfireRepository } from './repositories/campfire.repository';
-import { CampfireCacheService } from './services/campfire-cache.service';
-import { CampfirePolicyService } from './services/campfire-policy.service';
-import { CampfireService } from './services/campfire.service';
-import { CampfireController } from './controllers/campfire.controller';
+import { CampfireMessageRepository } from './repositories/campfire-message.repository';
 import { CampfireEventDispatcher } from './events/campfire-event.dispatcher';
-
-// Discovery
-import { CampfireDiscoveryRepository } from './repositories/campfire-discovery.repository';
-import { CampfireRankingService } from './services/campfire-ranking.service';
-import { CampfireRecommendationService } from './services/campfire-recommendation.service';
-import { CampfireDiscoveryCacheService } from './services/campfire-discovery-cache.service';
-import { CampfireDiscoveryService } from './services/campfire-discovery.service';
-import { CampfireDiscoveryController } from './controllers/campfire-discovery.controller';
-import { CampfireDiscoverySubscriber } from './events/campfire-discovery.subscriber';
+import { CampfireService } from './services/campfire.service';
+import { CampfirePresenceService } from './services/campfire-presence.service';
+import { CampfireChatService } from './services/campfire-chat.service';
+import { CampfireController } from './controllers/campfire.controller';
 import { CampfireGateway } from './gateways/campfire.gateway';
+import { LivekitService } from './services/livekit.service';
+import { LiveSessionEntity } from './entities/live-session.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CampfireEntity]),
+    TypeOrmModule.forFeature([CampfireEntity, CampfireMessageEntity, LiveSessionEntity]),
   ],
-  controllers: [
-    CampfireDiscoveryController,
-    CampfireController,
-  ],
+  controllers: [CampfireController],
   providers: [
-    CampfireEventDispatcher,
     CampfireRepository,
-    CampfireCacheService,
-    CampfirePolicyService,
+    CampfireMessageRepository,
+    CampfireEventDispatcher,
     CampfireService,
-    
-    // Discovery
-    CampfireDiscoveryRepository,
-    CampfireRankingService,
-    CampfireRecommendationService,
-    CampfireDiscoveryCacheService,
-    CampfireDiscoveryService,
-    CampfireDiscoverySubscriber,
+    CampfirePresenceService,
+    CampfireChatService,
+    LivekitService,
     CampfireGateway,
   ],
-  exports: [CampfireService, CampfireDiscoveryService, CampfireGateway],
+  exports: [CampfireService, CampfirePresenceService, LivekitService],
 })
 export class CampfireModule {}

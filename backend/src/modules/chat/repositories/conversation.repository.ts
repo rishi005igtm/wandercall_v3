@@ -167,8 +167,8 @@ export class ConversationRepository {
       lastMessageAt: sentAt,
     };
 
-    // ONLY update JSONB unreadCounts for non-community conversations to avoid massive row locks.
-    if (conversation.type !== ConversationType.COMMUNITY) {
+    // ONLY update JSONB unreadCounts for direct/group conversations to avoid massive row locks.
+    if (conversation.type !== ConversationType.COMMUNITY && conversation.type !== ConversationType.CAMPFIRE) {
       const updatedUnreadCounts = { ...conversation.unreadCounts };
       for (const recipientId of recipientIds) {
         if (recipientId !== senderId) {
@@ -225,6 +225,25 @@ export class ConversationRepository {
       .where("conv.type = :type", { type: ConversationType.COMMUNITY })
       .andWhere("conv.metadata->>'communityId' = :communityId", { communityId })
       .andWhere("conv.metadata->>'isDefault' = 'true'")
+      .getOne();
+  }
+
+  async createCampfireConversation(campfireId: string): Promise<ConversationEntity> {
+    const conversation = this.convRepo.create({
+      id: randomUUID(),
+      type: ConversationType.CAMPFIRE,
+      metadata: { campfireId },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    return this.convRepo.save(conversation);
+  }
+
+  async findCampfireConversation(campfireId: string): Promise<ConversationEntity | null> {
+    return this.convRepo
+      .createQueryBuilder('conv')
+      .where("conv.type = :type", { type: ConversationType.CAMPFIRE })
+      .andWhere("conv.metadata->>'campfireId' = :campfireId", { campfireId })
       .getOne();
   }
 }

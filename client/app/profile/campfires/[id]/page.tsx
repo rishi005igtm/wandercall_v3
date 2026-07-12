@@ -2,13 +2,18 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { useCampfire, useStartCampfire, useEndCampfire, useDeleteCampfire } from "../../../../hooks/api/useCampfire";
-import { campfireApi } from "../../../../lib/api/campfire";
+import { useCampfire, useTransitionCampfireLifecycle, useDeleteCampfire, useJoinSession, useEndCampfire } from "../../../../hooks/api/useCampfire";
+import { campfireApi, CampfireStatus } from "../../../../lib/api/campfire";
 import { useUserProfileQuery } from "../../../../hooks/api/useUserQueries";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAppSelector } from "../../../../lib/store/store";
-import { connectSocket, disconnectSocket, getSocket } from "../../../../lib/socket";
+import { useCampfireSessionManager } from "../../../../providers/CampfireSessionProvider";
 import { motion, AnimatePresence } from "framer-motion";
+import { ChatContainer } from "./components/chat/ChatContainer";
+import { useCampfirePresenceQueue } from "./hooks/useCampfirePresenceQueue";
+import { useCampfireVoice } from "../../../../providers/CampfireVoiceProvider";
+import { useParticipants, useLocalParticipant, useConnectionState } from "@livekit/components-react";
+import { CampfirePresenceToast } from "./components/presence/CampfirePresenceToast";
 import {
   Flame,
   Mic,
@@ -25,6 +30,7 @@ import {
   Play,
   Volume2,
   LogOut,
+  Power,
   Compass,
   Share2,
   Bookmark,
@@ -35,6 +41,7 @@ import {
   X,
   ChevronLeft,
   ChevronRight,
+  MoreVertical,
   Send,
   UserPlus,
   LockKeyhole,
@@ -299,8 +306,8 @@ const INITIAL_HOSTED_ROOMS: CampfireRoom[] = [
 ];
 
 interface CompanionAvatarProps {
-  avatar: string;
-  name: string;
+  avatar?: string | null;
+  name?: string | null;
   className?: string;
 }
 
@@ -325,13 +332,13 @@ function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: Compan
     return colors[index];
   };
 
-  const initials = name ? name.trim().charAt(0).toUpperCase() : "?";
+  const initials = name && name.trim().length > 0 ? name.trim().charAt(0).toUpperCase() : "W";
 
   if (isUrl && !hasError) {
     return (
       <img
-        src={avatar}
-        alt={name}
+        src={avatar || undefined}
+        alt={name || "Explorer"}
         onError={() => setHasError(true)}
         className={`${className} rounded-full object-cover shrink-0`}
       />
@@ -341,7 +348,7 @@ function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: Compan
   return (
     <div
       className={`${className} rounded-full flex items-center justify-center font-bold shrink-0 select-none ${getHashColor(
-        name
+        name || "Wanderer"
       )}`}
     >
       {initials}
@@ -389,9 +396,14 @@ export default function CampfireRoomPage() {
   const roomId = rawId ? rawId.split('--')[0] : '';
 
   const { data: activeRoom, isLoading } = useCampfire(roomId);
-  const startCampfire = useStartCampfire();
-  const endCampfire = useEndCampfire();
   const deleteCampfire = useDeleteCampfire();
+  const transitionLifecycle = useTransitionCampfireLifecycle(roomId);
+  const joinSessionMutation = useJoinSession();
+  const endCampfire = useEndCampfire();
+  const { socket, joinRoom, leaveRoom, isSessionTerminated } = useCampfireSessionManager();
+  const { activeToasts, enqueueToast, dismissToast } = useCampfirePresenceQueue();
+  const { livekitToken, connectVoice, disconnectVoice } = useCampfireVoice();
+
   const queryClient = useQueryClient();
   const authState = useAppSelector((state) => state.auth);
   const { data: currentUserProfile } = useUserProfileQuery(authState?.userId || null);
@@ -400,6 +412,12 @@ export default function CampfireRoomPage() {
     if (!activeRoom || !authState?.userId) return false;
     return activeRoom.hostId === authState.userId;
   }, [activeRoom, authState.userId]);
+
+  const activeRoomRef = useRef<any>(activeRoom);
+  useEffect(() => {
+    activeRoomRef.current = activeRoom;
+  }, [activeRoom]);
+
   const [authorized, setAuthorized] = useState(false);
   const [passcodeInput, setPasscodeInput] = useState("");
   const [passcodeError, setPasscodeError] = useState(false);
@@ -409,20 +427,33 @@ export default function CampfireRoomPage() {
   // Immersive room states
   const [isMuted, setIsMuted] = useState(true);
   const [hasRaisedHand, setHasRaisedHand] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { localParticipant } = useLocalParticipant();
+  const roomState = useConnectionState();
+  const [isEmojiMenuOpen, setIsEmojiMenuOpen] = useState(false);
   const [floatingEmojis, setFloatingEmojis] = useState<FloatingEmoji[]>([]);
   const [speakersList, setSpeakersList] = useState<Speaker[]>([]);
   const [listenersList, setListenersList] = useState<Listener[]>([]);
   const [activeSpeakersMap, setActiveSpeakersMap] = useState<Record<string, boolean>>({});
-  const [chatMessages, setChatMessages] = useState<{ id: string; sender: string; avatar: string; text: string; time: string }[]>([]);
-  const [chatInput, setChatInput] = useState("");
   const [roomEnergyState, setRoomEnergyState] = useState<"Quiet" | "Active" | "Exciting" | "Legendary">("Active");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [zoomedAvatar, setZoomedAvatar] = useState<{ url: string; name: string } | null>(null);
+  const [isHostOnline, setIsHostOnline] = useState<boolean>(
+    activeRoom ? ((activeRoom as any).isHostOnline ?? (activeRoom.hostId === authState?.userId)) : false
+  );
 
-  // Seat indexes: Seat 0 = Host (always filled). Seats 1-5 = Empty, User, or Guest speakers.
+  useEffect(() => {
+    if (!activeRoom) return;
+    if (activeRoom.hostId === authState?.userId) {
+      setIsHostOnline(true);
+    } else if (typeof (activeRoom as any).isHostOnline === 'boolean') {
+      setIsHostOnline((activeRoom as any).isHostOnline);
+    }
+  }, [(activeRoom as any)?.isHostOnline, activeRoom?.hostId, authState?.userId]);
+
+  // Seat indexes: Seat 0 = Host (always filled when host online). Seats 1-5 = Empty, User, or Guest speakers.
   const [userSeatIndex, setUserSeatIndex] = useState<number | null>(null);
-
-  const chatEndRef = useRef<HTMLDivElement>(null);
+  const [globalSeatOccupants, setGlobalSeatOccupants] = useState<Record<number, any>>({});
 
   const triggerToast = (msg: string) => {
     setToastMsg(msg);
@@ -433,9 +464,9 @@ export default function CampfireRoomPage() {
   // Angles: 270 (Top), 330 (Top-Right), 30 (Bottom-Right), 90 (Bottom), 150 (Bottom-Left), 210 (Top-Left)
   const SEAT_ANGLES = [270, 330, 30, 90, 150, 210];
   const seatPositions = useMemo(() => {
-    const radius = 125;
-    return SEAT_ANGLES.map((angle) => {
+    return SEAT_ANGLES.map(angle => {
       const rad = (angle * Math.PI) / 180;
+      const radius = 125;
       return {
         x: Math.round(Math.cos(rad) * radius),
         y: Math.round(Math.sin(rad) * radius)
@@ -445,7 +476,7 @@ export default function CampfireRoomPage() {
 
   // Load room data
   useEffect(() => {
-    if (!activeRoom) return;
+    if (isSessionTerminated || !activeRoom) return;
 
     const currentStatus = activeRoom.status as string;
     if (currentStatus === 'ENDED' || currentStatus === 'CLOSED' || currentStatus === 'DELETED' || currentStatus === 'ARCHIVED') {
@@ -457,9 +488,6 @@ export default function CampfireRoomPage() {
     // Use actual speakers and listeners length later, for now we will just populate empty
     setSpeakersList([]);
     setListenersList([]);
-    setChatMessages([
-      { id: "msg-init", sender: "Campfire Keeper", avatar: "/globe", text: `Welcome to "${activeRoom.title}"! Gather round the fire and respect the circle.`, time: "Just now" }
-    ]);
 
     // Check authorization for private rooms
     if (activeRoom.visibility === 'PRIVATE') {
@@ -471,76 +499,245 @@ export default function CampfireRoomPage() {
     } else {
       setAuthorized(true);
     }
-  }, [activeRoom, router]);
+  }, [activeRoom, router, isSessionTerminated]);
 
-  // Socket.IO Integration
+  // Session Integration
   useEffect(() => {
-    if (!activeRoom || !authorized || !authState?.userId) return;
+    if (!activeRoom || !authorized || !authState?.userId || livekitToken) return;
 
-    const socket = connectSocket();
+    joinSessionMutation.mutate(activeRoom.id, {
+      onSuccess: (data) => {
+        connectVoice(data.wsUrl, data.token);
+      },
+      onError: () => {
+        triggerToast("Failed to join campfire. It might be full or ended.");
+        router.push("/profile/campfires");
+      }
+    });
+  }, [activeRoom?.id, authorized, authState?.userId, livekitToken]);
+
+  // Host auto-publish mic upon successful connection and permission grant
+  const hasAutoPublishedRef = useRef(false);
+
+  // Host auto-publish mic upon successful connection and permission grant
+  useEffect(() => {
+    if (isUserHost && roomState === 'connected' && localParticipant && isMuted && !hasAutoPublishedRef.current) {
+      if (localParticipant.permissions?.canPublish) {
+        hasAutoPublishedRef.current = true;
+        console.log("[AUDIT - Phase 3] Host detected and canPublish=true, attempting to auto-publish mic...");
+        localParticipant.setMicrophoneEnabled(true).then(() => {
+          console.log("[AUDIT - Phase 3] SUCCESS: Host mic published.");
+          setIsMuted(false);
+        }).catch((e: any) => {
+          console.error("[AUDIT - Phase 3] FAILED: Could not auto-publish host mic:", e);
+          if (e.name === 'NotAllowedError') {
+            triggerToast("Microphone permission denied. Please allow mic access to speak.");
+          }
+        });
+      }
+    }
+  }, [roomState, isUserHost, localParticipant, isMuted, localParticipant?.permissions?.canPublish]);
+
+  const enqueueToastRef = useRef(enqueueToast);
+  const queryClientRef = useRef(queryClient);
+  const authStateRef = useRef(authState);
+
+  useEffect(() => {
+    enqueueToastRef.current = enqueueToast;
+    queryClientRef.current = queryClient;
+    authStateRef.current = authState;
+  }, [enqueueToast, queryClient, authState]);
+
+  // Socket.IO Integration (Presence & UI Events Only)
+  useEffect(() => {
+    if (!activeRoom?.id || !authState?.userId || !socket) return;
+
+    if (!socket.connected) {
+      socket.connect();
+    }
 
     const userProfile = {
-      name: currentUserProfile?.displayName || authState.name || (isUserHost ? activeRoom?.hostName : "Guest") || "Explorer",
-      avatar: currentUserProfile?.avatarUrl || (isUserHost ? activeRoom?.hostAvatar : null) || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+      name: currentUserProfile?.displayName || authState.name || (isUserHost ? activeRoomRef.current?.hostName : "Guest") || "Explorer",
+      avatar: currentUserProfile?.avatarUrl || (isUserHost ? activeRoomRef.current?.hostAvatar : null) || null,
+      role: isUserHost ? "HOST" : (currentUserProfile?.role || "LISTENER"),
+      userId: authState.userId,
+      hostId: activeRoom.hostId
     };
 
-    socket.emit("join_room", { roomId: activeRoom.id, userId: authState.userId, userProfile });
-    socket.emit("update_profile", { roomId: activeRoom.id, userId: authState.userId, userProfile });
-    campfireApi.recordJoin(activeRoom.id).catch(() => {});
+    joinRoom(activeRoom.id, authState.userId, userProfile);
 
-    socket.on("user_joined", (data: any) => {
-      triggerToast(`${data.userProfile.name} joined the campfire.`);
-      setListenersList(prev => [...prev.filter(l => l.id !== data.userId), { id: data.userId, name: data.userProfile.name, avatar: data.userProfile.avatar }]);
-    });
+    const checkIsHost = (targetUserId?: string, targetRole?: string, targetName?: string) => {
+      const room = activeRoomRef.current;
+      if (!room) return false;
+      if (targetUserId && targetUserId === room.hostId) return true;
+      if (targetRole && (targetRole.toUpperCase() === 'HOST' || targetRole === 'host')) return true;
+      if (targetName && targetName === room.hostName && targetName !== 'Wanderer' && targetName !== 'Explorer') return true;
+      return false;
+    };
 
-    socket.on("profile_updated", (data: any) => {
+    const handleShowPresenceToast = (targetUserId: string, displayName: string, avatar: string, role: string, action: 'JOINED' | 'LEFT') => {
+      if (!targetUserId || targetUserId === authStateRef.current?.userId || targetUserId === socket.id) return;
+      enqueueToastRef.current({
+        userId: targetUserId,
+        displayName: displayName || "Explorer",
+        avatar: avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
+        role: role || "LISTENER",
+        action,
+        timestamp: new Date().toISOString(),
+      });
+    };
+
+    const onParticipantJoined = (payload: any) => {
+      handleShowPresenceToast(payload.userId, payload.displayName, payload.avatar, payload.role, 'JOINED');
+      setListenersList(prev => [...prev.filter(l => l.id !== payload.userId), { id: payload.userId, name: payload.displayName, avatar: payload.avatar }]);
+      if (checkIsHost(payload.userId, payload.role, payload.displayName)) {
+        setIsHostOnline(true);
+      }
+      queryClientRef.current.invalidateQueries({ queryKey: ['campfires', 'detail', activeRoom.id] });
+    };
+
+    const onParticipantLeft = (payload: any) => {
+      handleShowPresenceToast(payload.userId, payload.displayName, payload.avatar, payload.role, 'LEFT');
+      setListenersList(prev => prev.filter(l => l.id !== payload.userId));
+      setSpeakersList(prev => prev.filter(s => s.id !== payload.userId));
+      if (checkIsHost(payload.userId, payload.role, payload.displayName)) {
+        setIsHostOnline(false);
+      }
+      queryClientRef.current.invalidateQueries({ queryKey: ['campfires', 'detail', activeRoom.id] });
+    };
+
+    const onUserJoined = (data: any) => {
+      if (data.userId && data.userId !== socket.id) {
+        handleShowPresenceToast(data.userId, data.userProfile?.name, data.userProfile?.avatar, data.userProfile?.role, 'JOINED');
+        setListenersList(prev => [...prev.filter(l => l.id !== data.userId), { id: data.userId, name: data.userProfile?.name || "Explorer", avatar: data.userProfile?.avatar || null }]);
+        if (checkIsHost(data.userId, data.userProfile?.role, data.userProfile?.name)) {
+          setIsHostOnline(true);
+        }
+      }
+    };
+
+    const onProfileUpdated = (data: any) => {
+      if (!data.userProfile) return;
       setListenersList(prev => prev.map(l => l.id === data.userId ? { ...l, name: data.userProfile.name, avatar: data.userProfile.avatar } : l));
       setSpeakersList(prev => prev.map(s => s.id === data.userId ? { ...s, name: data.userProfile.name, avatar: data.userProfile.avatar } : s));
-    });
-
-    socket.on("user_left", (data: any) => {
-      setListenersList(prev => prev.filter(l => l.id !== data.userId));
-      setSpeakersList(prev => prev.filter(s => s.id !== data.userId));
-    });
-
-    socket.on("new_message", (msg: any) => {
-      setChatMessages(prev => [...prev, msg]);
-    });
-
-    socket.on("new_reaction", (reaction: any) => {
-      setFloatingEmojis(prev => [...prev, reaction]);
-    });
-
-    const handleRemoteRoomUpdate = () => {
-      queryClient.invalidateQueries({ queryKey: ['campfires'] });
     };
-    const handleRemoteRoomEnded = (data?: any) => {
-      if (data && (data.id || data.roomId)) {
-        const targetId = data.id || data.roomId;
-        if (targetId !== activeRoom.id) return;
+
+    const onRoomStatsUpdate = (data: any) => {
+      queryClientRef.current.setQueryData(['campfires', 'detail', activeRoom.id], (old: any) => {
+        if (!old) return old;
+        return { 
+          ...old, 
+          currentParticipants: data.participantsCount, 
+          participantsCount: data.participantsCount,
+          currentListeners: Math.max(0, data.participantsCount - (old.speakers?.length || 1)) 
+        };
+      });
+    };
+
+    const onUserLeft = (data: any) => {
+      if (data.userId && data.userId !== socket.id) {
+        handleShowPresenceToast(data.userId, data.userProfile?.name, data.userProfile?.avatar, data.userProfile?.role, 'LEFT');
+        setListenersList(prev => prev.filter(l => l.id !== data.userId));
+        setSpeakersList(prev => prev.filter(s => s.id !== data.userId));
+        if (checkIsHost(data.userId, data.userProfile?.role, data.userProfile?.name)) {
+          setIsHostOnline(false);
+        }
       }
-      queryClient.invalidateQueries({ queryKey: ['campfires'] });
-      triggerToast("The host left and stopped the campfire. Redirecting...");
-      router.push("/profile/campfires");
     };
-    socket.on("campfire:updated", handleRemoteRoomUpdate);
-    socket.on("campfire:started", handleRemoteRoomUpdate);
-    socket.on("campfire:ended", handleRemoteRoomEnded);
-    socket.on("room_ended", handleRemoteRoomEnded);
+
+    const onNewReaction = (reaction: any) => {
+      setFloatingEmojis(prev => [...prev, reaction]);
+    };
+
+    const onPresenceSnapshot = (snapshot: any) => {
+      if (snapshot && typeof snapshot.isHostOnline === 'boolean') {
+        setIsHostOnline(snapshot.isHostOnline);
+      }
+    };
+
+    const onRoomSeatsSnapshot = (snapshot: Record<number, string | null>) => {
+      // snapshot is {1: userId, 2: null, ...}
+      setGlobalSeatOccupants(prev => {
+        const next = { ...prev };
+        for (const [seatStr, userId] of Object.entries(snapshot)) {
+          const idx = parseInt(seatStr);
+          if (userId === null) {
+            delete next[idx];
+          } else {
+            next[idx] = { userId };
+          }
+        }
+        return next;
+      });
+      
+      // Update local userSeatIndex if we are in the snapshot
+      let foundSeat: number | null = null;
+      for (const [seatStr, userId] of Object.entries(snapshot)) {
+        if (userId === authState.userId) {
+          foundSeat = parseInt(seatStr);
+          break;
+        }
+      }
+      setUserSeatIndex(foundSeat);
+      if (foundSeat !== null) setIsMuted(false);
+    };
+
+    const onSeatTaken = (data: { userId: string; seatIndex: number; userProfile: any }) => {
+      setGlobalSeatOccupants(prev => ({ ...prev, [data.seatIndex]: { userId: data.userId, profile: data.userProfile } }));
+      if (data.userId === authState.userId) {
+        setUserSeatIndex(data.seatIndex);
+        setIsMuted(false);
+        triggerToast("You joined the speaking circle. Talk live!");
+      } else {
+        triggerToast(`${data.userProfile?.name || "Someone"} took a seat.`);
+      }
+    };
+
+    const onSeatLeft = (data: { userId: string }) => {
+      setGlobalSeatOccupants(prev => {
+        const next = { ...prev };
+        let vacatedSeat: number | null = null;
+        for (const [idxStr, occ] of Object.entries(next)) {
+          if (occ.userId === data.userId) {
+            vacatedSeat = parseInt(idxStr);
+            delete next[vacatedSeat];
+          }
+        }
+        if (vacatedSeat !== null && data.userId === authState.userId) {
+          setUserSeatIndex(null);
+          setIsMuted(true);
+          triggerToast("You left the speaking circle.");
+        }
+        return next;
+      });
+    };
+
+    socket.on("CAMPFIRE_PARTICIPANT_JOINED", onParticipantJoined);
+    socket.on("CAMPFIRE_PARTICIPANT_LEFT", onParticipantLeft);
+    socket.on("user_joined", onUserJoined);
+    socket.on("profile_updated", onProfileUpdated);
+    socket.on("room_stats_update", onRoomStatsUpdate);
+    socket.on("user_left", onUserLeft);
+    socket.on("new_reaction", onNewReaction);
+    socket.on("room_presence_snapshot", onPresenceSnapshot);
+    socket.on("room_seats_snapshot", onRoomSeatsSnapshot);
+    socket.on("seat_taken", onSeatTaken);
+    socket.on("seat_left", onSeatLeft);
 
     return () => {
-      socket.emit("leave_room", { roomId: activeRoom.id, userId: authState.userId });
-      socket.off("user_joined");
-      socket.off("profile_updated");
-      socket.off("user_left");
-      socket.off("new_message");
-      socket.off("new_reaction");
-      socket.off("campfire:updated", handleRemoteRoomUpdate);
-      socket.off("campfire:started", handleRemoteRoomUpdate);
-      socket.off("campfire:ended", handleRemoteRoomEnded);
-      socket.off("room_ended", handleRemoteRoomEnded);
+      socket.off("CAMPFIRE_PARTICIPANT_JOINED", onParticipantJoined);
+      socket.off("CAMPFIRE_PARTICIPANT_LEFT", onParticipantLeft);
+      socket.off("user_joined", onUserJoined);
+      socket.off("profile_updated", onProfileUpdated);
+      socket.off("room_stats_update", onRoomStatsUpdate);
+      socket.off("user_left", onUserLeft);
+      socket.off("new_reaction", onNewReaction);
+      socket.off("room_presence_snapshot", onPresenceSnapshot);
+      socket.off("room_seats_snapshot", onRoomSeatsSnapshot);
+      socket.off("seat_taken", onSeatTaken);
+      socket.off("seat_left", onSeatLeft);
     };
-  }, [activeRoom, authorized, authState?.userId, authState?.name, currentUserProfile, queryClient]);
+  }, [activeRoom?.id, authState?.userId, socket, joinRoom, leaveRoom]);
 
   // Keypad submit
   const handlePasswordSubmit = () => {
@@ -557,38 +754,30 @@ export default function CampfireRoomPage() {
     }
   };
 
-  // Simulate active speaker voice waves
+  // LiveKit active speaker integration
+  const participants = useParticipants();
+  
   useEffect(() => {
     if (!authorized || !activeRoom) return;
 
-    const interval = setInterval(() => {
-      const speakingMap: Record<string, boolean> = {};
-      if (Math.random() > 0.6) {
-        speakingMap["host"] = true;
+    const speakingMap: Record<string, boolean> = {};
+    let speakCount = 0;
+    
+    participants.forEach((p) => {
+      if (p.isSpeaking) {
+        // p.identity maps to userId
+        speakingMap[p.identity] = true;
+        speakCount++;
       }
-      
-      const guests = speakersList.filter(s => s.role !== "host" && s.id !== "user");
-      guests.forEach((spk) => {
-        if (Math.random() > 0.73) {
-          speakingMap[spk.id] = true;
-        }
-      });
+    });
 
-      if (!isMuted && userSeatIndex !== null && Math.random() > 0.5) {
-        speakingMap["user"] = true;
-      }
+    setActiveSpeakersMap(speakingMap);
 
-      setActiveSpeakersMap(speakingMap);
-
-      const speakCount = Object.keys(speakingMap).length;
-      if (speakCount === 0) setRoomEnergyState("Quiet");
-      else if (speakCount === 1) setRoomEnergyState("Active");
-      else if (speakCount === 2) setRoomEnergyState("Exciting");
-      else setRoomEnergyState("Legendary");
-    }, 2500);
-
-    return () => clearInterval(interval);
-  }, [authorized, activeRoom, speakersList, isMuted, userSeatIndex]);
+    if (speakCount === 0) setRoomEnergyState("Quiet");
+    else if (speakCount === 1) setRoomEnergyState("Active");
+    else if (speakCount === 2) setRoomEnergyState("Exciting");
+    else setRoomEnergyState("Legendary");
+  }, [authorized, activeRoom, participants]);
 
   // Clean emoji particles
   useEffect(() => {
@@ -598,11 +787,6 @@ export default function CampfireRoomPage() {
     }, 2000);
     return () => clearTimeout(timer);
   }, [floatingEmojis]);
-
-  // Scroll to bottom of chat
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [chatMessages, authorized]);
 
   // Auto-focus hidden input on private room prompt
   useEffect(() => {
@@ -618,107 +802,132 @@ export default function CampfireRoomPage() {
     if (!activeRoom) return Array(6).fill(null);
     const occupants = Array(6).fill(null);
 
-    // Seat 0: Host
+    // Seat 0: Host (Exclusively reserved for Host; cleared in real time when Host leaves)
     const hostFallbackName = isUserHost ? (currentUserProfile?.displayName || authState?.name || "You (Host)") : "Host";
-    const hostFallbackAvatar = isUserHost ? (currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80") : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
+    const hostFallbackAvatar = isUserHost ? (currentUserProfile?.avatarUrl || null) : null;
 
-    occupants[0] = {
-      type: "host",
-      name: (isUserHost && currentUserProfile?.displayName) ? currentUserProfile.displayName : ((activeRoom.hostName && activeRoom.hostName !== "Wanderer" && activeRoom.hostName !== "Host") ? activeRoom.hostName : hostFallbackName),
-      avatar: (isUserHost && currentUserProfile?.avatarUrl) ? currentUserProfile.avatarUrl : (activeRoom.hostAvatar || hostFallbackAvatar),
-      isSpeaking: activeSpeakersMap["host"]
-    };
+    if (isUserHost || isHostOnline) {
+      occupants[0] = {
+        type: "host",
+        name: (isUserHost && currentUserProfile?.displayName) ? currentUserProfile.displayName : ((activeRoom.hostName && activeRoom.hostName !== "Wanderer" && activeRoom.hostName !== "Host") ? activeRoom.hostName : hostFallbackName),
+        avatar: (isUserHost && currentUserProfile?.avatarUrl) ? currentUserProfile.avatarUrl : (activeRoom.hostAvatar || hostFallbackAvatar),
+        isSpeaking: activeSpeakersMap["host"]
+      };
+    } else {
+      occupants[0] = null;
+    }
 
     // Remaining guests from room speakers list
     const roomSpeakers = speakersList.filter(s => s.role !== "host" && s.id !== "user");
+    const roomSpeakersMap = new Map(roomSpeakers.map(s => [s.id, s]));
+    const roomListenersMap = new Map(listenersList.map(s => [s.id, s]));
 
-    // Place the user if they sit in a seat
-    if (userSeatIndex !== null) {
-      occupants[userSeatIndex] = {
-        type: "user",
-        name: currentUserProfile?.displayName || authState?.name || "You",
-        avatar: currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
-        isSpeaking: activeSpeakersMap["user"] && !isMuted
-      };
-    }
-
-    // Fill remaining vacant seats with guest speakers
-    let guestIdx = 0;
+    // Fill remaining vacant seats with global state
     for (let i = 1; i < 6; i++) {
-      if (occupants[i] === null && guestIdx < roomSpeakers.length) {
-        const spk = roomSpeakers[guestIdx++];
+      const globalOcc = globalSeatOccupants[i];
+      if (globalOcc) {
+        const isMe = globalOcc.userId === authState?.userId;
+        const mappedProfile = globalOcc.profile || roomSpeakersMap.get(globalOcc.userId) || roomListenersMap.get(globalOcc.userId);
         occupants[i] = {
-          type: "speaker",
-          id: spk.id,
-          name: spk.name,
-          avatar: spk.avatar,
-          isSpeaking: activeSpeakersMap[spk.id]
+          type: isMe ? "user" : "speaker",
+          id: globalOcc.userId,
+          name: isMe ? (currentUserProfile?.displayName || authState?.name || "You") : (mappedProfile?.name || "Speaker"),
+          avatar: isMe ? (currentUserProfile?.avatarUrl || null) : (mappedProfile?.avatar || null),
+          isSpeaking: activeSpeakersMap[globalOcc.userId] || (isMe && !isMuted)
         };
       }
     }
 
     return occupants;
-  }, [activeRoom, speakersList, userSeatIndex, activeSpeakersMap, isMuted]);
+  }, [activeRoom, globalSeatOccupants, speakersList, listenersList, userSeatIndex, activeSpeakersMap, isMuted, isHostOnline, isUserHost, currentUserProfile, authState]);
 
   // Handlers for taking and leaving seats
   const handleTakeSeat = (index: number) => {
-    setUserSeatIndex(index);
-    setIsMuted(false); // Sit down and unmute!
-    triggerToast("You joined the speaking circle. Talk live!");
+    if (index === 0 && !isUserHost) {
+      triggerToast("Top circle seat is exclusively reserved for the Host!");
+      return;
+    }
+    if (isUserHost) {
+      triggerToast("As the Host, you are already permanently seated at the top circle seat!");
+      return;
+    }
+    if (userSeatIndex !== null) {
+      triggerToast("You are already seated! Click 'Leave Seat' before taking another seat.");
+      return;
+    }
+    
+    // Emit to backend instead of local mutate
+    socket?.emit("take_seat", {
+      roomId: activeRoom?.id,
+      userId: authState.userId,
+      seatIndex: index,
+      userProfile: {
+        name: currentUserProfile?.displayName || authState.name || "Guest",
+        avatar: currentUserProfile?.avatarUrl || null,
+        role: "Speaker"
+      }
+    });
   };
 
-  const handleLeaveSeat = (e?: React.MouseEvent) => {
+  const handleLeaveSeat = async (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    setUserSeatIndex(null);
-    setIsMuted(true); // Leave seat and mute
+    socket?.emit("leave_seat", {
+      roomId: activeRoom?.id,
+      userId: authState.userId
+    });
+    setIsMuted(true);
+    try { await localParticipant?.setMicrophoneEnabled(false); } catch(e){}
     triggerToast("You left the speaking circle and returned to listeners.");
   };
 
   // Mic toggle handler
-  const handleMicToggle = () => {
+  const handleMicToggle = async () => {
     if (isMuted) {
+      // If host, unmute immediately (already seated at top)
+      if (isUserHost) {
+        setIsMuted(false);
+        try { await localParticipant?.setMicrophoneEnabled(true); } catch(e){}
+        triggerToast("Host speaking live!");
+        return;
+      }
       // Unmuting: Must sit down
       if (userSeatIndex === null) {
         // Find first empty seat slot
         const emptyIdx = seatOccupants.findIndex((occ, idx) => idx > 0 && occ === null);
         if (emptyIdx !== -1) {
           handleTakeSeat(emptyIdx);
+          triggerToast("Requesting seat...");
+          // LiveKit will update localParticipant.permissions.canPublish via WebSocket,
+          // but we still need to wait for it before setting microphone enabled.
+          // The most reliable way is an effect listening to `permissions.canPublish`,
+          // but here we can just set an intent state or just use a small poll.
+          let attempts = 0;
+          const pollPermissions = setInterval(async () => {
+            if (localParticipant?.permissions?.canPublish) {
+              clearInterval(pollPermissions);
+              try { await localParticipant.setMicrophoneEnabled(true); setIsMuted(false); } catch(e){}
+            }
+            if (++attempts > 20) clearInterval(pollPermissions); // 10 second timeout
+          }, 500);
         } else {
           triggerToast("All speaking seats are full! Wait for a seat to empty.");
         }
       } else {
         setIsMuted(false);
+        try { await localParticipant?.setMicrophoneEnabled(true); } catch(e){}
         triggerToast("Speaking live!");
       }
     } else {
       setIsMuted(true);
+      try { await localParticipant?.setMicrophoneEnabled(false); } catch(e){}
       triggerToast("Muted.");
     }
   };
 
   const triggerEmoji = (emoji: string) => {
-    if (activeRoom && authState?.userId) {
-      const socket = getSocket();
+    if (activeRoom && authState?.userId && socket) {
       socket.emit("send_reaction", { roomId: activeRoom.id, emoji });
     }
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!chatInput.trim() || !activeRoom || !authState?.userId) return;
-    
-    const socket = getSocket();
-    socket.emit("send_message", { 
-      roomId: activeRoom.id, 
-      userId: authState.userId, 
-      userProfile: {
-        name: currentUserProfile?.displayName || authState.name || "Guest",
-        avatar: currentUserProfile?.avatarUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
-      }, 
-      text: chatInput 
-    });
-
-    setChatInput("");
   };
 
   if (!activeRoom) {
@@ -877,153 +1086,131 @@ export default function CampfireRoomPage() {
     );
   }
 
+  if (isSessionTerminated || !activeRoom) return null;
+
   // Active Voice Room Rendering
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 pb-24 text-white relative">
+    <div className="flex-1 w-full max-w-[1600px] mx-auto px-4 md:px-6 py-2 text-white relative h-[calc(100vh-80px)] overflow-hidden flex flex-col">
+      <CampfirePresenceToast activeToasts={activeToasts} onDismiss={dismissToast} />
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full flex flex-col gap-6"
+        className="w-full h-full flex flex-col"
       >
-        {/* Header Area */}
-        <div className="flex items-center justify-between glass-panel p-4 rounded-2xl glass-glow-indigo">
-          <div className="flex items-center gap-4">
-            <div className="relative h-12 w-12 flex items-center justify-center rounded-2xl bg-zinc-950/80 border border-white/10 shrink-0">
-              <Flame className="h-6 w-6 text-brand-amber animate-pulse" />
-              <div className="absolute inset-0 rounded-2xl bg-brand-amber blur-md opacity-25" />
-            </div>
-            <div>
-              <div className="flex items-center flex-wrap gap-2">
-                <span className="text-[10px] uppercase font-bold tracking-widest text-brand-cyan">
-                  {activeRoom.category} Campfire
-                </span>
-                {activeRoom.visibility === 'PRIVATE' ? (
-                  <span className="flex items-center gap-1 text-[9px] bg-brand-purple/20 text-brand-purple px-1.5 py-0.5 rounded-full border border-brand-purple/30">
-                    <Lock className="h-2.5 w-2.5" /> Private
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-[9px] bg-emerald-500/20 text-emerald-450 px-1.5 py-0.5 rounded-full border border-emerald-500/30">
-                    <Unlock className="h-2.5 w-2.5" /> Public
-                  </span>
-                )}
-                <div className="flex items-center gap-1 text-[9px] text-zinc-400 font-mono bg-white/[0.03] border border-white/5 px-2 py-0.5 rounded-full hover:border-white/15 transition-all">
-                  <span className="text-zinc-500 font-bold">ID:</span>
-                  <span>{activeRoom.id}</span>
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(activeRoom.id);
-                      triggerToast(`Campfire ID "${activeRoom.id}" copied!`);
-                    }}
-                    className="hover:text-white transition-colors cursor-pointer ml-1 p-0.5 rounded"
-                    title="Copy Campfire ID"
-                  >
-                    <Copy className="h-2.5 w-2.5" />
-                  </button>
-                </div>
-              </div>
-              <h1 className="text-xl font-bold tracking-tight text-white line-clamp-1 mt-0.5">
-                {activeRoom.title}
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/5 text-xs text-zinc-400">
-              <Activity className="h-3.5 w-3.5 text-brand-emerald" />
-              <span>Energy:</span>
-              <span className="font-bold text-white">{roomEnergyState}</span>
-            </div>
-            {isUserHost && (
-              <div className="flex items-center gap-2">
-                {activeRoom.status === 'ACTIVE' || (activeRoom.status as string) === 'LIVE' ? (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await endCampfire.mutateAsync(activeRoom.id);
-                        triggerToast("Session ended. Returning to dashboard...");
-                        router.push("/profile/campfires");
-                      } catch (err) {
-                        triggerToast("Failed to end session.");
-                      }
-                    }}
-                    className="flex items-center gap-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 px-3 py-2 rounded-xl text-xs font-semibold border border-amber-500/30 transition-all cursor-pointer"
-                  >
-                    <span>End Session</span>
-                  </button>
-                ) : (
-                  <button
-                    onClick={async () => {
-                      try {
-                        await startCampfire.mutateAsync(activeRoom.id);
-                        triggerToast("Session started/restarted!");
-                      } catch (err) {
-                        triggerToast("Failed to start session.");
-                      }
-                    }}
-                    className="flex items-center gap-1.5 bg-brand-purple/20 hover:bg-brand-purple/35 text-brand-purple px-3 py-2 rounded-xl text-xs font-semibold border border-brand-purple/30 transition-all cursor-pointer"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" />
-                    <span>Restart Session</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={async () => {
-                    if (confirm("Are you sure you want to delete this campfire?")) {
-                      try {
-                        await deleteCampfire.mutateAsync(activeRoom.id);
-                        triggerToast("Campfire deleted.");
-                        router.push("/profile/campfires");
-                      } catch (err) {
-                        triggerToast("Failed to delete campfire.");
-                      }
-                    }
-                  }}
-                  className="flex items-center justify-center bg-rose-500/10 hover:bg-rose-500/25 text-rose-400 p-2 rounded-xl text-xs font-semibold border border-rose-500/20 transition-all cursor-pointer"
-                  title="Delete Campfire"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            )}
-            <button
-              onClick={async () => {
-                if (isUserHost && (activeRoom.status === 'ACTIVE' || (activeRoom.status as string) === 'LIVE')) {
-                  try {
-                    await endCampfire.mutateAsync(activeRoom.id);
-                  } catch (e) {}
-                }
-                router.push("/profile/campfires");
-              }}
-              className="flex items-center gap-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 px-4 py-2 rounded-xl text-xs font-semibold border border-rose-500/20 transition-all cursor-pointer"
-            >
-              <LogOut className="h-4 w-4 shrink-0" />
-              <span>Leave<span className="hidden sm:inline"> Campfire</span></span>
-            </button>
-          </div>
-        </div>
-
-        {/* Layout Grid: Centered Ring + Chat Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch min-h-[580px]">
+        <div className="flex flex-col md:grid md:grid-cols-[1fr_380px] gap-4 md:gap-6 w-full h-full min-h-0 pb-2 md:pb-0">
           
           {/* Campfire Visual Core Area */}
-          <div className="lg:col-span-2 glass-panel rounded-3xl p-6 relative flex flex-col justify-between overflow-hidden min-h-[500px]">
+          <div className="glass-panel rounded-3xl p-2.5 md:p-6 relative flex flex-col justify-between overflow-hidden h-[48vh] shrink-0 md:h-full border border-white/5">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(79,70,229,0.06),transparent_70%)] pointer-events-none" />
             <div className="absolute inset-0 opacity-[0.02] bg-[radial-gradient(circle_at_center,#ffffff_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
 
-            {activeRoom.description && activeRoom.description.trim() !== "" && activeRoom.description.trim() !== "No description provided." && (
-              <div className="text-center z-10 max-w-lg mx-auto bg-black/40 border border-white/5 backdrop-blur-md px-4 py-2 rounded-2xl">
-                <p className="text-xs text-zinc-300 italic line-clamp-2">
-                  "{activeRoom.description.trim()}"
-                </p>
+            {/* Mobile Menu Button */}
+            <div className="absolute top-4 left-4 z-30 md:hidden">
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="h-8 w-8 rounded-full bg-black/50 border border-white/10 flex items-center justify-center transition-all text-white backdrop-blur-md shadow-lg"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Mobile Menu Dropdown */}
+            <AnimatePresence>
+              {isMobileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, transformOrigin: "top left" }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="absolute top-14 left-4 z-40 bg-zinc-950/95 border border-white/10 rounded-2xl p-4 shadow-2xl backdrop-blur-xl w-[260px] flex flex-col gap-4 md:hidden"
+                >
+                  <div>
+                    <h3 className="text-white font-bold text-sm mb-2">{activeRoom.title}</h3>
+                    <div className="flex gap-2 mb-3">
+                      <span className="text-[9px] uppercase font-bold tracking-widest text-brand-cyan bg-brand-cyan/10 px-2 py-1 rounded-full">{activeRoom.category}</span>
+                      <span className="text-[9px] uppercase font-bold tracking-widest text-brand-purple bg-brand-purple/10 px-2 py-1 rounded-full">{activeRoom.mood}</span>
+                    </div>
+                    {activeRoom.description && (
+                      <p className="text-[10px] text-zinc-400 italic mb-4 pb-4 border-b border-white/10">"{activeRoom.description}"</p>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(activeRoom.id);
+                        triggerToast("Campfire ID copied!");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className="w-full text-left p-2 text-xs font-bold text-zinc-300 hover:bg-white/5 rounded-lg flex items-center gap-2"
+                    >
+                      <Copy className="h-4 w-4 text-brand-cyan" /> Copy Campfire ID
+                    </button>
+                    <button onClick={() => router.push("/profile/campfires")} className="w-full text-left p-2 text-xs font-bold text-zinc-300 hover:bg-white/5 rounded-lg flex items-center gap-2">
+                      <LogOut className="h-4 w-4" /> Leave Campfire
+                    </button>
+                    {isUserHost && (
+                      <>
+                        <button onClick={() => { if(confirm("End session?")) endCampfire.mutate(activeRoom.id); }} className="w-full text-left p-2 text-xs font-bold text-rose-400 hover:bg-rose-500/10 rounded-lg flex items-center gap-2">
+                          <Power className="h-4 w-4" /> End Session
+                        </button>
+                        <button onClick={() => { if(confirm("Delete campfire?")) deleteCampfire.mutate(activeRoom.id); }} className="w-full text-left p-2 text-xs font-bold text-red-500 hover:bg-red-500/10 rounded-lg flex items-center gap-2">
+                          <Trash2 className="h-4 w-4" /> Delete Campfire
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Top Right Copy Button (Same size on both phone & desktop) */}
+            <div className="absolute top-3 right-3 md:top-4 md:right-4 z-40 block">
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(activeRoom.id);
+                  triggerToast("Campfire ID copied!");
+                }}
+                className="h-10 w-10 rounded-full bg-black/60 border border-white/15 hover:bg-white/20 hover:border-white/30 flex items-center justify-center transition-all cursor-pointer text-zinc-200 hover:text-white shadow-xl backdrop-blur-md"
+                title="Copy Campfire ID"
+              >
+                <Copy className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Top Left Tags */}
+            <div className="absolute top-4 left-4 hidden md:flex flex-col gap-1.5 z-20 pointer-events-none">
+              <span className="text-[9px] uppercase font-bold tracking-widest text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 px-2 py-1 rounded-full w-max backdrop-blur-md shadow-sm">
+                {activeRoom.category}
+              </span>
+              <span className="text-[9px] uppercase font-bold tracking-widest text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-2 py-1 rounded-full w-max backdrop-blur-md shadow-sm">
+                {activeRoom.mood}
+              </span>
+            </div>
+
+            {/* Top Center Title */}
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 hidden md:flex flex-col items-center gap-1 z-20 pointer-events-none w-max max-w-[45%]">
+              <div className="flex items-center justify-center gap-2 bg-black/50 border border-white/5 backdrop-blur-lg px-4 py-1.5 rounded-full shadow-lg">
+                <h1 className="text-xs font-bold tracking-tight text-white line-clamp-1">
+                  {activeRoom.title}
+                </h1>
+                <div className="w-px h-3 bg-white/20 mx-1"></div>
+                {activeRoom.visibility === 'PRIVATE' ? (
+                  <span className="flex items-center gap-1 text-[8px] uppercase tracking-widest font-bold text-brand-purple shrink-0">
+                    <Lock className="h-2.5 w-2.5" /> Private
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[8px] uppercase tracking-widest font-bold text-emerald-400 shrink-0">
+                    <Unlock className="h-2.5 w-2.5" /> Public
+                  </span>
+                )}
               </div>
-            )}
+            </div>
 
             {/* THE Campfire CIRCLE GRAPH CONTAINER */}
-            <div className="relative flex-1 flex items-center justify-center min-h-[380px] w-full select-none">
-              
-              {/* Central Glowing Campfire */}
-              <div className="relative z-10 flex flex-col items-center justify-center">
+            <div className="relative flex-1 flex items-center justify-center min-h-[150px] w-full select-none overflow-hidden my-auto">
+              <div className="relative flex items-center justify-center w-[310px] h-[310px] scale-[0.66] md:scale-100 transition-transform origin-center shrink-0">
+                
+                {/* Central Glowing Campfire */}
+                <div className="relative z-10 flex flex-col items-center justify-center">
                 <div className={`absolute h-44 w-44 rounded-full blur-3xl transition-all duration-1000 ${
                   roomEnergyState === "Quiet" ? "bg-brand-amber/10 opacity-30" :
                   roomEnergyState === "Active" ? "bg-brand-amber/20 opacity-50" :
@@ -1132,7 +1319,7 @@ export default function CampfireRoomPage() {
               </div>
 
               {/* Orbit Ring visual guide */}
-              <div className="absolute border border-white/5 rounded-full w-[250px] h-[250px] pointer-events-none" />
+              <div className="absolute border border-white/5 rounded-full w-[240px] h-[240px] pointer-events-none" />
 
               {/* RENDER THE 6 SYSTEMATIC SEATS */}
               {seatOccupants.map((occupant, idx) => {
@@ -1145,7 +1332,7 @@ export default function CampfireRoomPage() {
                     key={`seat-${idx}`}
                     className="absolute z-20 transition-all duration-500"
                     style={{
-                      transform: "translate(-50%, -50%)",
+                      transform: `translate(-50%, -50%)`,
                       left: `calc(50% + ${pos.x}px)`,
                       top: `calc(50% + ${pos.y}px)`
                     }}
@@ -1204,6 +1391,20 @@ export default function CampfireRoomPage() {
                           </button>
                         )}
                       </div>
+                    ) : idx === 0 ? (
+                      <div
+                        onClick={() => triggerToast("The Host has temporarily stepped away. This top seat is strictly reserved and will auto-seat the Host immediately upon return.")}
+                        className="flex flex-col items-center justify-center h-14 w-14 rounded-full border-2 border-dashed border-purple-500/30 bg-purple-500/5 transition-all cursor-not-allowed relative shrink-0 aspect-square select-none group"
+                        style={{ width: "56px", height: "56px", minWidth: "56px", minHeight: "56px" }}
+                        title="Reserved exclusively for the Host"
+                      >
+                        <div className="h-5 w-5 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center shadow-inner">
+                          <span className="text-xs text-purple-400 font-black">👑</span>
+                        </div>
+                        <span className="absolute -bottom-5 text-[7px] font-extrabold text-purple-300 uppercase tracking-widest scale-85 select-none bg-zinc-950/95 px-1.5 py-0.5 rounded border border-purple-500/40 shadow-lg whitespace-nowrap">
+                          Host Away
+                        </span>
+                      </div>
                     ) : (
                       <button
                         onClick={() => handleTakeSeat(idx)}
@@ -1248,155 +1449,178 @@ export default function CampfireRoomPage() {
                 </AnimatePresence>
               </div>
             </div>
+          </div>
 
-            {/* BOTTOM CONTROL PANEL */}
-            <div className="z-10 flex flex-col md:flex-row items-center justify-between gap-4 bg-zinc-950/70 border border-white/5 p-4 rounded-2xl backdrop-blur-md">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={handleMicToggle}
-                  className={`h-11 w-11 rounded-xl flex items-center justify-center border transition-all cursor-pointer relative group shrink-0 ${
-                    isMuted
-                    ? "bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
-                    : "bg-gradient-to-br from-brand-emerald to-emerald-600 border-emerald-400/30 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)]"
-                  }`}
-                  title={isMuted ? "Muted (Click to speak)" : "Speaking Live (Click to mute)"}
-                >
-                  {!isMuted && (
-                    <>
-                      <span className="absolute -inset-1.5 rounded-xl bg-brand-emerald/20 border border-brand-emerald/30 animate-ping opacity-75" />
-                      <span className="absolute -inset-3 rounded-xl bg-brand-emerald/5 border border-brand-emerald/10 animate-pulse opacity-50" />
-                    </>
-                  )}
-                  {isMuted ? (
-                    <MicOff className="h-4.5 w-4.5 transition-transform group-hover:scale-110" />
-                  ) : (
-                    <Mic className="h-4.5 w-4.5 transition-transform group-hover:scale-110" />
-                  )}
-                </button>
-
-                {userSeatIndex !== null && (
-                  <button
-                    onClick={handleLeaveSeat}
-                    className="h-11 px-4 rounded-xl text-xs font-bold bg-white/5 border border-white/10 text-rose-400 hover:bg-white/10 hover:text-rose-350 cursor-pointer transition-all"
-                  >
-                    Leave Seat
-                  </button>
-                )}
-
-                <button
-                  onClick={() => setHasRaisedHand(!hasRaisedHand)}
-                  className={`h-11 w-11 rounded-xl flex items-center justify-center border transition-all cursor-pointer ${
-                    hasRaisedHand
-                    ? "bg-brand-amber/20 border-brand-amber text-brand-amber"
-                    : "bg-white/[0.02] border-white/10 text-zinc-400 hover:text-white"
-                  }`}
-                  title="Request to speak"
-                >
-                  <span className="text-lg">✋</span>
-                </button>
-              </div>
-
-              {/* Floating Reactions Toolbar */}
-              <div className="flex items-center gap-1.5 bg-black/40 p-1.5 rounded-xl border border-white/5">
-                {["🔥", "👏", "😂", "❤️", "😮"].map((emo) => (
-                  <button
-                    key={emo}
-                    onClick={() => triggerEmoji(emo)}
-                    className="h-8 w-8 text-lg rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
-                  >
-                    {emo}
-                  </button>
-                ))}
-              </div>
-
-              {/* Host Utility Panel Demo */}
-              {isUserHost && (
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold">
-                    Host Tools:
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <button className="p-2 rounded-lg bg-white/[0.02] border border-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Invite Friends">
-                      <UserPlus className="h-3.5 w-3.5" />
-                    </button>
-                    <button className="p-2 rounded-lg bg-white/[0.02] border border-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Mute All Speakers">
-                      <VolumeX className="h-3.5 w-3.5" />
-                    </button>
-                    <button className="p-2 rounded-lg bg-white/[0.02] border border-white/15 text-zinc-400 hover:text-white transition-colors cursor-pointer" title="Room Locks">
-                      <LockKeyhole className="h-3.5 w-3.5" />
-                    </button>
+            {/* Bottom Controls Wrapper (holds Rule + Tools) */}
+            <div className="z-20 flex flex-col gap-1.5 mt-auto shrink-0 pt-1 pb-0.5">
+              
+              {/* Bottom Center Rule/Description in normal flow */}
+              {activeRoom.description && activeRoom.description.trim() !== "" && activeRoom.description.trim() !== "No description provided." && (
+                <div className="hidden md:flex justify-center w-full max-w-[80%] mx-auto pointer-events-none">
+                  <div className="bg-black/50 border border-white/5 backdrop-blur-md px-5 py-2 rounded-2xl shadow-xl text-center inline-block">
+                    <p className="text-[11px] text-zinc-300 italic">
+                      "{activeRoom.description.trim()}"
+                    </p>
                   </div>
                 </div>
               )}
+
+              {/* BOTTOM CONTROL PANEL */}
+              <div className="flex flex-row items-center justify-center flex-wrap gap-2 md:gap-4 bg-zinc-950/80 border border-white/5 px-3 py-2 md:p-4 rounded-2xl backdrop-blur-md self-center mx-auto mb-0 w-max max-w-full">
+                <div className="flex items-center gap-2 md:gap-3">
+                  <button
+                    onClick={handleMicToggle}
+                    className={`h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center border transition-all cursor-pointer relative group shrink-0 ${
+                      isMuted
+                      ? "bg-rose-500/10 border-rose-500/30 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/50 shadow-[0_0_15px_rgba(239,68,68,0.1)] hover:shadow-[0_0_20px_rgba(239,68,68,0.2)]"
+                      : "bg-gradient-to-br from-brand-emerald to-emerald-600 border-emerald-400/30 text-white shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_25px_rgba(16,185,129,0.6)]"
+                    }`}
+                    title={isMuted ? "Muted (Click to speak)" : "Speaking Live (Click to mute)"}
+                  >
+                    {!isMuted && (
+                      <>
+                        <span className="absolute -inset-1.5 rounded-xl bg-brand-emerald/20 border border-brand-emerald/30 animate-ping opacity-75" />
+                        <span className="absolute -inset-3 rounded-xl bg-brand-emerald/5 border border-brand-emerald/10 animate-pulse opacity-50" />
+                      </>
+                    )}
+                    {isMuted ? (
+                      <MicOff className="h-4 w-4 md:h-4.5 md:w-4.5 transition-transform group-hover:scale-110" />
+                    ) : (
+                      <Mic className="h-4 w-4 md:h-4.5 md:w-4.5 transition-transform group-hover:scale-110" />
+                    )}
+                  </button>
+
+                  {userSeatIndex !== null && (
+                    <button
+                      onClick={handleLeaveSeat}
+                      className="h-9 px-3 md:h-11 md:px-4 rounded-xl text-[10px] md:text-xs font-bold bg-white/5 border border-white/10 text-rose-400 hover:bg-white/10 hover:text-rose-350 cursor-pointer transition-all"
+                    >
+                      Leave Seat
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setHasRaisedHand(!hasRaisedHand);
+                      if(!hasRaisedHand) triggerToast("Hand raised!");
+                    }}
+                    className={`h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center border transition-all cursor-pointer shrink-0 ${
+                      hasRaisedHand
+                      ? "bg-amber-500/20 border-amber-500/40 text-amber-500 hover:bg-amber-500/30"
+                      : "bg-white/[0.02] border-white/10 text-zinc-400 hover:text-white"
+                    }`}
+                    title="Request to speak"
+                  >
+                    <span className="text-sm md:text-lg">✋</span>
+                  </button>
+                  
+                  {/* Floating Reactions Emoji Button */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsEmojiMenuOpen(!isEmojiMenuOpen)}
+                      className="h-9 w-9 md:h-11 md:w-11 rounded-xl flex items-center justify-center bg-white/[0.02] border border-white/10 transition-all cursor-pointer shrink-0 hover:bg-white/10 text-sm md:text-lg"
+                      title="React"
+                    >
+                      😀
+                    </button>
+                    <AnimatePresence>
+                      {isEmojiMenuOpen && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                          className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-1.5 bg-zinc-900 p-2 rounded-xl border border-white/10 shadow-2xl z-50"
+                        >
+                          {["🔥", "👏", "😂", "❤️", "😮"].map((emo) => (
+                            <button
+                              key={emo}
+                              onClick={() => { triggerEmoji(emo); setIsEmojiMenuOpen(false); }}
+                              className="h-8 w-8 text-lg rounded-lg hover:bg-white/10 transition-colors flex items-center justify-center cursor-pointer"
+                            >
+                              {emo}
+                            </button>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
+                <div className="hidden md:flex items-center gap-2">
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest font-bold mr-1">
+                    TOOLS:
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      onClick={() => {
+                        leaveRoom(activeRoom.id, authState.userId!);
+                        disconnectVoice();
+                        router.push("/profile/campfires");
+                      }}
+                      className="p-2 rounded-lg bg-zinc-500/10 border border-zinc-500/30 text-zinc-400 hover:text-white hover:bg-zinc-500/20 transition-all shadow-sm cursor-pointer" 
+                      title="Leave Campfire"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+
+                    {isUserHost && (
+                      <>
+                        <div className="w-px h-5 bg-white/10 mx-1"></div>
+                        <button 
+                          onClick={() => {
+                            if (confirm("Are you sure you want to end this session for everyone?")) {
+                              endCampfire.mutate(activeRoom.id, {
+                                onSuccess: () => {
+                                  triggerToast("Session Ended");
+                                  leaveRoom(activeRoom.id, authState.userId!);
+                                  disconnectVoice();
+                                  router.push("/profile/campfires");
+                                }
+                              });
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 transition-all shadow-sm cursor-pointer" 
+                          title="End Session"
+                        >
+                          <Power className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (confirm("Are you sure you want to delete this campfire?")) {
+                              deleteCampfire.mutate(activeRoom.id, {
+                                onSuccess: () => {
+                                  triggerToast("Campfire deleted.");
+                                  router.push('/profile/campfires');
+                                }
+                              });
+                            }
+                          }}
+                          className="p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 hover:text-red-400 hover:bg-red-500/20 transition-all shadow-sm cursor-pointer" 
+                          title="Delete Campfire"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Chat Panel Right */}
-          <div className="glass-panel rounded-3xl p-5 flex flex-col justify-between overflow-hidden min-h-[500px] border border-white/5">
-            <div className="flex items-center justify-between pb-3 border-b border-white/5">
-              <div className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4 text-brand-cyan" />
-                <span className="text-sm font-bold text-white">Campfire Chat</span>
-              </div>
-              <span className="text-[10px] bg-brand-cyan/15 text-brand-cyan px-2 py-0.5 rounded-full font-bold">
-                {chatMessages.length} Messages
-              </span>
-            </div>
-
-            <div className="flex-1 overflow-y-auto no-scrollbar py-4 space-y-4 max-h-[360px]">
-              {chatMessages.map((msg) => (
-                <div key={msg.id} className="flex gap-3 text-xs">
-                  {msg.sender === "Campfire Keeper" ? (
-                    <div className="bg-brand-purple/10 border border-brand-purple/20 p-2.5 rounded-xl w-full text-zinc-300">
-                      <p className="font-semibold text-brand-purple mb-0.5 flex items-center gap-1">
-                        <Sparkles className="h-3 w-3" /> System Log
-                      </p>
-                      <p>{msg.text}</p>
-                    </div>
-                  ) : (
-                    <>
-                      <div
-                        onClick={() => setZoomedAvatar({ url: msg.avatar, name: msg.sender })}
-                        className="h-8 w-8 rounded-full border border-white/10 shrink-0 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden select-none"
-                      >
-                        <CompanionAvatar
-                          avatar={msg.avatar}
-                          name={msg.sender}
-                          className="h-full w-full text-xs"
-                        />
-                      </div>
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold text-zinc-200">{msg.sender}</span>
-                          <span className="text-[9px] text-zinc-500">{msg.time}</span>
-                        </div>
-                        <p className="text-zinc-400 bg-white/[0.02] border border-white/5 px-2.5 py-1.5 rounded-xl break-all">
-                          {msg.text}
-                        </p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-
-            <form onSubmit={handleSendMessage} className="pt-3 border-t border-white/5 flex gap-2">
-              <input
-                type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type campfire thoughts..."
-                className="flex-1 bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-brand-purple/50 text-white placeholder-zinc-500"
-              />
-              <button
-                type="submit"
-                className="h-9 w-9 bg-brand-purple hover:bg-brand-purple/90 rounded-xl flex items-center justify-center transition-colors cursor-pointer text-white"
-              >
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
-          </div>
+          <ChatContainer 
+            roomId={activeRoom.id}
+            socket={socket}
+            campfireTitle={activeRoom.title} 
+            participantCount={Math.max(((activeRoom.currentSpeakers || 0) + (activeRoom.currentListeners || 0)) || 1, seatOccupants.filter(Boolean).length + listenersList.length)}
+            currentUser={{
+              id: authState.userId!,
+              fullName: currentUserProfile?.displayName || authState.name || "Guest",
+              role: isUserHost ? "Host" : (userSeatIndex !== null ? "Speaker" : "Listener"),
+              avatar: currentUserProfile?.avatarUrl || null
+            }} 
+          />
         </div>
       </motion.div>
 

@@ -6,6 +6,7 @@ import chatReducer from './slices/chatSlice';
 import communityWizardReducer from './slices/communityWizardSlice';
 import communityMembershipReducer from './slices/communityMembershipSlice';
 import communityDiscoveryReducer from './slices/communityDiscoverySlice';
+import campfireReducer from './slices/campfireSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     communityWizard: communityWizardReducer,
     communityMembership: communityMembershipReducer,
     communityDiscovery: communityDiscoveryReducer,
+    campfire: campfireReducer,
   },
   devTools: process.env.NODE_ENV !== 'production',
 });

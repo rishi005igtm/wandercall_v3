@@ -58,6 +58,30 @@ export const useEndCampfire = () => {
   });
 };
 
+export const useRestartCampfire = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: (id: string) => campfireApi.restart(id),
+    onSuccess: (data, id) => {
+      queryClient.setQueryData(QUERY_KEYS.CAMPFIRES.DETAIL(id), data);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
+    },
+  });
+};
+
+export const useTransitionCampfireLifecycle = (id: string) => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (targetStatus: any) => campfireApi.transitionLifecycle(id, targetStatus),
+    onSuccess: (data) => {
+      queryClient.setQueryData(QUERY_KEYS.CAMPFIRES.DETAIL(id), data);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
+    },
+  });
+};
+
 export const useCampfireSearch = (params: Record<string, any>, options?: { enabled?: boolean }) => {
   return useQuery({
     queryKey: QUERY_KEYS.CAMPFIRES.SEARCH(params),
@@ -73,7 +97,9 @@ export const useCreateCampfire = () => {
     mutationFn: (data: CreateCampfireDto) => campfireApi.create(data),
     onSuccess: (newCampfire) => {
       queryClient.setQueryData(QUERY_KEYS.CAMPFIRES.DETAIL(newCampfire.id), newCampfire);
-      queryClient.invalidateQueries({ queryKey: ['campfires'] });
+      queryClient.invalidateQueries({
+        predicate: (query) => query.queryKey[0] === 'campfires' && query.queryKey[1] !== 'detail'
+      });
     },
   });
 };
@@ -86,11 +112,18 @@ export const useToggleReminder = () => {
     onSuccess: (data, id) => {
       if (data.campfire) {
         queryClient.setQueryData(QUERY_KEYS.CAMPFIRES.DETAIL(id), data.campfire);
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CAMPFIRES.ALL });
       }
-      queryClient.invalidateQueries({ queryKey: ['campfires'] });
     },
   });
 };
+
+export const useJoinSession = () => {
+  return useMutation({
+    mutationFn: (id: string) => campfireApi.joinSession(id),
+  });
+};
+
 
 export const useWorkspaceCampfires = (tab: 'hosted' | 'joined' | 'saved', options?: { enabled?: boolean }) => {
   return useQuery({

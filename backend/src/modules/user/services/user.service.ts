@@ -27,6 +27,7 @@ import { RelationshipService } from './relationship.service';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
+  private profilePromiseCache = new Map<string, Promise<UserProfileResponseDto>>();
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -198,6 +199,21 @@ export class UserService {
   }
 
   async getProfileByUserId(userId: string): Promise<UserProfileResponseDto> {
+    if (this.profilePromiseCache.has(userId)) {
+      return this.profilePromiseCache.get(userId)!;
+    }
+
+    const promise = this._getProfileByUserId(userId);
+    this.profilePromiseCache.set(userId, promise);
+    
+    try {
+      return await promise;
+    } finally {
+      this.profilePromiseCache.delete(userId);
+    }
+  }
+
+  private async _getProfileByUserId(userId: string): Promise<UserProfileResponseDto> {
     this.logger.log(`Profile fetch: Requesting profile for userId '${userId}'`);
     let profile = await this.userRepository.findByUserId(userId);
     const authUser = await this.authRepository.findById(userId);

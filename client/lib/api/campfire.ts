@@ -6,8 +6,12 @@ export enum CampfireVisibility {
 }
 
 export enum CampfireStatus {
+  DRAFT = 'DRAFT',
   SCHEDULED = 'SCHEDULED',
+  WAITING = 'WAITING',
+  LIVE = 'LIVE',
   ACTIVE = 'ACTIVE',
+  ENDING = 'ENDING',
   ENDED = 'ENDED',
   ARCHIVED = 'ARCHIVED',
 }
@@ -64,6 +68,10 @@ export interface Campfire {
   hostName?: string;
   hostAvatar?: string;
   hostUsername?: string;
+  currentParticipants?: number;
+  participantsCount?: number;
+  isHostOnline?: boolean;
+  onlineUserIds?: string[];
 }
 
 
@@ -162,8 +170,18 @@ export const campfireApi = {
     return response.data;
   },
 
-  recordJoin: async (id: string): Promise<{ success: boolean }> => {
-    const response = await httpClient.post(`/campfires/${id}/join`);
+  restart: async (id: string): Promise<Campfire> => {
+    const response = await httpClient.post(`/campfires/${id}/restart`);
+    return response.data;
+  },
+
+  transitionLifecycle: async (id: string, targetStatus: CampfireStatus): Promise<Campfire> => {
+    const response = await httpClient.post(`/campfires/${id}/lifecycle`, { targetStatus });
+    return response.data;
+  },
+
+  joinSession: async (id: string): Promise<{ token: string; wsUrl: string; role: string; campfireId: string; roomName: string }> => {
+    const response = await httpClient.post(`/campfires/${id}/join-session`);
     return response.data;
   },
 

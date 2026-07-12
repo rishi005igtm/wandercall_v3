@@ -33,11 +33,11 @@ export class CampfireDiscoveryRepository {
       const rawRow = raw.find((r) => r.campfire_id === item.id);
       if (rawRow) {
         item.hostName = rawRow.userProfile_displayName || rawRow.userAuth_displayName || 'Wanderer';
-        item.hostAvatar = rawRow.userProfile_avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+        item.hostAvatar = rawRow.userProfile_avatarUrl || null;
         item.hostUsername = rawRow.userProfile_username || null;
       } else {
         item.hostName = 'Wanderer';
-        item.hostAvatar = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+        item.hostAvatar = null;
       }
     });
     
@@ -73,8 +73,11 @@ export class CampfireDiscoveryRepository {
     }
 
     if (query.status) {
-      const targetStatus = (query.status as string) === 'LIVE' ? 'ACTIVE' : query.status;
-      qb.andWhere('campfire.status = :status', { status: targetStatus });
+      if ((query.status as string) === 'LIVE' || (query.status as string) === 'ACTIVE') {
+        qb.andWhere('campfire.status IN (:...statuses)', { statuses: ['LIVE', 'ACTIVE'] });
+      } else {
+        qb.andWhere('campfire.status = :status', { status: query.status });
+      }
     }
 
     if (query.communityId) {

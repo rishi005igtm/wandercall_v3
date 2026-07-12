@@ -1,64 +1,75 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EventEmitter } from 'events';
-import { RedisService } from '../../redis/redis-core.service';
-import { CampfireRedisKeys } from '../constants/campfire.redis-keys';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { CampfireEntity } from '../entities/campfire.entity';
 
-export const CampfireEvents = {
-  CREATED: 'CAMPFIRE_CREATED',
-  UPDATED: 'CAMPFIRE_UPDATED',
-  DELETED: 'CAMPFIRE_DELETED',
-  STARTED: 'CAMPFIRE_STARTED',
-  CLOSED: 'CAMPFIRE_CLOSED',
-};
+export enum CampfireEvents {
+  CREATED = 'campfire.created',
+  UPDATED = 'campfire.updated',
+  DELETED = 'campfire.deleted',
+  STARTED = 'campfire.started',
+  ENDED = 'campfire.ended',
+  RESTARTED = 'campfire.restarted',
+  PARTICIPANT_JOINED = 'campfire.participant.joined',
+  PARTICIPANT_LEFT = 'campfire.participant.left',
+}
+
+export interface CampfireParticipantEventPayload {
+  campfireId: string;
+  userId: string;
+  displayName: string;
+  avatar: string;
+  role: string;
+  action: 'JOINED' | 'LEFT';
+  timestamp: string;
+}
 
 @Injectable()
-export class CampfireEventDispatcher extends EventEmitter {
+export class CampfireEventDispatcher {
   private readonly logger = new Logger(CampfireEventDispatcher.name);
 
-  constructor(private readonly redisService: RedisService) {
-    super();
-    this.setMaxListeners(50);
+  constructor(private readonly eventEmitter: EventEmitter2) {}
+
+  emitCreated(campfire: CampfireEntity) {
+    this.logger.debug(`Emitting CREATED for campfire ${campfire.id}`);
+    this.eventEmitter.emit(CampfireEvents.CREATED, campfire);
   }
 
-  emit(eventName: string | symbol, ...args: any[]): boolean {
-    const result = super.emit(eventName, ...args);
-    const payload = args[0];
-    
-    if (payload && payload.id) {
-      const channel = CampfireRedisKeys.events(payload.id);
-      this.redisService.client.publish(channel, JSON.stringify({ event: eventName, payload }))
-        .catch(err => this.logger.error(`Redis publish failed for ${String(eventName)}`, err));
-    } else if (payload && payload.campfireId) {
-      const channel = CampfireRedisKeys.events(payload.campfireId);
-      this.redisService.client.publish(channel, JSON.stringify({ event: eventName, payload }))
-        .catch(err => this.logger.error(`Redis publish failed for ${String(eventName)}`, err));
-    }
-
-    return result;
+  emitUpdated(campfire: CampfireEntity) {
+    this.logger.debug(`Emitting UPDATED for campfire ${campfire.id}`);
+    this.eventEmitter.emit(CampfireEvents.UPDATED, campfire);
   }
 
-  dispatchCreated(campfire: any) {
-    this.logger.debug(`Dispatching event: ${CampfireEvents.CREATED}`);
-    this.emit(CampfireEvents.CREATED, campfire);
+  emitDeleted(campfireId: string) {
+    this.logger.debug(`Emitting DELETED for campfire ${campfireId}`);
+    this.eventEmitter.emit(CampfireEvents.DELETED, { id: campfireId });
   }
 
-  dispatchUpdated(campfire: any) {
-    this.logger.debug(`Dispatching event: ${CampfireEvents.UPDATED}`);
-    this.emit(CampfireEvents.UPDATED, campfire);
+  emitStarted(campfire: CampfireEntity) {
+    this.logger.debug(`Emitting STARTED for campfire ${campfire.id}`);
+    this.eventEmitter.emit(CampfireEvents.STARTED, campfire);
   }
 
-  dispatchDeleted(campfireId: string, communityId: string) {
-    this.logger.debug(`Dispatching event: ${CampfireEvents.DELETED}`);
-    this.emit(CampfireEvents.DELETED, { campfireId, communityId });
+  emitEnded(campfire: CampfireEntity) {
+    this.logger.debug(`Emitting ENDED for campfire ${campfire.id}`);
+    this.eventEmitter.emit(CampfireEvents.ENDED, campfire);
   }
 
-  dispatchStarted(campfire: any) {
-    this.logger.debug(`Dispatching event: ${CampfireEvents.STARTED}`);
-    this.emit(CampfireEvents.STARTED, campfire);
+  emitRestarted(campfire: CampfireEntity) {
+    this.logger.debug(`Emitting RESTARTED for campfire ${campfire.id}`);
+    this.eventEmitter.emit(CampfireEvents.RESTARTED, campfire);
   }
 
-  dispatchClosed(campfire: any) {
-    this.logger.debug(`Dispatching event: ${CampfireEvents.CLOSED}`);
-    this.emit(CampfireEvents.CLOSED, campfire);
+  emitParticipantJoined(payload: CampfireParticipantEventPayload) {
+    this.logger.debug(`Emitting PARTICIPANT_JOINED for user ${payload.userId} in room ${payload.campfireId}`);
+    this.eventEmitter.emit(CampfireEvents.PARTICIPANT_JOINED, payload);
+  }
+
+  emitParticipantLeft(payload: CampfireParticipantEventPayload) {
+    this.logger.debug(`Emitting PARTICIPANT_LEFT for user ${payload.userId} in room ${payload.campfireId}`);
+    this.eventEmitter.emit(CampfireEvents.PARTICIPANT_LEFT, payload);
+  }
+
+  on(event: string, callback: (...args: any[]) => void) {
+    this.eventEmitter.on(event, callback);
   }
 }

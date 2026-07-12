@@ -4,8 +4,10 @@ export enum CampfireVisibility {
 }
 
 export enum CampfireStatus {
+  DRAFT = 'DRAFT',
   SCHEDULED = 'SCHEDULED',
-  ACTIVE = 'ACTIVE',
+  WAITING = 'WAITING',
+  LIVE = 'LIVE',
   ENDED = 'ENDED',
   ARCHIVED = 'ARCHIVED',
 }
@@ -15,24 +17,37 @@ export enum CampfireMood {
   DEEP_DISCUSSION = 'DEEP_DISCUSSION',
   LEARNING = 'LEARNING',
   CASUAL = 'CASUAL',
-  ADVENTURE = 'ADVENTURE',
   TRAVEL = 'TRAVEL',
+  ADVENTURE = 'ADVENTURE',
 }
 
 export enum CampfireCategory {
-  ADVENTURE = 'ADVENTURE',
-  FOOD = 'FOOD',
+  TRAVEL = 'TRAVEL',
   PHOTOGRAPHY = 'PHOTOGRAPHY',
   STORYTELLING = 'STORYTELLING',
-  TRAVEL = 'TRAVEL',
   LEARNING = 'LEARNING',
+  ADVENTURE = 'ADVENTURE',
+  FOOD = 'FOOD',
+}
+
+export enum CampfireParticipantRole {
+  HOST = 'HOST',
+  MODERATOR = 'MODERATOR',
+  SPEAKER = 'SPEAKER',
+  LISTENER = 'LISTENER',
+}
+
+export enum CampfireParticipantStatus {
+  CONNECTED = 'CONNECTED',
+  DISCONNECTED = 'DISCONNECTED',
+  BANNED = 'BANNED',
 }
 
 export const CAMPFIRE_ERROR_MESSAGES = {
   NOT_FOUND: 'Campfire not found',
-  ALREADY_STARTED: 'Campfire has already started',
-  ALREADY_ENDED: 'Campfire has already ended',
-  CAPACITY_REACHED: 'Campfire is full',
-  SPEAKER_LIMIT_REACHED: 'Speaker limit reached',
-  UNAUTHORIZED: 'You do not have permission to perform this action',
+  UNAUTHORIZED: 'You are not authorized to perform this action',
+  INVALID_STATUS_TRANSITION: 'Invalid status transition',
+  ROOM_FULL: 'Campfire is currently at full capacity',
+  PASSCODE_REQUIRED: 'Passcode is required for private campfires',
+  INVALID_PASSCODE: 'Invalid passcode',
 };

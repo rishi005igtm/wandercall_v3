@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { store } from '../lib/store/store';
 import { AuthBootstrap } from './AuthBootstrap';
 import { SocketProvider } from './SocketProvider';
+import { CampfireSessionProvider } from './CampfireSessionProvider';
+import { CampfireVoiceProvider } from './CampfireVoiceProvider';
 
 export function AppProviders({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -28,7 +30,11 @@ export function AppProviders({ children }: { children: React.ReactNode }) {
         <AuthBootstrap>
           {/* SocketProvider mounts after auth is bootstrapped so it always has the token */}
           <SocketProvider>
-            {children}
+            <CampfireVoiceProvider>
+              <CampfireSessionProvider>
+                {children}
+              </CampfireSessionProvider>
+            </CampfireVoiceProvider>
           </SocketProvider>
         </AuthBootstrap>
       </QueryClientProvider>

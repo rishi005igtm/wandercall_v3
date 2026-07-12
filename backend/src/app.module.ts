@@ -45,8 +45,14 @@ import { RedisModule } from './modules/redis';
 // Campfire Platform
 import { CampfireModule } from './modules/campfire/campfire.module';
 import { CampfireEntity } from './modules/campfire/entities/campfire.entity';
+import { LiveSessionEntity } from './modules/campfire/entities/live-session.entity';
+import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     RedisModule,
     AppConfigModule,
     TypeOrmModule.forRootAsync({
@@ -89,6 +95,7 @@ import { CampfireEntity } from './modules/campfire/entities/campfire.entity';
             CommunityBanEntity,
             // Campfire Platform entities
             CampfireEntity,
+            LiveSessionEntity,
           ],
           synchronize: false, // Handled on startup via DatabaseInitializerService
           autoLoadEntities: true,

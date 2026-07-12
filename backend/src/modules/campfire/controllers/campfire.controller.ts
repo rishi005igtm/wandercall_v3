@@ -1,97 +1,103 @@
 import {
   Controller,
-  Get,
   Post,
-  Patch,
   Delete,
+  Get,
   Param,
   Body,
-  Query,
   UseGuards,
-  HttpCode,
-  HttpStatus,
-  createParamDecorator,
-  ExecutionContext,
+  Req,
+  Query,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CampfireService } from '../services/campfire.service';
 import { CreateCampfireDto } from '../dto/create-campfire.dto';
-import { UpdateCampfireDto } from '../dto/update-campfire.dto';
-import { CampfireQueryDto } from '../dto/campfire-query.dto';
-
-export interface AuthUser {
-  userId: string;
-  email: string;
-  role: string;
-  accountStatus: string;
-}
-
-export const GetUser = createParamDecorator(
-  (_data: unknown, ctx: ExecutionContext): AuthUser => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
-  },
-);
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { LivekitService } from '../services/livekit.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('campfires')
 export class CampfireController {
-  constructor(private readonly campfireService: CampfireService) {}
+  constructor(
+    private readonly campfireService: CampfireService,
+    private readonly livekitService: LivekitService,
+  ) {}
 
   @Post()
-  async createCampfire(@GetUser() user: AuthUser, @Body() dto: CreateCampfireDto) {
-    return this.campfireService.create(user.userId, dto);
+  async create(@Req() req: any, @Body() dto: CreateCampfireDto) {
+    const userId = req.user.userId || req.user.id;
+    return this.campfireService.create(userId, dto);
   }
 
-  @Get()
-  async getCampfires(@Query() query: CampfireQueryDto) {
-    return this.campfireService.findAndCount(query);
+  @Get('live')
+  async getLive(@Query('limit') limit?: number, @Query('offset') offset?: number) {
+    return this.campfireService.getLiveCampfires(limit, offset);
+  }
+
+  @Get('search')
+  async search(@Query() query: any) {
+    return this.campfireService.search(query);
   }
 
   @Get('workspace/:tab')
-  async getWorkspace(@GetUser() user: AuthUser, @Param('tab') tab: string) {
-    return this.campfireService.findWorkspace(user.userId, tab);
+  async getWorkspace(@Req() req: any, @Param('tab') tab: 'hosted' | 'joined' | 'saved') {
+    const userId = req.user.userId || req.user.id;
+    return this.campfireService.getWorkspace(userId, tab);
   }
 
   @Get(':id')
-  async getCampfireById(@Param('id') id: string) {
+  async getById(@Param('id') id: string) {
     return this.campfireService.findById(id);
   }
 
-  @Post(':id/remind')
-  async toggleReminder(@GetUser() user: AuthUser, @Param('id') id: string) {
-    return this.campfireService.toggleReminder(id, user.userId);
-  }
-
-  @Post(':id/join')
-  async recordJoin(@GetUser() user: AuthUser, @Param('id') id: string) {
-    await this.campfireService.recordJoin(id, user.userId);
+  @Delete(':id')
+  async delete(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.userId || req.user.id;
+    await this.campfireService.softDelete(id, userId);
     return { success: true };
   }
 
+  @Post(':id/join-session')
+  async joinSession(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.userId || req.user.id;
+    const name = req.user.name || req.user.displayName || 'Explorer';
+    const campfire = await this.campfireService.findById(id);
+    
+    // The role at join is primarily Listener unless host.
+    // If they later take a seat, the gateway updates their permissions on the LiveKit server.
+    const isHost = campfire.hostId === userId;
+    const role = isHost ? 'Host' : 'Listener';
+    
+    const { token, roomName } = await this.livekitService.generateToken(id, userId, role, name);
+    const wsUrl = this.livekitService.getWsUrl();
+    
+    // --- TEMPORARY AUDIT LOG (Phase 2) ---
+    console.log(`[AUDIT - Phase 2] Generated Token for room: ${roomName}, user: ${userId}, role: ${role}`);
+    console.log(`[AUDIT - Phase 2] LiveKit WS URL: ${wsUrl}`);
+    console.log(`[AUDIT - Phase 2] Token string: ${token.substring(0, 30)}...`);
+    // -------------------------------------
 
-  @Patch(':id')
-  async updateCampfire(
-    @GetUser() user: AuthUser,
-    @Param('id') id: string,
-    @Body() dto: UpdateCampfireDto,
-  ) {
-    return this.campfireService.update(id, user.userId, dto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deleteCampfire(@GetUser() user: AuthUser, @Param('id') id: string) {
-    return this.campfireService.softDelete(id, user.userId);
-  }
-
-  @Post(':id/start')
-  async startCampfire(@GetUser() user: AuthUser, @Param('id') id: string) {
-    return this.campfireService.start(id, user.userId);
+    return {
+      token,
+      wsUrl,
+      roomName
+    };
   }
 
   @Post(':id/end')
-  async endCampfire(@GetUser() user: AuthUser, @Param('id') id: string) {
-    return this.campfireService.end(id, user.userId);
+  async endSession(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.userId || req.user.id;
+    return this.campfireService.endSession(id, userId);
+  }
+
+  @Post(':id/start')
+  async startSession(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.userId || req.user.id;
+    return this.campfireService.restartSession(id, userId);
+  }
+
+  @Post(':id/restart')
+  async restartSession(@Req() req: any, @Param('id') id: string) {
+    const userId = req.user.userId || req.user.id;
+    return this.campfireService.restartSession(id, userId);
   }
 }

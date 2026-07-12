@@ -1,207 +1,161 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException, Inject } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, NotFoundException, ForbiddenException, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
 import { CampfireRepository } from '../repositories/campfire.repository';
-import { CampfirePolicyService } from './campfire-policy.service';
-import { CampfireCacheService } from './campfire-cache.service';
-import { CreateCampfireDto } from '../dto/create-campfire.dto';
-import { UpdateCampfireDto } from '../dto/update-campfire.dto';
-import { CampfireQueryDto } from '../dto/campfire-query.dto';
-import { CampfireEntity } from '../entities/campfire.entity';
-import { CampfireStatus, CAMPFIRE_ERROR_MESSAGES } from '../constants/campfire.constant';
 import { CampfireEventDispatcher } from '../events/campfire-event.dispatcher';
+import { CampfirePresenceService } from './campfire-presence.service';
+import { CreateCampfireDto } from '../dto/create-campfire.dto';
+import { CampfireStatus, CAMPFIRE_ERROR_MESSAGES } from '../constants/campfire.constant';
+import { CampfireEntity } from '../entities/campfire.entity';
 
 @Injectable()
 export class CampfireService {
+  private readonly logger = new Logger(CampfireService.name);
+
   constructor(
     private readonly repository: CampfireRepository,
-    private readonly policyService: CampfirePolicyService,
-    private readonly cacheService: CampfireCacheService,
     private readonly eventDispatcher: CampfireEventDispatcher,
-    private readonly configService: ConfigService,
+    @Optional() @Inject(forwardRef(() => CampfirePresenceService)) private readonly presenceService?: CampfirePresenceService,
   ) {}
 
-  async create(userId: string, dto: CreateCampfireDto): Promise<CampfireEntity> {
-    if (!this.policyService.canCreateCampfire(userId, dto.communityId || '00000000-0000-0000-0000-000000000000')) {
-      throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.UNAUTHORIZED);
-    }
-
-    const defaultCapacity = this.configService.get<number>('campfire.limits.defaultCapacity', 50);
-    const defaultSpeakerLimit = this.configService.get<number>('campfire.limits.defaultSpeakerLimit', 10);
-    const defaultListenerLimit = this.configService.get<number>('campfire.limits.defaultListenerLimit', 50);
-
-    const scheduledDate = dto.scheduledStartAt ? new Date(dto.scheduledStartAt) : undefined;
-    const initialStatus = dto.status || (scheduledDate && scheduledDate > new Date() ? CampfireStatus.SCHEDULED : CampfireStatus.ACTIVE);
-    const startedAt = initialStatus === CampfireStatus.ACTIVE ? new Date() : undefined;
-
+  async create(hostId: string, dto: CreateCampfireDto): Promise<CampfireEntity> {
+    const isScheduled = !!dto.scheduledStartAt;
+    
+    // Safely extract scheduledStartAt to avoid type issues with spread
     const { scheduledStartAt, ...restDto } = dto;
-
+    
     const campfire = await this.repository.create({
       ...restDto,
-      communityId: dto.communityId || '00000000-0000-0000-0000-000000000000',
-      hostId: userId,
-      status: initialStatus,
-      scheduledStartAt: scheduledDate,
-      startedAt,
-      capacity: defaultCapacity,
-      speakerLimit: defaultSpeakerLimit,
-      listenerLimit: defaultListenerLimit,
-      currentSpeakers: initialStatus === CampfireStatus.ACTIVE ? 1 : 0,
-      currentListeners: 0,
+      hostId,
+      status: isScheduled ? CampfireStatus.SCHEDULED : CampfireStatus.LIVE,
+      startedAt: isScheduled ? null : new Date(),
+      scheduledStartAt: scheduledStartAt ? new Date(scheduledStartAt) : null,
     });
 
-    await this.cacheService.setCampfire(campfire);
-    this.eventDispatcher.dispatchCreated(campfire);
+    this.logger.debug(`Campfire created: ${campfire.id}`);
+    this.eventDispatcher.emitCreated(campfire);
 
-    return campfire;
-  }
-
-  async findById(id: string): Promise<CampfireEntity> {
-    let campfire = await this.cacheService.getCampfire(id);
-
-    if (!campfire) {
-      campfire = await this.repository.findById(id);
-      if (!campfire) {
-        throw new NotFoundException(CAMPFIRE_ERROR_MESSAGES.NOT_FOUND);
-      }
-      await this.cacheService.setCampfire(campfire);
+    if (!isScheduled) {
+      this.eventDispatcher.emitStarted(campfire);
     }
 
     return campfire;
   }
 
-  async findAndCount(query: CampfireQueryDto): Promise<{ data: CampfireEntity[]; total: number }> {
-    const [data, total] = await this.repository.findAndCount(query);
-    return { data, total };
-  }
-
-  async update(id: string, userId: string, dto: UpdateCampfireDto): Promise<CampfireEntity> {
-    const campfire = await this.findById(id);
-
-    if (!this.policyService.canUpdateCampfire(userId, campfire)) {
-      throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.UNAUTHORIZED);
+  async findById(id: string): Promise<any> {
+    const campfire = await this.repository.findById(id);
+    if (!campfire) throw new NotFoundException(CAMPFIRE_ERROR_MESSAGES.NOT_FOUND);
+    
+    if (this.presenceService) {
+      const snapshot = await this.presenceService.getRoomPresenceSnapshot(id, campfire.hostId);
+      return {
+        ...campfire,
+        currentParticipants: snapshot.participantsCount,
+        participantsCount: snapshot.participantsCount,
+        isHostOnline: snapshot.isHostOnline,
+        onlineUserIds: snapshot.onlineUserIds,
+      };
     }
 
-    const updated = await this.repository.update(id, dto);
-    await this.cacheService.setCampfire(updated);
-    this.eventDispatcher.dispatchUpdated(updated);
-
-    return updated;
+    return campfire;
   }
 
   async softDelete(id: string, userId: string): Promise<void> {
     const campfire = await this.findById(id);
-
-    if (!this.policyService.canDeleteCampfire(userId, campfire)) {
+    if (campfire.hostId !== userId) {
       throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.UNAUTHORIZED);
     }
 
     await this.repository.softDelete(id);
-    await this.cacheService.invalidateCampfire(id);
-    this.eventDispatcher.dispatchDeleted(id, campfire.communityId);
+    this.logger.debug(`Campfire deleted: ${id}`);
+    
+    this.eventDispatcher.emitDeleted(id);
   }
 
-  async start(id: string, userId: string): Promise<CampfireEntity> {
+  async endSession(id: string, userId: string): Promise<CampfireEntity> {
     const campfire = await this.findById(id);
-
-    if (!this.policyService.canStartCampfire(userId, campfire)) {
+    if (campfire.hostId !== userId) {
       throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.UNAUTHORIZED);
     }
 
-    if (campfire.status === CampfireStatus.ACTIVE) {
-      throw new BadRequestException(CAMPFIRE_ERROR_MESSAGES.ALREADY_STARTED);
-    }
-
-    const updated = await this.repository.update(id, {
-      status: CampfireStatus.ACTIVE,
-      startedAt: new Date(),
-      currentSpeakers: Math.max(1, campfire.currentSpeakers || 1),
-    });
-
-    await this.cacheService.setCampfire(updated);
-    this.eventDispatcher.dispatchStarted(updated);
-
-    return updated;
-  }
-
-  async end(id: string, userId: string): Promise<CampfireEntity> {
-    const campfire = await this.findById(id);
-
-    if (!this.policyService.canStopCampfire(userId, campfire)) {
-      throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.UNAUTHORIZED);
-    }
-
-    if (campfire.status === CampfireStatus.ENDED) {
-      throw new BadRequestException(CAMPFIRE_ERROR_MESSAGES.ALREADY_ENDED);
+    if (campfire.status !== CampfireStatus.LIVE) {
+      throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.INVALID_STATUS_TRANSITION);
     }
 
     const updated = await this.repository.update(id, {
       status: CampfireStatus.ENDED,
       endedAt: new Date(),
-      currentSpeakers: 0,
-      currentListeners: 0,
-    } as any);
+    });
 
-    await this.cacheService.setCampfire(updated);
-    this.eventDispatcher.dispatchClosed(updated);
-
+    this.logger.debug(`Campfire ended: ${id}`);
+    this.eventDispatcher.emitEnded(updated);
+    
     return updated;
   }
 
-  async updateParticipants(id: string, currentSpeakers: number, currentListeners: number): Promise<CampfireEntity> {
-    const updated = await this.repository.update(id, {
-      currentSpeakers,
-      currentListeners,
-    } as any);
-    await this.cacheService.setCampfire(updated);
-    this.eventDispatcher.dispatchUpdated(updated);
-    return updated;
-  }
-
-  async toggleReminder(id: string, userId: string): Promise<{ campfire: CampfireEntity; reminded: boolean }> {
+  async restartSession(id: string, userId: string): Promise<CampfireEntity> {
     const campfire = await this.findById(id);
-    const currentReminders = Array.isArray(campfire.remindedUserIds) ? [...campfire.remindedUserIds] : [];
-    const index = currentReminders.indexOf(userId);
-    let reminded = false;
-    if (index > -1) {
-      currentReminders.splice(index, 1);
-    } else {
-      currentReminders.push(userId);
-      reminded = true;
+    if (campfire.hostId !== userId) {
+      throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.UNAUTHORIZED);
     }
 
-    const updated = await this.repository.update(id, { remindedUserIds: currentReminders } as any);
-    await this.cacheService.setCampfire(updated);
-    this.eventDispatcher.dispatchUpdated(updated);
+    // You can restart an ENDED session, or "restart" a LIVE one (force refresh room)
+    const updated = await this.repository.update(id, {
+      status: CampfireStatus.LIVE,
+      startedAt: new Date(),
+      endedAt: null, // Reset ended at
+    });
 
-    return { campfire: updated, reminded };
+    this.logger.debug(`Campfire restarted: ${id}`);
+    this.eventDispatcher.emitRestarted(updated);
+    
+    return updated;
   }
 
-  async findWorkspace(userId: string, tab: string): Promise<CampfireEntity[]> {
+  async getLiveCampfires(limit: number = 20, offset: number = 0): Promise<{ items: CampfireEntity[], total: number }> {
+    const [items, total] = await this.repository.findLive(limit, offset);
+    return { items, total };
+  }
+
+  async search(query: any): Promise<{ items: CampfireEntity[], total: number }> {
+    const [items, total] = await this.repository.search(query);
+    return { items, total };
+  }
+
+  async getWorkspace(userId: string, tab: 'hosted' | 'joined' | 'saved'): Promise<any[]> {
     if (tab === 'hosted') {
-      const [items] = await this.repository.findAndCount({ hostId: userId, limit: 100 });
+      const [items] = await this.repository.search({ hostId: userId, limit: 100 });
       return items;
     }
-    if (tab === 'saved') {
-      const [items] = await this.repository.findAndCount({ savedByUserId: userId, limit: 100 } as any);
-      return items;
-    }
+
     if (tab === 'joined') {
-      const [items] = await this.repository.findAndCount({ participantUserId: userId, limit: 100 } as any);
-      return items.filter(c => c.hostId !== userId).slice(0, 4);
+      let campfireIds: string[] = [];
+
+      if (!this.presenceService || !this.presenceService['redisService']) {
+        campfireIds = this.presenceService?.fallbackJoinedCampfires.get(userId) || [];
+      } else {
+        const client = this.presenceService['redisService'].client;
+        if (!client || client.status !== 'ready') {
+          campfireIds = this.presenceService.fallbackJoinedCampfires.get(userId) || [];
+        } else {
+          const historyKey = `presence:user:${userId}:joined_campfires`;
+          // Get the highest scores (most recent)
+          campfireIds = await client.zrevrange(historyKey, 0, -1);
+        }
+      }
+
+      if (!campfireIds || campfireIds.length === 0) return [];
+
+      // Fetch these campfires from database
+      const promises = campfireIds.map(id => this.findById(id).catch(() => null));
+      const campfires = await Promise.all(promises);
+
+      return campfires.filter(c => c !== null);
     }
+
+    if (tab === 'saved') {
+      // Saved logic not currently implemented in DB
+      return [];
+    }
+
     return [];
   }
-
-  async recordJoin(id: string, userId: string): Promise<void> {
-    if (!id || !userId) return;
-    const campfire = await this.repository.findById(id);
-    if (!campfire || campfire.hostId === userId) return;
-
-    const currentJoined = Array.isArray(campfire.joinedUserIds) ? [...campfire.joinedUserIds] : [];
-    const filtered = currentJoined.filter((u) => u !== userId);
-    filtered.push(userId);
-
-    await this.repository.update(id, { joinedUserIds: filtered } as any);
-  }
 }
-

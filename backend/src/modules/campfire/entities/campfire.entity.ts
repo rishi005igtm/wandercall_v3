@@ -1,17 +1,17 @@
 import {
-  Column,
-  CreateDateColumn,
-  DeleteDateColumn,
   Entity,
-  Index,
+  Column,
   PrimaryGeneratedColumn,
+  CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
+  Index,
 } from 'typeorm';
 import {
-  CampfireCategory,
-  CampfireMood,
   CampfireStatus,
   CampfireVisibility,
+  CampfireCategory,
+  CampfireMood,
 } from '../constants/campfire.constant';
 
 @Entity('campfires')
@@ -19,82 +19,66 @@ export class CampfireEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'uuid' })
   @Index()
+  @Column({ type: 'uuid' })
   communityId: string;
 
-  @Column({ type: 'uuid' })
   @Index()
+  @Column({ type: 'uuid' })
   hostId: string;
 
+  @Index()
   @Column({ type: 'varchar', length: 150 })
   title: string;
 
   @Column({ type: 'text', nullable: true })
-  description?: string;
+  description: string;
 
-  @Column({ type: 'varchar', length: 50, default: CampfireCategory.ADVENTURE })
-  category: CampfireCategory;
+  @Column({
+    type: 'enum',
+    enum: CampfireStatus,
+    default: CampfireStatus.DRAFT,
+  })
+  status: CampfireStatus;
 
-  @Column({ type: 'varchar', length: 50, default: CampfireMood.STORYTELLING })
-  mood: CampfireMood;
-
-  @Column({ type: 'varchar', length: 20, default: CampfireVisibility.PUBLIC })
-  @Index()
+  @Column({
+    type: 'enum',
+    enum: CampfireVisibility,
+    default: CampfireVisibility.PUBLIC,
+  })
   visibility: CampfireVisibility;
 
-  @Column({ type: 'varchar', length: 20, default: CampfireStatus.SCHEDULED })
-  @Index()
-  status: CampfireStatus;
+  @Column({
+    type: 'enum',
+    enum: CampfireCategory,
+    default: CampfireCategory.ADVENTURE,
+  })
+  category: CampfireCategory;
+
+  @Column({
+    type: 'enum',
+    enum: CampfireMood,
+    default: CampfireMood.STORYTELLING,
+  })
+  mood: CampfireMood;
+
+  @Column({ type: 'jsonb', default: {} })
+  metadata: Record<string, any>;
 
   @Column({ type: 'int', default: 50 })
   capacity: number;
 
-  @Column({ type: 'int', default: 10 })
-  speakerLimit: number;
-
-  @Column({ type: 'int', default: 40 })
-  listenerLimit: number;
-
   @Column({ type: 'int', default: 0 })
-  currentSpeakers: number;
-
-  @Column({ type: 'int', default: 0 })
-  currentListeners: number;
+  currentParticipants: number;
 
   @Column({ type: 'timestamp', nullable: true })
-  @Index()
-  scheduledStartAt?: Date;
-
-  @Column({ type: 'jsonb', nullable: true, default: [] })
-  remindedUserIds?: string[];
-
-  @Column({ type: 'jsonb', nullable: true, default: [] })
-  joinedUserIds?: string[];
+  scheduledStartAt: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  startedAt?: Date;
+  startedAt: Date | null;
 
   @Column({ type: 'timestamp', nullable: true })
-  endedAt?: Date;
-
-  @Column({ type: 'varchar', length: 255, nullable: true })
-  livekitRoom?: string;
-
-  @Column({ type: 'boolean', default: false })
-  isLocked: boolean;
-
-  @Column({ type: 'boolean', default: false })
-  isRecording: boolean;
-
-  @Column({ type: 'boolean', default: false })
-  isArchived: boolean;
-
-  @Column({ type: 'jsonb', nullable: true, default: {} })
-  settings?: Record<string, any>;
-
-  @Column({ type: 'jsonb', nullable: true, default: {} })
-  metadata?: Record<string, any>;
+  endedAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;
@@ -103,14 +87,10 @@ export class CampfireEntity {
   updatedAt: Date;
 
   @DeleteDateColumn()
-  deletedAt?: Date;
+  deletedAt: Date | null;
 
-  // Virtual fields populated by joins or services
+  // Virtual fields for Discovery/Responses
   hostName?: string;
-  hostAvatar?: string;
-  hostUsername?: string;
-
-  constructor(partial: Partial<CampfireEntity>) {
-    Object.assign(this, partial);
-  }
+  hostAvatar?: string | null;
+  hostUsername?: string | null;
 }
