@@ -122,7 +122,7 @@ pipeline {
                         docker run -d \\
                             --name wandercall-api-prod \\
                             -p 5000:5000 \\
-                            --env-file .env.production \\
+                            --env-file /opt/wandercall/.env.production \\
                             --restart unless-stopped \\
                             ${DOCKER_IMAGE}:${BUILD_TAG}
                         """
