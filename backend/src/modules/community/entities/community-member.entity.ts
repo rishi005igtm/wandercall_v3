@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum CommunityMemberStatus {
   ACTIVE = 'ACTIVE',
@@ -45,7 +52,11 @@ export class CommunityMemberEntity {
   @Column({ type: 'timestamp', nullable: true })
   lastSeenAt?: Date;
 
-  @Column({ type: 'varchar', length: 20, default: CommunityMemberStatus.ACTIVE })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: CommunityMemberStatus.ACTIVE,
+  })
   status: CommunityMemberStatus;
 
   @CreateDateColumn()

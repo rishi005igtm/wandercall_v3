@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 export enum CommunityInviteStatus {
   PENDING = 'PENDING',
@@ -34,7 +41,11 @@ export class CommunityInviteEntity {
   @Column({ type: 'uuid', nullable: true })
   messageId?: string;
 
-  @Column({ type: 'varchar', length: 20, default: CommunityInviteStatus.PENDING })
+  @Column({
+    type: 'varchar',
+    length: 20,
+    default: CommunityInviteStatus.PENDING,
+  })
   status: CommunityInviteStatus;
 
   @CreateDateColumn()

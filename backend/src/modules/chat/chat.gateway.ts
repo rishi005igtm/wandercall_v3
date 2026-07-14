@@ -18,7 +18,10 @@ import { ChatService } from './services/chat.service';
 import { CommunityChatService } from './services/community-chat.service';
 import { PresenceService } from './services/presence.service';
 import { ChatEventDispatcher } from './services/chat-event.dispatcher';
-import { CommunityEventDispatcher, CommunityEvents } from '../community/events/community-event.dispatcher';
+import {
+  CommunityEventDispatcher,
+  CommunityEvents,
+} from '../community/events/community-event.dispatcher';
 import { ConversationRepository } from './repositories/conversation.repository';
 import {
   SendMessageDto,
@@ -56,7 +59,9 @@ import { PresenceStatus } from './interfaces/presence.interface';
   transports: ['websocket', 'polling'],
   path: '/socket.io/',
 })
-export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class ChatGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
 
@@ -87,7 +92,9 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     if (!userId) {
       this.logger.warn(`Socket ${socket.id} rejected — invalid or missing JWT`);
-      socket.emit(SOCKET_EVENTS.AUTH_ERROR, { message: 'Authentication required.' });
+      socket.emit(SOCKET_EVENTS.AUTH_ERROR, {
+        message: 'Authentication required.',
+      });
       socket.disconnect(true);
       return;
     }
@@ -96,7 +103,11 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     this.presenceService.connect(userId, socket.id);
     await socket.join(`user:${userId}`);
 
-    socket.emit(SOCKET_EVENTS.CONNECTED, { socketId: socket.id, userId, status: PresenceStatus.ONLINE });
+    socket.emit(SOCKET_EVENTS.CONNECTED, {
+      socketId: socket.id,
+      userId,
+      status: PresenceStatus.ONLINE,
+    });
 
     // Notify only users who share a conversation with this user, not ALL sockets globally.
     // For now we broadcast to the server room for this user — presence is lightweight.
@@ -114,8 +125,12 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
 
     this.presenceService.disconnect(userId, socket.id);
     const isStillOnline = this.presenceService.isOnline(userId);
-    
-    this.chatEventDispatcher.dispatchUserDisconnected(userId, socket.id, isStillOnline);
+
+    this.chatEventDispatcher.dispatchUserDisconnected(
+      userId,
+      socket.id,
+      isStillOnline,
+    );
 
     if (!isStillOnline) {
       const presence = this.presenceService.getPresence(userId);
@@ -134,16 +149,20 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage(SOCKET_EVENTS.SEND_MESSAGE)
   async handleSendMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() rawData: any,
-  ): Promise<any> {
+    @MessageBody() rawData: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId) return this.ackError('AUTH_REQUIRED', 'Not authenticated.');
 
     const dto = plainToInstance(SendMessageDto, rawData);
     const errors = await validate(dto);
     if (errors.length > 0) {
-      const detail = errors.map((e) => Object.values(e.constraints ?? {}).join(', ')).join('; ');
-      this.logger.warn(`[SendMsg:Invalid] socketId=${socket.id} userId=${userId} errors=${detail}`);
+      const detail = errors
+        .map((e) => Object.values(e.constraints ?? {}).join(', '))
+        .join('; ');
+      this.logger.warn(
+        `[SendMsg:Invalid] socketId=${socket.id} userId=${userId} errors=${detail}`,
+      );
       return this.ackError('VALIDATION_ERROR', detail);
     }
 
@@ -157,8 +176,13 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
         createdAt: message.createdAt,
       };
     } catch (error: any) {
-      this.logger.error(`[SendMsg:Fail] socketId=${socket.id} error=${error.message}`);
-      return this.ackError(error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED', error.message);
+      this.logger.error(
+        `[SendMsg:Fail] socketId=${socket.id} error=${error.message}`,
+      );
+      return this.ackError(
+        error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
+        error.message,
+      );
     }
   }
 
@@ -166,15 +190,17 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   handleTypingStart(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: TypingDto,
-  ): any {
+  ): Record<string, unknown> {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId) return { success: false };
 
     this.presenceService.startTyping(userId, data.conversationId);
-    socket.to(`conv:${data.conversationId}`).emit(SOCKET_EVENTS.TYPING_START_BROADCAST, {
-      userId,
-      conversationId: data.conversationId,
-    });
+    socket
+      .to(`conv:${data.conversationId}`)
+      .emit(SOCKET_EVENTS.TYPING_START_BROADCAST, {
+        userId,
+        conversationId: data.conversationId,
+      });
     return { success: true };
   }
 
@@ -182,15 +208,17 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   handleTypingStop(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: TypingDto,
-  ): any {
+  ): Record<string, unknown> {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId) return { success: false };
 
     this.presenceService.stopTyping(userId, data.conversationId);
-    socket.to(`conv:${data.conversationId}`).emit(SOCKET_EVENTS.TYPING_STOP_BROADCAST, {
-      userId,
-      conversationId: data.conversationId,
-    });
+    socket
+      .to(`conv:${data.conversationId}`)
+      .emit(SOCKET_EVENTS.TYPING_STOP_BROADCAST, {
+        userId,
+        conversationId: data.conversationId,
+      });
     return { success: true };
   }
 
@@ -198,12 +226,14 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleMarkDelivered(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: MarkDeliveredDto,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.messageId) return { success: false };
     try {
       await this.chatService.markDelivered(data.messageId, userId);
-    } catch (_) { /* non-critical */ }
+    } catch (_) {
+      /* non-critical */
+    }
     return { success: true };
   }
 
@@ -211,17 +241,28 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleMarkRead(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: MarkReadDto,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId) return { success: false };
     try {
       if (data.messageId) {
-        await this.chatService.markRead(userId, data.conversationId, data.messageId);
+        await this.chatService.markRead(
+          userId,
+          data.conversationId,
+          data.messageId,
+        );
       } else {
-        await this.conversationRepository.clearUnreadCount(data.conversationId, userId);
-        this.server.to(`user:${userId}`).emit('conversation:updated', { conversationId: data.conversationId });
+        await this.conversationRepository.clearUnreadCount(
+          data.conversationId,
+          userId,
+        );
+        this.server.to(`user:${userId}`).emit('conversation:updated', {
+          conversationId: data.conversationId,
+        });
       }
-    } catch (_) { /* non-critical */ }
+    } catch (_) {
+      /* non-critical */
+    }
     return { success: true };
   }
 
@@ -229,7 +270,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleOpenConversation(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: OpenConversationDto,
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.conversationId) {
       return this.ackError('VALIDATION_ERROR', 'conversationId required.');
@@ -240,20 +281,38 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
       await socket.join(`conv:${data.conversationId}`);
 
       // 2. Clear unread count and update lastReadAt
-      await this.conversationRepository.clearUnreadCount(data.conversationId, userId);
-      
+      await this.conversationRepository.clearUnreadCount(
+        data.conversationId,
+        userId,
+      );
+
       // Notify the user's sockets to update conversation list (e.g. unread count to 0)
-      this.server.to(`user:${userId}`).emit('conversation:updated', { conversationId: data.conversationId });
+      this.server
+        .to(`user:${userId}`)
+        .emit('conversation:updated', { conversationId: data.conversationId });
 
       // 3. Bulk-deliver any SENT messages the user hasn't received yet
-      await this.chatService.markConversationDelivered(data.conversationId, userId);
+      await this.chatService.markConversationDelivered(
+        data.conversationId,
+        userId,
+      );
 
       // 4. Load recent history
-      const { items } = await this.chatService.getMessages(userId, data.conversationId, 30);
+      const { items } = await this.chatService.getMessages(
+        userId,
+        data.conversationId,
+        30,
+      );
 
-      return { success: true, conversationId: data.conversationId, messages: items };
+      return {
+        success: true,
+        conversationId: data.conversationId,
+        messages: items,
+      };
     } catch (error: any) {
-      this.logger.error(`[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`);
+      this.logger.error(
+        `[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`,
+      );
       return this.ackError('OPEN_FAILED', error.message);
     }
   }
@@ -266,9 +325,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleJoinCommunity(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: { communityId: string },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
-    if (!userId || !data?.communityId) return this.ackError('VALIDATION_ERROR', 'communityId required.');
+    if (!userId || !data?.communityId)
+      return this.ackError('VALIDATION_ERROR', 'communityId required.');
 
     try {
       await socket.join(`room:community:${data.communityId}`);
@@ -283,9 +343,10 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleLeaveCommunity(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: { communityId: string },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
-    if (!userId || !data?.communityId) return this.ackError('VALIDATION_ERROR', 'communityId required.');
+    if (!userId || !data?.communityId)
+      return this.ackError('VALIDATION_ERROR', 'communityId required.');
 
     try {
       await socket.leave(`room:community:${data.communityId}`);
@@ -299,41 +360,60 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   @SubscribeMessage('community:send_message')
   async handleCommunitySendMessage(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() rawData: any,
-  ): Promise<any> {
+    @MessageBody() rawData: Record<string, unknown>,
+  ): Promise<unknown> {
     const userId = socket.data.userId;
     if (!userId) return this.ackError('AUTH_REQUIRED', 'Not authenticated.');
-    if (!rawData.communityId) return this.ackError('VALIDATION_ERROR', 'communityId required.');
+    if (!rawData.communityId)
+      return this.ackError('VALIDATION_ERROR', 'communityId required.');
 
     const dto = plainToInstance(SendMessageDto, rawData);
     const errors = await validate(dto);
     if (errors.length > 0) {
-      const detail = errors.map((e) => Object.values(e.constraints ?? {}).join(', ')).join('; ');
-      this.logger.error(`[CommSendMsg:ValidationFail] socketId=${socket.id} error=${detail} rawData=${JSON.stringify(rawData)}`);
+      const detail = errors
+        .map((e) => Object.values(e.constraints ?? {}).join(', '))
+        .join('; ');
+      this.logger.error(
+        `[CommSendMsg:ValidationFail] socketId=${socket.id} error=${detail} rawData=${JSON.stringify(rawData)}`,
+      );
       return this.ackError('VALIDATION_ERROR', detail);
     }
 
     try {
-      const message = await this.communityChatService.sendMessage(userId, rawData.communityId, dto);
+      const message = await this.communityChatService.sendMessage(
+        userId,
+        rawData.communityId as string,
+        dto,
+      );
       return message;
     } catch (error: any) {
-      this.logger.error(`[CommSendMsg:Fail] socketId=${socket.id} error=${error.message}`);
-      return this.ackError(error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED', error.message);
+      this.logger.error(
+        `[CommSendMsg:Fail] socketId=${socket.id} error=${error.message}`,
+      );
+      return this.ackError(
+        error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
+        error.message,
+      );
     }
   }
 
   @SubscribeMessage('community:join-lobby')
   async handleJoinLobby(
     @ConnectedSocket() socket: Socket,
-    @MessageBody() data: { communityId: string; user: any },
-  ): Promise<any> {
+    @MessageBody() data: { communityId: string; user: Record<string, unknown> },
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.communityId) return { success: false };
     await socket.join(`community:${data.communityId}`);
     await socket.join(`room:community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
       type: 'COMMUNITY_JOIN_LOBBY' as any,
-      payload: { communityId: data.communityId, userId, user: data.user, socketId: socket.id },
+      payload: {
+        communityId: data.communityId,
+        userId,
+        user: data.user,
+        socketId: socket.id,
+      },
     });
     return { success: true };
   }
@@ -342,7 +422,7 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
   async handleLeaveLobby(
     @ConnectedSocket() socket: Socket,
     @MessageBody() data: { communityId: string },
-  ): Promise<any> {
+  ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.communityId) return { success: false };
     await socket.leave(`community:${data.communityId}`);
@@ -373,113 +453,246 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
      *   server-side. This transitions status SENT → DELIVERED without requiring the
      *   client to explicitly emit mark-delivered.
      */
-    this.chatEventDispatcher.subscribe<MessageCreatedEvent>('MESSAGE_CREATED', async (payload) => {
-      const { message, recipientIds } = payload;
+    this.chatEventDispatcher.subscribe<MessageCreatedEvent>(
+      'MESSAGE_CREATED',
+      async (payload) => {
+        const { message, recipientIds } = payload;
 
-      for (const recipientId of recipientIds) {
-        // Emit message:new to all devices of this participant
-        this.server.to(`user:${recipientId}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
-          message: this.chatService.toResponseDto(message),
-          conversationId: message.conversationId,
-        });
+        for (const recipientId of recipientIds) {
+          // Emit message:new to all devices of this participant
+          this.server
+            .to(`user:${recipientId}`)
+            .emit(SOCKET_EVENTS.MESSAGE_NEW, {
+              message: this.chatService.toResponseDto(message),
+              conversationId: message.conversationId,
+            });
 
-        // Auto-deliver for RECIPIENTS (not the sender) who are online right now
-        if (recipientId !== message.senderId && this.presenceService.isOnline(recipientId)) {
-          try {
-            await this.chatService.markDelivered(message.id, recipientId);
-          } catch (_) { /* non-critical — status stays SENT if this fails */ }
+          // Auto-deliver for RECIPIENTS (not the sender) who are online right now
+          if (
+            recipientId !== message.senderId &&
+            this.presenceService.isOnline(recipientId)
+          ) {
+            try {
+              await this.chatService.markDelivered(message.id, recipientId);
+            } catch (_) {
+              /* non-critical — status stays SENT if this fails */
+            }
+          }
         }
-      }
-
-    });
+      },
+    );
 
     /** MESSAGE_DELIVERED → notify the sender their message was received */
-    this.chatEventDispatcher.subscribe<MessageDeliveredEvent>('MESSAGE_DELIVERED', (payload) => {
-      this.server.to(`user:${payload.senderId}`).emit(SOCKET_EVENTS.MESSAGE_DELIVERED, {
-        messageId: payload.messageId,
-        conversationId: payload.conversationId,
-        deliveredAt: payload.deliveredAt,
-      });
-    });
+    this.chatEventDispatcher.subscribe<MessageDeliveredEvent>(
+      'MESSAGE_DELIVERED',
+      (payload) => {
+        this.server
+          .to(`user:${payload.senderId}`)
+          .emit(SOCKET_EVENTS.MESSAGE_DELIVERED, {
+            messageId: payload.messageId,
+            conversationId: payload.conversationId,
+            deliveredAt: payload.deliveredAt,
+          });
+      },
+    );
 
     /** MESSAGE_READ → notify the sender their message was read */
-    this.chatEventDispatcher.subscribe<MessageReadEvent>('MESSAGE_READ', (payload) => {
-      this.server.to(`user:${payload.senderId}`).emit(SOCKET_EVENTS.MESSAGE_READ, {
-        messageId: payload.messageId,
-        conversationId: payload.conversationId,
-        readAt: payload.readAt,
-      });
-    });
+    this.chatEventDispatcher.subscribe<MessageReadEvent>(
+      'MESSAGE_READ',
+      (payload) => {
+        this.server
+          .to(`user:${payload.senderId}`)
+          .emit(SOCKET_EVENTS.MESSAGE_READ, {
+            messageId: payload.messageId,
+            conversationId: payload.conversationId,
+            readAt: payload.readAt,
+          });
+      },
+    );
 
     /** MESSAGE_EDITED → broadcast to all sockets in the conversation room */
-    this.chatEventDispatcher.subscribe<MessageEditedEvent>('MESSAGE_EDITED', (payload) => {
-      this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_EDITED, payload);
-    });
+    this.chatEventDispatcher.subscribe<MessageEditedEvent>(
+      'MESSAGE_EDITED',
+      (payload) => {
+        this.server
+          .to(`conv:${payload.conversationId}`)
+          .emit(SOCKET_EVENTS.MESSAGE_EDITED, payload);
+      },
+    );
 
     /** MESSAGE_DELETED → broadcast to all sockets in the conversation room */
-    this.chatEventDispatcher.subscribe<MessageDeletedEvent>('MESSAGE_DELETED', (payload) => {
-      this.server.to(`conv:${payload.conversationId}`).emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
-    });
+    this.chatEventDispatcher.subscribe<MessageDeletedEvent>(
+      'MESSAGE_DELETED',
+      (payload) => {
+        this.server
+          .to(`conv:${payload.conversationId}`)
+          .emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
+      },
+    );
 
     /** COMMUNITY_MESSAGE_CREATED → broadcast to all sockets in the community room */
-    this.chatEventDispatcher.subscribe<any>('COMMUNITY_MESSAGE_CREATED', (payload) => {
-      const { communityId, message } = payload;
-      this.server.to(`room:community:${communityId}`).to(`community:${communityId}`).emit(SOCKET_EVENTS.MESSAGE_NEW, {
-        message,
-        conversationId: message.conversationId,
-        communityId,
-      });
-    });
+    this.chatEventDispatcher.subscribe<any>(
+      'COMMUNITY_MESSAGE_CREATED',
+      (payload) => {
+        const { communityId, message } = payload;
+        this.server
+          .to(`room:community:${communityId}`)
+          .to(`community:${communityId}`)
+          .emit(SOCKET_EVENTS.MESSAGE_NEW, {
+            message,
+            conversationId: message.conversationId,
+            communityId,
+          });
+      },
+    );
 
-    this.communityEventDispatcher.on(CommunityEvents.MEMBER_MUTED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'MUTE' });
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.MEMBER_UNMUTED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'UNMUTE' });
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.MEMBER_BANNED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'BAN' });
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.MEMBER_UNBANNED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'UNBAN' });
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.MEMBER_WARNED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'WARN' });
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.MEMBER_KICKED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:moderation:action', { ...payload, action: 'KICK' });
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.ROLE_CHANGED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:role:updated', payload);
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.SETTINGS_UPDATED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:settings:updated', payload);
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.JOINED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:member:joined', payload);
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.LEFT, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:member:left', payload);
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.OWNER_TRANSFERRED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:ownership:transferred', payload);
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-    this.communityEventDispatcher.on(CommunityEvents.UPDATED, (payload: any) => {
-      this.server.to(`room:community:${payload.communityId}`).to(`community:${payload.communityId}`).emit('community:updated', payload);
-      this.server.emit('COMMUNITY_UPDATED', { communityId: payload.communityId });
-    });
-
+    this.communityEventDispatcher.on(
+      CommunityEvents.MEMBER_MUTED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:moderation:action', { ...payload, action: 'MUTE' });
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.MEMBER_UNMUTED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:moderation:action', {
+            ...payload,
+            action: 'UNMUTE',
+          });
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.MEMBER_BANNED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:moderation:action', { ...payload, action: 'BAN' });
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.MEMBER_UNBANNED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:moderation:action', { ...payload, action: 'UNBAN' });
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.MEMBER_WARNED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:moderation:action', { ...payload, action: 'WARN' });
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.MEMBER_KICKED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:moderation:action', { ...payload, action: 'KICK' });
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.ROLE_CHANGED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:role:updated', payload);
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.SETTINGS_UPDATED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:settings:updated', payload);
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.JOINED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:member:joined', payload);
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.LEFT,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:member:left', payload);
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.OWNER_TRANSFERRED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:ownership:transferred', payload);
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
+    this.communityEventDispatcher.on(
+      CommunityEvents.UPDATED,
+      (payload: Record<string, unknown>) => {
+        this.server
+          .to(`room:community:${payload.communityId}`)
+          .to(`community:${payload.communityId}`)
+          .emit('community:updated', payload);
+        this.server.emit('COMMUNITY_UPDATED', {
+          communityId: payload.communityId,
+        });
+      },
+    );
   }
 
   // ─────────────────────────────────────────────────────────
@@ -490,13 +703,19 @@ export class ChatGateway implements OnGatewayInit, OnGatewayConnection, OnGatewa
     try {
       const token =
         socket.handshake.auth?.token ||
-        (socket.handshake.headers?.authorization as string | undefined)?.replace('Bearer ', '') ||
+        socket.handshake.headers?.authorization?.replace('Bearer ', '') ||
         (socket.handshake.query?.token as string);
 
       if (!token) return null;
 
-      const secret = this.configService.get<string>('jwt.secret', 'wandercall_jwt_secret_key_2026');
-      const payload = this.jwtService.verify<{ sub: string; email: string }>(token, { secret });
+      const secret = this.configService.get<string>(
+        'jwt.secret',
+        'wandercall_jwt_secret_key_2026',
+      );
+      const payload = this.jwtService.verify<{ sub: string; email: string }>(
+        token,
+        { secret },
+      );
       return payload.sub ?? null;
     } catch {
       return null;

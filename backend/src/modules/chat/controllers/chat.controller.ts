@@ -20,6 +20,7 @@ import { ChatService } from '../services/chat.service';
 import { PresenceService } from '../services/presence.service';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { plainToInstance } from 'class-transformer';
+import { RequestWithUser } from '../../../core/interfaces/request-with-user.interface';
 
 // ─────────────────────────────────────────────────────────
 // Decorator — extract authenticated user from request
@@ -33,8 +34,8 @@ interface AuthUser {
 
 export const GetUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthUser => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
+    const request = ctx.switchToHttp().getRequest<RequestWithUser>();
+    return request.user as unknown as AuthUser;
   },
 );
 
@@ -72,8 +73,17 @@ export class ChatController {
     @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
     @Query('cursor') cursor?: string,
   ) {
-    const dateCursor = cursor && cursor.trim() !== '' && cursor !== 'undefined' ? new Date(cursor) : undefined;
-    return this.communityChatService.getMessages(user.userId, communityId, conversationId, dateCursor, limit);
+    const dateCursor =
+      cursor && cursor.trim() !== '' && cursor !== 'undefined'
+        ? new Date(cursor)
+        : undefined;
+    return this.communityChatService.getMessages(
+      user.userId,
+      communityId,
+      conversationId,
+      dateCursor,
+      limit,
+    );
   }
 
   /**
@@ -81,7 +91,9 @@ export class ChatController {
    * Gets the default base conversation for a community
    */
   @Get('communities/:communityId/default-conversation')
-  async getCommunityDefaultConversation(@Param('communityId') communityId: string) {
+  async getCommunityDefaultConversation(
+    @Param('communityId') communityId: string,
+  ) {
     return this.communityChatService.getDefaultConversation(communityId);
   }
 
@@ -89,7 +101,15 @@ export class ChatController {
   async sendMessage(
     @GetUser() user: AuthUser,
     @Param('conversationId') conversationId: string,
-    @Body() body: { clientMessageId: string; type?: string; text?: string; attachments?: any[]; replyToId?: string; metadata?: Record<string, any> },
+    @Body()
+    body: {
+      clientMessageId: string;
+      type?: string;
+      text?: string;
+      attachments?: any[];
+      replyToId?: string;
+      metadata?: Record<string, any>;
+    },
   ) {
     const dto = plainToInstance(SendMessageDto, {
       clientMessageId: body.clientMessageId,
@@ -121,7 +141,10 @@ export class ChatController {
     @GetUser() user: AuthUser,
     @Param('targetUserId') targetUserId: string,
   ) {
-    return this.chatService.getOrCreateDirectConversation(user.userId, targetUserId);
+    return this.chatService.getOrCreateDirectConversation(
+      user.userId,
+      targetUserId,
+    );
   }
 
   /**
@@ -135,7 +158,12 @@ export class ChatController {
     @Query('limit', new DefaultValuePipe(30), ParseIntPipe) limit: number,
     @Query('cursor') cursor?: string,
   ) {
-    return this.chatService.getMessages(user.userId, conversationId, limit, cursor);
+    return this.chatService.getMessages(
+      user.userId,
+      conversationId,
+      limit,
+      cursor,
+    );
   }
 
   /**

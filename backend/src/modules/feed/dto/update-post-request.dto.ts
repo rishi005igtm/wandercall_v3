@@ -1,4 +1,10 @@
-import { IsEnum, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { PostVisibility } from '../entities/post.entity';
 
@@ -9,7 +15,9 @@ export class UpdatePostRequestDto {
 
   @IsOptional()
   @IsString()
-  @MinLength(50, { message: 'Story details must be at least 50 characters long if updated.' })
+  @MinLength(50, {
+    message: 'Story details must be at least 50 characters long if updated.',
+  })
   content?: string;
 
   @IsOptional()
@@ -33,5 +41,4 @@ export class UpdatePostRequestDto {
   @Type(() => Number)
   @IsNumber()
   locationLon?: number;
-
 }

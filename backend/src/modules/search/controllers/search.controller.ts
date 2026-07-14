@@ -2,6 +2,7 @@ import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserSearchService } from '../services/user-search.service';
 import { SocialDiscoveryService } from '../services/social-discovery.service';
+import { RequestWithUser } from '../../../core/interfaces/request-with-user.interface';
 
 @Controller('search')
 @UseGuards(JwtAuthGuard)
@@ -13,7 +14,7 @@ export class SearchController {
 
   @Get('users')
   async searchUsers(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Query('q') q?: string,
     @Query('query') query?: string,
     @Query('limit') limit = '20',
@@ -44,7 +45,7 @@ export class SearchController {
 
   @Get('recommendations')
   async getRecommendations(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Query('limit') limit = '20',
     @Query('cursor') cursor?: string,
   ) {
@@ -56,12 +57,18 @@ export class SearchController {
   }
 
   @Get('circles')
-  async getExplorerCircles(@Req() req: any) {
+  async getExplorerCircles(@Req() req: RequestWithUser) {
     return this.discoveryService.getExplorerCirclesGraph(req.user.userId);
   }
 
   @Get('history')
-  async getSearchHistory(@Req() req: any, @Query('limit') limit = '10') {
-    return this.searchService.getSearchHistory(req.user.userId, parseInt(limit, 10));
+  async getSearchHistory(
+    @Req() req: RequestWithUser,
+    @Query('limit') limit = '10',
+  ) {
+    return this.searchService.getSearchHistory(
+      req.user.userId,
+      parseInt(limit, 10),
+    );
   }
 }

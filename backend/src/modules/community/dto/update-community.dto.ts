@@ -1,4 +1,11 @@
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { CommunityVisibility } from '../constants/community.constant';
 
 export class UpdateCommunityDto {

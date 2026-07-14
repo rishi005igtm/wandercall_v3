@@ -32,7 +32,10 @@ export class AuthRepository {
     return this.userRepo.save(user);
   }
 
-  async updateStatus(userId: string, status: AccountStatus): Promise<UserAuthEntity | null> {
+  async updateStatus(
+    userId: string,
+    status: AccountStatus,
+  ): Promise<UserAuthEntity | null> {
     await this.userRepo.update(userId, { accountStatus: status });
     return this.findById(userId);
   }
@@ -67,7 +70,10 @@ export class AuthRepository {
     await this.sessionRepo.delete(sessionId);
   }
 
-  async deleteSessionByIdAndUser(sessionId: string, userId: string): Promise<void> {
+  async deleteSessionByIdAndUser(
+    sessionId: string,
+    userId: string,
+  ): Promise<void> {
     await this.sessionRepo.delete({ id: sessionId, userId });
   }
 
@@ -79,18 +85,26 @@ export class AuthRepository {
     await this.sessionRepo.delete({ userId });
   }
 
-  async revokeOtherUserSessions(userId: string, currentSessionId: string): Promise<void> {
+  async revokeOtherUserSessions(
+    userId: string,
+    currentSessionId: string,
+  ): Promise<void> {
     await this.sessionRepo.update(
       { userId, id: Not(currentSessionId) },
       { isRevoked: true },
     );
   }
 
-  async deleteOtherUserSessions(userId: string, currentSessionId: string): Promise<void> {
+  async deleteOtherUserSessions(
+    userId: string,
+    currentSessionId: string,
+  ): Promise<void> {
     await this.sessionRepo.delete({ userId, id: Not(currentSessionId) });
   }
 
-  async findActiveSessionsByUserId(userId: string): Promise<UserSessionEntity[]> {
+  async findActiveSessionsByUserId(
+    userId: string,
+  ): Promise<UserSessionEntity[]> {
     return this.sessionRepo.find({
       where: { userId, isRevoked: false },
       order: { updatedAt: 'DESC' },

@@ -1,4 +1,14 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { Request } from 'express';
 import { RegisterRequestDto } from '../dto/register-request.dto';
 import { LoginRequestDto } from '../dto/login-request.dto';
@@ -8,6 +18,7 @@ import { AuthResponseDto } from '../dto/auth-response.dto';
 import { AuthService } from '../services/auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { UserSessionEntity } from '../entities/user-session.entity';
+import { RequestWithUser } from '../../../core/interfaces/request-with-user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -19,7 +30,8 @@ export class AuthController {
     @Body() dto: RegisterRequestDto,
     @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    const ip = req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
+    const ip =
+      req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
     const userAgent = req.headers['user-agent'] || 'Unknown';
     return this.authService.register(dto, ip, userAgent);
   }
@@ -47,7 +59,8 @@ export class AuthController {
     @Body() dto: LoginRequestDto,
     @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    const ip = req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
+    const ip =
+      req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
     const userAgent = req.headers['user-agent'] || 'Unknown';
     return this.authService.login(dto, ip, userAgent);
   }
@@ -58,7 +71,8 @@ export class AuthController {
     @Body() dto: GoogleAuthRequestDto,
     @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    const ip = req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
+    const ip =
+      req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
     const userAgent = req.headers['user-agent'] || 'Unknown';
     return this.authService.googleAuth(dto, ip, userAgent);
   }
@@ -69,7 +83,8 @@ export class AuthController {
     @Body() dto: RefreshTokenRequestDto,
     @Req() req: Request,
   ): Promise<AuthResponseDto> {
-    const ip = req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
+    const ip =
+      req.ip || (req.headers['x-forwarded-for'] as string) || '127.0.0.1';
     const userAgent = req.headers['user-agent'] || 'Unknown';
     return this.authService.refreshToken(dto, ip, userAgent);
   }
@@ -86,11 +101,11 @@ export class AuthController {
 
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
-  async getActiveSessions(@Req() req: any): Promise<any[]> {
+  async getActiveSessions(@Req() req: RequestWithUser): Promise<any[]> {
     const sessions = await this.authService.getActiveSessions(req.user.userId);
     return sessions.map((sess) => ({
       ...sess,
-      isCurrent: sess.id === req.user.sessionId,
+      isCurrent: sess.id === (req.user.sessionId as string),
     }));
   }
 
@@ -98,7 +113,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
   async revokeSession(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('sessionId') sessionId: string,
   ): Promise<{ message: string }> {
     await this.authService.revokeSessionById(req.user.userId, sessionId);
@@ -108,15 +123,22 @@ export class AuthController {
   @Post('sessions/revoke-others')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async revokeOtherSessions(@Req() req: any): Promise<{ message: string }> {
-    await this.authService.revokeOtherSessions(req.user.userId, req.user.sessionId);
+  async revokeOtherSessions(
+    @Req() req: RequestWithUser,
+  ): Promise<{ message: string }> {
+    await this.authService.revokeOtherSessions(
+      req.user.userId,
+      req.user.sessionId as string,
+    );
     return { message: 'All other device sessions successfully revoked.' };
   }
 
   @Post('sessions/revoke-all')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtAuthGuard)
-  async revokeAllSessions(@Req() req: any): Promise<{ message: string }> {
+  async revokeAllSessions(
+    @Req() req: RequestWithUser,
+  ): Promise<{ message: string }> {
     await this.authService.revokeAllSessions(req.user.userId);
     return { message: 'All active device sessions successfully revoked.' };
   }

@@ -6,7 +6,12 @@ import { PostRepository } from '../repositories/post.repository';
 import { InteractionRepository } from '../repositories/interaction.repository';
 import { FollowRepository } from '../../user/repositories/follow.repository';
 import { UserRepository } from '../../user/repositories/user.repository';
-import { PostEntity, PostStatus, PostVisibility, PostAuthorType } from '../entities/post.entity';
+import {
+  PostEntity,
+  PostStatus,
+  PostVisibility,
+  PostAuthorType,
+} from '../entities/post.entity';
 
 describe('Feed Recommendation & Ranking Suite', () => {
   let rankingEngine: RankingEngine;
@@ -47,7 +52,8 @@ describe('Feed Recommendation & Ranking Suite', () => {
     }).compile();
 
     rankingEngine = module.get<RankingEngine>(RankingEngine);
-    recommendationEngine = module.get<RecommendationEngine>(RecommendationEngine);
+    recommendationEngine =
+      module.get<RecommendationEngine>(RecommendationEngine);
   });
 
   afterEach(() => {
@@ -80,11 +86,11 @@ describe('Feed Recommendation & Ranking Suite', () => {
       });
 
       expect(score).toBeGreaterThan(0);
-      
+
       // Let's compare with an older post
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 10); // 10 days ago
-      
+
       const oldPost = new PostEntity({
         id: 'post-2',
         authorId: 'user-1',
@@ -127,14 +133,16 @@ describe('Feed Recommendation & Ranking Suite', () => {
         publishedAt: now,
       });
 
-      const unseenScore = rankingEngine.scorePost(post, { viewerId: 'viewer-1' });
-      const seenScore = rankingEngine.scorePost(post, { 
+      const unseenScore = rankingEngine.scorePost(post, {
         viewerId: 'viewer-1',
-        impressionCounts: { 'post-1': 1 }
+      });
+      const seenScore = rankingEngine.scorePost(post, {
+        viewerId: 'viewer-1',
+        impressionCounts: { 'post-1': 1 },
       });
 
       expect(seenScore).toBeLessThan(unseenScore);
-      expect(seenScore).toBeCloseTo(unseenScore * 0.20); // Penalty is 0.20
+      expect(seenScore).toBeCloseTo(unseenScore * 0.2); // Penalty is 0.20
     });
   });
 
@@ -191,17 +199,22 @@ describe('Feed Recommendation & Ranking Suite', () => {
         });
       });
 
-      const result = await recommendationEngine.getPersonalizedFeed('viewer-1', {
-        feedType: 'global',
-        limit: 1,
-      });
+      const result = await recommendationEngine.getPersonalizedFeed(
+        'viewer-1',
+        {
+          feedType: 'global',
+          limit: 1,
+        },
+      );
 
       expect(result.items).toHaveLength(1);
       expect(result.items[0].id).toBe('p-1'); // The high popularity, high interest one must be first
       expect(result.nextCursor).toBeDefined();
 
       // Check cursor contains stable data
-      const decodedCursor = JSON.parse(Buffer.from(result.nextCursor!, 'base64').toString('ascii'));
+      const decodedCursor = JSON.parse(
+        Buffer.from(result.nextCursor!, 'base64').toString('ascii'),
+      );
       expect(decodedCursor.offset).toBe(1);
       expect(decodedCursor.timestamp).toBeLessThanOrEqual(Date.now());
     });
@@ -249,12 +262,17 @@ describe('Feed Recommendation & Ranking Suite', () => {
       mockInteractionRepository.getImpressions.mockResolvedValue([]);
       mockInterestEngine.getUserInterestMap.mockResolvedValue({});
       mockFollowRepository.getFollowing.mockResolvedValue({ items: [] });
-      mockUserRepository.findByUserId.mockImplementation((id) => Promise.resolve({ userId: id }));
+      mockUserRepository.findByUserId.mockImplementation((id) =>
+        Promise.resolve({ userId: id }),
+      );
 
-      const result = await recommendationEngine.getPersonalizedFeed('viewer-1', {
-        feedType: 'global',
-        limit: 3,
-      });
+      const result = await recommendationEngine.getPersonalizedFeed(
+        'viewer-1',
+        {
+          feedType: 'global',
+          limit: 3,
+        },
+      );
 
       // Verification of diversity:
       // Index 0: p-1 (author-1, score = high)

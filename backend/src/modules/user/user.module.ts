@@ -19,10 +19,27 @@ import { RelationshipService } from './services/relationship.service';
     AuthModule,
     StorageModule,
     forwardRef(() => PrivacyModule),
-    TypeOrmModule.forFeature([UserProfileEntity, UserSettingsEntity, UserPlanEntity, FollowEntity]),
+    TypeOrmModule.forFeature([
+      UserProfileEntity,
+      UserSettingsEntity,
+      UserPlanEntity,
+      FollowEntity,
+    ]),
   ],
   controllers: [UserController],
-  providers: [UserService, UserRepository, FollowRepository, FollowService, RelationshipService],
-  exports: [UserService, UserRepository, FollowRepository, FollowService, RelationshipService],
+  providers: [
+    UserService,
+    UserRepository,
+    FollowRepository,
+    FollowService,
+    RelationshipService,
+  ],
+  exports: [
+    UserService,
+    UserRepository,
+    FollowRepository,
+    FollowService,
+    RelationshipService,
+  ],
 })
 export class UserModule {}

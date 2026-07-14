@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { AccountStatus } from '../enums/account-status.enum';
 import { UserRole } from '../enums/user-role.enum';
 

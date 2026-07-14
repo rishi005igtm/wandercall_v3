@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CampfireEntity } from '../entities/campfire.entity';
+import { CampfireStatus } from '../constants/campfire.constant';
 
 @Injectable()
 export class CampfireRepository {
@@ -23,7 +24,10 @@ export class CampfireRepository {
     return entity;
   }
 
-  async update(id: string, data: Partial<CampfireEntity>): Promise<CampfireEntity> {
+  async update(
+    id: string,
+    data: Partial<CampfireEntity>,
+  ): Promise<CampfireEntity> {
     await this.repo.update(id, data);
     const updated = await this.findById(id);
     if (!updated) throw new Error('Entity not found after update');
@@ -34,9 +38,12 @@ export class CampfireRepository {
     await this.repo.softDelete(id);
   }
 
-  async findLive(limit: number = 20, offset: number = 0): Promise<[CampfireEntity[], number]> {
+  async findLive(
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<[CampfireEntity[], number]> {
     const [items, total] = await this.repo.findAndCount({
-      where: { status: 'LIVE' as any },
+      where: { status: CampfireStatus.LIVE },
       order: { startedAt: 'DESC' },
       take: limit,
       skip: offset,
@@ -47,25 +54,34 @@ export class CampfireRepository {
 
   // Find campfires by host id, optionally excluding deleted via softDelete behavior
   async findByHostId(hostId: string): Promise<CampfireEntity[]> {
-    const items = await this.repo.find({ where: { hostId }, order: { createdAt: 'DESC' } });
+    const items = await this.repo.find({
+      where: { hostId },
+      order: { createdAt: 'DESC' },
+    });
     await this.hydrateHosts(items);
     return items;
   }
 
-  async search(query: any): Promise<[CampfireEntity[], number]> {
+  async search(query: {
+    status?: string;
+    hostId?: string;
+    communityId?: string;
+    limit?: number | string;
+    offset?: number | string;
+  }): Promise<[CampfireEntity[], number]> {
     const { status, hostId, communityId, limit = 20, offset = 0 } = query;
-    const where: any = {};
-    
+    const where: Record<string, unknown> = {};
+
     // The frontend passes 'ACTIVE' for live campfires.
     if (status === 'ACTIVE') {
-      where.status = 'LIVE';
+      where.status = CampfireStatus.LIVE;
     } else if (status) {
       where.status = status;
     }
-    
+
     if (hostId) where.hostId = hostId;
     if (communityId) where.communityId = communityId;
-    
+
     const [items, total] = await this.repo.findAndCount({
       where,
       order: { createdAt: 'DESC' },
@@ -76,24 +92,44 @@ export class CampfireRepository {
     return [items, total];
   }
 
-  private async hydrateHosts(items: CampfireEntity[]): Promise<CampfireEntity[]> {
+  private async hydrateHosts(
+    items: CampfireEntity[],
+  ): Promise<CampfireEntity[]> {
     if (!items || items.length === 0) return items;
-    const hostIds = Array.from(new Set(items.map(i => i.hostId).filter(Boolean)));
+    const hostIds = Array.from(
+      new Set(items.map((i) => i.hostId).filter(Boolean)),
+    );
     if (hostIds.length === 0) return items;
 
     try {
-      const profiles = await this.repo.manager.query(
+      const profiles: unknown = await this.repo.manager.query(
         `SELECT up."userId", up."displayName", up."avatarUrl", up."username", ua."displayName" as "authName"
          FROM users_auth ua
          LEFT JOIN users_profile up ON up."userId" = ua."id"
          WHERE ua."id" IN (${hostIds.map((_, i) => `$${i + 1}`).join(', ')})`,
-        hostIds
+        hostIds,
       );
 
-      const profileMap = new Map<string, any>(profiles.map((p: any) => [p.userId, p]));
+      const typedProfiles = profiles as Array<{
+        userId: string;
+        displayName?: string;
+        avatarUrl?: string;
+        username?: string;
+        authName?: string;
+      }>;
+      const profileMap = new Map<
+        string,
+        {
+          userId: string;
+          displayName?: string;
+          avatarUrl?: string;
+          username?: string;
+          authName?: string;
+        }
+      >(typedProfiles.map((p) => [p.userId, p]));
 
       for (const item of items) {
-        const p: any = profileMap.get(item.hostId);
+        const p = profileMap.get(item.hostId);
         if (p) {
           item.hostName = p.displayName || p.authName || 'Wanderer';
           item.hostAvatar = p.avatarUrl || null;
@@ -102,7 +138,7 @@ export class CampfireRepository {
           item.hostAvatar = null;
         }
       }
-    } catch (e) {
+    } catch {
       // Fallback if query fails
       for (const item of items) {
         if (!item.hostName) item.hostName = 'Wanderer';

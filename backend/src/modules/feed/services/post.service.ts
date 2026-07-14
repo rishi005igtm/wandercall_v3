@@ -1,4 +1,10 @@
-import { BadRequestException, Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PostRepository } from '../repositories/post.repository';
 import { InteractionRepository } from '../repositories/interaction.repository';
@@ -6,7 +12,12 @@ import { InterestEngine } from './interest.engine';
 import { StorageService } from '../../storage/services/storage.service';
 import { UploadIntent } from '../../storage/enums/upload-intent.enum';
 import { FeedEventDispatcher } from '../events/feed-event.dispatcher';
-import { PostEntity, PostStatus, PostAuthorType, PostVisibility } from '../entities/post.entity';
+import {
+  PostEntity,
+  PostStatus,
+  PostAuthorType,
+  PostVisibility,
+} from '../entities/post.entity';
 import { PostSaveEntity } from '../entities/post-save.entity';
 import { PostCommentEntity } from '../entities/post-comment.entity';
 import { PostLikeEntity } from '../entities/post-like.entity';
@@ -57,7 +68,6 @@ export class PostService {
     params: CreatePostParams,
     files?: { images?: Express.Multer.File[]; audio?: Express.Multer.File },
   ): Promise<PostEntity> {
-
     const postId = randomUUID();
 
     // Mapping authorization roles to publisher types
@@ -90,7 +100,9 @@ export class PostService {
       throw new BadRequestException('Adventure title is required.');
     }
     if (!post.content || post.content.trim().length < 50) {
-      throw new BadRequestException('Adventure story details must be at least 50 characters long.');
+      throw new BadRequestException(
+        'Adventure story details must be at least 50 characters long.',
+      );
     }
     if (!post.category || post.category.trim() === '') {
       throw new BadRequestException('Adventure category is required.');
@@ -98,7 +110,7 @@ export class PostService {
 
     // --- PHASE 3: METADATA GENERATION ---
     post.status = PostStatus.METADATA_GENERATED;
-    post.aiQualityScore = 1.0; 
+    post.aiQualityScore = 1.0;
     post.searchMetadata = {
       tags: [post.category, 'wandercall', 'explore'],
       indexedAt: new Date().toISOString(),
@@ -109,17 +121,16 @@ export class PostService {
     post.publishedAt = new Date();
     const savedPost = await this.postRepository.save(post);
 
-    
     try {
       const imageUrls: string[] = [];
       const imagePublicIds: string[] = [];
 
       if (files?.images && files.images.length > 0) {
-        const uploadPromises = files.images.map(file => 
-          this.storageService.uploadFile(file, UploadIntent.FEED_IMAGE, postId)
+        const uploadPromises = files.images.map((file) =>
+          this.storageService.uploadFile(file, UploadIntent.FEED_IMAGE, postId),
         );
         const metadatas = await Promise.all(uploadPromises);
-        metadatas.forEach(metadata => {
+        metadatas.forEach((metadata) => {
           imageUrls.push(metadata.secureUrl);
           imagePublicIds.push(metadata.publicId);
         });
@@ -143,7 +154,9 @@ export class PostService {
       this.eventDispatcher.dispatchPostCreated(savedPost);
       this.eventDispatcher.dispatchPostPublished(savedPost);
     } catch (err) {
-      this.logger.error(`[Lifecycle - Step 5: Processing] Failed processing for post ${postId}: ${err}`);
+      this.logger.error(
+        `[Lifecycle - Step 5: Processing] Failed processing for post ${postId}: ${err}`,
+      );
       savedPost.status = PostStatus.FAILED;
       await this.postRepository.save(savedPost);
     }
@@ -167,14 +180,17 @@ export class PostService {
 
     // Ensure editor is author or admin
     if (post.authorId !== userId && userRole !== UserRole.ADMIN) {
-      throw new ForbiddenException('You do not have permission to edit this coordinates log.');
+      throw new ForbiddenException(
+        'You do not have permission to edit this coordinates log.',
+      );
     }
 
     if (params.title !== undefined) post.title = params.title;
     if (params.content !== undefined) post.content = params.content;
     if (params.category !== undefined) post.category = params.category;
     if (params.visibility !== undefined) post.visibility = params.visibility;
-    if (params.locationName !== undefined) post.locationName = params.locationName;
+    if (params.locationName !== undefined)
+      post.locationName = params.locationName;
     if (params.locationLat !== undefined) post.locationLat = params.locationLat;
     if (params.locationLon !== undefined) post.locationLon = params.locationLon;
 
@@ -186,7 +202,11 @@ export class PostService {
   /**
    * Delete post and clean up uploaded media files to prevent storage leak.
    */
-  async deletePost(userId: string, userRole: UserRole, postId: string): Promise<void> {
+  async deletePost(
+    userId: string,
+    userRole: UserRole,
+    postId: string,
+  ): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
@@ -194,7 +214,9 @@ export class PostService {
 
     // Ensure permissions
     if (post.authorId !== userId && userRole !== UserRole.ADMIN) {
-      throw new ForbiddenException('You do not have permission to delete this coordinates log.');
+      throw new ForbiddenException(
+        'You do not have permission to delete this coordinates log.',
+      );
     }
 
     // Clean up images from Cloudinary
@@ -203,7 +225,9 @@ export class PostService {
         try {
           await this.storageService.deleteFile(publicId);
         } catch (err: any) {
-          this.logger.warn(`Failed to delete Cloudinary image asset ${publicId} on post delete: ${err.message}`);
+          this.logger.warn(
+            `Failed to delete Cloudinary image asset ${publicId} on post delete: ${err.message}`,
+          );
         }
       }
     }
@@ -213,7 +237,9 @@ export class PostService {
       try {
         await this.storageService.deleteFile(post.audioPublicId);
       } catch (err: any) {
-        this.logger.warn(`Failed to delete Cloudinary audio asset ${post.audioPublicId} on post delete: ${err.message}`);
+        this.logger.warn(
+          `Failed to delete Cloudinary audio asset ${post.audioPublicId} on post delete: ${err.message}`,
+        );
       }
     }
 
@@ -227,21 +253,34 @@ export class PostService {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    const state = await this.interactionRepository.getUserPostState(
+      userId,
+      postId,
+    );
     if (state?.hasLiked) {
       return; // Already liked
     }
 
-    await this.interactionRepository.addLike(new PostLikeEntity({
-      id: randomUUID(),
-      userId,
-      postId,
-    }));
-    await this.interactionRepository.upsertUserPostState(userId, postId, { hasLiked: true });
+    await this.interactionRepository.addLike(
+      new PostLikeEntity({
+        id: randomUUID(),
+        userId,
+        postId,
+      }),
+    );
+    await this.interactionRepository.upsertUserPostState(userId, postId, {
+      hasLiked: true,
+    });
     await this.postRepository.incrementLikes(postId);
 
     // Track interaction for personalization
-    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.LIKE);
+    await this.interestEngine.recordInteraction(
+      userId,
+      postId,
+      post.authorId,
+      post.category,
+      InteractionType.LIKE,
+    );
     this.eventDispatcher.dispatchLikeAdded(postId, userId, post.category);
   }
 
@@ -251,15 +290,27 @@ export class PostService {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    const state = await this.interactionRepository.getUserPostState(
+      userId,
+      postId,
+    );
     if (!state || !state.hasLiked) return; // Not liked
 
     await this.interactionRepository.removeLike(postId, userId);
-    await this.interactionRepository.upsertUserPostState(userId, postId, { hasLiked: false });
+    await this.interactionRepository.upsertUserPostState(userId, postId, {
+      hasLiked: false,
+    });
     await this.postRepository.decrementLikes(postId);
-    
+
     // Offset interest score by applying a negative view weight multiplier
-    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.LIKE, -1.0);
+    await this.interestEngine.recordInteraction(
+      userId,
+      postId,
+      post.authorId,
+      post.category,
+      InteractionType.LIKE,
+      -1.0,
+    );
     this.eventDispatcher.dispatchLikeRemoved(postId, userId, post.category);
   }
 
@@ -269,20 +320,33 @@ export class PostService {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    const state = await this.interactionRepository.getUserPostState(
+      userId,
+      postId,
+    );
     if (state?.hasSaved) {
       return; // Already saved
     }
 
-    await this.interactionRepository.saveSave(new PostSaveEntity({
-      id: randomUUID(),
-      userId,
-      postId,
-    }));
-    await this.interactionRepository.upsertUserPostState(userId, postId, { hasSaved: true });
+    await this.interactionRepository.saveSave(
+      new PostSaveEntity({
+        id: randomUUID(),
+        userId,
+        postId,
+      }),
+    );
+    await this.interactionRepository.upsertUserPostState(userId, postId, {
+      hasSaved: true,
+    });
     await this.postRepository.incrementSaves(postId);
 
-    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.SAVE);
+    await this.interestEngine.recordInteraction(
+      userId,
+      postId,
+      post.authorId,
+      post.category,
+      InteractionType.SAVE,
+    );
     this.eventDispatcher.dispatchSaveAdded(postId, userId, post.category);
   }
 
@@ -292,20 +356,36 @@ export class PostService {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
     }
 
-    const state = await this.interactionRepository.getUserPostState(userId, postId);
+    const state = await this.interactionRepository.getUserPostState(
+      userId,
+      postId,
+    );
     if (!state || !state.hasSaved) return; // Not saved
 
     await this.interactionRepository.deleteSave(postId, userId);
-    await this.interactionRepository.upsertUserPostState(userId, postId, { hasSaved: false });
+    await this.interactionRepository.upsertUserPostState(userId, postId, {
+      hasSaved: false,
+    });
     await this.postRepository.decrementSaves(postId);
-    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.SAVE, -1.0);
+    await this.interestEngine.recordInteraction(
+      userId,
+      postId,
+      post.authorId,
+      post.category,
+      InteractionType.SAVE,
+      -1.0,
+    );
     this.eventDispatcher.dispatchSaveRemoved(postId, userId, post.category);
   }
 
   /**
    * Add a comment to a post.
    */
-  async addComment(userId: string, postId: string, content: string): Promise<PostCommentEntity> {
+  async addComment(
+    userId: string,
+    postId: string,
+    content: string,
+  ): Promise<PostCommentEntity> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
@@ -320,8 +400,19 @@ export class PostService {
     const saved = await this.interactionRepository.addComment(comment);
     await this.postRepository.incrementComments(postId);
 
-    await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.COMMENT);
-    this.eventDispatcher.dispatchCommentAdded(postId, userId, saved.id, post.category);
+    await this.interestEngine.recordInteraction(
+      userId,
+      postId,
+      post.authorId,
+      post.category,
+      InteractionType.COMMENT,
+    );
+    this.eventDispatcher.dispatchCommentAdded(
+      postId,
+      userId,
+      saved.id,
+      post.category,
+    );
 
     return saved;
   }
@@ -375,15 +466,26 @@ export class PostService {
     await this.postRepository.incrementShares(postId);
 
     if (userId) {
-      await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.SHARE);
+      await this.interestEngine.recordInteraction(
+        userId,
+        postId,
+        post.authorId,
+        post.category,
+        InteractionType.SHARE,
+      );
       this.eventDispatcher.dispatchShareAdded(postId, userId, post.category);
     }
   }
 
   async trackView(
-    userId: string | null, 
-    postId: string, 
-    data: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string } = {}
+    userId: string | null,
+    postId: string,
+    data: {
+      feedSessionId?: string;
+      durationMs?: number;
+      lastVisiblePercent?: number;
+      sourceFeed?: string;
+    } = {},
   ): Promise<void> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
@@ -392,18 +494,29 @@ export class PostService {
 
     if (userId) {
       const duration = (data.durationMs || 1500) / 1000;
-      await this.interactionRepository.addImpression(new FeedImpressionEntity({
-        id: randomUUID(),
+      await this.interactionRepository.addImpression(
+        new FeedImpressionEntity({
+          id: randomUUID(),
+          userId,
+          postId,
+          feedSessionId: data.feedSessionId,
+          sourceFeed: data.sourceFeed || 'global',
+          lastVisiblePercent: data.lastVisiblePercent || 100,
+          totalVisibleDurationMs: data.durationMs || 1500,
+          completedViews: data.durationMs && data.durationMs > 3000 ? 1 : 0,
+        }),
+      );
+      await this.interactionRepository.upsertUserPostState(userId, postId, {
+        viewCount: 1,
+        totalVisibleTime: duration,
+      });
+      await this.interestEngine.recordInteraction(
         userId,
         postId,
-        feedSessionId: data.feedSessionId,
-        sourceFeed: data.sourceFeed || 'global',
-        lastVisiblePercent: data.lastVisiblePercent || 100,
-        totalVisibleDurationMs: data.durationMs || 1500,
-        completedViews: data.durationMs && data.durationMs > 3000 ? 1 : 0
-      }));
-      await this.interactionRepository.upsertUserPostState(userId, postId, { viewCount: 1, totalVisibleTime: duration });
-      await this.interestEngine.recordInteraction(userId, postId, post.authorId, post.category, InteractionType.VIEW);
+        post.authorId,
+        post.category,
+        InteractionType.VIEW,
+      );
     }
   }
 }

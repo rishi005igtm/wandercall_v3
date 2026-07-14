@@ -1,9 +1,19 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CommunityEntity } from '../entities/community.entity';
 import { CommunitySettingsEntity } from '../entities/community-settings.entity';
 import { CommunityStatisticsEntity } from '../entities/community-statistics.entity';
-import { CommunityMemberEntity, CommunityMemberStatus } from '../entities/community-member.entity';
+import {
+  CommunityMemberEntity,
+  CommunityMemberStatus,
+} from '../entities/community-member.entity';
 import { CommunityCoordinateEntity } from '../entities/community-coordinate.entity';
 import { CommunityRoleEntity } from '../entities/community-role.entity';
 import { CommunityRepository } from '../repositories/community.repository';
@@ -31,78 +41,106 @@ export class CommunityService {
     private readonly dataSource: DataSource,
   ) {}
 
-  async createCommunity(ownerId: string, dto: CreateCommunityDto): Promise<CommunityEntity> {
+  async createCommunity(
+    ownerId: string,
+    dto: CreateCommunityDto,
+  ): Promise<CommunityEntity> {
     const existing = await this.communityRepo.findBySlug(dto.slug);
     if (existing) {
       throw new ConflictException('Community with this slug already exists');
     }
 
-    const savedCommunity = await this.dataSource.transaction(async (manager) => {
-      // 1. Create Community
-      const community = manager.create(CommunityEntity, {
-        ...dto,
-        ownerId,
-        currentMemberCount: 1, // The owner
-      });
-      const saved = await manager.save(CommunityEntity, community);
-
-      // 2. Create Settings
-      const settings = manager.create(CommunitySettingsEntity, {
-        communityId: saved.id,
-      });
-      await manager.save(CommunitySettingsEntity, settings);
-
-      // 3. Create Statistics
-      const stats = manager.create(CommunityStatisticsEntity, {
-        communityId: saved.id,
-        memberCount: 1,
-      });
-      await manager.save(CommunityStatisticsEntity, stats);
-
-      // 4. Create Coordinates (PHYSICAL if lat/long provided, otherwise GLOBAL)
-      if (!saved.coordinateId) {
-        const isPhysical = dto.latitude !== undefined && dto.longitude !== undefined && dto.latitude !== 0 && dto.longitude !== 0;
-        const coord = manager.create(CommunityCoordinateEntity, {
-          categoryId: dto.primaryCategoryId,
-          coordinateName: isPhysical ? (dto.coordinateName || dto.name) : 'Global Universe',
-          coordinateType: isPhysical ? 'PHYSICAL' : 'GLOBAL',
-          latitude: isPhysical ? dto.latitude : 0,
-          longitude: isPhysical ? dto.longitude : 0,
-          geohash: isPhysical ? `${dto.latitude},${dto.longitude}`.slice(0, 20) : 'global',
-          city: isPhysical ? dto.city : undefined,
-          region: isPhysical ? dto.region : undefined,
-          country: isPhysical ? dto.country : undefined,
+    const savedCommunity = await this.dataSource.transaction(
+      async (manager) => {
+        // 1. Create Community
+        const community = manager.create(CommunityEntity, {
+          ...dto,
+          ownerId,
+          currentMemberCount: 1, // The owner
         });
-        const savedCoord = await manager.save(CommunityCoordinateEntity, coord);
-        saved.coordinateId = savedCoord.id;
-        await manager.save(CommunityEntity, saved);
-      }
+        const saved = await manager.save(CommunityEntity, community);
 
-      // 5. Create Owner Member with OWNER roleId
-      const ownerRole = await manager.findOne(CommunityRoleEntity, { where: { name: 'OWNER' } });
-      const member = manager.create(CommunityMemberEntity, {
-        communityId: saved.id,
-        userId: ownerId,
-        roleId: ownerRole?.id,
-        isOwner: true,
-        status: CommunityMemberStatus.ACTIVE,
-      });
-      await manager.save(CommunityMemberEntity, member);
+        // 2. Create Settings
+        const settings = manager.create(CommunitySettingsEntity, {
+          communityId: saved.id,
+        });
+        await manager.save(CommunitySettingsEntity, settings);
 
-      return saved;
-    });
+        // 3. Create Statistics
+        const stats = manager.create(CommunityStatisticsEntity, {
+          communityId: saved.id,
+          memberCount: 1,
+        });
+        await manager.save(CommunityStatisticsEntity, stats);
+
+        // 4. Create Coordinates (PHYSICAL if lat/long provided, otherwise GLOBAL)
+        if (!saved.coordinateId) {
+          const isPhysical =
+            dto.latitude !== undefined &&
+            dto.longitude !== undefined &&
+            dto.latitude !== 0 &&
+            dto.longitude !== 0;
+          const coord = manager.create(CommunityCoordinateEntity, {
+            categoryId: dto.primaryCategoryId,
+            coordinateName: isPhysical
+              ? dto.coordinateName || dto.name
+              : 'Global Universe',
+            coordinateType: isPhysical ? 'PHYSICAL' : 'GLOBAL',
+            latitude: isPhysical ? dto.latitude : 0,
+            longitude: isPhysical ? dto.longitude : 0,
+            geohash: isPhysical
+              ? `${dto.latitude},${dto.longitude}`.slice(0, 20)
+              : 'global',
+            city: isPhysical ? dto.city : undefined,
+            region: isPhysical ? dto.region : undefined,
+            country: isPhysical ? dto.country : undefined,
+          });
+          const savedCoord = await manager.save(
+            CommunityCoordinateEntity,
+            coord,
+          );
+          saved.coordinateId = savedCoord.id;
+          await manager.save(CommunityEntity, saved);
+        }
+
+        // 5. Create Owner Member with OWNER roleId
+        const ownerRole = await manager.findOne(CommunityRoleEntity, {
+          where: { name: 'OWNER' },
+        });
+        const member = manager.create(CommunityMemberEntity, {
+          communityId: saved.id,
+          userId: ownerId,
+          roleId: ownerRole?.id,
+          isOwner: true,
+          status: CommunityMemberStatus.ACTIVE,
+        });
+        await manager.save(CommunityMemberEntity, member);
+
+        return saved;
+      },
+    );
 
     // 6. Send Initial Invites (outside transaction to avoid connection isolation deadlock)
     if (dto.invitedUserIds && dto.invitedUserIds.length > 0) {
-      await this.inviteService.createInitialInvites(savedCommunity, ownerId, dto.invitedUserIds);
+      await this.inviteService.createInitialInvites(
+        savedCommunity,
+        ownerId,
+        dto.invitedUserIds,
+      );
     }
 
     // 7. Create Base Conversation for the Community
     try {
-      await this.communityChatService.createBaseConversation(savedCommunity.id, ownerId);
+      await this.communityChatService.createBaseConversation(
+        savedCommunity.id,
+        ownerId,
+      );
     } catch (error) {
       // Log the error but don't fail the community creation
-      console.error(`Failed to create base conversation for community ${savedCommunity.id}:`, error);
+      console.error(
+        `Failed to create base conversation for community ${savedCommunity.id}:`,
+        error,
+      );
     }
 
     // 8. Dispatch Event
@@ -131,7 +169,11 @@ export class CommunityService {
     return community;
   }
 
-  async updateCommunity(id: string, userId: string, dto: UpdateCommunityDto): Promise<CommunityEntity> {
+  async updateCommunity(
+    id: string,
+    userId: string,
+    dto: UpdateCommunityDto,
+  ): Promise<CommunityEntity> {
     const community = await this.getCommunityById(id);
     if (community.ownerId !== userId) {
       throw new BadRequestException('Only the owner can update the community');
@@ -161,7 +203,11 @@ export class CommunityService {
     return settings;
   }
 
-  async updateSettings(communityId: string, userId: string, dto: UpdateCommunitySettingsDto): Promise<CommunitySettingsEntity> {
+  async updateSettings(
+    communityId: string,
+    userId: string,
+    dto: UpdateCommunitySettingsDto,
+  ): Promise<CommunitySettingsEntity> {
     const community = await this.getCommunityById(communityId);
     if (community.ownerId !== userId) {
       throw new BadRequestException('Only the owner can update settings');

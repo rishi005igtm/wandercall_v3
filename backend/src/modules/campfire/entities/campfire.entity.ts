@@ -93,4 +93,7 @@ export class CampfireEntity {
   hostName?: string;
   hostAvatar?: string | null;
   hostUsername?: string | null;
+  participantsCount?: number;
+  isHostOnline?: boolean;
+  onlineUserIds?: string[];
 }

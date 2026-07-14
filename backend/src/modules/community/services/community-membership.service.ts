@@ -1,7 +1,19 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CommunityEntity } from '../entities/community.entity';
-import { CommunityMemberEntity, CommunityMemberStatus } from '../entities/community-member.entity';
+import {
+  CommunityMemberEntity,
+  CommunityMemberStatus,
+} from '../entities/community-member.entity';
 import { CommunityStatisticsEntity } from '../entities/community-statistics.entity';
 import { CommunityRepository } from '../repositories/community.repository';
 import { CommunityMemberRepository } from '../repositories/community-member.repository';
@@ -42,8 +54,9 @@ export class CommunityMembershipService {
 
   async getMembers(communityIdOrSlug: string, includeGuests = true) {
     const communityId = await this.resolveCommunityId(communityIdOrSlug);
-    
-    const members = await this.memberRepo['repo'].createQueryBuilder('m')
+
+    const members = await this.memberRepo['repo']
+      .createQueryBuilder('m')
       .leftJoinAndSelect('users', 'u', 'u.id = m.userId')
       .leftJoinAndSelect('community_roles', 'r', 'r.id = m.roleId')
       .where('m.communityId = :communityId', { communityId })
@@ -72,10 +85,11 @@ export class CommunityMembershipService {
     });
 
     if (includeGuests && this.presenceTracker) {
-      const activeCohorts = await this.presenceTracker.getActiveCohorts(communityId);
-      const guestCohorts = activeCohorts.filter(c => c.isGuest);
+      const activeCohorts =
+        await this.presenceTracker.getActiveCohorts(communityId);
+      const guestCohorts = activeCohorts.filter((c) => c.isGuest);
       for (const guest of guestCohorts) {
-        if (!mappedMembers.some(m => m.userId === guest.userId)) {
+        if (!mappedMembers.some((m) => m.userId === guest.userId)) {
           mappedMembers.push({
             id: `guest-${guest.userId}`,
             userId: guest.userId,
@@ -98,15 +112,23 @@ export class CommunityMembershipService {
     return mappedMembers;
   }
 
-  async joinCommunity(communityId: string, userId: string): Promise<CommunityMemberEntity> {
+  async joinCommunity(
+    communityId: string,
+    userId: string,
+  ): Promise<CommunityMemberEntity> {
     communityId = await this.resolveCommunityId(communityId);
-    return this.dataSource.transaction(async manager => {
-      const community = await manager.findOne(CommunityEntity, { where: { id: communityId }, lock: { mode: 'pessimistic_write' } });
+    return this.dataSource.transaction(async (manager) => {
+      const community = await manager.findOne(CommunityEntity, {
+        where: { id: communityId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!community) {
         throw new NotFoundException('Community not found');
       }
 
-      const existingMember = await manager.findOne(CommunityMemberEntity, { where: { communityId, userId } });
+      const existingMember = await manager.findOne(CommunityMemberEntity, {
+        where: { communityId, userId },
+      });
       if (existingMember) {
         if (existingMember.status === CommunityMemberStatus.ACTIVE) {
           throw new ConflictException('User is already an active member');
@@ -117,7 +139,9 @@ export class CommunityMembershipService {
 
       const activeBan = await this.banRepo.findActiveBan(communityId, userId);
       if (activeBan) {
-        throw new ForbiddenException('User is currently banned from this community');
+        throw new ForbiddenException(
+          'User is currently banned from this community',
+        );
       }
 
       if (community.currentMemberCount >= community.memberLimit) {
@@ -144,7 +168,11 @@ export class CommunityMembershipService {
 
       community.currentMemberCount += 1;
       await manager.save(community);
-      await manager.update(CommunityStatisticsEntity, { communityId }, { memberCount: community.currentMemberCount });
+      await manager.update(
+        CommunityStatisticsEntity,
+        { communityId },
+        { memberCount: community.currentMemberCount },
+      );
 
       this.eventDispatcher.dispatchJoined(communityId, userId);
       return member;
@@ -153,62 +181,131 @@ export class CommunityMembershipService {
 
   async leaveCommunity(communityId: string, userId: string): Promise<void> {
     communityId = await this.resolveCommunityId(communityId);
-    return this.dataSource.transaction(async manager => {
-      const community = await manager.findOne(CommunityEntity, { where: { id: communityId }, lock: { mode: 'pessimistic_write' } });
+    return this.dataSource.transaction(async (manager) => {
+      const community = await manager.findOne(CommunityEntity, {
+        where: { id: communityId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!community) {
         throw new NotFoundException('Community not found');
       }
 
-      const member = await manager.findOne(CommunityMemberEntity, { where: { communityId, userId, status: CommunityMemberStatus.ACTIVE } });
+      const member = await manager.findOne(CommunityMemberEntity, {
+        where: { communityId, userId, status: CommunityMemberStatus.ACTIVE },
+      });
       if (!member) {
         throw new BadRequestException('User is not an active member');
       }
 
       if (member.isOwner || community.ownerId === userId) {
-        throw new BadRequestException('Owner cannot leave community. Transfer ownership first.');
+        throw new BadRequestException(
+          'Owner cannot leave community. Transfer ownership first.',
+        );
       }
 
       member.status = CommunityMemberStatus.LEFT;
       await manager.save(member);
 
-      community.currentMemberCount = Math.max(0, community.currentMemberCount - 1);
+      community.currentMemberCount = Math.max(
+        0,
+        community.currentMemberCount - 1,
+      );
       await manager.save(community);
-      await manager.update(CommunityStatisticsEntity, { communityId }, { memberCount: community.currentMemberCount });
+      await manager.update(
+        CommunityStatisticsEntity,
+        { communityId },
+        { memberCount: community.currentMemberCount },
+      );
 
       this.eventDispatcher.dispatchLeft(communityId, userId);
     });
   }
 
-  async kickMember(communityId: string, requesterId: string, targetUserId: string, reason?: string): Promise<void> {
-    return this.moderationService.kickMember(communityId, requesterId, targetUserId, reason);
+  async kickMember(
+    communityId: string,
+    requesterId: string,
+    targetUserId: string,
+    reason?: string,
+  ): Promise<void> {
+    return this.moderationService.kickMember(
+      communityId,
+      requesterId,
+      targetUserId,
+      reason,
+    );
   }
 
-  async banMember(communityId: string, requesterId: string, targetUserId: string, reason?: string, permanent: boolean = true, expiresAt?: Date): Promise<void> {
-    const durationMinutes = expiresAt ? Math.round((expiresAt.getTime() - Date.now()) / 60000) : undefined;
-    return this.moderationService.banMember(communityId, requesterId, targetUserId, reason, permanent, durationMinutes);
+  async banMember(
+    communityId: string,
+    requesterId: string,
+    targetUserId: string,
+    reason?: string,
+    permanent: boolean = true,
+    expiresAt?: Date,
+  ): Promise<void> {
+    const durationMinutes = expiresAt
+      ? Math.round((expiresAt.getTime() - Date.now()) / 60000)
+      : undefined;
+    return this.moderationService.banMember(
+      communityId,
+      requesterId,
+      targetUserId,
+      reason,
+      permanent,
+      durationMinutes,
+    );
   }
 
-  async muteMember(communityId: string, requesterId: string, targetUserId: string, durationMinutes: number, reason?: string): Promise<void> {
-    await this.moderationService.muteMember(communityId, requesterId, targetUserId, durationMinutes, reason);
+  async muteMember(
+    communityId: string,
+    requesterId: string,
+    targetUserId: string,
+    durationMinutes: number,
+    reason?: string,
+  ): Promise<void> {
+    await this.moderationService.muteMember(
+      communityId,
+      requesterId,
+      targetUserId,
+      durationMinutes,
+      reason,
+    );
   }
 
-  async transferOwnership(communityId: string, currentOwnerId: string, newOwnerId: string): Promise<void> {
+  async transferOwnership(
+    communityId: string,
+    currentOwnerId: string,
+    newOwnerId: string,
+  ): Promise<void> {
     communityId = await this.resolveCommunityId(communityId);
     if (currentOwnerId === newOwnerId) {
       throw new BadRequestException('Cannot transfer ownership to yourself');
     }
 
-    return this.dataSource.transaction(async manager => {
-      const community = await manager.findOne(CommunityEntity, { where: { id: communityId }, lock: { mode: 'pessimistic_write' } });
+    return this.dataSource.transaction(async (manager) => {
+      const community = await manager.findOne(CommunityEntity, {
+        where: { id: communityId },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (!community || community.ownerId !== currentOwnerId) {
         throw new ForbiddenException('You are not the owner of this community');
       }
 
-      const oldOwner = await manager.findOne(CommunityMemberEntity, { where: { communityId, userId: currentOwnerId } });
-      const newOwner = await manager.findOne(CommunityMemberEntity, { where: { communityId, userId: newOwnerId, status: CommunityMemberStatus.ACTIVE } });
+      const oldOwner = await manager.findOne(CommunityMemberEntity, {
+        where: { communityId, userId: currentOwnerId },
+      });
+      const newOwner = await manager.findOne(CommunityMemberEntity, {
+        where: {
+          communityId,
+          userId: newOwnerId,
+          status: CommunityMemberStatus.ACTIVE,
+        },
+      });
 
       if (!newOwner) {
-        throw new BadRequestException('New owner must be an active member of the community');
+        throw new BadRequestException(
+          'New owner must be an active member of the community',
+        );
       }
 
       const adminRole = await this.roleRepo.findByName('ADMIN');
@@ -230,7 +327,11 @@ export class CommunityMembershipService {
       community.ownerId = newOwnerId;
       await manager.save(community);
 
-      this.eventDispatcher.dispatchOwnerTransferred(communityId, currentOwnerId, newOwnerId);
+      this.eventDispatcher.dispatchOwnerTransferred(
+        communityId,
+        currentOwnerId,
+        newOwnerId,
+      );
       await this.auditService.logAction({
         communityId,
         actorId: currentOwnerId,
@@ -243,7 +344,17 @@ export class CommunityMembershipService {
     });
   }
 
-  async updateRole(communityId: string, requesterId: string, targetUserId: string, newRoleId: string): Promise<void> {
-    await this.roleService.assignRole(communityId, requesterId, targetUserId, newRoleId);
+  async updateRole(
+    communityId: string,
+    requesterId: string,
+    targetUserId: string,
+    newRoleId: string,
+  ): Promise<void> {
+    await this.roleService.assignRole(
+      communityId,
+      requesterId,
+      targetUserId,
+      newRoleId,
+    );
   }
 }

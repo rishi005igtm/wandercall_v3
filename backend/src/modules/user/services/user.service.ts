@@ -27,7 +27,10 @@ import { RelationshipService } from './relationship.service';
 @Injectable()
 export class UserService {
   private readonly logger = new Logger(UserService.name);
-  private profilePromiseCache = new Map<string, Promise<UserProfileResponseDto>>();
+  private profilePromiseCache = new Map<
+    string,
+    Promise<UserProfileResponseDto>
+  >();
 
   constructor(
     private readonly userRepository: UserRepository,
@@ -37,7 +40,9 @@ export class UserService {
     private readonly relationshipService: RelationshipService,
   ) {}
 
-  async checkUsernameAvailability(username: string): Promise<{ available: boolean; username: string }> {
+  async checkUsernameAvailability(
+    username: string,
+  ): Promise<{ available: boolean; username: string }> {
     const existing = await this.userRepository.findByUsername(username);
     return {
       available: !existing,
@@ -46,7 +51,11 @@ export class UserService {
   }
 
   async generateUsernameSuggestions(name: string): Promise<string[]> {
-    const clean = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '') || 'explorer';
+    const clean =
+      name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '') || 'explorer';
     const first = clean.slice(0, 8);
     const rand1 = Math.floor(10 + Math.random() * 89);
     const rand2 = Math.floor(100 + Math.random() * 899);
@@ -67,10 +76,14 @@ export class UserService {
       }
     }
 
-    return availableList.length > 0 ? availableList : [`${clean}_${Date.now().toString().slice(-4)}`];
+    return availableList.length > 0
+      ? availableList
+      : [`${clean}_${Date.now().toString().slice(-4)}`];
   }
 
-  private async ensureDefaultSettings(userId: string): Promise<UserSettingsEntity> {
+  private async ensureDefaultSettings(
+    userId: string,
+  ): Promise<UserSettingsEntity> {
     let settings = await this.userRepository.findSettingsByUserId(userId);
     if (!settings) {
       settings = new UserSettingsEntity({
@@ -138,24 +151,33 @@ export class UserService {
     return plan;
   }
 
-  async completeProfile(dto: CompleteProfileRequestDto): Promise<UserProfileResponseDto> {
+  async completeProfile(
+    dto: CompleteProfileRequestDto,
+  ): Promise<UserProfileResponseDto> {
     const authUser = await this.authRepository.findById(dto.userId);
     if (!authUser) {
       throw new NotFoundException('User account not found.');
     }
 
     if (!authUser.isEmailVerified) {
-      throw new ForbiddenException('Email address must be verified before completing profile setup.');
+      throw new ForbiddenException(
+        'Email address must be verified before completing profile setup.',
+      );
     }
 
     const usernameCheck = await this.checkUsernameAvailability(dto.username);
     const existingProfile = await this.userRepository.findByUserId(dto.userId);
-    
-    if (!usernameCheck.available && (!existingProfile || existingProfile.username.toLowerCase() !== dto.username.toLowerCase())) {
-      throw new ConflictException('Username is already taken. Please choose another username.');
+
+    if (
+      !usernameCheck.available &&
+      (!existingProfile ||
+        existingProfile.username.toLowerCase() !== dto.username.toLowerCase())
+    ) {
+      throw new ConflictException(
+        'Username is already taken. Please choose another username.',
+      );
     }
 
-    const displayName = dto.displayName || authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : 'Explorer');
     const cleanUsername = dto.username.toLowerCase();
     const generatedProfileUrl = `https://wandercall.io/${cleanUsername}`;
 
@@ -163,10 +185,17 @@ export class UserService {
       id: existingProfile ? existingProfile.id : randomUUID(),
       userId: dto.userId,
       username: cleanUsername,
-      displayName: dto.displayName || existingProfile?.displayName || authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : 'Explorer'),
+      displayName:
+        dto.displayName ||
+        existingProfile?.displayName ||
+        authUser.displayName ||
+        (authUser.email ? authUser.email.split('@')[0] : 'Explorer'),
       avatarUrl: dto.avatarUrl || existingProfile?.avatarUrl || undefined,
       bio: dto.bio || existingProfile?.bio || undefined,
-      locationFormatted: dto.locationFormatted || existingProfile?.locationFormatted || undefined,
+      locationFormatted:
+        dto.locationFormatted ||
+        existingProfile?.locationFormatted ||
+        undefined,
       locationLat: dto.locationLat || existingProfile?.locationLat || undefined,
       locationLon: dto.locationLon || existingProfile?.locationLon || undefined,
       isPrivate: false,
@@ -177,8 +206,12 @@ export class UserService {
       xpCurrent: existingProfile ? existingProfile.xpCurrent : 1000,
       xpNext: existingProfile ? existingProfile.xpNext : 2000,
       reputationScore: existingProfile ? existingProfile.reputationScore : 0,
-      adventuresCompleted: existingProfile ? existingProfile.adventuresCompleted : 0,
-      communitiesJoined: existingProfile ? existingProfile.communitiesJoined : 0,
+      adventuresCompleted: existingProfile
+        ? existingProfile.adventuresCompleted
+        : 0,
+      communitiesJoined: existingProfile
+        ? existingProfile.communitiesJoined
+        : 0,
       campfiresHosted: existingProfile ? existingProfile.campfiresHosted : 0,
       dnaBadges: existingProfile ? existingProfile.dnaBadges : null,
       createdAt: existingProfile ? existingProfile.createdAt : new Date(),
@@ -202,7 +235,7 @@ export class UserService {
 
     const promise = this._getProfileByUserId(userId);
     this.profilePromiseCache.set(userId, promise);
-    
+
     try {
       return await promise;
     } finally {
@@ -210,7 +243,9 @@ export class UserService {
     }
   }
 
-  private async _getProfileByUserId(userId: string): Promise<UserProfileResponseDto> {
+  private async _getProfileByUserId(
+    userId: string,
+  ): Promise<UserProfileResponseDto> {
     let profile = await this.userRepository.findByUserId(userId);
     const authUser = await this.authRepository.findById(userId);
 
@@ -244,18 +279,27 @@ export class UserService {
     await this.ensureDefaultSettings(userId);
     await this.ensureDefaultPlan(userId);
 
-    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+    return this.mapProfileToDto(
+      profile,
+      authUser ? authUser.accountStatus : AccountStatus.ACTIVE,
+    );
   }
 
-  async getPublicProfileByUsername(username: string, currentUserId?: string | null): Promise<PublicProfileResponseDto> {
+  async getPublicProfileByUsername(
+    username: string,
+    currentUserId?: string | null,
+  ): Promise<PublicProfileResponseDto> {
     const profile = await this.userRepository.findByUsername(username);
     if (!profile) {
-      throw new NotFoundException(`User profile with username '${username}' not found.`);
+      throw new NotFoundException(
+        `User profile with username '${username}' not found.`,
+      );
     }
 
-
-    const relationship = await this.relationshipService.resolveRelationship(currentUserId || null, profile.userId);
-
+    const relationship = await this.relationshipService.resolveRelationship(
+      currentUserId || null,
+      profile.userId,
+    );
 
     return {
       userId: profile.userId,
@@ -280,7 +324,10 @@ export class UserService {
     };
   }
 
-  async updateProfile(userId: string, dto: UpdateProfileRequestDto): Promise<UserProfileResponseDto> {
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileRequestDto,
+  ): Promise<UserProfileResponseDto> {
     const profile = await this.userRepository.findByUserId(userId);
     if (!profile) {
       throw new NotFoundException('Profile not found for user');
@@ -289,20 +336,31 @@ export class UserService {
     if (dto.displayName !== undefined) profile.displayName = dto.displayName;
     if (dto.bio !== undefined) profile.bio = dto.bio;
     if (dto.avatarUrl !== undefined) profile.avatarUrl = dto.avatarUrl;
-    if (dto.avatarPublicId !== undefined) profile.avatarPublicId = dto.avatarPublicId;
-    if (dto.coverImageUrl !== undefined) profile.coverImageUrl = dto.coverImageUrl;
-    if (dto.coverImagePublicId !== undefined) profile.coverImagePublicId = dto.coverImagePublicId;
-    if (dto.locationFormatted !== undefined) profile.locationFormatted = dto.locationFormatted;
-    if (dto.phoneCoordinate !== undefined) profile.phoneCoordinate = dto.phoneCoordinate;
+    if (dto.avatarPublicId !== undefined)
+      profile.avatarPublicId = dto.avatarPublicId;
+    if (dto.coverImageUrl !== undefined)
+      profile.coverImageUrl = dto.coverImageUrl;
+    if (dto.coverImagePublicId !== undefined)
+      profile.coverImagePublicId = dto.coverImagePublicId;
+    if (dto.locationFormatted !== undefined)
+      profile.locationFormatted = dto.locationFormatted;
+    if (dto.phoneCoordinate !== undefined)
+      profile.phoneCoordinate = dto.phoneCoordinate;
 
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
     const authUser = await this.authRepository.findById(userId);
-    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+    return this.mapProfileToDto(
+      profile,
+      authUser ? authUser.accountStatus : AccountStatus.ACTIVE,
+    );
   }
 
-  async uploadAvatar(userId: string, file: Express.Multer.File): Promise<UserProfileResponseDto> {
+  async uploadAvatar(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<UserProfileResponseDto> {
     let profile = await this.userRepository.findByUserId(userId);
     if (!profile) {
       await this.getProfileByUserId(userId);
@@ -322,12 +380,17 @@ export class UserService {
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
-
     const authUser = await this.authRepository.findById(userId);
-    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+    return this.mapProfileToDto(
+      profile,
+      authUser ? authUser.accountStatus : AccountStatus.ACTIVE,
+    );
   }
 
-  async uploadCoverImage(userId: string, file: Express.Multer.File): Promise<UserProfileResponseDto> {
+  async uploadCoverImage(
+    userId: string,
+    file: Express.Multer.File,
+  ): Promise<UserProfileResponseDto> {
     let profile = await this.userRepository.findByUserId(userId);
     if (!profile) {
       await this.getProfileByUserId(userId);
@@ -347,9 +410,11 @@ export class UserService {
     profile.updatedAt = new Date();
     await this.userRepository.saveProfile(profile);
 
-
     const authUser = await this.authRepository.findById(userId);
-    return this.mapProfileToDto(profile, authUser ? authUser.accountStatus : AccountStatus.ACTIVE);
+    return this.mapProfileToDto(
+      profile,
+      authUser ? authUser.accountStatus : AccountStatus.ACTIVE,
+    );
   }
 
   async getSettings(userId: string): Promise<UserSettingsDto> {
@@ -367,7 +432,10 @@ export class UserService {
     };
   }
 
-  async updateSettings(userId: string, partial: Partial<UserSettingsDto>): Promise<UserSettingsDto> {
+  async updateSettings(
+    userId: string,
+    partial: Partial<UserSettingsDto>,
+  ): Promise<UserSettingsDto> {
     const settings = await this.ensureDefaultSettings(userId);
     Object.assign(settings, partial);
     settings.updatedAt = new Date();
@@ -388,7 +456,10 @@ export class UserService {
     };
   }
 
-  async updatePlan(userId: string, partial: Partial<UserPlanDto>): Promise<UserPlanDto> {
+  async updatePlan(
+    userId: string,
+    partial: Partial<UserPlanDto>,
+  ): Promise<UserPlanDto> {
     const plan = await this.ensureDefaultPlan(userId);
     Object.assign(plan, partial);
     plan.updatedAt = new Date();
@@ -396,7 +467,10 @@ export class UserService {
     return this.getPlan(userId);
   }
 
-  private async mapProfileToDto(profile: UserProfileEntity, accountStatus: string): Promise<UserProfileResponseDto> {
+  private async mapProfileToDto(
+    profile: UserProfileEntity,
+    accountStatus: string,
+  ): Promise<UserProfileResponseDto> {
     const authUser = await this.authRepository.findById(profile.userId);
     return {
       userId: profile.userId,
@@ -411,7 +485,8 @@ export class UserService {
       locationLat: profile.locationLat,
       locationLon: profile.locationLon,
       isPrivate: profile.isPrivate,
-      profileUrl: profile.profileUrl || `https://wandercall.io/${profile.username}`,
+      profileUrl:
+        profile.profileUrl || `https://wandercall.io/${profile.username}`,
       coverImageUrl: profile.coverImageUrl,
       coverImagePublicId: profile.coverImagePublicId,
       phoneCoordinate: profile.phoneCoordinate,

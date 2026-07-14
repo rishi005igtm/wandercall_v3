@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('users_settings')
 export class UserSettingsEntity {
@@ -12,10 +18,10 @@ export class UserSettingsEntity {
   is2faEnabled: boolean;
 
   @Column({ type: 'json', nullable: true })
-  privacyMatrix: any;
+  privacyMatrix: unknown;
 
   @Column({ type: 'json', nullable: true })
-  notifications: any;
+  notifications: unknown;
 
   @Column({ default: 150 })
   travelRadius: number;
@@ -27,10 +33,10 @@ export class UserSettingsEntity {
   difficulty: string;
 
   @Column({ type: 'json', nullable: true })
-  selectedTags: any;
+  selectedTags: unknown;
 
   @Column({ type: 'json', nullable: true })
-  connectedNetworks: any;
+  connectedNetworks: unknown;
 
   @CreateDateColumn()
   createdAt: Date;

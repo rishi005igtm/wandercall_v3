@@ -1,6 +1,14 @@
-import { Injectable, InternalServerErrorException, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
+import {
+  v2 as cloudinary,
+  UploadApiResponse,
+  UploadApiOptions,
+} from 'cloudinary';
 import { Readable } from 'stream';
 import { IStorageAssetMetadata } from '../interfaces/storage-asset-metadata.interface';
 
@@ -9,9 +17,13 @@ export class CloudinaryProvider {
   private readonly logger = new Logger(CloudinaryProvider.name);
 
   constructor(private readonly configService: ConfigService) {
-    const cloudName = this.configService.get<string>('storage.cloudinary.cloudName');
+    const cloudName = this.configService.get<string>(
+      'storage.cloudinary.cloudName',
+    );
     const apiKey = this.configService.get<string>('storage.cloudinary.apiKey');
-    const apiSecret = this.configService.get<string>('storage.cloudinary.apiSecret');
+    const apiSecret = this.configService.get<string>(
+      'storage.cloudinary.apiSecret',
+    );
 
     if (cloudName && apiKey && apiSecret) {
       cloudinary.config({
@@ -21,14 +33,18 @@ export class CloudinaryProvider {
         secure: true,
       });
     } else {
-      const cloudinaryUrl = this.configService.get<string>('storage.cloudinary.url');
+      const cloudinaryUrl = this.configService.get<string>(
+        'storage.cloudinary.url',
+      );
       if (cloudinaryUrl) {
         cloudinary.config({
           cloudinary_url: cloudinaryUrl,
           secure: true,
         });
       } else {
-        this.logger.warn('Cloudinary credentials not found in configuration. Cloud storage operations will fail.');
+        this.logger.warn(
+          'Cloudinary credentials not found in configuration. Cloud storage operations will fail.',
+        );
       }
     }
   }
@@ -41,11 +57,11 @@ export class CloudinaryProvider {
     folder: string,
     publicId: string,
     resourceType: 'image' | 'raw' | 'video' | 'auto' = 'auto',
-    transformationOptions: any = {},
+    transformationOptions: UploadApiOptions = {},
   ): Promise<IStorageAssetMetadata> {
     const startTime = Date.now();
     return new Promise((resolve, reject) => {
-      const uploadOptions: any = {
+      const uploadOptions: UploadApiOptions = {
         folder,
         public_id: publicId,
         overwrite: true,
@@ -58,13 +74,16 @@ export class CloudinaryProvider {
       const uploadStream = cloudinary.uploader.upload_stream(
         uploadOptions,
         (error, result: UploadApiResponse | undefined) => {
-          const latency = Date.now() - startTime;
           if (error || !result) {
-            this.logger.error(`Cloudinary upload failed for folder=${folder}, publicId=${publicId}: ${error?.message}`, error?.stack);
-            return reject(new InternalServerErrorException('Cloud storage upload failed.'));
+            this.logger.error(
+              `Cloudinary upload failed for folder=${folder}, publicId=${publicId}: ${error?.message}`,
+              error?.stack,
+            );
+            return reject(
+              new InternalServerErrorException('Cloud storage upload failed.'),
+            );
           }
 
-          
           const metadata: IStorageAssetMetadata = {
             publicId: result.public_id,
             secureUrl: result.secure_url,
@@ -90,23 +109,48 @@ export class CloudinaryProvider {
   /**
    * Delete asset from Cloudinary by publicId
    */
-  async deleteAsset(publicId: string, resourceType: 'image' | 'raw' | 'video' | 'auto' = 'image'): Promise<boolean> {
-    const startTime = Date.now();
+  async deleteAsset(
+    publicId: string,
+    resourceType: 'image' | 'raw' | 'video' | 'auto' = 'image',
+  ): Promise<boolean> {
     try {
-      const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType, invalidate: true });
-      const latency = Date.now() - startTime;
+      const result: { result: string } = await cloudinary.uploader.destroy(
+        publicId,
+        {
+          resource_type: resourceType,
+          invalidate: true,
+        },
+      );
       return result.result === 'ok' || result.result === 'not found';
-    } catch (error: any) {
-      throw new InternalServerErrorException('Cloud storage asset deletion failed.');
+    } catch (error: unknown) {
+      throw new InternalServerErrorException(
+        'Cloud storage asset deletion failed.',
+      );
     }
   }
 
   /**
    * Fetch asset metadata from Cloudinary
    */
-  async getAssetMetadata(publicId: string, resourceType: 'image' | 'raw' | 'video' | 'auto' = 'image'): Promise<IStorageAssetMetadata | null> {
+  async getAssetMetadata(
+    publicId: string,
+    resourceType: 'image' | 'raw' | 'video' | 'auto' = 'image',
+  ): Promise<IStorageAssetMetadata | null> {
     try {
-      const resource = await cloudinary.api.resource(publicId, { resource_type: resourceType });
+      const resource = (await cloudinary.api.resource(publicId, {
+        resource_type: resourceType,
+      })) as {
+        public_id: string;
+        secure_url: string;
+        resource_type: string;
+        width: number;
+        height: number;
+        format: string;
+        bytes: number;
+        version: number;
+        folder?: string;
+        created_at: string;
+      };
       return {
         publicId: resource.public_id,
         secureUrl: resource.secure_url,
@@ -119,12 +163,17 @@ export class CloudinaryProvider {
         folder: resource.folder || '',
         createdTimestamp: resource.created_at,
       };
-    } catch (error: any) {
-      if (error?.http_code === 404) {
+    } catch (error: unknown) {
+      const err = error as { http_code?: number; message?: string };
+      if (err?.http_code === 404) {
         return null;
       }
-      this.logger.error(`Cloudinary metadata fetch failed for publicId=${publicId}: ${error.message}`);
-      throw new InternalServerErrorException('Failed to fetch cloud asset metadata.');
+      this.logger.error(
+        `Cloudinary metadata fetch failed for publicId=${publicId}: ${err?.message}`,
+      );
+      throw new InternalServerErrorException(
+        'Failed to fetch cloud asset metadata.',
+      );
     }
   }
 }

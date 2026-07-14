@@ -1,6 +1,20 @@
-import { IsEnum, IsOptional, IsString, IsInt, Min, Max, IsBoolean, IsArray, IsUUID } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+  IsUUID,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { CampfireCategory, CampfireMood, CampfireStatus, CampfireVisibility } from '../constants/campfire.constant';
+import {
+  CampfireCategory,
+  CampfireMood,
+  CampfireStatus,
+  CampfireVisibility,
+} from '../constants/campfire.constant';
 import { CampfireEntity } from '../entities/campfire.entity';
 
 export enum CampfireSortField {
@@ -41,7 +55,7 @@ export class CampfireFilterDto {
   @IsString()
   @IsOptional()
   search?: string;
-  
+
   @IsString({ each: true })
   @IsOptional()
   @IsArray()

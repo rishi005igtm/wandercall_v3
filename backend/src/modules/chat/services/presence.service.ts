@@ -113,7 +113,9 @@ export class PresenceService implements IPresenceService {
   stopTyping(userId: string, conversationId: string): void {
     const presence = this.presenceMap.get(userId);
     if (presence) {
-      presence.typingIn = (presence.typingIn ?? []).filter((id) => id !== conversationId);
+      presence.typingIn = (presence.typingIn ?? []).filter(
+        (id) => id !== conversationId,
+      );
     }
 
     const key = `${userId}:${conversationId}`;

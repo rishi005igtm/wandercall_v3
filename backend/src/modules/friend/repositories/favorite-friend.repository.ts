@@ -17,7 +17,10 @@ export class FavoriteFriendRepository extends Repository<FavoriteFriendEntity> {
       .getMany();
   }
 
-  async getFavorite(userId: string, friendId: string): Promise<FavoriteFriendEntity | null> {
+  async getFavorite(
+    userId: string,
+    friendId: string,
+  ): Promise<FavoriteFriendEntity | null> {
     return this.findOne({
       where: { userId, friendId },
     });

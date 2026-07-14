@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 
 @Entity('feed_impressions')
 @Index(['userId', 'postId'], { unique: true })

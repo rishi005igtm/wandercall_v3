@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { randomUUID } from 'crypto';
-import { ConversationEntity, ConversationType } from '../entities/conversation.entity';
+import {
+  ConversationEntity,
+  ConversationType,
+} from '../entities/conversation.entity';
 import { ConversationParticipantEntity } from '../entities/conversation-participant.entity';
 
 @Injectable()
@@ -28,7 +31,10 @@ export class ConversationRepository {
    *
    * This guarantees: for any pair of users, exactly ONE conversation ever exists.
    */
-  async findOrCreateDirect(userAId: string, userBId: string): Promise<ConversationEntity> {
+  async findOrCreateDirect(
+    userAId: string,
+    userBId: string,
+  ): Promise<ConversationEntity> {
     // Canonical sorted key — always the same regardless of argument order
     const [idA, idB] = [userAId, userBId].sort();
     const participantKey = `${idA}:${idB}`;
@@ -48,7 +54,10 @@ export class ConversationRepository {
 
     return this.dataSource.transaction(async (manager) => {
       // Acquire transaction-level advisory lock — released when transaction ends
-      await manager.query(`SELECT pg_advisory_xact_lock($1, $2)`, [lockKey1, lockKey2]);
+      await manager.query(`SELECT pg_advisory_xact_lock($1, $2)`, [
+        lockKey1,
+        lockKey2,
+      ]);
 
       // Re-check inside the lock (another transaction may have just committed)
       const doubleCheck = await manager.findOne(ConversationEntity, {
@@ -78,9 +87,14 @@ export class ConversationRepository {
         userId: idB,
         joinedAt: new Date(),
       });
-      await manager.save(ConversationParticipantEntity, [participantA, participantB]);
+      await manager.save(ConversationParticipantEntity, [
+        participantA,
+        participantB,
+      ]);
 
-      this.logger.log(`Created DIRECT conversation ${savedConv.id} (key: ${participantKey})`);
+      this.logger.log(
+        `Created DIRECT conversation ${savedConv.id} (key: ${participantKey})`,
+      );
       return savedConv;
     });
   }
@@ -122,14 +136,19 @@ export class ConversationRepository {
   /**
    * Get participants for a conversation.
    */
-  async getParticipants(conversationId: string): Promise<ConversationParticipantEntity[]> {
+  async getParticipants(
+    conversationId: string,
+  ): Promise<ConversationParticipantEntity[]> {
     return this.participantRepo.find({ where: { conversationId } });
   }
 
   /**
    * Check if a user is a participant in a conversation.
    */
-  async isParticipant(conversationId: string, userId: string): Promise<boolean> {
+  async isParticipant(
+    conversationId: string,
+    userId: string,
+  ): Promise<boolean> {
     const count = await this.participantRepo.count({
       where: { conversationId, userId, hasLeft: false },
     });
@@ -158,7 +177,9 @@ export class ConversationRepository {
     sentAt: Date,
     recipientIds: string[],
   ): Promise<void> {
-    const conversation = await this.convRepo.findOneOrFail({ where: { id: conversationId } });
+    const conversation = await this.convRepo.findOneOrFail({
+      where: { id: conversationId },
+    });
 
     const updatePayload: any = {
       lastMessageId: messageId,
@@ -168,11 +189,15 @@ export class ConversationRepository {
     };
 
     // ONLY update JSONB unreadCounts for direct/group conversations to avoid massive row locks.
-    if (conversation.type !== ConversationType.COMMUNITY && conversation.type !== ConversationType.CAMPFIRE) {
+    if (
+      conversation.type !== ConversationType.COMMUNITY &&
+      conversation.type !== ConversationType.CAMPFIRE
+    ) {
       const updatedUnreadCounts = { ...conversation.unreadCounts };
       for (const recipientId of recipientIds) {
         if (recipientId !== senderId) {
-          updatedUnreadCounts[recipientId] = (updatedUnreadCounts[recipientId] || 0) + 1;
+          updatedUnreadCounts[recipientId] =
+            (updatedUnreadCounts[recipientId] || 0) + 1;
         }
       }
       updatePayload.unreadCounts = updatedUnreadCounts;
@@ -185,8 +210,13 @@ export class ConversationRepository {
    * Clear the unread count for a user in a conversation.
    * Called when the user opens the conversation.
    */
-  async clearUnreadCount(conversationId: string, userId: string): Promise<void> {
-    const conversation = await this.convRepo.findOne({ where: { id: conversationId } });
+  async clearUnreadCount(
+    conversationId: string,
+    userId: string,
+  ): Promise<void> {
+    const conversation = await this.convRepo.findOne({
+      where: { id: conversationId },
+    });
     if (!conversation) return;
 
     const updatedCounts = { ...conversation.unreadCounts };
@@ -194,18 +224,25 @@ export class ConversationRepository {
     await this.convRepo.update(conversationId, { unreadCounts: updatedCounts });
 
     // Update participant's lastReadAt
-    await this.participantRepo.update({ conversationId, userId }, { lastReadAt: new Date() });
+    await this.participantRepo.update(
+      { conversationId, userId },
+      { lastReadAt: new Date() },
+    );
   }
 
   /**
    * Get the IDs of all participants in a conversation.
    */
   async getParticipantIds(conversationId: string): Promise<string[]> {
-    const participants = await this.participantRepo.find({ where: { conversationId } });
+    const participants = await this.participantRepo.find({
+      where: { conversationId },
+    });
     return participants.map((p) => p.userId);
   }
 
-  async createCommunityConversation(communityId: string): Promise<ConversationEntity> {
+  async createCommunityConversation(
+    communityId: string,
+  ): Promise<ConversationEntity> {
     const conversation = this.convRepo.create({
       id: randomUUID(),
       type: ConversationType.COMMUNITY,
@@ -219,16 +256,20 @@ export class ConversationRepository {
     return this.convRepo.save(conversation);
   }
 
-  async findDefaultCommunityConversation(communityId: string): Promise<ConversationEntity | null> {
+  async findDefaultCommunityConversation(
+    communityId: string,
+  ): Promise<ConversationEntity | null> {
     return this.convRepo
       .createQueryBuilder('conv')
-      .where("conv.type = :type", { type: ConversationType.COMMUNITY })
+      .where('conv.type = :type', { type: ConversationType.COMMUNITY })
       .andWhere("conv.metadata->>'communityId' = :communityId", { communityId })
       .andWhere("conv.metadata->>'isDefault' = 'true'")
       .getOne();
   }
 
-  async createCampfireConversation(campfireId: string): Promise<ConversationEntity> {
+  async createCampfireConversation(
+    campfireId: string,
+  ): Promise<ConversationEntity> {
     const conversation = this.convRepo.create({
       id: randomUUID(),
       type: ConversationType.CAMPFIRE,
@@ -239,10 +280,12 @@ export class ConversationRepository {
     return this.convRepo.save(conversation);
   }
 
-  async findCampfireConversation(campfireId: string): Promise<ConversationEntity | null> {
+  async findCampfireConversation(
+    campfireId: string,
+  ): Promise<ConversationEntity | null> {
     return this.convRepo
       .createQueryBuilder('conv')
-      .where("conv.type = :type", { type: ConversationType.CAMPFIRE })
+      .where('conv.type = :type', { type: ConversationType.CAMPFIRE })
       .andWhere("conv.metadata->>'campfireId' = :campfireId", { campfireId })
       .getOne();
   }

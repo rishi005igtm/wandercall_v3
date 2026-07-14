@@ -30,16 +30,22 @@ export class CommunityRoleRepository {
     return this.repo.findOne(options);
   }
 
-  async create(data: Partial<CommunityRoleEntity>): Promise<CommunityRoleEntity> {
+  async create(
+    data: Partial<CommunityRoleEntity>,
+  ): Promise<CommunityRoleEntity> {
     const role = this.repo.create(data);
     return this.repo.save(role);
   }
 
-  async createRole(data: Partial<CommunityRoleEntity>): Promise<CommunityRoleEntity> {
+  async createRole(
+    data: Partial<CommunityRoleEntity>,
+  ): Promise<CommunityRoleEntity> {
     return this.create(data);
   }
 
-  async save(role: CommunityRoleEntity | Partial<CommunityRoleEntity>): Promise<CommunityRoleEntity> {
+  async save(
+    role: CommunityRoleEntity | Partial<CommunityRoleEntity>,
+  ): Promise<CommunityRoleEntity> {
     return this.repo.save(role as any);
   }
 

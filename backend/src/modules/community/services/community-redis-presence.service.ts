@@ -22,14 +22,19 @@ export class CommunityRedisPresenceService implements OnModuleInit {
 
   // Fallback in-memory structures if Upstash/Redis connection is pending
   private readonly fallbackOnlineMap = new Map<string, Set<string>>();
-  private readonly fallbackCohorts = new Map<string, Map<string, ActiveCohortUser>>();
+  private readonly fallbackCohorts = new Map<
+    string,
+    Map<string, ActiveCohortUser>
+  >();
 
   constructor(@Optional() private readonly redisService?: RedisService) {}
 
   onModuleInit() {
     if (this.redisService) {
     } else {
-      this.logger.warn('RedisService not injected. Using high-performance in-memory presence fallback.');
+      this.logger.warn(
+        'RedisService not injected. Using high-performance in-memory presence fallback.',
+      );
     }
   }
 
@@ -37,7 +42,11 @@ export class CommunityRedisPresenceService implements OnModuleInit {
    * Registers a user or guest joining a community presence session / active cohort.
    * Updates Redis Sets, Sorted Sets, and sets heartbeat TTL.
    */
-  async enterPresenceSession(communityId: string, user: ActiveCohortUser, socketId?: string): Promise<number> {
+  async enterPresenceSession(
+    communityId: string,
+    user: ActiveCohortUser,
+    socketId?: string,
+  ): Promise<number> {
     const ttl = COMMUNITY_RANKING_CONFIG.thresholds.presenceTtlSeconds;
     const client = this.redisService?.client;
 
@@ -69,7 +78,9 @@ export class CommunityRedisPresenceService implements OnModuleInit {
 
         return count;
       } catch (err: any) {
-        this.logger.error(`Redis enterPresenceSession error: ${err.message}. Falling back to memory.`);
+        this.logger.error(
+          `Redis enterPresenceSession error: ${err.message}. Falling back to memory.`,
+        );
       }
     }
 
@@ -90,7 +101,10 @@ export class CommunityRedisPresenceService implements OnModuleInit {
   /**
    * Removes a user session when they leave or disconnect.
    */
-  async leavePresenceSession(communityId: string, userId: string): Promise<number> {
+  async leavePresenceSession(
+    communityId: string,
+    userId: string,
+  ): Promise<number> {
     const client = this.redisService?.client;
 
     if (client && client.status === 'ready') {
@@ -110,7 +124,9 @@ export class CommunityRedisPresenceService implements OnModuleInit {
         }
         return count;
       } catch (err: any) {
-        this.logger.error(`Redis leavePresenceSession error: ${err.message}. Falling back to memory.`);
+        this.logger.error(
+          `Redis leavePresenceSession error: ${err.message}. Falling back to memory.`,
+        );
       }
     }
 
@@ -154,7 +170,9 @@ export class CommunityRedisPresenceService implements OnModuleInit {
     const client = this.redisService?.client;
     if (client && client.status === 'ready') {
       try {
-        const count = await client.scard(`presence:community:${communityId}:online`);
+        const count = await client.scard(
+          `presence:community:${communityId}:online`,
+        );
         return count;
       } catch (e) {
         // ignore
@@ -172,7 +190,7 @@ export class CommunityRedisPresenceService implements OnModuleInit {
       try {
         const cohortHashKey = `presence:room:community:${communityId}:cohorts`;
         const rawValues = await client.hvals(cohortHashKey);
-        return rawValues.map(v => JSON.parse(v));
+        return rawValues.map((v) => JSON.parse(v));
       } catch (e) {
         // ignore
       }

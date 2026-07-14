@@ -5,11 +5,25 @@ import { RefreshTokenRequestDto } from '../dto/refresh-token-request.dto';
 import { AuthResponseDto } from '../dto/auth-response.dto';
 
 export interface IAuthService {
-  register(dto: RegisterRequestDto, ipAddress?: string, userAgent?: string): Promise<AuthResponseDto>;
-  login(dto: LoginRequestDto, ipAddress?: string, userAgent?: string): Promise<AuthResponseDto>;
-  googleAuth(dto: GoogleAuthRequestDto, ipAddress?: string, userAgent?: string): Promise<AuthResponseDto>;
+  register(
+    dto: RegisterRequestDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResponseDto>;
+  login(
+    dto: LoginRequestDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResponseDto>;
+  googleAuth(
+    dto: GoogleAuthRequestDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResponseDto>;
   refreshToken(dto: RefreshTokenRequestDto): Promise<AuthResponseDto>;
   logout(userId: string, refreshToken?: string): Promise<void>;
   revokeAllSessions(userId: string): Promise<void>;
-  resendVerificationCode(email: string): Promise<{ success: boolean; message: string }>;
+  resendVerificationCode(
+    email: string,
+  ): Promise<{ success: boolean; message: string }>;
 }

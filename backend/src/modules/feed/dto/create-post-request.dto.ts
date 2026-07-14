@@ -1,4 +1,11 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MinLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { PostVisibility } from '../entities/post.entity';
 
@@ -8,7 +15,9 @@ export class CreatePostRequestDto {
   title: string;
 
   @IsString()
-  @MinLength(50, { message: 'Story details must be at least 50 characters long.' })
+  @MinLength(50, {
+    message: 'Story details must be at least 50 characters long.',
+  })
   content: string;
 
   @IsString()
@@ -32,5 +41,4 @@ export class CreatePostRequestDto {
   @Type(() => Number)
   @IsNumber()
   locationLon?: number;
-
 }

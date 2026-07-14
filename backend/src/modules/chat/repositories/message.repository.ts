@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan, IsNull } from 'typeorm';
 import { MessageEntity, MessageStatus } from '../entities/message.entity';
-import { DEFAULT_MESSAGE_PAGE_SIZE, MAX_MESSAGE_PAGE_SIZE } from '../constants/chat.constants';
+import {
+  DEFAULT_MESSAGE_PAGE_SIZE,
+  MAX_MESSAGE_PAGE_SIZE,
+} from '../constants/chat.constants';
 
 export interface PaginatedMessages {
   items: MessageEntity[];
@@ -37,7 +40,9 @@ export class MessageRepository {
    * Find a message by the client-generated UUID.
    * Used for idempotency — prevents duplicate messages on client retry.
    */
-  async findByClientMessageId(clientMessageId: string): Promise<MessageEntity | null> {
+  async findByClientMessageId(
+    clientMessageId: string,
+  ): Promise<MessageEntity | null> {
     return this.messageRepo.findOne({ where: { clientMessageId } });
   }
 
@@ -68,9 +73,10 @@ export class MessageRepository {
     const hasMore = raw.length > safeLimit;
     if (hasMore) raw.pop();
 
-    const nextCursor = hasMore && raw.length > 0
-      ? raw[raw.length - 1].createdAt.toISOString()
-      : undefined;
+    const nextCursor =
+      hasMore && raw.length > 0
+        ? raw[raw.length - 1].createdAt.toISOString()
+        : undefined;
 
     // Reverse so oldest is first (chronological display order)
     return { items: raw.reverse(), nextCursor, hasMore };
@@ -79,7 +85,11 @@ export class MessageRepository {
   /**
    * Get unread messages in a conversation for a user since their lastReadAt.
    */
-  async findUnread(conversationId: string, userId: string, since?: Date): Promise<MessageEntity[]> {
+  async findUnread(
+    conversationId: string,
+    userId: string,
+    since?: Date,
+  ): Promise<MessageEntity[]> {
     const qb = this.messageRepo
       .createQueryBuilder('msg')
       .where('msg.conversationId = :conversationId', { conversationId })
@@ -112,7 +122,10 @@ export class MessageRepository {
    * Mark all undelivered messages in a conversation as delivered for a user.
    * Called when user reconnects — delivers all pending messages in bulk.
    */
-  async markAllDelivered(conversationId: string, recipientId: string): Promise<void> {
+  async markAllDelivered(
+    conversationId: string,
+    recipientId: string,
+  ): Promise<void> {
     await this.messageRepo
       .createQueryBuilder()
       .update(MessageEntity)
@@ -139,7 +152,10 @@ export class MessageRepository {
   /**
    * Soft-edit a message's text.
    */
-  async edit(messageId: string, newText: string): Promise<MessageEntity | null> {
+  async edit(
+    messageId: string,
+    newText: string,
+  ): Promise<MessageEntity | null> {
     const message = await this.findById(messageId);
     if (!message || message.isDeleted) return null;
 
@@ -167,7 +183,11 @@ export class MessageRepository {
   /**
    * Search messages by text in a conversation.
    */
-  async search(conversationId: string, query: string, limit = 20): Promise<MessageEntity[]> {
+  async search(
+    conversationId: string,
+    query: string,
+    limit = 20,
+  ): Promise<MessageEntity[]> {
     return this.messageRepo
       .createQueryBuilder('msg')
       .where('msg.conversationId = :conversationId', { conversationId })

@@ -1,7 +1,16 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { CommunityEntity } from '../entities/community.entity';
-import { CommunityMemberEntity, CommunityMemberStatus } from '../entities/community-member.entity';
+import {
+  CommunityMemberEntity,
+  CommunityMemberStatus,
+} from '../entities/community-member.entity';
 import { CommunityStatisticsEntity } from '../entities/community-statistics.entity';
 import { CommunityRepository } from '../repositories/community.repository';
 import { CommunityMemberRepository } from '../repositories/community-member.repository';
@@ -30,17 +39,40 @@ export class CommunityModerationService {
   /**
    * Issue an official warning to a member.
    */
-  async warnMember(communityId: string, actorId: string, targetUserId: string, reason?: string): Promise<void> {
+  async warnMember(
+    communityId: string,
+    actorId: string,
+    targetUserId: string,
+    reason?: string,
+  ): Promise<void> {
     const id = await this.permissionService.resolveCommunityId(communityId);
-    const { member: actorMember, role: actorRole } = await this.permissionService.requirePermission(id, actorId, 'member.mute');
+    const { member: actorMember, role: actorRole } =
+      await this.permissionService.requirePermission(
+        id,
+        actorId,
+        'member.mute',
+      );
 
-    const targetMember = await this.memberRepo.findByUserAndCommunity(targetUserId, id);
+    const targetMember = await this.memberRepo.findByUserAndCommunity(
+      targetUserId,
+      id,
+    );
     if (!targetMember || targetMember.status !== CommunityMemberStatus.ACTIVE) {
-      throw new NotFoundException('Target user is not an active member of this community');
+      throw new NotFoundException(
+        'Target user is not an active member of this community',
+      );
     }
 
-    const targetRole = targetMember.roleId ? await this.roleRepo.findById(targetMember.roleId) : null;
-    this.permissionService.enforceHierarchy(actorRole, actorMember.isOwner, targetRole, targetMember.isOwner, 'warn');
+    const targetRole = targetMember.roleId
+      ? await this.roleRepo.findById(targetMember.roleId)
+      : null;
+    this.permissionService.enforceHierarchy(
+      actorRole,
+      actorMember.isOwner,
+      targetRole,
+      targetMember.isOwner,
+      'warn',
+    );
 
     const actionReason = reason || 'Community guideline warning';
 
@@ -54,7 +86,12 @@ export class CommunityModerationService {
     });
 
     // Dispatch event so live UI/notification system picks up the warning immediately
-    this.eventDispatcher.dispatchMemberWarned(id, targetUserId, actorId, actionReason);
+    this.eventDispatcher.dispatchMemberWarned(
+      id,
+      targetUserId,
+      actorId,
+      actionReason,
+    );
   }
 
   /**
@@ -68,15 +105,33 @@ export class CommunityModerationService {
     reason?: string,
   ): Promise<CommunityMemberEntity> {
     const id = await this.permissionService.resolveCommunityId(communityId);
-    const { member: actorMember, role: actorRole } = await this.permissionService.requirePermission(id, actorId, 'member.mute');
+    const { member: actorMember, role: actorRole } =
+      await this.permissionService.requirePermission(
+        id,
+        actorId,
+        'member.mute',
+      );
 
-    const targetMember = await this.memberRepo.findByUserAndCommunity(targetUserId, id);
+    const targetMember = await this.memberRepo.findByUserAndCommunity(
+      targetUserId,
+      id,
+    );
     if (!targetMember || targetMember.status !== CommunityMemberStatus.ACTIVE) {
-      throw new NotFoundException('Target user is not an active member of this community');
+      throw new NotFoundException(
+        'Target user is not an active member of this community',
+      );
     }
 
-    const targetRole = targetMember.roleId ? await this.roleRepo.findById(targetMember.roleId) : null;
-    this.permissionService.enforceHierarchy(actorRole, actorMember.isOwner, targetRole, targetMember.isOwner, 'mute');
+    const targetRole = targetMember.roleId
+      ? await this.roleRepo.findById(targetMember.roleId)
+      : null;
+    this.permissionService.enforceHierarchy(
+      actorRole,
+      actorMember.isOwner,
+      targetRole,
+      targetMember.isOwner,
+      'mute',
+    );
 
     const mutedUntil = new Date(Date.now() + durationMinutes * 60000);
     targetMember.isMuted = true;
@@ -93,24 +148,50 @@ export class CommunityModerationService {
       metadata: { mutedUntil: mutedUntil.toISOString() },
     });
 
-    this.eventDispatcher.dispatchMemberMuted(id, targetUserId, actorId, mutedUntil);
+    this.eventDispatcher.dispatchMemberMuted(
+      id,
+      targetUserId,
+      actorId,
+      mutedUntil,
+    );
     return updated;
   }
 
   /**
    * Unmute a member immediately.
    */
-  async unmuteMember(communityId: string, actorId: string, targetUserId: string, reason?: string): Promise<CommunityMemberEntity> {
+  async unmuteMember(
+    communityId: string,
+    actorId: string,
+    targetUserId: string,
+    reason?: string,
+  ): Promise<CommunityMemberEntity> {
     const id = await this.permissionService.resolveCommunityId(communityId);
-    const { member: actorMember, role: actorRole } = await this.permissionService.requirePermission(id, actorId, 'member.mute');
+    const { member: actorMember, role: actorRole } =
+      await this.permissionService.requirePermission(
+        id,
+        actorId,
+        'member.mute',
+      );
 
-    const targetMember = await this.memberRepo.findByUserAndCommunity(targetUserId, id);
+    const targetMember = await this.memberRepo.findByUserAndCommunity(
+      targetUserId,
+      id,
+    );
     if (!targetMember) {
       throw new NotFoundException('Target user not found');
     }
 
-    const targetRole = targetMember.roleId ? await this.roleRepo.findById(targetMember.roleId) : null;
-    this.permissionService.enforceHierarchy(actorRole, actorMember.isOwner, targetRole, targetMember.isOwner, 'unmute');
+    const targetRole = targetMember.roleId
+      ? await this.roleRepo.findById(targetMember.roleId)
+      : null;
+    this.permissionService.enforceHierarchy(
+      actorRole,
+      actorMember.isOwner,
+      targetRole,
+      targetMember.isOwner,
+      'unmute',
+    );
 
     targetMember.isMuted = false;
     targetMember.mutedUntil = undefined;
@@ -124,37 +205,77 @@ export class CommunityModerationService {
       reason: reason || 'Mute lifted by moderator',
     });
 
-    this.eventDispatcher.dispatchMemberUnmuted(id, targetUserId, actorId, reason);
+    this.eventDispatcher.dispatchMemberUnmuted(
+      id,
+      targetUserId,
+      actorId,
+      reason,
+    );
     return updated;
   }
 
   /**
    * Kick a member from the community. They can re-join anytime if not banned.
    */
-  async kickMember(communityId: string, actorId: string, targetUserId: string, reason?: string): Promise<void> {
+  async kickMember(
+    communityId: string,
+    actorId: string,
+    targetUserId: string,
+    reason?: string,
+  ): Promise<void> {
     const id = await this.permissionService.resolveCommunityId(communityId);
-    const { member: actorMember, role: actorRole } = await this.permissionService.requirePermission(id, actorId, 'member.kick');
+    const { member: actorMember, role: actorRole } =
+      await this.permissionService.requirePermission(
+        id,
+        actorId,
+        'member.kick',
+      );
 
     return this.dataSource.transaction(async (manager) => {
       const target = await manager.findOne(CommunityMemberEntity, {
-        where: { communityId: id, userId: targetUserId, status: CommunityMemberStatus.ACTIVE },
+        where: {
+          communityId: id,
+          userId: targetUserId,
+          status: CommunityMemberStatus.ACTIVE,
+        },
       });
       if (!target) {
-        throw new NotFoundException('Target user is not an active member of this community');
+        throw new NotFoundException(
+          'Target user is not an active member of this community',
+        );
       }
 
-      const targetRole = target.roleId ? await this.roleRepo.findById(target.roleId) : null;
-      this.permissionService.enforceHierarchy(actorRole, actorMember.isOwner, targetRole, target.isOwner, 'kick');
+      const targetRole = target.roleId
+        ? await this.roleRepo.findById(target.roleId)
+        : null;
+      this.permissionService.enforceHierarchy(
+        actorRole,
+        actorMember.isOwner,
+        targetRole,
+        target.isOwner,
+        'kick',
+      );
 
-      const oldRoleName = targetRole?.displayName || targetRole?.name || 'MEMBER';
+      const oldRoleName =
+        targetRole?.displayName || targetRole?.name || 'MEMBER';
       target.status = CommunityMemberStatus.KICKED;
       await manager.save(target);
 
-      const community = await manager.findOne(CommunityEntity, { where: { id }, lock: { mode: 'pessimistic_write' } });
+      const community = await manager.findOne(CommunityEntity, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
       if (community) {
-        community.currentMemberCount = Math.max(0, community.currentMemberCount - 1);
+        community.currentMemberCount = Math.max(
+          0,
+          community.currentMemberCount - 1,
+        );
         await manager.save(community);
-        await manager.update(CommunityStatisticsEntity, { communityId: id }, { memberCount: community.currentMemberCount });
+        await manager.update(
+          CommunityStatisticsEntity,
+          { communityId: id },
+          { memberCount: community.currentMemberCount },
+        );
       }
 
       await this.auditService.logAction({
@@ -182,24 +303,48 @@ export class CommunityModerationService {
     durationMinutes?: number,
   ): Promise<void> {
     const id = await this.permissionService.resolveCommunityId(communityId);
-    const { member: actorMember, role: actorRole } = await this.permissionService.requirePermission(id, actorId, 'member.ban');
+    const { member: actorMember, role: actorRole } =
+      await this.permissionService.requirePermission(id, actorId, 'member.ban');
 
     return this.dataSource.transaction(async (manager) => {
-      const target = await manager.findOne(CommunityMemberEntity, { where: { communityId: id, userId: targetUserId } });
-      const targetRole = target?.roleId ? await this.roleRepo.findById(target.roleId) : null;
-      this.permissionService.enforceHierarchy(actorRole, actorMember.isOwner, targetRole, target?.isOwner ?? false, 'ban');
+      const target = await manager.findOne(CommunityMemberEntity, {
+        where: { communityId: id, userId: targetUserId },
+      });
+      const targetRole = target?.roleId
+        ? await this.roleRepo.findById(target.roleId)
+        : null;
+      this.permissionService.enforceHierarchy(
+        actorRole,
+        actorMember.isOwner,
+        targetRole,
+        target?.isOwner ?? false,
+        'ban',
+      );
 
-      const oldRoleName = targetRole?.displayName || targetRole?.name || (target?.status === CommunityMemberStatus.ACTIVE ? 'MEMBER' : 'NONE');
+      const oldRoleName =
+        targetRole?.displayName ||
+        targetRole?.name ||
+        (target?.status === CommunityMemberStatus.ACTIVE ? 'MEMBER' : 'NONE');
 
       if (target && target.status === CommunityMemberStatus.ACTIVE) {
         target.status = CommunityMemberStatus.BANNED;
         await manager.save(target);
 
-        const community = await manager.findOne(CommunityEntity, { where: { id }, lock: { mode: 'pessimistic_write' } });
+        const community = await manager.findOne(CommunityEntity, {
+          where: { id },
+          lock: { mode: 'pessimistic_write' },
+        });
         if (community) {
-          community.currentMemberCount = Math.max(0, community.currentMemberCount - 1);
+          community.currentMemberCount = Math.max(
+            0,
+            community.currentMemberCount - 1,
+          );
           await manager.save(community);
-          await manager.update(CommunityStatisticsEntity, { communityId: id }, { memberCount: community.currentMemberCount });
+          await manager.update(
+            CommunityStatisticsEntity,
+            { communityId: id },
+            { memberCount: community.currentMemberCount },
+          );
         }
       } else if (target) {
         target.status = CommunityMemberStatus.BANNED;
@@ -215,7 +360,10 @@ export class CommunityModerationService {
         await manager.save(newMember);
       }
 
-      const expiresAt = !permanent && durationMinutes ? new Date(Date.now() + durationMinutes * 60000) : undefined;
+      const expiresAt =
+        !permanent && durationMinutes
+          ? new Date(Date.now() + durationMinutes * 60000)
+          : undefined;
       await this.banRepo.create({
         communityId: id,
         userId: targetUserId,
@@ -230,7 +378,9 @@ export class CommunityModerationService {
         actorId,
         targetUserId,
         action: CommunityAuditAction.MEMBER_BAN,
-        reason: reason || (permanent ? 'Permanent Ban' : `Temporary Ban (${durationMinutes}m)`),
+        reason:
+          reason ||
+          (permanent ? 'Permanent Ban' : `Temporary Ban (${durationMinutes}m)`),
         oldRole: oldRoleName,
         durationMinutes: permanent ? undefined : durationMinutes,
         metadata: { permanent, expiresAt: expiresAt?.toISOString() },
@@ -243,7 +393,12 @@ export class CommunityModerationService {
   /**
    * Unban a member so they can re-join the community.
    */
-  async unbanMember(communityId: string, actorId: string, targetUserId: string, reason?: string): Promise<void> {
+  async unbanMember(
+    communityId: string,
+    actorId: string,
+    targetUserId: string,
+    reason?: string,
+  ): Promise<void> {
     const id = await this.permissionService.resolveCommunityId(communityId);
     await this.permissionService.requirePermission(id, actorId, 'member.ban');
 
@@ -253,7 +408,9 @@ export class CommunityModerationService {
         await manager.delete(this.banRepo.target, { id: activeBan.id });
       }
 
-      const member = await manager.findOne(CommunityMemberEntity, { where: { communityId: id, userId: targetUserId } });
+      const member = await manager.findOne(CommunityMemberEntity, {
+        where: { communityId: id, userId: targetUserId },
+      });
       if (member && member.status === CommunityMemberStatus.BANNED) {
         member.status = CommunityMemberStatus.LEFT; // Reset to left so they can join again cleanly
         await manager.save(member);
@@ -267,7 +424,12 @@ export class CommunityModerationService {
         reason: reason || 'Ban revoked by moderator',
       });
 
-      this.eventDispatcher.dispatchMemberUnbanned(id, targetUserId, actorId, reason);
+      this.eventDispatcher.dispatchMemberUnbanned(
+        id,
+        targetUserId,
+        actorId,
+        reason,
+      );
     });
   }
 
@@ -277,9 +439,17 @@ export class CommunityModerationService {
   async getMemberHistory(
     communityId: string,
     targetUserId: string,
-  ): Promise<{ auditLogs: any[]; activeBan: any | null; warningsCount: number; mutesCount: number }> {
+  ): Promise<{
+    auditLogs: any[];
+    activeBan: any | null;
+    warningsCount: number;
+    mutesCount: number;
+  }> {
     const id = await this.permissionService.resolveCommunityId(communityId);
-    const { items: auditLogs } = await this.auditService.getLogs(id, { targetUserId, limit: 50 });
+    const { items: auditLogs } = await this.auditService.getLogs(id, {
+      targetUserId,
+      limit: 50,
+    });
     const activeBan = await this.banRepo.findActiveBan(id, targetUserId);
 
     let warningsCount = 0;

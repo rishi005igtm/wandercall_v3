@@ -16,11 +16,17 @@ async function bootstrap() {
     'http://localhost:3000',
     'http://localhost:5173',
   ]);
-  
+
   app.enableCors({
-    origin: corsOrigins.length > 0 && corsOrigins[0] !== '' ? corsOrigins : true,
+    origin:
+      corsOrigins.length > 0 && corsOrigins[0] !== '' ? corsOrigins : true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'Accept',
+      'X-Requested-With',
+    ],
     credentials: true,
   });
 

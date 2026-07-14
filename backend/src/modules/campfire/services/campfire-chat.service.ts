@@ -8,8 +8,23 @@ export class CampfireChatService {
 
   constructor(private readonly messageRepository: CampfireMessageRepository) {}
 
-  async saveMessage(roomId: string, userId: string, userProfile: any, text: string): Promise<CampfireMessageEntity> {
-    const displayName = userProfile?.name || userProfile?.displayName || 'Explorer';
+  async saveMessage(
+    roomId: string,
+    userId: string,
+    userProfile:
+      | {
+          name?: string;
+          displayName?: string;
+          avatar?: string;
+          avatarUrl?: string;
+          role?: string;
+        }
+      | null
+      | undefined,
+    text: string,
+  ): Promise<CampfireMessageEntity> {
+    const displayName =
+      userProfile?.name || userProfile?.displayName || 'Explorer';
     const avatar = userProfile?.avatar || userProfile?.avatarUrl || null;
     const role = userProfile?.role || 'Listener';
 
@@ -23,9 +38,14 @@ export class CampfireChatService {
     });
 
     // Prune old messages asynchronously to maintain the 100 limit rolling window
-    this.messageRepository.pruneOldMessages(roomId, 100).catch(err => {
-      this.logger.error(`Error pruning old campfire messages for room ${roomId}: ${err.message}`);
-    });
+    this.messageRepository
+      .pruneOldMessages(roomId, 100)
+      .catch((err: unknown) => {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.logger.error(
+          `Error pruning old campfire messages for room ${roomId}: ${errMsg}`,
+        );
+      });
 
     return message;
   }

@@ -1,13 +1,23 @@
-import { IsEnum, IsNotEmpty, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 import { Transform } from 'class-transformer';
-import { CampfireCategory, CampfireMood, CampfireStatus, CampfireVisibility } from '../constants/campfire.constant';
-
+import {
+  CampfireCategory,
+  CampfireMood,
+  CampfireStatus,
+  CampfireVisibility,
+} from '../constants/campfire.constant';
 
 export class CreateCampfireDto {
   @IsUUID()
   @IsOptional()
   communityId?: string;
-
 
   @IsString()
   @IsNotEmpty()
@@ -18,17 +28,23 @@ export class CreateCampfireDto {
   @IsOptional()
   description?: string;
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase().replace(/ /g, '_') : value))
+  @Transform(({ value }: { value: unknown }): unknown =>
+    typeof value === 'string' ? value.toUpperCase().replace(/ /g, '_') : value,
+  )
   @IsEnum(CampfireCategory)
   @IsOptional()
   category?: CampfireCategory;
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase().replace(/ /g, '_') : value))
+  @Transform(({ value }: { value: unknown }): unknown =>
+    typeof value === 'string' ? value.toUpperCase().replace(/ /g, '_') : value,
+  )
   @IsEnum(CampfireMood)
   @IsOptional()
   mood?: CampfireMood;
 
-  @Transform(({ value }) => (typeof value === 'string' ? value.toUpperCase() : value))
+  @Transform(({ value }: { value: unknown }): unknown =>
+    typeof value === 'string' ? value.toUpperCase() : value,
+  )
   @IsEnum(CampfireVisibility)
   @IsOptional()
   visibility?: CampfireVisibility;
@@ -41,4 +57,3 @@ export class CreateCampfireDto {
   @IsOptional()
   scheduledStartAt?: string;
 }
-

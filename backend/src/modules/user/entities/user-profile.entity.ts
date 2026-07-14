@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('users_profile')
 @Index(['username', 'displayName'])
@@ -77,7 +84,7 @@ export class UserProfileEntity {
   followingCount: number;
 
   @Column({ type: 'json', nullable: true })
-  dnaBadges?: any;
+  dnaBadges?: unknown;
 
   @CreateDateColumn()
   createdAt: Date;

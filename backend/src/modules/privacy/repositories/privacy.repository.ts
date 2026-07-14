@@ -8,13 +8,20 @@ export class PrivacyRepository extends Repository<PrivacyRelationEntity> {
     super(PrivacyRelationEntity, dataSource.createEntityManager());
   }
 
-  async getRelation(userId: string, targetUserId: string): Promise<PrivacyRelationEntity | null> {
+  async getRelation(
+    userId: string,
+    targetUserId: string,
+  ): Promise<PrivacyRelationEntity | null> {
     return this.findOne({
       where: { userId, targetUserId },
     });
   }
 
-  async getBlockedUsers(userId: string, limit: number = 20, cursor?: string): Promise<{ items: PrivacyRelationEntity[], nextCursor?: string }> {
+  async getBlockedUsers(
+    userId: string,
+    limit: number = 20,
+    cursor?: string,
+  ): Promise<{ items: PrivacyRelationEntity[]; nextCursor?: string }> {
     const qb = this.createQueryBuilder('privacy')
       .leftJoinAndSelect('privacy.targetUser', 'targetUser')
       .where('privacy.userId = :userId', { userId })
@@ -43,12 +50,12 @@ export class PrivacyRepository extends Repository<PrivacyRelationEntity> {
     updates: Partial<PrivacyRelationEntity>,
   ): Promise<PrivacyRelationEntity> {
     const existing = await this.getRelation(userId, targetUserId);
-    
+
     if (existing) {
       Object.assign(existing, updates);
       return this.save(existing);
     }
-    
+
     const newRelation = this.create({ userId, targetUserId, ...updates });
     return this.save(newRelation);
   }

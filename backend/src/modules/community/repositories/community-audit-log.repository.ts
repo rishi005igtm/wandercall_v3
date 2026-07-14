@@ -8,7 +8,9 @@ export class CommunityAuditLogRepository extends Repository<CommunityAuditLogEnt
     super(CommunityAuditLogEntity, dataSource.createEntityManager());
   }
 
-  async createLog(data: Partial<CommunityAuditLogEntity>): Promise<CommunityAuditLogEntity> {
+  async createLog(
+    data: Partial<CommunityAuditLogEntity>,
+  ): Promise<CommunityAuditLogEntity> {
     const log = this.create(data);
     return this.save(log);
   }
@@ -24,20 +26,26 @@ export class CommunityAuditLogRepository extends Repository<CommunityAuditLogEnt
     } = {},
   ): Promise<{ items: CommunityAuditLogEntity[]; nextCursor?: string }> {
     const limit = Math.min(filter.limit || 30, 100);
-    const query = this.createQueryBuilder('log')
-      .where('log.communityId = :communityId', { communityId });
+    const query = this.createQueryBuilder('log').where(
+      'log.communityId = :communityId',
+      { communityId },
+    );
 
     if (filter.actorId) {
       query.andWhere('log.actorId = :actorId', { actorId: filter.actorId });
     }
     if (filter.targetUserId) {
-      query.andWhere('log.targetUserId = :targetUserId', { targetUserId: filter.targetUserId });
+      query.andWhere('log.targetUserId = :targetUserId', {
+        targetUserId: filter.targetUserId,
+      });
     }
     if (filter.action) {
       query.andWhere('log.action = :action', { action: filter.action });
     }
     if (filter.cursor) {
-      query.andWhere('log.createdAt < :cursor', { cursor: new Date(filter.cursor) });
+      query.andWhere('log.createdAt < :cursor', {
+        cursor: new Date(filter.cursor),
+      });
     }
 
     query.orderBy('log.createdAt', 'DESC').take(limit + 1);

@@ -1,6 +1,17 @@
-import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Min } from 'class-validator';
+import {
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+} from 'class-validator';
 import { Type } from 'class-transformer';
-import { CampfireCategory, CampfireMood, CampfireStatus } from '../constants/campfire.constant';
+import {
+  CampfireCategory,
+  CampfireMood,
+  CampfireStatus,
+} from '../constants/campfire.constant';
 
 export class CampfireQueryDto {
   @IsUUID()
@@ -47,4 +58,3 @@ export class CampfireQueryDto {
   @IsOptional()
   participantUserId?: string;
 }
-

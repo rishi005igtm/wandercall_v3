@@ -17,7 +17,10 @@ export enum ConversationType {
 
 @Entity('chat_conversations')
 @Index(['updatedAt'])
-@Index(['participantKey'], { unique: true, where: '"participantKey" IS NOT NULL' })
+@Index(['participantKey'], {
+  unique: true,
+  where: '"participantKey" IS NOT NULL',
+})
 export class ConversationEntity {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -42,7 +42,12 @@ export class FeedEventDispatcher extends EventEmitter {
     this.emit('save.removed', { postId, userId, category });
   }
 
-  dispatchCommentAdded(postId: string, userId: string, commentId: string, category: string) {
+  dispatchCommentAdded(
+    postId: string,
+    userId: string,
+    commentId: string,
+    category: string,
+  ) {
     this.emit('comment.added', { postId, userId, commentId, category });
   }
 

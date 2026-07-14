@@ -36,8 +36,14 @@ export class CommunityEventDispatcher extends EventEmitter {
     const payload = args[0];
     if (payload && payload.communityId) {
       const channel = `channel:events:community:${payload.communityId}`;
-      this.redisService.client.publish(channel, JSON.stringify({ event: eventName, payload }))
-        .catch(err => this.logger.error(`Redis publish failed for ${String(eventName)}`, err));
+      this.redisService.client
+        .publish(channel, JSON.stringify({ event: eventName, payload }))
+        .catch((err) =>
+          this.logger.error(
+            `Redis publish failed for ${String(eventName)}`,
+            err,
+          ),
+        );
     }
     return result;
   }
@@ -78,8 +84,16 @@ export class CommunityEventDispatcher extends EventEmitter {
     this.emit(CommunityEvents.SETTINGS_UPDATED, { communityId, updatedBy });
   }
 
-  dispatchMemberInvited(communityId: string, senderId: string, receiverId: string) {
-    this.emit(CommunityEvents.MEMBER_INVITED, { communityId, senderId, receiverId });
+  dispatchMemberInvited(
+    communityId: string,
+    senderId: string,
+    receiverId: string,
+  ) {
+    this.emit(CommunityEvents.MEMBER_INVITED, {
+      communityId,
+      senderId,
+      receiverId,
+    });
   }
 
   dispatchMemberKicked(communityId: string, userId: string, kickedBy: string) {
@@ -90,27 +104,85 @@ export class CommunityEventDispatcher extends EventEmitter {
     this.emit(CommunityEvents.MEMBER_BANNED, { communityId, userId, bannedBy });
   }
 
-  dispatchMemberUnbanned(communityId: string, userId: string, unbannedBy: string, reason?: string) {
-    this.emit(CommunityEvents.MEMBER_UNBANNED, { communityId, userId, unbannedBy, reason });
+  dispatchMemberUnbanned(
+    communityId: string,
+    userId: string,
+    unbannedBy: string,
+    reason?: string,
+  ) {
+    this.emit(CommunityEvents.MEMBER_UNBANNED, {
+      communityId,
+      userId,
+      unbannedBy,
+      reason,
+    });
   }
 
-  dispatchMemberMuted(communityId: string, userId: string, mutedBy: string, mutedUntil: Date) {
-    this.emit(CommunityEvents.MEMBER_MUTED, { communityId, userId, mutedBy, mutedUntil });
+  dispatchMemberMuted(
+    communityId: string,
+    userId: string,
+    mutedBy: string,
+    mutedUntil: Date,
+  ) {
+    this.emit(CommunityEvents.MEMBER_MUTED, {
+      communityId,
+      userId,
+      mutedBy,
+      mutedUntil,
+    });
   }
 
-  dispatchMemberUnmuted(communityId: string, userId: string, unmutedBy: string, reason?: string) {
-    this.emit(CommunityEvents.MEMBER_UNMUTED, { communityId, userId, unmutedBy, reason });
+  dispatchMemberUnmuted(
+    communityId: string,
+    userId: string,
+    unmutedBy: string,
+    reason?: string,
+  ) {
+    this.emit(CommunityEvents.MEMBER_UNMUTED, {
+      communityId,
+      userId,
+      unmutedBy,
+      reason,
+    });
   }
 
-  dispatchMemberWarned(communityId: string, userId: string, warnedBy: string, reason?: string) {
-    this.emit(CommunityEvents.MEMBER_WARNED, { communityId, userId, warnedBy, reason });
+  dispatchMemberWarned(
+    communityId: string,
+    userId: string,
+    warnedBy: string,
+    reason?: string,
+  ) {
+    this.emit(CommunityEvents.MEMBER_WARNED, {
+      communityId,
+      userId,
+      warnedBy,
+      reason,
+    });
   }
 
-  dispatchOwnerTransferred(communityId: string, oldOwnerId: string, newOwnerId: string) {
-    this.emit(CommunityEvents.OWNER_TRANSFERRED, { communityId, oldOwnerId, newOwnerId });
+  dispatchOwnerTransferred(
+    communityId: string,
+    oldOwnerId: string,
+    newOwnerId: string,
+  ) {
+    this.emit(CommunityEvents.OWNER_TRANSFERRED, {
+      communityId,
+      oldOwnerId,
+      newOwnerId,
+    });
   }
 
-  dispatchRoleChanged(communityId: string, userId: string, roleId: string, changedBy: string) {
-    this.emit(CommunityEvents.ROLE_CHANGED, { communityId, userId, roleId, changedBy });
+  dispatchRoleChanged(
+    communityId: string,
+    userId: string,
+    roleId: string,
+    changedBy: string,
+  ) {
+    this.emit(CommunityEvents.ROLE_CHANGED, {
+      communityId,
+      userId,
+      roleId,
+      changedBy,
+    });
   }
 }

@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommunityAuditLogRepository } from '../repositories/community-audit-log.repository';
-import { CommunityAuditAction, CommunityAuditLogEntity } from '../entities/community-audit-log.entity';
+import {
+  CommunityAuditAction,
+  CommunityAuditLogEntity,
+} from '../entities/community-audit-log.entity';
 import { UserRepository } from '../../user/repositories/user.repository';
 
 @Injectable()
@@ -37,7 +40,10 @@ export class CommunityAuditService {
       });
       return log;
     } catch (error: any) {
-      this.logger.error(`Failed to create audit log: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to create audit log: ${error.message}`,
+        error.stack,
+      );
       throw error;
     }
   }
@@ -52,7 +58,10 @@ export class CommunityAuditService {
       cursor?: string;
     } = {},
   ): Promise<{ items: any[]; nextCursor?: string }> {
-    const { items, nextCursor } = await this.auditRepo.findLogs(communityId, filter);
+    const { items, nextCursor } = await this.auditRepo.findLogs(
+      communityId,
+      filter,
+    );
 
     // Collect all unique user IDs to enrich in a batch
     const userIds = new Set<string>();
@@ -61,7 +70,10 @@ export class CommunityAuditService {
       if (item.targetUserId) userIds.add(item.targetUserId);
     });
 
-    const userMap = new Map<string, { username: string; displayName?: string; avatarUrl?: string }>();
+    const userMap = new Map<
+      string,
+      { username: string; displayName?: string; avatarUrl?: string }
+    >();
     for (const uid of userIds) {
       const profile = await this.userRepo.findByUserId(uid);
       if (profile) {
@@ -78,10 +90,17 @@ export class CommunityAuditService {
       const target = item.targetUserId ? userMap.get(item.targetUserId) : null;
       return {
         ...item,
-        actorName: actor?.displayName || actor?.username || item.actorId.slice(0, 8),
-        actorAvatar: actor?.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
-        targetName: target ? target.displayName || target.username : item.targetUserId?.slice(0, 8),
-        targetAvatar: target?.avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        actorName:
+          actor?.displayName || actor?.username || item.actorId.slice(0, 8),
+        actorAvatar:
+          actor?.avatarUrl ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+        targetName: target
+          ? target.displayName || target.username
+          : item.targetUserId?.slice(0, 8),
+        targetAvatar:
+          target?.avatarUrl ||
+          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
       };
     });
 

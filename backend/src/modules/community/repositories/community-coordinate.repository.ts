@@ -18,7 +18,9 @@ export class CommunityCoordinateRepository {
     return this.repo.findOne({ where: { id } });
   }
 
-  async findByCategoryId(categoryId: string): Promise<CommunityCoordinateEntity[]> {
+  async findByCategoryId(
+    categoryId: string,
+  ): Promise<CommunityCoordinateEntity[]> {
     return this.repo.find({ where: { categoryId } });
   }
 }

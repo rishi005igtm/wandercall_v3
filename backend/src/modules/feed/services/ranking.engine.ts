@@ -39,9 +39,11 @@ export class RankingEngine {
     const diffMs = Math.max(0, referenceTime - publishedAt.getTime());
     const hoursElapsed = diffMs / (1000 * 60 * 60);
     const daysElapsed = hoursElapsed / 24;
-    
-    let freshnessScore = Math.exp(-RANKING_CONFIG.freshness.decayRate * daysElapsed);
-    
+
+    let freshnessScore = Math.exp(
+      -RANKING_CONFIG.freshness.decayRate * daysElapsed,
+    );
+
     // New Post Boost
     if (hoursElapsed < RANKING_CONFIG.freshness.newPostWindowHours) {
       freshnessScore *= RANKING_CONFIG.freshness.newPostBoost;
@@ -53,15 +55,20 @@ export class RankingEngine {
       post.commentCount * RANKING_CONFIG.engagementMultipliers.comment +
       post.saveCount * RANKING_CONFIG.engagementMultipliers.save +
       post.shareCount * RANKING_CONFIG.engagementMultipliers.share;
-    
-    const popularityScore = baseEngagement > 0 ? baseEngagement / (baseEngagement + 15.0) : 0;
+
+    const popularityScore =
+      baseEngagement > 0 ? baseEngagement / (baseEngagement + 15.0) : 0;
 
     // 3. Affinity Features
     const rawInterest = userInterests[post.category] || 0.0;
-    const interestScore = rawInterest > 0 ? rawInterest / (rawInterest + 5.0) : 0.0;
+    const interestScore =
+      rawInterest > 0 ? rawInterest / (rawInterest + 5.0) : 0.0;
 
     const rawAuthorAffinity = authorAffinityMap[post.authorId] || 0.0;
-    const authorAffinityScore = rawAuthorAffinity > 0 ? rawAuthorAffinity / (rawAuthorAffinity + 5.0) : 0.0;
+    const authorAffinityScore =
+      rawAuthorAffinity > 0
+        ? rawAuthorAffinity / (rawAuthorAffinity + 5.0)
+        : 0.0;
 
     const relationshipScore = followedCreatorIds.has(post.authorId) ? 1.0 : 0.0;
 
@@ -80,7 +87,7 @@ export class RankingEngine {
 
     // Exploration Boost
     if (isExplore) {
-      score += RANKING_CONFIG.weights.diversityBoost; 
+      score += RANKING_CONFIG.weights.diversityBoost;
     }
 
     // AI Quality Modifier
@@ -89,7 +96,7 @@ export class RankingEngine {
     // 5. Seen Penalty Engine (Stage 6)
     const views = impressionCounts[post.id] || 0;
     let seenPenalty = 1.0;
-    
+
     if (views === 1) seenPenalty = RANKING_CONFIG.penalties.seen1x;
     else if (views === 2) seenPenalty = RANKING_CONFIG.penalties.seen2x;
     else if (views === 3) seenPenalty = RANKING_CONFIG.penalties.seen3x;

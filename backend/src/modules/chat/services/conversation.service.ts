@@ -15,14 +15,18 @@ export class ConversationService {
   ) {}
 
   async getConversations(userId: string) {
-    const conversations = await this.conversationRepository.findByUserId(userId);
+    const conversations =
+      await this.conversationRepository.findByUserId(userId);
     return conversations.map((conv) => ({
       ...conv,
       unreadCount: conv.unreadCounts[userId] ?? 0,
     }));
   }
 
-  async getOrCreateDirectConversation(requesterId: string, targetUserId: string) {
+  async getOrCreateDirectConversation(
+    requesterId: string,
+    targetUserId: string,
+  ) {
     const conversation = await this.conversationRepository.findOrCreateDirect(
       requesterId,
       targetUserId,
@@ -30,7 +34,11 @@ export class ConversationService {
     return { conversationId: conversation.id };
   }
 
-  async updateMemberReadState(conversationId: string, userId: string, sequenceNumber: number) {
+  async updateMemberReadState(
+    conversationId: string,
+    userId: string,
+    sequenceNumber: number,
+  ) {
     await this.dataSource
       .createQueryBuilder()
       .insert()
@@ -40,13 +48,20 @@ export class ConversationService {
       .execute();
   }
 
-  async updateMemberDeliveredState(conversationId: string, userId: string, sequenceNumber: number) {
+  async updateMemberDeliveredState(
+    conversationId: string,
+    userId: string,
+    sequenceNumber: number,
+  ) {
     await this.dataSource
       .createQueryBuilder()
       .insert()
       .into(ConversationMemberStateEntity)
       .values({ conversationId, userId, lastDeliveredSequence: sequenceNumber })
-      .orUpdate(['lastDeliveredSequence', 'updatedAt'], ['conversationId', 'userId'])
+      .orUpdate(
+        ['lastDeliveredSequence', 'updatedAt'],
+        ['conversationId', 'userId'],
+      )
       .execute();
   }
 }

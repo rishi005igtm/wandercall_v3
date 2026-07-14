@@ -4,7 +4,14 @@ import { Type } from 'class-transformer';
 export class FeedQueryDto {
   @IsOptional()
   @IsString()
-  feedType?: 'global' | 'following' | 'trending' | 'recent' | 'category' | 'saved' | 'host';
+  feedType?:
+    | 'global'
+    | 'following'
+    | 'trending'
+    | 'recent'
+    | 'category'
+    | 'saved'
+    | 'host';
 
   @IsOptional()
   @IsString()

@@ -43,7 +43,6 @@ export class HealthController {
       checks.redis = 'error';
     }
 
-
     const allOk = Object.values(checks).every((v) => v === 'ok');
 
     const result = {

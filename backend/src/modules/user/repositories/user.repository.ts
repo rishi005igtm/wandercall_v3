@@ -21,7 +21,9 @@ export class UserRepository {
   }
 
   async findByUsername(username: string): Promise<UserProfileEntity | null> {
-    return this.profileRepo.findOne({ where: { username: username.toLowerCase() } });
+    return this.profileRepo.findOne({
+      where: { username: username.toLowerCase() },
+    });
   }
 
   async saveProfile(profile: UserProfileEntity): Promise<UserProfileEntity> {
@@ -37,31 +39,46 @@ export class UserRepository {
     });
   }
 
-  async searchActiveProfiles(query: string, limit = 100, offset = 0, excludeUserIds: string[] = []): Promise<UserProfileEntity[]> {
-    const qb = this.profileRepo.createQueryBuilder('profile')
+  async searchActiveProfiles(
+    query: string,
+    limit = 100,
+    offset = 0,
+    excludeUserIds: string[] = [],
+  ): Promise<UserProfileEntity[]> {
+    const qb = this.profileRepo
+      .createQueryBuilder('profile')
       .where('profile.isPrivate = :isPrivate', { isPrivate: false });
-    
+
     if (excludeUserIds.length > 0) {
-      qb.andWhere('profile.userId NOT IN (:...excludeUserIds)', { excludeUserIds });
+      qb.andWhere('profile.userId NOT IN (:...excludeUserIds)', {
+        excludeUserIds,
+      });
     }
 
     if (query) {
-      qb.andWhere('(profile.username ILIKE :query OR profile.displayName ILIKE :query OR profile.bio ILIKE :query)', { query: `%${query}%` });
+      qb.andWhere(
+        '(profile.username ILIKE :query OR profile.displayName ILIKE :query OR profile.bio ILIKE :query)',
+        { query: `%${query}%` },
+      );
     }
 
-    return qb.orderBy('profile.reputationScore', 'DESC')
+    return qb
+      .orderBy('profile.reputationScore', 'DESC')
       .addOrderBy('profile.xpCurrent', 'DESC')
       .skip(offset)
       .take(limit)
       .getMany();
   }
 
-
-  async findSettingsByUserId(userId: string): Promise<UserSettingsEntity | null> {
+  async findSettingsByUserId(
+    userId: string,
+  ): Promise<UserSettingsEntity | null> {
     return this.settingsRepo.findOne({ where: { userId } });
   }
 
-  async saveSettings(settings: UserSettingsEntity): Promise<UserSettingsEntity> {
+  async saveSettings(
+    settings: UserSettingsEntity,
+  ): Promise<UserSettingsEntity> {
     return this.settingsRepo.save(settings);
   }
 

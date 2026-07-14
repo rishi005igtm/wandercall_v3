@@ -11,9 +11,12 @@ export class RelationshipService {
     private readonly privacyService: PrivacyService,
   ) {}
 
-  async resolveRelationship(viewerId: string | null, targetUserId: string): Promise<RelationshipResponseDto> {
+  async resolveRelationship(
+    viewerId: string | null,
+    targetUserId: string,
+  ): Promise<RelationshipResponseDto> {
     const result = new RelationshipResponseDto();
-    
+
     if (!viewerId) {
       result.viewerFollowsTarget = false;
       result.targetFollowsViewer = false;

@@ -1,4 +1,13 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, Index, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Index,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { UserProfileEntity } from '../../user/entities/user-profile.entity';
 
 @Entity('user_favorite_friends')

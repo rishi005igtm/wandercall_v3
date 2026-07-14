@@ -423,9 +423,13 @@ export function validate(config: Record<string, unknown>) {
     if (convertedConfig[key] === 'false') convertedConfig[key] = false;
   }
 
-  const validatedConfig = plainToInstance(EnvironmentVariables, convertedConfig, {
-    enableImplicitConversion: true,
-  });
+  const validatedConfig = plainToInstance(
+    EnvironmentVariables,
+    convertedConfig,
+    {
+      enableImplicitConversion: true,
+    },
+  );
 
   const errors = validateSync(validatedConfig, {
     skipMissingProperties: true, // Only validate fields that ARE present
@@ -435,7 +439,9 @@ export function validate(config: Record<string, unknown>) {
     throw new Error(
       `❌ Environment Validation Failed!\n` +
         `The application could not start due to invalid environment configuration:\n` +
-        errors.map((err) => Object.values(err.constraints || {}).join(', ')).join('\n'),
+        errors
+          .map((err) => Object.values(err.constraints || {}).join(', '))
+          .join('\n'),
     );
   }
   return validatedConfig;

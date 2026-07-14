@@ -1,4 +1,11 @@
-import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, DeleteDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  PrimaryGeneratedColumn,
+  DeleteDateColumn,
+} from 'typeorm';
 
 @Entity('community_saved')
 @Index(['userId', 'communityId'], { unique: true })

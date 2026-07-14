@@ -23,6 +23,8 @@ import { FeedQueryDto } from '../dto/feed-query.dto';
 import { CommentRequestDto } from '../dto/comment-request.dto';
 import { PostService } from '../services/post.service';
 import { RecommendationEngine } from '../services/recommendation.engine';
+import { RequestWithUser } from '../../../core/interfaces/request-with-user.interface';
+import { UserRole } from '../../auth/enums/user-role.enum';
 
 @Controller('feed')
 export class FeedController {
@@ -45,7 +47,7 @@ export class FeedController {
    */
   @Get()
   @UseGuards(OptionalJwtAuthGuard)
-  async getFeed(@Query() query: FeedQueryDto, @Req() req: any) {
+  async getFeed(@Query() query: FeedQueryDto, @Req() req: RequestWithUser) {
     const userId = req.user?.userId || null;
     return this.recommendationEngine.getPersonalizedFeed(userId, query);
   }
@@ -58,7 +60,7 @@ export class FeedController {
   async getUserFeed(
     @Param('username') username: string,
     @Query() query: FeedQueryDto,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     const viewerId = req.user?.userId || null;
     return this.recommendationEngine.getUserFeed(viewerId, username, query);
@@ -82,21 +84,19 @@ export class FeedController {
       audio?: Express.Multer.File[];
     },
     @Body() dto: CreatePostRequestDto,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     const userId = req.user.userId;
-    const userRole = req.user.role;
-    
+    const userRole = req.user.role as UserRole;
+
     // Stitch audio file correctly (extract first element from the files list array)
     const audioFile = files?.audio?.[0] || undefined;
     const imagesFiles = files?.images || [];
 
-    const post = await this.postService.createPost(
-      userId,
-      userRole,
-      dto,
-      { images: imagesFiles, audio: audioFile },
-    );
+    const post = await this.postService.createPost(userId, userRole, dto, {
+      images: imagesFiles,
+      audio: audioFile,
+    });
 
     return {
       success: true,
@@ -114,10 +114,10 @@ export class FeedController {
   async editPost(
     @Param('id') id: string,
     @Body() dto: UpdatePostRequestDto,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     const userId = req.user.userId;
-    const userRole = req.user.role;
+    const userRole = req.user.role as UserRole;
     const post = await this.postService.editPost(userId, userRole, id, dto);
     return {
       success: true,
@@ -132,9 +132,9 @@ export class FeedController {
   @Delete('posts/:id')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async deletePost(@Param('id') id: string, @Req() req: any) {
+  async deletePost(@Param('id') id: string, @Req() req: RequestWithUser) {
     const userId = req.user.userId;
-    const userRole = req.user.role;
+    const userRole = req.user.role as UserRole;
     await this.postService.deletePost(userId, userRole, id);
     return {
       success: true,
@@ -148,7 +148,7 @@ export class FeedController {
   @Post('posts/:id/like')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async likePost(@Param('id') id: string, @Req() req: any) {
+  async likePost(@Param('id') id: string, @Req() req: RequestWithUser) {
     const userId = req.user.userId;
     await this.postService.likePost(userId, id);
     return { success: true, message: 'Post liked.' };
@@ -160,7 +160,7 @@ export class FeedController {
   @Delete('posts/:id/like')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async unlikePost(@Param('id') id: string, @Req() req: any) {
+  async unlikePost(@Param('id') id: string, @Req() req: RequestWithUser) {
     const userId = req.user.userId;
     await this.postService.unlikePost(userId, id);
     return { success: true, message: 'Post unliked.' };
@@ -172,7 +172,7 @@ export class FeedController {
   @Post('posts/:id/save')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async savePost(@Param('id') id: string, @Req() req: any) {
+  async savePost(@Param('id') id: string, @Req() req: RequestWithUser) {
     const userId = req.user.userId;
     await this.postService.savePost(userId, id);
     return { success: true, message: 'Post saved to bookmarks.' };
@@ -184,7 +184,7 @@ export class FeedController {
   @Delete('posts/:id/save')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async unsavePost(@Param('id') id: string, @Req() req: any) {
+  async unsavePost(@Param('id') id: string, @Req() req: RequestWithUser) {
     const userId = req.user.userId;
     await this.postService.unsavePost(userId, id);
     return { success: true, message: 'Post removed from bookmarks.' };
@@ -198,7 +198,7 @@ export class FeedController {
   async addComment(
     @Param('id') id: string,
     @Body() dto: CommentRequestDto,
-    @Req() req: any,
+    @Req() req: RequestWithUser,
   ) {
     const userId = req.user.userId;
     const comment = await this.postService.addComment(userId, id, dto.content);
@@ -224,7 +224,7 @@ export class FeedController {
   @Post('posts/:id/share')
   @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.OK)
-  async trackShare(@Param('id') id: string, @Req() req: any) {
+  async trackShare(@Param('id') id: string, @Req() req: RequestWithUser) {
     const userId = req.user?.userId || null;
     await this.postService.trackShare(userId, id);
     return { success: true, message: 'Share interaction recorded.' };
@@ -237,9 +237,15 @@ export class FeedController {
   @UseGuards(OptionalJwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async trackView(
-    @Param('id') id: string, 
-    @Req() req: any,
-    @Body() body: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string }
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body()
+    body: {
+      feedSessionId?: string;
+      durationMs?: number;
+      lastVisiblePercent?: number;
+      sourceFeed?: string;
+    },
   ) {
     const userId = req.user?.userId || null;
     await this.postService.trackView(userId, id, body);

@@ -1,11 +1,17 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { EventEmitter } from 'events';
-import { ChatEvent, IChatEventDispatcher } from '../interfaces/chat-event.interface';
+import {
+  ChatEvent,
+  IChatEventDispatcher,
+} from '../interfaces/chat-event.interface';
 import { RedisService } from '../../redis/redis-core.service';
 import { MessageEntity } from '../entities/message.entity';
 
 @Injectable()
-export class ChatEventDispatcher extends EventEmitter implements IChatEventDispatcher, OnModuleInit {
+export class ChatEventDispatcher
+  extends EventEmitter
+  implements IChatEventDispatcher, OnModuleInit
+{
   private readonly logger = new Logger(ChatEventDispatcher.name);
 
   constructor(private readonly redisService: RedisService) {
@@ -22,7 +28,10 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
     // Subscribe to all community events using pattern
     subscriber.psubscribe('community:*:events', (err, count) => {
       if (err) {
-        this.logger.error('Failed to subscribe to Redis community events pattern', err);
+        this.logger.error(
+          'Failed to subscribe to Redis community events pattern',
+          err,
+        );
       } else {
       }
     });
@@ -43,7 +52,7 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
 
   dispatch<T extends ChatEvent>(event: T): void {
     this.emit(event.type, event.payload);
-    this.emit('*', event); 
+    this.emit('*', event);
   }
 
   subscribe<T extends ChatEvent>(
@@ -56,14 +65,18 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
   dispatchUserConnected(userId: string, socketId: string) {
     this.dispatch({
       type: 'USER_CONNECTED',
-      payload: { userId, socketId }
+      payload: { userId, socketId },
     });
   }
 
-  dispatchUserDisconnected(userId: string, socketId: string, isStillOnline: boolean) {
+  dispatchUserDisconnected(
+    userId: string,
+    socketId: string,
+    isStillOnline: boolean,
+  ) {
     this.dispatch({
       type: 'USER_DISCONNECTED',
-      payload: { userId, socketId, isStillOnline }
+      payload: { userId, socketId, isStillOnline },
     });
   }
 
@@ -74,15 +87,16 @@ export class ChatEventDispatcher extends EventEmitter implements IChatEventDispa
   dispatchCommunityMessage(communityId: string, message: MessageEntity) {
     const payload = {
       type: 'COMMUNITY_MESSAGE_CREATED',
-      data: { communityId, message }
+      data: { communityId, message },
     };
-    
+
     // Publish to Redis
-    this.redisService.client.publish(
-      `community:${communityId}:events`,
-      JSON.stringify(payload)
-    ).catch(err => {
-      this.logger.error(`Failed to publish community message to Redis: ${err.message}`);
-    });
+    this.redisService.client
+      .publish(`community:${communityId}:events`, JSON.stringify(payload))
+      .catch((err) => {
+        this.logger.error(
+          `Failed to publish community message to Redis: ${err.message}`,
+        );
+      });
   }
 }

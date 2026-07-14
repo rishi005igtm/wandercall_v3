@@ -22,7 +22,12 @@ export class CommunityStoryService {
   /**
    * Pin or unpin a story to the top of the community feed.
    */
-  async pinStory(communityId: string, actorId: string, storyId: string, isPinned = true): Promise<PostEntity> {
+  async pinStory(
+    communityId: string,
+    actorId: string,
+    storyId: string,
+    isPinned = true,
+  ): Promise<PostEntity> {
     const id = await this.permissionService.resolveCommunityId(communityId);
     await this.permissionService.requirePermission(id, actorId, 'story.pin');
 
@@ -43,13 +48,17 @@ export class CommunityStoryService {
       communityId: id,
       actorId,
       targetUserId: post.authorId,
-      action: isPinned ? CommunityAuditAction.STORY_PIN : CommunityAuditAction.STORY_UNPIN,
-      reason: isPinned ? 'Pinned story to community hero/feed' : 'Unpinned story',
+      action: isPinned
+        ? CommunityAuditAction.STORY_PIN
+        : CommunityAuditAction.STORY_UNPIN,
+      reason: isPinned
+        ? 'Pinned story to community hero/feed'
+        : 'Unpinned story',
       metadata: { storyId, title: post.title },
     });
 
     this.eventDispatcher.dispatch({
-      type: 'COMMUNITY_STORY_PINNED' as any,
+      type: 'COMMUNITY_STORY_PINNED',
       payload: { communityId: id, storyId, actorId, isPinned },
     });
 
@@ -59,7 +68,12 @@ export class CommunityStoryService {
   /**
    * Feature a story in the community gallery or highlight section.
    */
-  async featureStory(communityId: string, actorId: string, storyId: string, isFeatured = true): Promise<PostEntity> {
+  async featureStory(
+    communityId: string,
+    actorId: string,
+    storyId: string,
+    isFeatured = true,
+  ): Promise<PostEntity> {
     const id = await this.permissionService.resolveCommunityId(communityId);
     await this.permissionService.requirePermission(id, actorId, 'story.pin');
 
@@ -91,7 +105,12 @@ export class CommunityStoryService {
   /**
    * Soft-delete a story or post within the community.
    */
-  async deleteStory(communityId: string, actorId: string, storyId: string, reason?: string): Promise<void> {
+  async deleteStory(
+    communityId: string,
+    actorId: string,
+    storyId: string,
+    reason?: string,
+  ): Promise<void> {
     const id = await this.permissionService.resolveCommunityId(communityId);
     await this.permissionService.requirePermission(id, actorId, 'story.delete');
 
@@ -113,7 +132,7 @@ export class CommunityStoryService {
     });
 
     this.eventDispatcher.dispatch({
-      type: 'COMMUNITY_STORY_DELETED' as any,
+      type: 'COMMUNITY_STORY_DELETED',
       payload: { communityId: id, storyId, actorId },
     });
   }
@@ -138,11 +157,16 @@ export class CommunityStoryService {
       );
 
     if (filter.category) {
-      query.andWhere('post.category = :category', { category: filter.category });
+      query.andWhere('post.category = :category', {
+        category: filter.category,
+      });
     }
 
     query
-      .orderBy("COALESCE((post.aiMetadata->>'isPinned')::boolean, false)", 'DESC')
+      .orderBy(
+        "COALESCE((post.aiMetadata->>'isPinned')::boolean, false)",
+        'DESC',
+      )
       .addOrderBy('post.publishedAt', 'DESC', 'NULLS LAST')
       .addOrderBy('post.createdAt', 'DESC')
       .take(limit)

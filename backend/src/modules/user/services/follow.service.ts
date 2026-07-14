@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { randomUUID } from 'crypto';
@@ -31,19 +36,29 @@ export class FollowService {
     return (Math.abs(hash) % 30) + 70; // Deterministic compatibility score between 70% and 99%
   }
 
-  async followUser(currentUserId: string, targetUsername: string): Promise<RelationshipResponseDto> {
-    const startTime = Date.now();
-    const targetProfile = await this.userRepository.findByUsername(targetUsername);
+  async followUser(
+    currentUserId: string,
+    targetUsername: string,
+  ): Promise<RelationshipResponseDto> {
+    const targetProfile =
+      await this.userRepository.findByUsername(targetUsername);
     if (!targetProfile) {
-      this.logger.warn(`Follow request failed: target username '${targetUsername}' does not exist.`);
-      throw new NotFoundException(`User with username '${targetUsername}' not found.`);
+      this.logger.warn(
+        `Follow request failed: target username '${targetUsername}' does not exist.`,
+      );
+      throw new NotFoundException(
+        `User with username '${targetUsername}' not found.`,
+      );
     }
 
     if (targetProfile.userId === currentUserId) {
       throw new BadRequestException('You cannot follow yourself.');
     }
 
-    const existingFollow = await this.followRepository.findOne(currentUserId, targetProfile.userId);
+    const existingFollow = await this.followRepository.findOne(
+      currentUserId,
+      targetProfile.userId,
+    );
     if (existingFollow) {
       throw new BadRequestException('You are already following this user.');
     }
@@ -56,59 +71,109 @@ export class FollowService {
           followingId: targetProfile.userId,
         });
         await manager.save(FollowEntity, follow);
-        await manager.increment(UserProfileEntity, { userId: targetProfile.userId }, 'followerCount', 1);
-        await manager.increment(UserProfileEntity, { userId: currentUserId }, 'followingCount', 1);
+        await manager.increment(
+          UserProfileEntity,
+          { userId: targetProfile.userId },
+          'followerCount',
+          1,
+        );
+        await manager.increment(
+          UserProfileEntity,
+          { userId: currentUserId },
+          'followingCount',
+          1,
+        );
       });
 
-      const duration = Date.now() - startTime;
-
-      return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
+      return this.relationshipService.resolveRelationship(
+        currentUserId,
+        targetProfile.userId,
+      );
     } catch (error) {
-      this.logger.error(`Database exception during follow action from ${currentUserId} to ${targetProfile.userId}`, error);
+      this.logger.error(
+        `Database exception during follow action from ${currentUserId} to ${targetProfile.userId}`,
+        error,
+      );
       throw error;
     }
   }
 
-  async unfollowUser(currentUserId: string, targetUsername: string): Promise<RelationshipResponseDto> {
-    const startTime = Date.now();
-    const targetProfile = await this.userRepository.findByUsername(targetUsername);
+  async unfollowUser(
+    currentUserId: string,
+    targetUsername: string,
+  ): Promise<RelationshipResponseDto> {
+    const targetProfile =
+      await this.userRepository.findByUsername(targetUsername);
     if (!targetProfile) {
-      this.logger.warn(`Unfollow request failed: target username '${targetUsername}' does not exist.`);
-      throw new NotFoundException(`User with username '${targetUsername}' not found.`);
+      this.logger.warn(
+        `Unfollow request failed: target username '${targetUsername}' does not exist.`,
+      );
+      throw new NotFoundException(
+        `User with username '${targetUsername}' not found.`,
+      );
     }
 
     if (targetProfile.userId === currentUserId) {
       throw new BadRequestException('You cannot unfollow yourself.');
     }
 
-    const existingFollow = await this.followRepository.findOne(currentUserId, targetProfile.userId);
+    const existingFollow = await this.followRepository.findOne(
+      currentUserId,
+      targetProfile.userId,
+    );
     if (!existingFollow) {
       throw new BadRequestException('You are not following this user.');
     }
 
     try {
       await this.dataSource.transaction(async (manager) => {
-        await manager.delete(FollowEntity, { followerId: currentUserId, followingId: targetProfile.userId });
-        await manager.decrement(UserProfileEntity, { userId: targetProfile.userId }, 'followerCount', 1);
-        await manager.decrement(UserProfileEntity, { userId: currentUserId }, 'followingCount', 1);
+        await manager.delete(FollowEntity, {
+          followerId: currentUserId,
+          followingId: targetProfile.userId,
+        });
+        await manager.decrement(
+          UserProfileEntity,
+          { userId: targetProfile.userId },
+          'followerCount',
+          1,
+        );
+        await manager.decrement(
+          UserProfileEntity,
+          { userId: currentUserId },
+          'followingCount',
+          1,
+        );
       });
 
-      const duration = Date.now() - startTime;
-
-      return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
+      return this.relationshipService.resolveRelationship(
+        currentUserId,
+        targetProfile.userId,
+      );
     } catch (error) {
-      this.logger.error(`Database exception during unfollow action from ${currentUserId} to ${targetProfile.userId}`, error);
+      this.logger.error(
+        `Database exception during unfollow action from ${currentUserId} to ${targetProfile.userId}`,
+        error,
+      );
       throw error;
     }
   }
 
-  async getRelationshipState(currentUserId: string | null, targetUsername: string): Promise<RelationshipResponseDto> {
-    const targetProfile = await this.userRepository.findByUsername(targetUsername);
+  async getRelationshipState(
+    currentUserId: string | null,
+    targetUsername: string,
+  ): Promise<RelationshipResponseDto> {
+    const targetProfile =
+      await this.userRepository.findByUsername(targetUsername);
     if (!targetProfile) {
-      throw new NotFoundException(`User with username '${targetUsername}' not found.`);
+      throw new NotFoundException(
+        `User with username '${targetUsername}' not found.`,
+      );
     }
 
-    return this.relationshipService.resolveRelationship(currentUserId, targetProfile.userId);
+    return this.relationshipService.resolveRelationship(
+      currentUserId,
+      targetProfile.userId,
+    );
   }
 
   async getFollowers(
@@ -117,9 +182,12 @@ export class FollowService {
     cursor?: string,
     search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
-    const targetProfile = await this.userRepository.findByUsername(targetUsername);
+    const targetProfile =
+      await this.userRepository.findByUsername(targetUsername);
     if (!targetProfile) {
-      throw new NotFoundException(`User with username '${targetUsername}' not found.`);
+      throw new NotFoundException(
+        `User with username '${targetUsername}' not found.`,
+      );
     }
 
     const { items, nextCursor } = await this.followRepository.getFollowers(
@@ -134,7 +202,10 @@ export class FollowService {
       username: profile.username,
       displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
-      compatibility: this.calculateCompatibility(targetProfile.username, profile.username),
+      compatibility: this.calculateCompatibility(
+        targetProfile.username,
+        profile.username,
+      ),
     }));
 
     return { items: mappedItems, nextCursor };
@@ -146,9 +217,12 @@ export class FollowService {
     cursor?: string,
     search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
-    const targetProfile = await this.userRepository.findByUsername(targetUsername);
+    const targetProfile =
+      await this.userRepository.findByUsername(targetUsername);
     if (!targetProfile) {
-      throw new NotFoundException(`User with username '${targetUsername}' not found.`);
+      throw new NotFoundException(
+        `User with username '${targetUsername}' not found.`,
+      );
     }
 
     const { items, nextCursor } = await this.followRepository.getFollowing(
@@ -163,7 +237,10 @@ export class FollowService {
       username: profile.username,
       displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
-      compatibility: this.calculateCompatibility(targetProfile.username, profile.username),
+      compatibility: this.calculateCompatibility(
+        targetProfile.username,
+        profile.username,
+      ),
     }));
 
     return { items: mappedItems, nextCursor };

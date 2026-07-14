@@ -15,7 +15,7 @@ export interface ExplorerCircleNode {
   username: string;
   avatar: string;
   compatibility: number;
-  sharedDNA: "Explorer" | "Creative" | "Socializer";
+  sharedDNA: 'Explorer' | 'Creative' | 'Socializer';
   mutualExperiences: number;
   mutualCommunities: number;
   mutualFriends: number;
@@ -33,7 +33,7 @@ export interface ExplorerCircleNode {
 export interface ExplorerCircleEdge {
   source: string;
   target: string;
-  relationship: "FRIEND" | "MUTUAL_FRIEND" | "RECOMMENDED";
+  relationship: 'FRIEND' | 'MUTUAL_FRIEND' | 'RECOMMENDED';
 }
 
 export interface ExplorerCirclesGraphResponse {
@@ -63,22 +63,33 @@ export class SocialDiscoveryService {
     limit = 20,
     cursor?: string,
   ): Promise<{ items: any[]; nextCursor?: string }> {
-
     // 1. Fetch viewer profile and interests
     const viewer = await this.userRepository.findByUserId(userId);
     const viewerInterests = await this.interestRepo.find({ where: { userId } });
-    const viewerInterestCategories = new Set(viewerInterests.map(i => i.category.toLowerCase()));
+    const viewerInterestCategories = new Set(
+      viewerInterests.map((i) => i.category.toLowerCase()),
+    );
 
     // 2. Fetch viewer's existing follows and blocked users (Hard Exclusions)
-    const followingResult = await this.followRepository.getFollowing(userId, 1000);
-    const followersResult = await this.followRepository.getFollowers(userId, 1000);
-    
-    const followingIds = new Set(followingResult.items.map(i => i.profile.userId));
-    const followerIds = new Set(followersResult.items.map(i => i.profile.userId));
-    
+    const followingResult = await this.followRepository.getFollowing(
+      userId,
+      1000,
+    );
+    const followersResult = await this.followRepository.getFollowers(
+      userId,
+      1000,
+    );
+
+    const followingIds = new Set(
+      followingResult.items.map((i) => i.profile.userId),
+    );
+    const followerIds = new Set(
+      followersResult.items.map((i) => i.profile.userId),
+    );
+
     // Mutual friends are those who follow each other
     const mutualFriendIds = new Set<string>();
-    followingIds.forEach(id => {
+    followingIds.forEach((id) => {
       if (followerIds.has(id)) mutualFriendIds.add(id);
     });
 
@@ -86,7 +97,7 @@ export class SocialDiscoveryService {
     let blockedIds = new Set<string>();
     try {
       const blockedList = await this.privacyService.getBlockedUsers(userId);
-      blockedIds = new Set(blockedList.items.map(u => u.targetUserId));
+      blockedIds = new Set(blockedList.items.map((u) => u.targetUserId));
     } catch (e) {
       this.logger.warn(`Could not fetch blocked users: ${e.message}`);
     }
@@ -100,7 +111,9 @@ export class SocialDiscoveryService {
 
     // 3. Candidate Generation (Fetch active explorers not in excluded list)
     const allUsers = await this.userRepository.findAllActive(100);
-    const candidates = allUsers.filter(u => !excludedIds.has(u.userId) && !u.isPrivate);
+    const candidates = allUsers.filter(
+      (u) => !excludedIds.has(u.userId) && !u.isPrivate,
+    );
 
     // 4. Multi-Signal Scoring Pipeline
     const scoredCandidates = await Promise.all(
@@ -110,17 +123,24 @@ export class SocialDiscoveryService {
 
         // Signal 1: Mutual Friends (Weight: 35%)
         try {
-          const candFollowing = await this.followRepository.getFollowing(candidate.userId, 200);
-          const candFollowingIds = new Set(candFollowing.items.map(i => i.profile.userId));
-          
+          const candFollowing = await this.followRepository.getFollowing(
+            candidate.userId,
+            200,
+          );
+          const candFollowingIds = new Set(
+            candFollowing.items.map((i) => i.profile.userId),
+          );
+
           let mutualCount = 0;
-          candFollowingIds.forEach(id => {
+          candFollowingIds.forEach((id) => {
             if (followingIds.has(id) || followerIds.has(id)) mutualCount++;
           });
 
           if (mutualCount > 0) {
             score += Math.min(mutualCount * 7, 35);
-            reasons.push(`${mutualCount} Mutual Friend${mutualCount > 1 ? 's' : ''}`);
+            reasons.push(
+              `${mutualCount} Mutual Friend${mutualCount > 1 ? 's' : ''}`,
+            );
           }
         } catch (e) {
           // Ignore error
@@ -128,12 +148,16 @@ export class SocialDiscoveryService {
 
         // Signal 2: Shared Adventure DNA & Interests (Weight: 25%)
         try {
-          const candInterests = await this.interestRepo.find({ where: { userId: candidate.userId } });
-          const candCategories = candInterests.map(i => i.category.toLowerCase());
-          
+          const candInterests = await this.interestRepo.find({
+            where: { userId: candidate.userId },
+          });
+          const candCategories = candInterests.map((i) =>
+            i.category.toLowerCase(),
+          );
+
           let sharedCount = 0;
           const sharedNames: string[] = [];
-          candCategories.forEach(cat => {
+          candCategories.forEach((cat) => {
             if (viewerInterestCategories.has(cat)) {
               sharedCount++;
               sharedNames.push(cat);
@@ -144,7 +168,7 @@ export class SocialDiscoveryService {
           if (candidate.bio && viewer?.bio) {
             const bioWords = candidate.bio.toLowerCase().split(/\s+/);
             const viewerWords = new Set(viewer.bio.toLowerCase().split(/\s+/));
-            bioWords.forEach(w => {
+            bioWords.forEach((w) => {
               if (w.length > 4 && viewerWords.has(w)) sharedCount++;
             });
           }
@@ -159,8 +183,14 @@ export class SocialDiscoveryService {
 
         // Signal 3: Location Similarity (Weight: 20%)
         if (viewer?.locationFormatted && candidate.locationFormatted) {
-          const viewerCity = viewer.locationFormatted.split(',')[0].trim().toLowerCase();
-          const candCity = candidate.locationFormatted.split(',')[0].trim().toLowerCase();
+          const viewerCity = viewer.locationFormatted
+            .split(',')[0]
+            .trim()
+            .toLowerCase();
+          const candCity = candidate.locationFormatted
+            .split(',')[0]
+            .trim()
+            .toLowerCase();
           if (viewerCity === candCity && viewerCity.length > 0) {
             score += 20;
             reasons.push(`Lives in ${candidate.locationFormatted}`);
@@ -190,7 +220,7 @@ export class SocialDiscoveryService {
           score: finalScore,
           reasons,
         };
-      })
+      }),
     );
 
     // Sort descending by score
@@ -201,16 +231,20 @@ export class SocialDiscoveryService {
     const paginatedSlice = scoredCandidates.slice(offset, offset + limit);
     const hasMore = scoredCandidates.length > offset + limit;
 
-    const items = paginatedSlice.map(item => ({
+    const items = paginatedSlice.map((item) => ({
       userId: item.profile.userId,
       username: item.profile.username,
       displayName: item.profile.displayName,
-      avatarUrl: item.profile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      avatarUrl:
+        item.profile.avatarUrl ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
       compatibility: item.score,
       level: item.profile.level,
       reputationScore: item.profile.reputationScore,
       locationFormatted: item.profile.locationFormatted || 'Bangalore, India',
-      bio: item.profile.bio || 'Passionate explorer chasing scenic trails and cultural journeys.',
+      bio:
+        item.profile.bio ||
+        'Passionate explorer chasing scenic trails and cultural journeys.',
       reasons: item.reasons,
       isFollowing: false,
       isFriend: false,
@@ -226,30 +260,67 @@ export class SocialDiscoveryService {
    * Generates live graph nodes and edges for the Explorer Circles (/profile/community) page.
    * Never generates fake edges; connects only actual friends and mutual connections.
    */
-  async getExplorerCirclesGraph(userId: string): Promise<ExplorerCirclesGraphResponse> {
-
+  async getExplorerCirclesGraph(
+    userId: string,
+  ): Promise<ExplorerCirclesGraphResponse> {
     // 1. Get recommendations to populate the graph nodes
-    const recommendations = await this.getFriendRecommendations(userId, DISCOVERY_CONFIG.thresholds.circleNodesCount);
-    
+    const recommendations = await this.getFriendRecommendations(
+      userId,
+      DISCOVERY_CONFIG.thresholds.circleNodesCount,
+    );
+
     // Also include a few existing mutual friends if available to form a rich cluster
-    const followingResult = await this.followRepository.getFollowing(userId, 10);
-    const followersResult = await this.followRepository.getFollowers(userId, 10);
-    
-    const followerIds = new Set(followersResult.items.map(i => i.profile.userId));
-    const mutualFriends = followingResult.items.filter(i => followerIds.has(i.profile.userId));
+    const followingResult = await this.followRepository.getFollowing(
+      userId,
+      10,
+    );
+    const followersResult = await this.followRepository.getFollowers(
+      userId,
+      10,
+    );
+
+    const followerIds = new Set(
+      followersResult.items.map((i) => i.profile.userId),
+    );
+    const mutualFriends = followingResult.items.filter((i) =>
+      followerIds.has(i.profile.userId),
+    );
 
     const nodesMap = new Map<string, ExplorerCircleNode>();
 
     // Add recommendations as nodes
     recommendations.items.forEach((rec, idx) => {
-      const dnaTypes: ("Explorer" | "Creative" | "Socializer")[] = ["Explorer", "Creative", "Socializer"];
+      const dnaTypes: ('Explorer' | 'Creative' | 'Socializer')[] = [
+        'Explorer',
+        'Creative',
+        'Socializer',
+      ];
       const sharedDNA = dnaTypes[idx % 3];
-      
-      const defaultTags = ["Trekking", "Scuba", "Camping", "Photography", "Roadtrips", "Homestays"];
-      const userTags = [defaultTags[idx % defaultTags.length], defaultTags[(idx + 2) % defaultTags.length]];
-      
-      const defaultCommunities = ["Cliff Trekkers", "Himalayan Base", "Netrani Scuba", "Visual Storys", "Solo Backpacks"];
-      const userComms = [defaultCommunities[idx % defaultCommunities.length], defaultCommunities[(idx + 1) % defaultCommunities.length]];
+
+      const defaultTags = [
+        'Trekking',
+        'Scuba',
+        'Camping',
+        'Photography',
+        'Roadtrips',
+        'Homestays',
+      ];
+      const userTags = [
+        defaultTags[idx % defaultTags.length],
+        defaultTags[(idx + 2) % defaultTags.length],
+      ];
+
+      const defaultCommunities = [
+        'Cliff Trekkers',
+        'Himalayan Base',
+        'Netrani Scuba',
+        'Visual Storys',
+        'Solo Backpacks',
+      ];
+      const userComms = [
+        defaultCommunities[idx % defaultCommunities.length],
+        defaultCommunities[(idx + 1) % defaultCommunities.length],
+      ];
 
       nodesMap.set(rec.userId, {
         id: rec.userId,
@@ -280,21 +351,23 @@ export class SocialDiscoveryService {
           id: mf.profile.userId,
           name: mf.profile.displayName,
           username: mf.profile.username,
-          avatar: mf.profile.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+          avatar:
+            mf.profile.avatarUrl ||
+            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
           compatibility: 95,
-          sharedDNA: "Explorer",
+          sharedDNA: 'Explorer',
           mutualExperiences: 6,
           mutualCommunities: 3,
           mutualFriends: 8,
           bio: mf.profile.bio || 'Wandercall companion & adventure partner.',
-          tags: ["Trekking", "Camping", "Monsoons"],
-          communities: ["Cliff Trekkers", "Himalayan Base"],
+          tags: ['Trekking', 'Camping', 'Monsoons'],
+          communities: ['Cliff Trekkers', 'Himalayan Base'],
           level: mf.profile.level || 5,
           reputationScore: mf.profile.reputationScore || 250,
           location: mf.profile.locationFormatted || 'Bangalore, India',
           isFollowing: true,
           isFriend: true,
-          reasons: ["Mutual Friend & Adventure Companion"],
+          reasons: ['Mutual Friend & Adventure Companion'],
         });
       }
     });
@@ -314,14 +387,16 @@ export class SocialDiscoveryService {
           edges.push({
             source: nodeA.id,
             target: nodeB.id,
-            relationship: "MUTUAL_FRIEND",
+            relationship: 'MUTUAL_FRIEND',
           });
-        } else if (nodeA.communities.some(c => nodeB.communities.includes(c))) {
+        } else if (
+          nodeA.communities.some((c) => nodeB.communities.includes(c))
+        ) {
           // Shared community edge
           edges.push({
             source: nodeA.id,
             target: nodeB.id,
-            relationship: "RECOMMENDED",
+            relationship: 'RECOMMENDED',
           });
         }
       }

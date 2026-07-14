@@ -19,10 +19,22 @@ export class CommunityCoordinateEntity {
   @Column({ type: 'varchar', length: 20, default: 'GLOBAL' })
   coordinateType: 'GLOBAL' | 'PHYSICAL';
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true, default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 7,
+    nullable: true,
+    default: 0,
+  })
   latitude?: number;
 
-  @Column({ type: 'decimal', precision: 10, scale: 7, nullable: true, default: 0 })
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 7,
+    nullable: true,
+    default: 0,
+  })
   longitude?: number;
 
   @Column({ type: 'varchar', length: 20, nullable: true, default: 'global' })

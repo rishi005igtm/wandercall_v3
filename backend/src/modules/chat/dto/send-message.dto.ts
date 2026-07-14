@@ -1,4 +1,12 @@
-import { IsEnum, IsOptional, IsString, IsUUID, MaxLength, IsArray, ValidateNested } from 'class-validator';
+import {
+  IsEnum,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  IsArray,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { MessageType } from '../entities/message.entity';
 import { MAX_MESSAGE_LENGTH } from '../constants/chat.constants';

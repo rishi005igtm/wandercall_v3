@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, Any } from 'typeorm';
-import { PostEntity, PostStatus, PostVisibility } from '../entities/post.entity';
+import {
+  PostEntity,
+  PostStatus,
+  PostVisibility,
+} from '../entities/post.entity';
 
 @Injectable()
 export class PostRepository {
@@ -57,22 +61,34 @@ export class PostRepository {
    * Fetch all candidate posts that are eligible for recommendation ranking.
    * Applying visibility filters at the database query level to prevent loading unauthorized content.
    */
-  async getCandidates(viewerId?: string, followedCreatorIds: string[] = []): Promise<PostEntity[]> {
-    const query = this.repo.createQueryBuilder('post')
+  async getCandidates(
+    viewerId?: string,
+    followedCreatorIds: string[] = [],
+  ): Promise<PostEntity[]> {
+    const query = this.repo
+      .createQueryBuilder('post')
       .where(
-        viewerId 
+        viewerId
           ? '(post.status = :publishedStatus OR (post.status IN (:...processingStatuses) AND post.authorId = :viewerId))'
           : 'post.status = :publishedStatus',
-        { 
+        {
           publishedStatus: PostStatus.PUBLISHED,
-          processingStatuses: [PostStatus.DRAFT, PostStatus.VALIDATING, PostStatus.IMAGE_VERIFIED, PostStatus.METADATA_GENERATED, PostStatus.FAILED],
-          viewerId
-        }
+          processingStatuses: [
+            PostStatus.DRAFT,
+            PostStatus.VALIDATING,
+            PostStatus.IMAGE_VERIFIED,
+            PostStatus.METADATA_GENERATED,
+            PostStatus.FAILED,
+          ],
+          viewerId,
+        },
       );
 
     if (!viewerId) {
       // Guest sees only PUBLIC posts
-      query.andWhere('post.visibility = :publicVisibility', { publicVisibility: PostVisibility.PUBLIC });
+      query.andWhere('post.visibility = :publicVisibility', {
+        publicVisibility: PostVisibility.PUBLIC,
+      });
     } else {
       // Authenticated user sees:
       // 1. PUBLIC posts
@@ -81,14 +97,14 @@ export class PostRepository {
       if (followedCreatorIds.length > 0) {
         query.andWhere(
           `(post.visibility = :publicVisibility OR ` +
-          `(post.visibility = :followersVisibility AND post.authorId IN (:...followedCreatorIds)) OR ` +
-          `post.authorId = :viewerId)`,
+            `(post.visibility = :followersVisibility AND post.authorId IN (:...followedCreatorIds)) OR ` +
+            `post.authorId = :viewerId)`,
           {
             publicVisibility: PostVisibility.PUBLIC,
             followersVisibility: PostVisibility.FOLLOWERS,
             followedCreatorIds,
             viewerId,
-          }
+          },
         );
       } else {
         query.andWhere(
@@ -96,14 +112,13 @@ export class PostRepository {
           {
             publicVisibility: PostVisibility.PUBLIC,
             viewerId,
-          }
+          },
         );
       }
     }
 
     // Keep candidate generator fast: order by freshness primarily to bound retrieval
-    query.orderBy('post.publishedAt', 'DESC')
-      .limit(500); // Generate a healthy pool of top 500 candidates for ranking pipeline
+    query.orderBy('post.publishedAt', 'DESC').limit(500); // Generate a healthy pool of top 500 candidates for ranking pipeline
 
     return query.getMany();
   }
@@ -115,32 +130,47 @@ export class PostRepository {
     });
   }
 
-  async getPostsByAuthor(authorId: string, viewerId?: string | null, isFollowing = false): Promise<PostEntity[]> {
-    const query = this.repo.createQueryBuilder('post')
+  async getPostsByAuthor(
+    authorId: string,
+    viewerId?: string | null,
+    isFollowing = false,
+  ): Promise<PostEntity[]> {
+    const query = this.repo
+      .createQueryBuilder('post')
       .where('post.authorId = :authorId', { authorId })
       .andWhere(
         viewerId === authorId
           ? '(post.status = :publishedStatus OR post.status IN (:...processingStatuses))'
           : 'post.status = :publishedStatus',
-        { 
+        {
           publishedStatus: PostStatus.PUBLISHED,
-          processingStatuses: [PostStatus.DRAFT, PostStatus.VALIDATING, PostStatus.IMAGE_VERIFIED, PostStatus.METADATA_GENERATED, PostStatus.FAILED]
-        }
+          processingStatuses: [
+            PostStatus.DRAFT,
+            PostStatus.VALIDATING,
+            PostStatus.IMAGE_VERIFIED,
+            PostStatus.METADATA_GENERATED,
+            PostStatus.FAILED,
+          ],
+        },
       );
 
     if (!viewerId) {
       // Guest sees only PUBLIC posts
-      query.andWhere('post.visibility = :publicVisibility', { publicVisibility: PostVisibility.PUBLIC });
+      query.andWhere('post.visibility = :publicVisibility', {
+        publicVisibility: PostVisibility.PUBLIC,
+      });
     } else if (viewerId === authorId) {
       // Owner sees all their published posts (PUBLIC, FOLLOWERS, PRIVATE)
     } else if (isFollowing) {
       // Follower sees PUBLIC and FOLLOWERS posts
       query.andWhere('post.visibility IN (:...allowedVisibilities)', {
-        allowedVisibilities: [PostVisibility.PUBLIC, PostVisibility.FOLLOWERS]
+        allowedVisibilities: [PostVisibility.PUBLIC, PostVisibility.FOLLOWERS],
       });
     } else {
       // Authenticated non-follower sees only PUBLIC posts
-      query.andWhere('post.visibility = :publicVisibility', { publicVisibility: PostVisibility.PUBLIC });
+      query.andWhere('post.visibility = :publicVisibility', {
+        publicVisibility: PostVisibility.PUBLIC,
+      });
     }
 
     query.orderBy('post.publishedAt', 'DESC');

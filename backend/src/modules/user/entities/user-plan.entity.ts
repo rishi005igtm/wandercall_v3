@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity('users_plan')
 export class UserPlanEntity {
@@ -24,7 +30,7 @@ export class UserPlanEntity {
   nextBillDate?: Date;
 
   @Column({ type: 'json', nullable: true })
-  paymentCard: any;
+  paymentCard?: unknown;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -10,7 +10,11 @@ import {
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { randomUUID } from 'crypto';
-import { MessageEntity, MessageStatus, MessageType } from '../entities/message.entity';
+import {
+  MessageEntity,
+  MessageStatus,
+  MessageType,
+} from '../entities/message.entity';
 import { ConversationEntity } from '../entities/conversation.entity';
 import { MessageRepository } from '../repositories/message.repository';
 import { ConversationRepository } from '../repositories/conversation.repository';
@@ -44,7 +48,10 @@ export class ChatService {
   private readonly logger = new Logger(ChatService.name);
 
   /** In-memory rate limiter — future: replace with Redis INCR+EXPIRE */
-  private readonly rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+  private readonly rateLimitMap = new Map<
+    string,
+    { count: number; windowStart: number }
+  >();
 
   constructor(
     private readonly messageRepository: MessageRepository,
@@ -65,7 +72,9 @@ export class ChatService {
     targetUserId: string,
   ): Promise<{ conversationId: string }> {
     if (requesterId === targetUserId) {
-      throw new BadRequestException('Cannot start a conversation with yourself.');
+      throw new BadRequestException(
+        'Cannot start a conversation with yourself.',
+      );
     }
 
     const [requesterBlocked, targetBlocked] = await Promise.all([
@@ -74,7 +83,9 @@ export class ChatService {
     ]);
 
     if (requesterBlocked || targetBlocked) {
-      throw new ForbiddenException('Cannot start a conversation with this user.');
+      throw new ForbiddenException(
+        'Cannot start a conversation with this user.',
+      );
     }
 
     const conversation = await this.conversationRepository.findOrCreateDirect(
@@ -86,7 +97,8 @@ export class ChatService {
   }
 
   async getConversations(userId: string) {
-    const conversations = await this.conversationRepository.findByUserId(userId);
+    const conversations =
+      await this.conversationRepository.findByUserId(userId);
     return conversations.map((conv) => ({
       ...conv,
       unreadCount: conv.unreadCounts[userId] ?? 0,
@@ -107,18 +119,28 @@ export class ChatService {
    * 6. Persist message + update conversation summary — ONE transaction
    * 7. Dispatch MESSAGE_CREATED
    */
-  async sendMessage(senderId: string, dto: SendMessageDto): Promise<MessageResponseDto> {
+  async sendMessage(
+    senderId: string,
+    dto: SendMessageDto,
+  ): Promise<MessageResponseDto> {
     // 1. Rate limiting
     this.enforceRateLimit(senderId);
 
     // 2. Membership check
-    const isMember = await this.conversationRepository.isParticipant(dto.conversationId, senderId);
+    const isMember = await this.conversationRepository.isParticipant(
+      dto.conversationId,
+      senderId,
+    );
     if (!isMember) {
-      throw new ForbiddenException('You are not a participant in this conversation.');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation.',
+      );
     }
 
     // 3. Privacy check
-    const recipientIds = await this.conversationRepository.getParticipantIds(dto.conversationId);
+    const recipientIds = await this.conversationRepository.getParticipantIds(
+      dto.conversationId,
+    );
     const otherParticipants = recipientIds.filter((id) => id !== senderId);
 
     for (const recipientId of otherParticipants) {
@@ -127,7 +149,9 @@ export class ChatService {
         this.privacyService.checkIsBlocked(recipientId, senderId),
       ]);
       if (blockedBySender || blockedByRecipient) {
-        throw new ForbiddenException('Message cannot be sent due to privacy settings.');
+        throw new ForbiddenException(
+          'Message cannot be sent due to privacy settings.',
+        );
       }
     }
 
@@ -138,11 +162,15 @@ export class ChatService {
       }
     }
     if (dto.text && dto.text.length > MAX_MESSAGE_LENGTH) {
-      throw new BadRequestException(`Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters.`);
+      throw new BadRequestException(
+        `Message exceeds maximum length of ${MAX_MESSAGE_LENGTH} characters.`,
+      );
     }
 
     // 5. Idempotency
-    const existing = await this.messageRepository.findByClientMessageId(dto.clientMessageId);
+    const existing = await this.messageRepository.findByClientMessageId(
+      dto.clientMessageId,
+    );
     if (existing) {
       this.logger.warn(
         `[Idempotent] clientMessageId=${dto.clientMessageId} already exists — returning cached`,
@@ -173,17 +201,17 @@ export class ChatService {
       // Unread is ONLY incremented for users who do NOT have the conversation actively open.
       // "Actively open" is approximated by lastReadAt being recent — the client sends
       // mark-read on open-conversation, which updates lastReadAt.
-      const conversation = await manager.findOneOrFail(
-        ConversationEntity,
-        { where: { id: dto.conversationId } },
-      );
+      const conversation = await manager.findOneOrFail(ConversationEntity, {
+        where: { id: dto.conversationId },
+      });
 
       const updatedUnreadCounts = { ...conversation.unreadCounts };
       for (const recipientId of recipientIds) {
         if (recipientId !== senderId) {
           // Only increment if recipient hasn't explicitly cleared unread recently.
           // We do increment here — the client clears it on open-conversation.
-          updatedUnreadCounts[recipientId] = (updatedUnreadCounts[recipientId] ?? 0) + 1;
+          updatedUnreadCounts[recipientId] =
+            (updatedUnreadCounts[recipientId] ?? 0) + 1;
         }
       }
 
@@ -193,23 +221,21 @@ export class ChatService {
           : dto.text
         : `[${dto.type ?? 'attachment'}]`;
 
-      await manager.update(
-        ConversationEntity,
-        dto.conversationId,
-        {
-          lastMessageId: savedMsg.id,
-          lastMessageSenderId: senderId,
-          lastMessageText: previewText,
-          lastMessageAt: savedMsg.createdAt,
-          unreadCounts: updatedUnreadCounts,
-        },
-      );
+      await manager.update(ConversationEntity, dto.conversationId, {
+        lastMessageId: savedMsg.id,
+        lastMessageSenderId: senderId,
+        lastMessageText: previewText,
+        lastMessageAt: savedMsg.createdAt,
+        unreadCounts: updatedUnreadCounts,
+      });
 
       return savedMsg;
     });
 
     // 7. Dispatch — gateway picks this up and broadcasts
-    const conversation = await this.conversationRepository.findById(dto.conversationId);
+    const conversation = await this.conversationRepository.findById(
+      dto.conversationId,
+    );
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_CREATED',
       payload: {
@@ -226,10 +252,20 @@ export class ChatService {
   // MESSAGE HISTORY
   // ─────────────────────────────────────────────────────────
 
-  async getMessages(userId: string, conversationId: string, limit: number, cursor?: string) {
-    const isMember = await this.conversationRepository.isParticipant(conversationId, userId);
+  async getMessages(
+    userId: string,
+    conversationId: string,
+    limit: number,
+    cursor?: string,
+  ) {
+    const isMember = await this.conversationRepository.isParticipant(
+      conversationId,
+      userId,
+    );
     if (!isMember) {
-      throw new ForbiddenException('You are not a participant in this conversation.');
+      throw new ForbiddenException(
+        'You are not a participant in this conversation.',
+      );
     }
     return this.messageRepository.paginate(conversationId, limit, cursor);
   }
@@ -261,14 +297,21 @@ export class ChatService {
    * Mark ALL SENT messages in a conversation as DELIVERED for a connecting user.
    * Called on open-conversation to catch up messages sent while user was offline.
    */
-  async markConversationDelivered(conversationId: string, recipientId: string): Promise<void> {
-    const messages = await this.messageRepository.findUnread(conversationId, recipientId);
-    const sentMessages = messages.filter((m) => m.status === MessageStatus.SENT);
+  async markConversationDelivered(
+    conversationId: string,
+    recipientId: string,
+  ): Promise<void> {
+    const messages = await this.messageRepository.findUnread(
+      conversationId,
+      recipientId,
+    );
+    const sentMessages = messages.filter(
+      (m) => m.status === MessageStatus.SENT,
+    );
 
     for (const msg of sentMessages) {
       const updated = await this.messageRepository.markDelivered(msg.id);
       if (!updated) continue;
-
 
       this.chatEventDispatcher.dispatch({
         type: 'MESSAGE_DELIVERED',
@@ -286,8 +329,15 @@ export class ChatService {
    * Mark a message as READ and clear unread count for this conversation.
    * Called when user has the conversation open.
    */
-  async markRead(userId: string, conversationId: string, messageId: string): Promise<void> {
-    const isMember = await this.conversationRepository.isParticipant(conversationId, userId);
+  async markRead(
+    userId: string,
+    conversationId: string,
+    messageId: string,
+  ): Promise<void> {
+    const isMember = await this.conversationRepository.isParticipant(
+      conversationId,
+      userId,
+    );
     if (!isMember) throw new ForbiddenException('Not a participant.');
 
     // Always clear unread count when user is looking at the conversation
@@ -298,13 +348,17 @@ export class ChatService {
     const targetMessage = await this.messageRepository.findById(messageId);
     if (!targetMessage) return;
 
-    const unreadMessages = await this.messageRepository.findUnread(conversationId, userId);
-    const toRead = unreadMessages.filter(m => m.createdAt.getTime() <= targetMessage.createdAt.getTime());
+    const unreadMessages = await this.messageRepository.findUnread(
+      conversationId,
+      userId,
+    );
+    const toRead = unreadMessages.filter(
+      (m) => m.createdAt.getTime() <= targetMessage.createdAt.getTime(),
+    );
 
     for (const msg of toRead) {
       const updated = await this.messageRepository.markRead(msg.id);
       if (!updated) continue;
-
 
       this.chatEventDispatcher.dispatch({
         type: 'MESSAGE_READ',
@@ -323,17 +377,22 @@ export class ChatService {
   // EDIT & DELETE
   // ─────────────────────────────────────────────────────────
 
-  async editMessage(userId: string, messageId: string, newText: string): Promise<MessageResponseDto> {
+  async editMessage(
+    userId: string,
+    messageId: string,
+    newText: string,
+  ): Promise<MessageResponseDto> {
     const message = await this.messageRepository.findById(messageId);
     if (!message) throw new NotFoundException('Message not found.');
-    if (message.senderId !== userId) throw new ForbiddenException('You can only edit your own messages.');
+    if (message.senderId !== userId)
+      throw new ForbiddenException('You can only edit your own messages.');
     if (!newText || newText.length > MAX_MESSAGE_LENGTH) {
       throw new BadRequestException('Invalid message text.');
     }
 
     const updated = await this.messageRepository.edit(messageId, newText);
-    if (!updated) throw new NotFoundException('Message not found or already deleted.');
-
+    if (!updated)
+      throw new NotFoundException('Message not found or already deleted.');
 
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_EDITED',
@@ -351,10 +410,10 @@ export class ChatService {
   async deleteMessage(userId: string, messageId: string): Promise<void> {
     const message = await this.messageRepository.findById(messageId);
     if (!message) throw new NotFoundException('Message not found.');
-    if (message.senderId !== userId) throw new ForbiddenException('You can only delete your own messages.');
+    if (message.senderId !== userId)
+      throw new ForbiddenException('You can only delete your own messages.');
 
     await this.messageRepository.softDelete(messageId);
-
 
     this.chatEventDispatcher.dispatch({
       type: 'MESSAGE_DELETED',

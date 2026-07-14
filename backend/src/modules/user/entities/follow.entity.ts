@@ -1,4 +1,12 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, Index, ManyToOne, JoinColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  Index,
+  ManyToOne,
+  JoinColumn,
+} from 'typeorm';
 import { UserProfileEntity } from './user-profile.entity';
 
 @Entity('user_follows')
@@ -32,4 +40,3 @@ export class FollowEntity {
     Object.assign(this, partial);
   }
 }
-

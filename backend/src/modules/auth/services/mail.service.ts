@@ -23,7 +23,11 @@ export class MailService {
     });
   }
 
-  async sendVerificationCode(email: string, name: string, code: string): Promise<void> {
+  async sendVerificationCode(
+    email: string,
+    name: string,
+    code: string,
+  ): Promise<void> {
     const mailOptions = {
       from: `"${this.mailConfiguration.fromName}" <${this.mailConfiguration.fromEmail}>`,
       to: email,
@@ -45,7 +49,10 @@ export class MailService {
     try {
       await this.transporter.sendMail(mailOptions);
     } catch (error) {
-      this.logger.error(`Failed to send verification code email to ${email}`, error);
+      this.logger.error(
+        `Failed to send verification code email to ${email}`,
+        error,
+      );
     }
   }
 

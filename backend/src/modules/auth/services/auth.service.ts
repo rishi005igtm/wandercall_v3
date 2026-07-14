@@ -38,14 +38,18 @@ export class AuthService implements IAuthService {
   ): Promise<AuthResponseDto> {
     const existing = await this.authRepository.findByEmail(dto.email);
     if (existing) {
-      throw new ConflictException('An account with this email address already exists.');
+      throw new ConflictException(
+        'An account with this email address already exists.',
+      );
     }
 
     const saltRounds = 10;
     const passwordHash = await bcrypt.hash(dto.password, saltRounds);
     const userId = randomUUID();
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
     const verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
     const newAuthUser = new UserAuthEntity({
@@ -64,12 +68,24 @@ export class AuthService implements IAuthService {
 
     await this.authRepository.create(newAuthUser);
 
-    await this.mailService.sendVerificationCode(dto.email, dto.name, verificationCode);
+    await this.mailService.sendVerificationCode(
+      dto.email,
+      dto.name,
+      verificationCode,
+    );
 
-    return this.createSessionAndTokens(newAuthUser, dto.name, ipAddress, userAgent);
+    return this.createSessionAndTokens(
+      newAuthUser,
+      dto.name,
+      ipAddress,
+      userAgent,
+    );
   }
 
-  async verifyEmailCode(email: string, code: string): Promise<{ verified: boolean; message: string }> {
+  async verifyEmailCode(
+    email: string,
+    code: string,
+  ): Promise<{ verified: boolean; message: string }> {
     const user = await this.authRepository.findByEmail(email);
     if (!user) {
       throw new BadRequestException('User not found.');
@@ -82,9 +98,12 @@ export class AuthService implements IAuthService {
     if (
       !user.verificationCode ||
       user.verificationCode !== code ||
-      (user.verificationCodeExpiresAt && user.verificationCodeExpiresAt < new Date())
+      (user.verificationCodeExpiresAt &&
+        user.verificationCodeExpiresAt < new Date())
     ) {
-      this.logger.warn(`Email verification failed for ${email}: Invalid or expired code`);
+      this.logger.warn(
+        `Email verification failed for ${email}: Invalid or expired code`,
+      );
       throw new BadRequestException('Invalid or expired verification code.');
     }
 
@@ -96,7 +115,9 @@ export class AuthService implements IAuthService {
     return { verified: true, message: 'Email successfully verified.' };
   }
 
-  async resendVerificationCode(email: string): Promise<{ success: boolean; message: string }> {
+  async resendVerificationCode(
+    email: string,
+  ): Promise<{ success: boolean; message: string }> {
     const user = await this.authRepository.findByEmail(email);
     if (!user) {
       throw new BadRequestException('User account not found.');
@@ -106,7 +127,9 @@ export class AuthService implements IAuthService {
       return { success: true, message: 'Email is already verified.' };
     }
 
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
     user.verificationCode = verificationCode;
     user.verificationCodeExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
     user.updatedAt = new Date();
@@ -114,7 +137,11 @@ export class AuthService implements IAuthService {
     await this.authRepository.updateUser(user);
 
     const displayName = user.displayName || 'Explorer';
-    await this.mailService.sendVerificationCode(email, displayName, verificationCode);
+    await this.mailService.sendVerificationCode(
+      email,
+      displayName,
+      verificationCode,
+    );
 
     return { success: true, message: 'Verification code successfully resent.' };
   }
@@ -138,10 +165,13 @@ export class AuthService implements IAuthService {
       user.accountStatus === AccountStatus.SUSPENDED ||
       user.accountStatus === AccountStatus.BLOCKED
     ) {
-      throw new UnauthorizedException('Your account has been restricted. Please contact support.');
+      throw new UnauthorizedException(
+        'Your account has been restricted. Please contact support.',
+      );
     }
 
-    const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
+    const displayName =
+      user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
     return this.createSessionAndTokens(user, displayName, ipAddress, userAgent);
   }
 
@@ -176,16 +206,22 @@ export class AuthService implements IAuthService {
     return this.createSessionAndTokens(user, name, ipAddress, userAgent);
   }
 
-  async refreshToken(dto: RefreshTokenRequestDto, ipAddress?: string, userAgent?: string): Promise<AuthResponseDto> {
+  async refreshToken(
+    dto: RefreshTokenRequestDto,
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResponseDto> {
     if (!dto.refreshToken) {
       throw new UnauthorizedException('Refresh token is missing');
     }
-    
+
     let payload: any;
     try {
       payload = this.jwtService.verify(dto.refreshToken);
     } catch {
-      throw new UnauthorizedException('Invalid or expired refresh token session.');
+      throw new UnauthorizedException(
+        'Invalid or expired refresh token session.',
+      );
     }
 
     const userId = payload?.sub;
@@ -226,7 +262,8 @@ export class AuthService implements IAuthService {
     if (ipAddress) session.ipAddress = ipAddress;
     await this.authRepository.saveSession(session);
 
-    const displayName = user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
+    const displayName =
+      user.displayName || (user.email ? user.email.split('@')[0] : 'Explorer');
 
     const authUser: AuthUserDto = {
       id: user.id,
@@ -250,7 +287,10 @@ export class AuthService implements IAuthService {
       try {
         const payload: any = this.jwtService.decode(refreshToken);
         if (payload?.sessionId) {
-          await this.authRepository.deleteSessionByIdAndUser(payload.sessionId, userId);
+          await this.authRepository.deleteSessionByIdAndUser(
+            payload.sessionId,
+            userId,
+          );
           return;
         }
       } catch {
@@ -266,7 +306,10 @@ export class AuthService implements IAuthService {
     await this.authRepository.deleteAllUserSessions(userId);
   }
 
-  async revokeOtherSessions(userId: string, currentSessionId: string): Promise<void> {
+  async revokeOtherSessions(
+    userId: string,
+    currentSessionId: string,
+  ): Promise<void> {
     await this.authRepository.deleteOtherUserSessions(userId, currentSessionId);
   }
 
@@ -283,7 +326,10 @@ export class AuthService implements IAuthService {
 
   private extractDeviceMetadata(userAgent?: string, userId?: string) {
     if (!userAgent) {
-      const fp = createHash('sha256').update(`${userId || ''}:Desktop PC:Browser:Desktop`).digest('hex').slice(0, 16);
+      const fp = createHash('sha256')
+        .update(`${userId || ''}:Desktop PC:Browser:Desktop`)
+        .digest('hex')
+        .slice(0, 16);
       return {
         deviceType: 'Desktop',
         operatingSystem: 'Desktop PC',
@@ -302,8 +348,10 @@ export class AuthService implements IAuthService {
     else if (/linux/i.test(userAgent)) os = 'Linux PC';
 
     let browser = 'Browser';
-    if (/chrome|crios/i.test(userAgent) && !/edg|opr/i.test(userAgent)) browser = 'Chrome';
-    else if (/safari/i.test(userAgent) && !/chrome|crios/i.test(userAgent)) browser = 'Safari';
+    if (/chrome|crios/i.test(userAgent) && !/edg|opr/i.test(userAgent))
+      browser = 'Chrome';
+    else if (/safari/i.test(userAgent) && !/chrome|crios/i.test(userAgent))
+      browser = 'Safari';
     else if (/firefox|fxios/i.test(userAgent)) browser = 'Firefox';
     else if (/edg/i.test(userAgent)) browser = 'Edge';
     else if (/opr/i.test(userAgent)) browser = 'Opera';
@@ -313,7 +361,10 @@ export class AuthService implements IAuthService {
     else if (/ipad|tablet/i.test(userAgent)) deviceType = 'Tablet';
 
     const rawFp = `${userId || ''}:${os}:${browser}:${deviceType}`;
-    const deviceFingerprint = createHash('sha256').update(rawFp).digest('hex').slice(0, 16);
+    const deviceFingerprint = createHash('sha256')
+      .update(rawFp)
+      .digest('hex')
+      .slice(0, 16);
 
     return {
       deviceType,
@@ -331,10 +382,14 @@ export class AuthService implements IAuthService {
     userAgent?: string,
   ): Promise<AuthResponseDto> {
     const meta = this.extractDeviceMetadata(userAgent, user.id);
-    const resolvedIp = ipAddress === '::1' ? '127.0.0.1' : (ipAddress || '127.0.0.1');
+    const resolvedIp =
+      ipAddress === '::1' ? '127.0.0.1' : ipAddress || '127.0.0.1';
 
     // Enterprise session reuse: check if an active session exists for this device fingerprint
-    let session = await this.authRepository.findActiveSessionByFingerprint(user.id, meta.deviceFingerprint);
+    let session = await this.authRepository.findActiveSessionByFingerprint(
+      user.id,
+      meta.deviceFingerprint,
+    );
     let sessionId: string;
 
     if (session) {
@@ -342,10 +397,12 @@ export class AuthService implements IAuthService {
     } else {
       sessionId = randomUUID();
       // Enforce Enterprise Limit: Maximum 4 concurrent active sessions per user profile
-      const activeSessions = await this.authRepository.findActiveSessionsByUserId(user.id);
+      const activeSessions =
+        await this.authRepository.findActiveSessionsByUserId(user.id);
       if (activeSessions.length >= 4) {
         const sorted = activeSessions.sort(
-          (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+          (a, b) =>
+            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
         );
         const numToDelete = activeSessions.length - 3;
         for (let i = 0; i < numToDelete; i++) {

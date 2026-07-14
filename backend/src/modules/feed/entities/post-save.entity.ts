@@ -1,4 +1,10 @@
-import { Column, CreateDateColumn, Entity, PrimaryColumn, Index } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryColumn,
+  Index,
+} from 'typeorm';
 
 @Entity('post_saves')
 @Index(['postId', 'userId'], { unique: true })

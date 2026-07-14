@@ -1,6 +1,16 @@
-import { Injectable, Logger, OnModuleInit, Optional, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleInit,
+  Optional,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { RedisService } from '../../redis/redis-core.service';
-import { CampfireEventDispatcher, CampfireParticipantEventPayload } from '../events/campfire-event.dispatcher';
+import {
+  CampfireEventDispatcher,
+  CampfireParticipantEventPayload,
+} from '../events/campfire-event.dispatcher';
 import { CampfireRepository } from '../repositories/campfire.repository';
 
 export interface CampfirePresenceParticipant {
@@ -18,36 +28,63 @@ export class CampfirePresenceService implements OnModuleInit {
 
   // In-memory fallbacks if Redis is not ready or during fallback mode
   private readonly fallbackOnlineSets = new Map<string, Set<string>>();
-  private readonly fallbackParticipants = new Map<string, Map<string, CampfirePresenceParticipant>>();
+  private readonly fallbackParticipants = new Map<
+    string,
+    Map<string, CampfirePresenceParticipant>
+  >();
   public readonly fallbackJoinedCampfires = new Map<string, string[]>();
   private readonly fallbackSeats = new Map<string, Map<number, string>>(); // roomId -> Map<seatIndex, userId>
 
   constructor(
     @Optional() private readonly redisService: RedisService,
     private readonly eventDispatcher: CampfireEventDispatcher,
-    @Optional() @Inject(forwardRef(() => CampfireRepository)) private readonly campfireRepository?: CampfireRepository,
+    @Optional()
+    @Inject(forwardRef(() => CampfireRepository))
+    private readonly campfireRepository?: CampfireRepository,
   ) {}
 
   onModuleInit() {
     if (this.redisService?.client) {
+      this.logger.log('Redis presence initialized successfully.');
     } else {
-      this.logger.warn('RedisService not injected or unavailable. Using high-performance in-memory presence fallback.');
+      this.logger.warn(
+        'RedisService not injected or unavailable. Using high-performance in-memory presence fallback.',
+      );
     }
   }
 
   async registerParticipantJoin(
     campfireId: string,
     userId: string,
-    userProfile: any,
+    userProfile:
+      | {
+          name?: string;
+          displayName?: string;
+          avatar?: string;
+          avatarUrl?: string;
+          role?: string;
+        }
+      | null
+      | undefined,
     socketId: string,
   ): Promise<{ success: boolean; participantCount: number; error?: string }> {
     if (!campfireId || !userId) {
-      return { success: false, participantCount: 0, error: 'Invalid join identifiers' };
+      return {
+        success: false,
+        participantCount: 0,
+        error: 'Invalid join identifiers',
+      };
     }
 
-    const displayName = userProfile?.name || userProfile?.displayName || 'Explorer';
-    const avatar = userProfile?.avatar || userProfile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
-    const role = userProfile?.role ? userProfile.role.toUpperCase() : 'LISTENER';
+    const displayName =
+      userProfile?.name || userProfile?.displayName || 'Explorer';
+    const avatar =
+      userProfile?.avatar ||
+      userProfile?.avatarUrl ||
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    const role = userProfile?.role
+      ? userProfile.role.toUpperCase()
+      : 'LISTENER';
 
     const participant: CampfirePresenceParticipant = {
       userId,
@@ -60,7 +97,6 @@ export class CampfirePresenceService implements OnModuleInit {
 
     const ttl = 300; // 5-minute presence TTL renews on heartbeat or active socket
     let participantCount = 1;
-    let isNewJoin = true;
 
     const client = this.redisService?.client;
     if (client && client.status === 'ready') {
@@ -69,11 +105,8 @@ export class CampfirePresenceService implements OnModuleInit {
         const cohortHashKey = `presence:room:campfire:${campfireId}:cohorts`;
         const userKey = `presence:user:${userId}:campfire`;
 
-        // Check if user was already inside
-        const alreadyOnline = await client.sismember(onlineSetKey, userId);
-        if (alreadyOnline === 1) {
-          isNewJoin = false;
-        }
+        // Check if user was already inside (no-op since we don't return isNewJoin)
+        await client.sismember(onlineSetKey, userId);
 
         // 1. Update user presence TTL
         await client.hset(userKey, {
@@ -99,18 +132,17 @@ export class CampfirePresenceService implements OnModuleInit {
 
         // 4. Get active count
         participantCount = await client.scard(onlineSetKey);
-      } catch (err: any) {
-        this.logger.error(`Redis registerParticipantJoin error: ${err.message}. Using fallback.`);
+      } catch (err: unknown) {
+        this.logger.error(
+          `Redis registerParticipantJoin error: ${err instanceof Error ? err.message : String(err)}. Using fallback.`,
+        );
         const res = this.registerJoinFallback(campfireId, userId, participant);
         participantCount = res.count;
-        isNewJoin = res.isNew;
       }
     } else {
       const res = this.registerJoinFallback(campfireId, userId, participant);
       participantCount = res.count;
-      isNewJoin = res.isNew;
     }
-
 
     // Always emit domain event so gateways broadcast reliable real-time presence updates to all room participants
     const payload: CampfireParticipantEventPayload = {
@@ -132,13 +164,13 @@ export class CampfirePresenceService implements OnModuleInit {
     userId: string,
     socketId?: string,
   ): Promise<{ success: boolean; participantCount: number }> {
+    void socketId;
     if (!campfireId || !userId) {
       return { success: false, participantCount: 0 };
     }
 
     let participantCount = 0;
     let participantData: CampfirePresenceParticipant | null = null;
-    let wasRemoved = false;
 
     const client = this.redisService?.client;
     if (client && client.status === 'ready') {
@@ -150,12 +182,16 @@ export class CampfirePresenceService implements OnModuleInit {
         const rawData = await client.hget(cohortHashKey, userId);
         if (rawData) {
           try {
-            participantData = JSON.parse(rawData);
-          } catch {}
+            participantData = JSON.parse(
+              rawData,
+            ) as CampfirePresenceParticipant;
+          } catch (e) {
+            this.logger.debug('Parse error', e);
+          }
         }
 
-        const removedCount = await client.srem(onlineSetKey, userId);
-        wasRemoved = removedCount > 0;
+        await client.srem(onlineSetKey, userId);
+        // wasRemoved = removedCount > 0;
 
         await client.hdel(cohortHashKey, userId);
         await client.del(userKey);
@@ -170,29 +206,32 @@ export class CampfirePresenceService implements OnModuleInit {
         }
 
         participantCount = await client.scard(onlineSetKey);
-      } catch (err: any) {
-        this.logger.error(`Redis registerParticipantLeave error: ${err.message}. Using fallback.`);
+      } catch (err: unknown) {
+        this.logger.error(
+          `Redis registerParticipantLeave error: ${err instanceof Error ? err.message : String(err)}. Using fallback.`,
+        );
         const res = this.registerLeaveFallback(campfireId, userId);
         participantCount = res.count;
         participantData = res.data;
-        wasRemoved = res.wasRemoved;
+        // wasRemoved = res.wasRemoved;
         this.fallbackLeaveSeatAuto(campfireId, userId);
       }
     } else {
       const res = this.registerLeaveFallback(campfireId, userId);
       participantCount = res.count;
       participantData = res.data;
-      wasRemoved = res.wasRemoved;
+      // wasRemoved = res.wasRemoved;
       this.fallbackLeaveSeatAuto(campfireId, userId);
     }
-
 
     // Always emit left payload so clients immediately remove top seat or guest avatar and display toast
     const payload: CampfireParticipantEventPayload = {
       campfireId,
       userId,
       displayName: participantData?.displayName || 'Explorer',
-      avatar: participantData?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      avatar:
+        participantData?.avatar ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
       role: participantData?.role || 'LISTENER',
       action: 'LEFT',
       timestamp: new Date().toISOString(),
@@ -205,7 +244,11 @@ export class CampfirePresenceService implements OnModuleInit {
   async getRoomPresenceSnapshot(
     campfireId: string,
     hostId?: string,
-  ): Promise<{ participantsCount: number; onlineUserIds: string[]; isHostOnline: boolean }> {
+  ): Promise<{
+    participantsCount: number;
+    onlineUserIds: string[];
+    isHostOnline: boolean;
+  }> {
     const client = this.redisService?.client;
     let onlineUserIds: string[] = [];
     let isHostInCohorts = false;
@@ -220,16 +263,20 @@ export class CampfirePresenceService implements OnModuleInit {
           const rawData = await client.hget(cohortHashKey, uid);
           if (rawData) {
             try {
-              const p = JSON.parse(rawData);
+              const p = JSON.parse(rawData) as CampfirePresenceParticipant;
               if (p && (p.role === 'HOST' || p.role === 'host')) {
                 isHostInCohorts = true;
                 break;
               }
-            } catch {}
+            } catch (e) {
+              this.logger.debug('Parse error', e);
+            }
           }
         }
-      } catch (err: any) {
-        this.logger.error(`Redis getRoomPresenceSnapshot error: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.error(
+          `Redis getRoomPresenceSnapshot error: ${err instanceof Error ? err.message : String(err)}`,
+        );
         const set = this.fallbackOnlineSets.get(campfireId);
         if (set) onlineUserIds = Array.from(set);
       }
@@ -257,12 +304,16 @@ export class CampfirePresenceService implements OnModuleInit {
         if (entity?.hostId) {
           resolvedHostId = entity.hostId;
         }
-      } catch (e: any) {
-        this.logger.error(`Error resolving hostId from repository: ${e.message}`);
+      } catch (e: unknown) {
+        this.logger.error(
+          `Error resolving hostId from repository: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     }
 
-    const isHostOnline = (resolvedHostId ? onlineUserIds.includes(resolvedHostId) : false) || isHostInCohorts;
+    const isHostOnline =
+      (resolvedHostId ? onlineUserIds.includes(resolvedHostId) : false) ||
+      isHostInCohorts;
     return {
       participantsCount: onlineUserIds.length,
       onlineUserIds,
@@ -290,7 +341,10 @@ export class CampfirePresenceService implements OnModuleInit {
 
     if (participant.role !== 'host' && participant.role !== 'HOST') {
       const history = this.fallbackJoinedCampfires.get(userId) || [];
-      const updatedHistory = [campfireId, ...history.filter(id => id !== campfireId)].slice(0, 4);
+      const updatedHistory = [
+        campfireId,
+        ...history.filter((id) => id !== campfireId),
+      ].slice(0, 4);
       this.fallbackJoinedCampfires.set(userId, updatedHistory);
     }
 
@@ -300,7 +354,11 @@ export class CampfirePresenceService implements OnModuleInit {
   private registerLeaveFallback(
     campfireId: string,
     userId: string,
-  ): { count: number; wasRemoved: boolean; data: CampfirePresenceParticipant | null } {
+  ): {
+    count: number;
+    wasRemoved: boolean;
+    data: CampfirePresenceParticipant | null;
+  } {
     const onlineSet = this.fallbackOnlineSets.get(campfireId);
     const cohortMap = this.fallbackParticipants.get(campfireId);
 
@@ -313,7 +371,11 @@ export class CampfirePresenceService implements OnModuleInit {
 
   // --- SEATING LOGIC ---
 
-  async takeSeat(campfireId: string, userId: string, seatIndex: number): Promise<{ success: boolean; error?: string }> {
+  async takeSeat(
+    campfireId: string,
+    userId: string,
+    seatIndex: number,
+  ): Promise<{ success: boolean; error?: string }> {
     if (seatIndex < 1 || seatIndex > 5) {
       return { success: false, error: 'Invalid seat index. Must be 1-5.' };
     }
@@ -327,7 +389,7 @@ export class CampfirePresenceService implements OnModuleInit {
         if (Object.values(currentSeats).includes(userId)) {
           return { success: false, error: 'You are already seated.' };
         }
-        
+
         // Then check if target seat is full
         if (currentSeats[seatIndex.toString()]) {
           return { success: false, error: 'Seat is already occupied.' };
@@ -340,8 +402,10 @@ export class CampfirePresenceService implements OnModuleInit {
 
         await client.hset(seatsKey, seatIndex.toString(), userId);
         return { success: true };
-      } catch (err: any) {
-        this.logger.error(`Redis takeSeat error: ${err.message}. Using fallback.`);
+      } catch (err: unknown) {
+        this.logger.error(
+          `Redis takeSeat error: ${err instanceof Error ? err.message : String(err)}. Using fallback.`,
+        );
       }
     }
 
@@ -350,19 +414,25 @@ export class CampfirePresenceService implements OnModuleInit {
       this.fallbackSeats.set(campfireId, new Map());
     }
     const roomSeats = this.fallbackSeats.get(campfireId)!;
-    
+
     // Check if user already seated
     for (const val of roomSeats.values()) {
-      if (val === userId) return { success: false, error: 'You are already seated.' };
+      if (val === userId)
+        return { success: false, error: 'You are already seated.' };
     }
-    if (roomSeats.has(seatIndex)) return { success: false, error: 'Seat is already occupied.' };
-    if (roomSeats.size >= 5) return { success: false, error: 'All 5 seats are full.' };
-    
+    if (roomSeats.has(seatIndex))
+      return { success: false, error: 'Seat is already occupied.' };
+    if (roomSeats.size >= 5)
+      return { success: false, error: 'All 5 seats are full.' };
+
     roomSeats.set(seatIndex, userId);
     return { success: true };
   }
 
-  async leaveSeat(campfireId: string, userId: string): Promise<{ success: boolean }> {
+  async leaveSeat(
+    campfireId: string,
+    userId: string,
+  ): Promise<{ success: boolean }> {
     const client = this.redisService?.client;
     if (client && client.status === 'ready') {
       try {
@@ -375,8 +445,10 @@ export class CampfirePresenceService implements OnModuleInit {
           }
         }
         return { success: true }; // Not seated anyway
-      } catch (err: any) {
-        this.logger.error(`Redis leaveSeat error: ${err.message}. Using fallback.`);
+      } catch (err: unknown) {
+        this.logger.error(
+          `Redis leaveSeat error: ${err instanceof Error ? err.message : String(err)}. Using fallback.`,
+        );
       }
     }
 
@@ -384,31 +456,50 @@ export class CampfirePresenceService implements OnModuleInit {
     return { success: true };
   }
 
-  async getRoomSeatsSnapshot(campfireId: string): Promise<Record<number, { userId: string; profile?: any } | null>> {
-    const snapshot: Record<number, { userId: string; profile?: any } | null> = { 1: null, 2: null, 3: null, 4: null, 5: null };
+  async getRoomSeatsSnapshot(
+    campfireId: string,
+  ): Promise<Record<number, { userId: string; profile?: any } | null>> {
+    const snapshot: Record<number, { userId: string; profile?: any } | null> = {
+      1: null,
+      2: null,
+      3: null,
+      4: null,
+      5: null,
+    };
     const client = this.redisService?.client;
-    
+
     if (client && client.status === 'ready') {
       try {
         const seatsKey = `presence:campfire:${campfireId}:seats`;
         const cohortHashKey = `presence:room:campfire:${campfireId}:cohorts`;
         const currentSeats = await client.hgetall(seatsKey);
-        
+
         for (const [seatIdx, occupantId] of Object.entries(currentSeats)) {
           const idx = parseInt(seatIdx);
           if (idx >= 1 && idx <= 5) {
-            let profile = undefined;
+            let profile: CampfirePresenceParticipant | undefined = undefined;
             const rawData = await client.hget(cohortHashKey, occupantId);
             if (rawData) {
               try {
-                profile = JSON.parse(rawData);
-              } catch {}
+                profile = JSON.parse(rawData) as CampfirePresenceParticipant;
+              } catch (e: unknown) {
+                this.logger.warn(
+                  `Failed to parse profile JSON for user ${occupantId}`,
+                  e instanceof Error ? e.message : String(e),
+                );
+              }
             }
             snapshot[idx] = { userId: occupantId, profile };
           }
         }
+
         return snapshot;
-      } catch (err: any) {}
+      } catch (err: unknown) {
+        this.logger.error(
+          `Error fetching Redis snapshot for campfire ${campfireId}`,
+          err instanceof Error ? err.stack : String(err),
+        );
+      }
     }
 
     const roomSeats = this.fallbackSeats.get(campfireId);

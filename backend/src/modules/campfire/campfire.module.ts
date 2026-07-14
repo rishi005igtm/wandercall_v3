@@ -15,7 +15,11 @@ import { LiveSessionEntity } from './entities/live-session.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([CampfireEntity, CampfireMessageEntity, LiveSessionEntity]),
+    TypeOrmModule.forFeature([
+      CampfireEntity,
+      CampfireMessageEntity,
+      LiveSessionEntity,
+    ]),
   ],
   controllers: [CampfireController],
   providers: [

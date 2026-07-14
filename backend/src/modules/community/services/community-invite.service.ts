@@ -1,4 +1,10 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { DataSource } from 'typeorm';
 import { CommunityInviteRepository } from '../repositories/community-invite.repository';
@@ -28,18 +34,26 @@ export class CommunityInviteService {
     invitedUserIds: string[],
   ): Promise<void> {
     if (!invitedUserIds || invitedUserIds.length === 0) return;
-    const uniqueIds = [...new Set(invitedUserIds)].filter((id) => id !== senderId);
+    const uniqueIds = [...new Set(invitedUserIds)].filter(
+      (id) => id !== senderId,
+    );
 
     for (const targetUserId of uniqueIds) {
       try {
         await this.sendInvite(community.id, senderId, targetUserId);
       } catch (error) {
-        console.warn(`Failed to send initial invite to ${targetUserId}: ${error.message}`);
+        console.warn(
+          `Failed to send initial invite to ${targetUserId}: ${error.message}`,
+        );
       }
     }
   }
 
-  async sendInvite(communityId: string, senderId: string, targetUserId: string): Promise<void> {
+  async sendInvite(
+    communityId: string,
+    senderId: string,
+    targetUserId: string,
+  ): Promise<void> {
     if (senderId === targetUserId) {
       throw new BadRequestException('Cannot invite yourself');
     }
@@ -50,7 +64,10 @@ export class CommunityInviteService {
     }
 
     // Check if already invited
-    const existingInvite = await this.inviteRepo.findPendingInvite(communityId, targetUserId);
+    const existingInvite = await this.inviteRepo.findPendingInvite(
+      communityId,
+      targetUserId,
+    );
     if (existingInvite) {
       throw new ConflictException('An invite is already pending for this user');
     }
@@ -65,8 +82,12 @@ export class CommunityInviteService {
     });
 
     // Send chat message
-    const { conversationId } = await this.chatService.getOrCreateDirectConversation(senderId, targetUserId);
-    
+    const { conversationId } =
+      await this.chatService.getOrCreateDirectConversation(
+        senderId,
+        targetUserId,
+      );
+
     const msg = await this.chatService.sendMessage(senderId, {
       conversationId,
       type: MessageType.COMMUNITY_INVITE,
@@ -88,7 +109,11 @@ export class CommunityInviteService {
     invite.messageId = msg.id;
     await this.inviteRepo.save(invite);
 
-    this.eventDispatcher.dispatchMemberInvited(communityId, senderId, targetUserId);
+    this.eventDispatcher.dispatchMemberInvited(
+      communityId,
+      senderId,
+      targetUserId,
+    );
   }
 
   async acceptInvite(inviteId: string, userId: string): Promise<void> {
@@ -98,7 +123,9 @@ export class CommunityInviteService {
     }
 
     if (invite.receiverId !== userId) {
-      throw new ForbiddenException('You cannot accept an invite sent to someone else');
+      throw new ForbiddenException(
+        'You cannot accept an invite sent to someone else',
+      );
     }
 
     if (invite.status === CommunityInviteStatus.ACCEPTED) {
@@ -106,11 +133,16 @@ export class CommunityInviteService {
     }
 
     if (invite.status !== CommunityInviteStatus.PENDING) {
-      throw new BadRequestException(`Invite is already ${invite.status.toLowerCase()}`);
+      throw new BadRequestException(
+        `Invite is already ${invite.status.toLowerCase()}`,
+      );
     }
 
     if (invite.expiresAt && new Date() > invite.expiresAt) {
-      await this.inviteRepo.updateStatus(inviteId, CommunityInviteStatus.EXPIRED);
+      await this.inviteRepo.updateStatus(
+        inviteId,
+        CommunityInviteStatus.EXPIRED,
+      );
       throw new BadRequestException('This invite has expired');
     }
 
@@ -128,15 +160,18 @@ export class CommunityInviteService {
     }
 
     if (invite.receiverId !== userId) {
-      throw new ForbiddenException('You cannot decline an invite sent to someone else');
+      throw new ForbiddenException(
+        'You cannot decline an invite sent to someone else',
+      );
     }
 
     if (invite.status !== CommunityInviteStatus.PENDING) {
-      throw new BadRequestException(`Invite is already ${invite.status.toLowerCase()}`);
+      throw new BadRequestException(
+        `Invite is already ${invite.status.toLowerCase()}`,
+      );
     }
 
     // Remove invite from community_invites table upon declining as required
     await this.inviteRepo.delete(invite.id);
   }
 }
-

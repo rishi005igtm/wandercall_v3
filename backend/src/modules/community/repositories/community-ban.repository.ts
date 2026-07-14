@@ -15,8 +15,12 @@ export class CommunityBanRepository {
     return this.repo.save(ban);
   }
 
-  async findActiveBan(communityId: string, userId: string): Promise<CommunityBanEntity | null> {
-    return this.repo.createQueryBuilder('ban')
+  async findActiveBan(
+    communityId: string,
+    userId: string,
+  ): Promise<CommunityBanEntity | null> {
+    return this.repo
+      .createQueryBuilder('ban')
       .where('ban.communityId = :communityId', { communityId })
       .andWhere('ban.userId = :userId', { userId })
       .andWhere('(ban.permanent = true OR ban.expiresAt > NOW())')
@@ -35,7 +39,9 @@ export class CommunityBanRepository {
     return this.repo.delete(criteria);
   }
 
-  async save(ban: CommunityBanEntity | Partial<CommunityBanEntity>): Promise<CommunityBanEntity> {
+  async save(
+    ban: CommunityBanEntity | Partial<CommunityBanEntity>,
+  ): Promise<CommunityBanEntity> {
     return this.repo.save(ban as any);
   }
 

@@ -61,7 +61,7 @@ export class CampfireEventDispatcher {
     this.eventEmitter.emit(CampfireEvents.PARTICIPANT_LEFT, payload);
   }
 
-  on(event: string, callback: (...args: any[]) => void) {
+  on<T = unknown>(event: string, callback: (payload: T) => void) {
     this.eventEmitter.on(event, callback);
   }
 }

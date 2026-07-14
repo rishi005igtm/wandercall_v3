@@ -1,9 +1,20 @@
-import { Injectable, NotFoundException, ForbiddenException, Logger, Optional, Inject, forwardRef } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  Logger,
+  Optional,
+  Inject,
+  forwardRef,
+} from '@nestjs/common';
 import { CampfireRepository } from '../repositories/campfire.repository';
 import { CampfireEventDispatcher } from '../events/campfire-event.dispatcher';
 import { CampfirePresenceService } from './campfire-presence.service';
 import { CreateCampfireDto } from '../dto/create-campfire.dto';
-import { CampfireStatus, CAMPFIRE_ERROR_MESSAGES } from '../constants/campfire.constant';
+import {
+  CampfireStatus,
+  CAMPFIRE_ERROR_MESSAGES,
+} from '../constants/campfire.constant';
 import { CampfireEntity } from '../entities/campfire.entity';
 
 @Injectable()
@@ -13,15 +24,20 @@ export class CampfireService {
   constructor(
     private readonly repository: CampfireRepository,
     private readonly eventDispatcher: CampfireEventDispatcher,
-    @Optional() @Inject(forwardRef(() => CampfirePresenceService)) private readonly presenceService?: CampfirePresenceService,
+    @Optional()
+    @Inject(forwardRef(() => CampfirePresenceService))
+    private readonly presenceService?: CampfirePresenceService,
   ) {}
 
-  async create(hostId: string, dto: CreateCampfireDto): Promise<CampfireEntity> {
+  async create(
+    hostId: string,
+    dto: CreateCampfireDto,
+  ): Promise<CampfireEntity> {
     const isScheduled = !!dto.scheduledStartAt;
-    
+
     // Safely extract scheduledStartAt to avoid type issues with spread
     const { scheduledStartAt, ...restDto } = dto;
-    
+
     const campfire = await this.repository.create({
       ...restDto,
       hostId,
@@ -39,12 +55,16 @@ export class CampfireService {
     return campfire;
   }
 
-  async findById(id: string): Promise<any> {
+  async findById(id: string): Promise<CampfireEntity> {
     const campfire = await this.repository.findById(id);
-    if (!campfire) throw new NotFoundException(CAMPFIRE_ERROR_MESSAGES.NOT_FOUND);
-    
+    if (!campfire)
+      throw new NotFoundException(CAMPFIRE_ERROR_MESSAGES.NOT_FOUND);
+
     if (this.presenceService) {
-      const snapshot = await this.presenceService.getRoomPresenceSnapshot(id, campfire.hostId);
+      const snapshot = await this.presenceService.getRoomPresenceSnapshot(
+        id,
+        campfire.hostId,
+      );
       return {
         ...campfire,
         currentParticipants: snapshot.participantsCount,
@@ -64,7 +84,7 @@ export class CampfireService {
     }
 
     await this.repository.softDelete(id);
-    
+
     this.eventDispatcher.emitDeleted(id);
   }
 
@@ -75,7 +95,9 @@ export class CampfireService {
     }
 
     if (campfire.status !== CampfireStatus.LIVE) {
-      throw new ForbiddenException(CAMPFIRE_ERROR_MESSAGES.INVALID_STATUS_TRANSITION);
+      throw new ForbiddenException(
+        CAMPFIRE_ERROR_MESSAGES.INVALID_STATUS_TRANSITION,
+      );
     }
 
     const updated = await this.repository.update(id, {
@@ -84,7 +106,7 @@ export class CampfireService {
     });
 
     this.eventDispatcher.emitEnded(updated);
-    
+
     return updated;
   }
 
@@ -102,23 +124,38 @@ export class CampfireService {
     });
 
     this.eventDispatcher.emitRestarted(updated);
-    
+
     return updated;
   }
 
-  async getLiveCampfires(limit: number = 20, offset: number = 0): Promise<{ items: CampfireEntity[], total: number }> {
+  async getLiveCampfires(
+    limit: number = 20,
+    offset: number = 0,
+  ): Promise<{ items: CampfireEntity[]; total: number }> {
     const [items, total] = await this.repository.findLive(limit, offset);
     return { items, total };
   }
 
-  async search(query: any): Promise<{ items: CampfireEntity[], total: number }> {
+  async search(query: {
+    status?: string;
+    hostId?: string;
+    communityId?: string;
+    limit?: number | string;
+    offset?: number | string;
+  }): Promise<{ items: CampfireEntity[]; total: number }> {
     const [items, total] = await this.repository.search(query);
     return { items, total };
   }
 
-  async getWorkspace(userId: string, tab: 'hosted' | 'joined' | 'saved'): Promise<any[]> {
+  async getWorkspace(
+    userId: string,
+    tab: 'hosted' | 'joined' | 'saved',
+  ): Promise<CampfireEntity[]> {
     if (tab === 'hosted') {
-      const [items] = await this.repository.search({ hostId: userId, limit: 100 });
+      const [items] = await this.repository.search({
+        hostId: userId,
+        limit: 100,
+      });
       return items;
     }
 
@@ -126,11 +163,13 @@ export class CampfireService {
       let campfireIds: string[] = [];
 
       if (!this.presenceService || !this.presenceService['redisService']) {
-        campfireIds = this.presenceService?.fallbackJoinedCampfires.get(userId) || [];
+        campfireIds =
+          this.presenceService?.fallbackJoinedCampfires.get(userId) || [];
       } else {
         const client = this.presenceService['redisService'].client;
         if (!client || client.status !== 'ready') {
-          campfireIds = this.presenceService.fallbackJoinedCampfires.get(userId) || [];
+          campfireIds =
+            this.presenceService.fallbackJoinedCampfires.get(userId) || [];
         } else {
           const historyKey = `presence:user:${userId}:joined_campfires`;
           // Get the highest scores (most recent)
@@ -141,10 +180,12 @@ export class CampfireService {
       if (!campfireIds || campfireIds.length === 0) return [];
 
       // Fetch these campfires from database
-      const promises = campfireIds.map(id => this.findById(id).catch(() => null));
+      const promises = campfireIds.map((id) =>
+        this.findById(id).catch(() => null),
+      );
       const campfires = await Promise.all(promises);
 
-      return campfires.filter(c => c !== null);
+      return campfires.filter((c) => c !== null);
     }
 
     if (tab === 'saved') {

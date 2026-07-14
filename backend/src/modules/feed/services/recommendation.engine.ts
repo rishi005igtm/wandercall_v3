@@ -10,7 +10,15 @@ import { RANKING_CONFIG } from '../config/ranking.config';
 import { PostEntity } from '../entities/post.entity';
 
 export interface FeedQueryDto {
-  feedType?: 'global' | 'following' | 'trending' | 'recent' | 'category' | 'saved' | 'host' | 'explore';
+  feedType?:
+    | 'global'
+    | 'following'
+    | 'trending'
+    | 'recent'
+    | 'category'
+    | 'saved'
+    | 'host'
+    | 'explore';
   category?: string;
   limit?: number;
   cursor?: string;
@@ -47,23 +55,27 @@ export class RecommendationEngine {
   ): Promise<{ items: any[]; nextCursor?: string }> {
     const feedType = query.feedType || 'global';
     const limit = Number(query.limit) || 10;
-    
+
     // 1. Parse or initialize stable cursor to prevent duplicates on scrolling
     let cursor: FeedCursor;
     if (query.cursor) {
       try {
-        cursor = JSON.parse(Buffer.from(query.cursor, 'base64').toString('ascii'));
+        cursor = JSON.parse(
+          Buffer.from(query.cursor, 'base64').toString('ascii'),
+        );
       } catch (err) {
-        this.logger.warn(`Failed to parse feed cursor: ${query.cursor}, fallback to defaults`);
+        this.logger.warn(
+          `Failed to parse feed cursor: ${query.cursor}, fallback to defaults`,
+        );
         cursor = { timestamp: Date.now(), offset: 0, feedType };
       }
     } else {
-      cursor = { 
-        timestamp: Date.now(), 
-        offset: 0, 
-        feedType, 
-        category: query.category, 
-        feedSessionId: query.feedSessionId || randomUUID()
+      cursor = {
+        timestamp: Date.now(),
+        offset: 0,
+        feedType,
+        category: query.category,
+        feedSessionId: query.feedSessionId || randomUUID(),
       };
     }
 
@@ -73,19 +85,26 @@ export class RecommendationEngine {
     let followedCreatorIds: string[] = [];
     const followedSet = new Set<string>();
     const seenSet = new Set<string>();
-    let viewCounts = new Map<string, number>();
+    const viewCounts = new Map<string, number>();
     let userInterests: Record<string, number> = {};
 
     if (viewerId) {
       // Fetch followed creators gracefully
       try {
-        const followingResult = await this.followRepository.getFollowing(viewerId, 1000);
-        followedCreatorIds = followingResult.items.map((item) => item.profile.userId);
+        const followingResult = await this.followRepository.getFollowing(
+          viewerId,
+          1000,
+        );
+        followedCreatorIds = followingResult.items.map(
+          (item) => item.profile.userId,
+        );
         for (const id of followedCreatorIds) {
           followedSet.add(id);
         }
       } catch (err: any) {
-        this.logger.warn(`Failed to fetch follows for user ${viewerId}: ${err.message}`);
+        this.logger.warn(
+          `Failed to fetch follows for user ${viewerId}: ${err.message}`,
+        );
       }
 
       // Fetch user impressions history gracefully
@@ -96,29 +115,44 @@ export class RecommendationEngine {
           seenSet.add(imp.postId);
         }
       } catch (err: any) {
-        this.logger.warn(`Failed to fetch impressions for user ${viewerId}: ${err.message}`);
+        this.logger.warn(
+          `Failed to fetch impressions for user ${viewerId}: ${err.message}`,
+        );
       }
 
       // Fetch interest affinities gracefully
       try {
         userInterests = await this.interestEngine.getUserInterestMap(viewerId);
       } catch (err: any) {
-        this.logger.warn(`Failed to fetch user interests for user ${viewerId}: ${err.message}`);
+        this.logger.warn(
+          `Failed to fetch user interests for user ${viewerId}: ${err.message}`,
+        );
       }
     }
-    
+
     let authorAffinityMap: Record<string, number> = {};
     if (viewerId) {
       try {
-        authorAffinityMap = await this.interestEngine.getUserAuthorAffinityMap(viewerId);
+        authorAffinityMap =
+          await this.interestEngine.getUserAuthorAffinityMap(viewerId);
       } catch (err: any) {
-        this.logger.warn(`Failed to fetch author affinity map for user ${viewerId}: ${err.message}`);
+        this.logger.warn(
+          `Failed to fetch author affinity map for user ${viewerId}: ${err.message}`,
+        );
       }
     }
 
     // 3. Candidate Generation and Eligibility Filtering
-    let candidates = await this.postRepository.getCandidates(viewerId || undefined, followedCreatorIds);
-    candidates = await this.applyEligibilityFilters(candidates, feedType, query.category, viewerId);
+    let candidates = await this.postRepository.getCandidates(
+      viewerId || undefined,
+      followedCreatorIds,
+    );
+    candidates = await this.applyEligibilityFilters(
+      candidates,
+      feedType,
+      query.category,
+      viewerId,
+    );
 
     // 4. Scoring candidates using stable query reference timestamp (Stage 3 & 4)
     const isExplore = feedType === 'explore';
@@ -134,7 +168,7 @@ export class RecommendationEngine {
         impressionCounts: Object.fromEntries(viewCounts),
         hasLiked,
         hasSaved,
-        isExplore
+        isExplore,
       });
       return { post, score };
     });
@@ -146,11 +180,16 @@ export class RecommendationEngine {
     const finalScoredList = this.applyDiversityReRanking(scoredCandidates);
 
     // 6. Slice page of results
-    const paginatedSlice = finalScoredList.slice(cursor.offset, cursor.offset + limit);
+    const paginatedSlice = finalScoredList.slice(
+      cursor.offset,
+      cursor.offset + limit,
+    );
     const hasMore = finalScoredList.length > cursor.offset + limit;
 
     // 7. Batch retrieve and stitch creator profiles (Avoid N+1 queries)
-    const authorIds = [...new Set(paginatedSlice.map((item) => item.post.authorId))];
+    const authorIds = [
+      ...new Set(paginatedSlice.map((item) => item.post.authorId)),
+    ];
     const profilesMap = new Map<string, any>();
     if (authorIds.length > 0) {
       for (const id of authorIds) {
@@ -168,20 +207,28 @@ export class RecommendationEngine {
       }
     }
 
-    const postIds = paginatedSlice.map(item => item.post.id);
+    const postIds = paginatedSlice.map((item) => item.post.id);
     const likedPostIds = new Set<string>();
     const savedPostIds = new Set<string>();
 
     if (viewerId && postIds.length > 0) {
-      const states = await this.interactionRepo.getUserPostStates(viewerId, postIds);
-      states.forEach(state => {
+      const states = await this.interactionRepo.getUserPostStates(
+        viewerId,
+        postIds,
+      );
+      states.forEach((state) => {
         if (state.hasLiked) likedPostIds.add(state.postId);
         if (state.hasSaved) savedPostIds.add(state.postId);
       });
     }
 
     // Stitch together final user payload using separated mapping function
-    const items = this.buildDTOs(paginatedSlice, profilesMap, likedPostIds, savedPostIds);
+    const items = this.buildDTOs(
+      paginatedSlice,
+      profilesMap,
+      likedPostIds,
+      savedPostIds,
+    );
 
     // 8. Generate next base64 cursor
     let nextCursor: string | undefined;
@@ -193,12 +240,13 @@ export class RecommendationEngine {
         category: query.category,
         feedSessionId: currentSessionId,
       };
-      nextCursor = Buffer.from(JSON.stringify(nextCursorObj)).toString('base64');
+      nextCursor = Buffer.from(JSON.stringify(nextCursorObj)).toString(
+        'base64',
+      );
     }
 
     return { items, nextCursor };
   }
-
 
   /**
    * Apply creator and category diversity rules to ensure a balanced feed (Stage 5)
@@ -209,15 +257,17 @@ export class RecommendationEngine {
     const list: { post: PostEntity; score: number }[] = [];
     const pool = [...candidates];
 
-    const maxConsecutiveAuthor = RANKING_CONFIG.diversity.maxConsecutiveAuthor || 2;
-    const maxConsecutiveCategory = RANKING_CONFIG.diversity.maxConsecutiveCategory || 3;
+    const maxConsecutiveAuthor =
+      RANKING_CONFIG.diversity.maxConsecutiveAuthor || 2;
+    const maxConsecutiveCategory =
+      RANKING_CONFIG.diversity.maxConsecutiveCategory || 3;
 
     const creatorWindow: string[] = [];
     const categoryWindow: string[] = [];
 
     while (pool.length > 0) {
       let bestIdx = -1;
-      let fallbackIdx = 0; // If all violate constraints, just take the highest score remaining
+      const fallbackIdx = 0; // If all violate constraints, just take the highest score remaining
 
       for (let i = 0; i < pool.length; i++) {
         const authorId = pool[i].post.authorId;
@@ -237,7 +287,10 @@ export class RecommendationEngine {
           else break;
         }
 
-        if (consecutiveAuthors < maxConsecutiveAuthor && consecutiveCategories < maxConsecutiveCategory) {
+        if (
+          consecutiveAuthors < maxConsecutiveAuthor &&
+          consecutiveCategories < maxConsecutiveCategory
+        ) {
           bestIdx = i;
           break; // Found the highest scoring candidate that satisfies constraints (pool is pre-sorted)
         }
@@ -245,14 +298,16 @@ export class RecommendationEngine {
 
       const chosenIdx = bestIdx !== -1 ? bestIdx : fallbackIdx;
       const chosen = pool.splice(chosenIdx, 1)[0];
-      
+
       list.push(chosen);
       creatorWindow.push(chosen.post.authorId);
       categoryWindow.push(chosen.post.category);
 
       // Keep windows bounded to prevent memory leaks, we only care about trailing sequence
-      if (creatorWindow.length > maxConsecutiveAuthor + 1) creatorWindow.shift();
-      if (categoryWindow.length > maxConsecutiveCategory + 1) categoryWindow.shift();
+      if (creatorWindow.length > maxConsecutiveAuthor + 1)
+        creatorWindow.shift();
+      if (categoryWindow.length > maxConsecutiveCategory + 1)
+        categoryWindow.shift();
     }
 
     return list;
@@ -270,19 +325,39 @@ export class RecommendationEngine {
     if (feedType === 'following') {
       if (viewerId) {
         try {
-          const followingResult = await this.followRepository.getFollowing(viewerId, 1000);
-          const followedSet = new Set(followingResult.items.map((item) => item.profile.userId));
-          return candidates.filter((c) => followedSet.has(c.authorId) || c.authorId === viewerId);
+          const followingResult = await this.followRepository.getFollowing(
+            viewerId,
+            1000,
+          );
+          const followedSet = new Set(
+            followingResult.items.map((item) => item.profile.userId),
+          );
+          return candidates.filter(
+            (c) => followedSet.has(c.authorId) || c.authorId === viewerId,
+          );
         } catch (e) {
           return candidates; // fallback gracefully
         }
       }
     } else if (feedType === 'category' && category) {
       if (category === 'experience') {
-        const experienceCategories = ['story', 'itinerary', 'stay', 'review', 'tips', 'food', 'budget', 'meetup'];
-        return candidates.filter((c) => experienceCategories.includes(c.category));
+        const experienceCategories = [
+          'story',
+          'itinerary',
+          'stay',
+          'review',
+          'tips',
+          'food',
+          'budget',
+          'meetup',
+        ];
+        return candidates.filter((c) =>
+          experienceCategories.includes(c.category),
+        );
       } else if (category === 'memory') {
-        return candidates.filter((c) => c.category === 'memory' || c.category === 'memories');
+        return candidates.filter(
+          (c) => c.category === 'memory' || c.category === 'memories',
+        );
       } else {
         return candidates.filter((c) => c.category === category);
       }
@@ -291,7 +366,10 @@ export class RecommendationEngine {
         try {
           const postIds = candidates.map((c) => c.id);
           const savedPostIds = new Set<string>();
-          const states = await this.interactionRepo.getUserPostStates(viewerId, postIds);
+          const states = await this.interactionRepo.getUserPostStates(
+            viewerId,
+            postIds,
+          );
           states.forEach((state) => {
             if (state.hasSaved) savedPostIds.add(state.postId);
           });
@@ -315,7 +393,7 @@ export class RecommendationEngine {
     paginatedSlice: { post: PostEntity; score: number }[],
     profilesMap: Map<string, any>,
     likedPostIds: Set<string>,
-    savedPostIds: Set<string>
+    savedPostIds: Set<string>,
   ): any[] {
     return paginatedSlice.map((item) => {
       const authorProfile = profilesMap.get(item.post.authorId) || {
@@ -364,12 +442,15 @@ export class RecommendationEngine {
     query: FeedQueryDto,
   ): Promise<{ items: any[]; nextCursor?: string }> {
     const limit = Number(query.limit) || 10;
-    
+
     // Resolve target username
     const cleanUsername = username.replace(/^@/, '').toLowerCase();
-    const targetProfile = await this.userRepository.findByUsername(cleanUsername);
+    const targetProfile =
+      await this.userRepository.findByUsername(cleanUsername);
     if (!targetProfile) {
-      throw new NotFoundException(`User with username '${username}' not found.`);
+      throw new NotFoundException(
+        `User with username '${username}' not found.`,
+      );
     }
 
     const authorId = targetProfile.userId;
@@ -382,15 +463,30 @@ export class RecommendationEngine {
     }
 
     // Get posts by author with proper visibility rules applied
-    let posts = await this.postRepository.getPostsByAuthor(authorId, viewerId, isFollowing);
+    let posts = await this.postRepository.getPostsByAuthor(
+      authorId,
+      viewerId,
+      isFollowing,
+    );
 
     // Apply category filters if requested
     if (query.category) {
       if (query.category === 'experience') {
-        const experienceCategories = ['story', 'itinerary', 'stay', 'review', 'tips', 'food', 'budget', 'meetup'];
+        const experienceCategories = [
+          'story',
+          'itinerary',
+          'stay',
+          'review',
+          'tips',
+          'food',
+          'budget',
+          'meetup',
+        ];
         posts = posts.filter((c) => experienceCategories.includes(c.category));
       } else if (query.category === 'memory') {
-        posts = posts.filter((c) => c.category === 'memory' || c.category === 'memories');
+        posts = posts.filter(
+          (c) => c.category === 'memory' || c.category === 'memories',
+        );
       } else {
         posts = posts.filter((c) => c.category === query.category);
       }
@@ -401,7 +497,9 @@ export class RecommendationEngine {
     let timestamp = Date.now();
     if (query.cursor) {
       try {
-        const cursorObj = JSON.parse(Buffer.from(query.cursor, 'base64').toString('ascii'));
+        const cursorObj = JSON.parse(
+          Buffer.from(query.cursor, 'base64').toString('ascii'),
+        );
         offset = Number(cursorObj.offset) || 0;
         timestamp = Number(cursorObj.timestamp) || Date.now();
       } catch (err) {
@@ -457,7 +555,9 @@ export class RecommendationEngine {
         timestamp,
         offset: offset + limit,
       };
-      nextCursor = Buffer.from(JSON.stringify(nextCursorObj)).toString('base64');
+      nextCursor = Buffer.from(JSON.stringify(nextCursorObj)).toString(
+        'base64',
+      );
     }
 
     return { items, nextCursor };

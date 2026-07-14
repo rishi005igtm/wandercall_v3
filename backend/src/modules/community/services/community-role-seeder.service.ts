@@ -14,14 +14,31 @@ export const SYSTEM_ROLES = [
     protected: true,
     permissions: [
       '*',
-      'COMMUNITY_DELETE', 'COMMUNITY_SETTINGS', 'TRANSFER_OWNERSHIP', 'INVITE_USERS', 'BAN_USERS', 'ASSIGN_ROLES', 'EDIT_DESCRIPTION',
-      'community.delete', 'community.update', 'settings.update',
-      'role.assign', 'role.manage',
-      'member.invite', 'member.kick', 'member.ban', 'member.mute',
-      'post.create', 'post.delete', 'post.pin',
-      'chat.send', 'chat.moderate',
-      'story.create', 'story.delete',
-      'event.create', 'event.manage'
+      'COMMUNITY_DELETE',
+      'COMMUNITY_SETTINGS',
+      'TRANSFER_OWNERSHIP',
+      'INVITE_USERS',
+      'BAN_USERS',
+      'ASSIGN_ROLES',
+      'EDIT_DESCRIPTION',
+      'community.delete',
+      'community.update',
+      'settings.update',
+      'role.assign',
+      'role.manage',
+      'member.invite',
+      'member.kick',
+      'member.ban',
+      'member.mute',
+      'post.create',
+      'post.delete',
+      'post.pin',
+      'chat.send',
+      'chat.moderate',
+      'story.create',
+      'story.delete',
+      'event.create',
+      'event.manage',
     ],
   },
   {
@@ -33,14 +50,27 @@ export const SYSTEM_ROLES = [
     editable: false,
     protected: true,
     permissions: [
-      'COMMUNITY_SETTINGS', 'INVITE_USERS', 'BAN_USERS', 'ASSIGN_ROLES', 'EDIT_DESCRIPTION',
-      'community.update', 'settings.update',
+      'COMMUNITY_SETTINGS',
+      'INVITE_USERS',
+      'BAN_USERS',
+      'ASSIGN_ROLES',
+      'EDIT_DESCRIPTION',
+      'community.update',
+      'settings.update',
       'role.assign',
-      'member.invite', 'member.kick', 'member.ban', 'member.mute',
-      'post.create', 'post.delete', 'post.pin',
-      'chat.send', 'chat.moderate',
-      'story.create', 'story.delete',
-      'event.create', 'event.manage'
+      'member.invite',
+      'member.kick',
+      'member.ban',
+      'member.mute',
+      'post.create',
+      'post.delete',
+      'post.pin',
+      'chat.send',
+      'chat.moderate',
+      'story.create',
+      'story.delete',
+      'event.create',
+      'event.manage',
     ],
   },
   {
@@ -56,7 +86,7 @@ export const SYSTEM_ROLES = [
       'member.invite',
       'post.create',
       'chat.send',
-      'story.create'
+      'story.create',
     ],
   },
   {
@@ -67,10 +97,7 @@ export const SYSTEM_ROLES = [
     systemRole: true,
     editable: false,
     protected: true,
-    permissions: [
-      'post.view',
-      'chat.view'
-    ],
+    permissions: ['post.view', 'chat.view'],
   },
 ];
 
@@ -86,7 +113,9 @@ export class CommunityRoleSeederService {
   async seedSystemRoles(): Promise<void> {
     try {
       for (const roleDef of SYSTEM_ROLES) {
-        const existing = await this.roleRepo.findOne({ where: { name: roleDef.name } });
+        const existing = await this.roleRepo.findOne({
+          where: { name: roleDef.name },
+        });
         if (!existing) {
           const newRole = this.roleRepo.create(roleDef);
           await this.roleRepo.save(newRole);
@@ -102,7 +131,10 @@ export class CommunityRoleSeederService {
         }
       }
     } catch (error) {
-      this.logger.error(`Failed to seed system community roles: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to seed system community roles: ${error.message}`,
+        error.stack,
+      );
     }
   }
 }

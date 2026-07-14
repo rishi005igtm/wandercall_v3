@@ -6,7 +6,10 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { CommunityVisibility, CommunityStatus } from '../constants/community.constant';
+import {
+  CommunityVisibility,
+  CommunityStatus,
+} from '../constants/community.constant';
 
 @Entity('communities')
 export class CommunityEntity {

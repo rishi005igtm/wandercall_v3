@@ -25,6 +25,7 @@ import { CommunityStoryService } from '../services/community-story.service';
 import { CreateCommunityDto } from '../dto/create-community.dto';
 import { UpdateCommunityDto } from '../dto/update-community.dto';
 import { UpdateCommunitySettingsDto } from '../dto/update-community-settings.dto';
+import { RequestWithUser } from '../../../core/interfaces/request-with-user.interface';
 
 export interface AuthUser {
   userId: string;
@@ -35,8 +36,8 @@ export interface AuthUser {
 
 export const GetUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthUser => {
-    const request = ctx.switchToHttp().getRequest();
-    return request.user;
+    const request = ctx.switchToHttp().getRequest<RequestWithUser>();
+    return request.user as unknown as AuthUser;
   },
 );
 
@@ -54,7 +55,10 @@ export class CommunityController {
   ) {}
 
   @Post()
-  async createCommunity(@GetUser() user: AuthUser, @Body() dto: CreateCommunityDto) {
+  async createCommunity(
+    @GetUser() user: AuthUser,
+    @Body() dto: CreateCommunityDto,
+  ) {
     return this.communityService.createCommunity(user.userId, dto);
   }
 
@@ -103,12 +107,18 @@ export class CommunityController {
   }
 
   @Post('invites/:inviteId/accept')
-  async acceptInvite(@GetUser() user: AuthUser, @Param('inviteId') inviteId: string) {
+  async acceptInvite(
+    @GetUser() user: AuthUser,
+    @Param('inviteId') inviteId: string,
+  ) {
     return this.inviteService.acceptInvite(inviteId, user.userId);
   }
 
   @Post('invites/:inviteId/decline')
-  async declineInvite(@GetUser() user: AuthUser, @Param('inviteId') inviteId: string) {
+  async declineInvite(
+    @GetUser() user: AuthUser,
+    @Param('inviteId') inviteId: string,
+  ) {
     return this.inviteService.declineInvite(inviteId, user.userId);
   }
 
@@ -190,7 +200,12 @@ export class CommunityController {
     @Body() body: { isPinned?: boolean },
     @GetUser() user: AuthUser,
   ) {
-    return this.storyService.pinStory(id, user.userId, storyId, body.isPinned ?? true);
+    return this.storyService.pinStory(
+      id,
+      user.userId,
+      storyId,
+      body.isPinned ?? true,
+    );
   }
 
   @Patch(':id/stories/:storyId/feature')
@@ -200,7 +215,12 @@ export class CommunityController {
     @Body() body: { isFeatured?: boolean },
     @GetUser() user: AuthUser,
   ) {
-    return this.storyService.featureStory(id, user.userId, storyId, body.isFeatured ?? true);
+    return this.storyService.featureStory(
+      id,
+      user.userId,
+      storyId,
+      body.isFeatured ?? true,
+    );
   }
 
   @Delete(':id/stories/:storyId')

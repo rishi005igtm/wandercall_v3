@@ -53,7 +53,10 @@ import { CommunityChatService } from './services/community-chat.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.secret', 'wandercall_jwt_secret_key_2026'),
+        secret: configService.get<string>(
+          'jwt.secret',
+          'wandercall_jwt_secret_key_2026',
+        ),
         signOptions: {
           expiresIn: configService.get<number>('jwt.expiresIn', 3600),
         },
@@ -77,6 +80,14 @@ import { CommunityChatService } from './services/community-chat.service';
     // Socket Gateway
     ChatGateway,
   ],
-  exports: [ChatService, CommunityChatService, PresenceService, ChatEventDispatcher, ChatGateway, MessageService, ConversationRepository],
+  exports: [
+    ChatService,
+    CommunityChatService,
+    PresenceService,
+    ChatEventDispatcher,
+    ChatGateway,
+    MessageService,
+    ConversationRepository,
+  ],
 })
 export class ChatModule {}

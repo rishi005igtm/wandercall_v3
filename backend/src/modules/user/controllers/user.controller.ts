@@ -27,6 +27,7 @@ import { FollowService } from '../services/follow.service';
 import { PublicProfileResponseDto } from '../dto/public-profile-response.dto';
 import { RelationshipResponseDto } from '../dto/relationship-response.dto';
 import { FollowerPreviewDto } from '../dto/follower-preview.dto';
+import { RequestWithUser } from '../../../core/interfaces/request-with-user.interface';
 
 @Controller('users')
 export class UserController {
@@ -37,25 +38,29 @@ export class UserController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getCurrentUser(@Req() req: any): Promise<UserProfileResponseDto> {
+  async getCurrentUser(
+    @Req() req: RequestWithUser,
+  ): Promise<UserProfileResponseDto> {
     return this.userService.getProfileByUserId(req.user.userId);
   }
 
   @Get('profile/me')
   @UseGuards(JwtAuthGuard)
-  async getMyProfile(@Req() req: any): Promise<UserProfileResponseDto> {
+  async getMyProfile(
+    @Req() req: RequestWithUser,
+  ): Promise<UserProfileResponseDto> {
     return this.userService.getProfileByUserId(req.user.userId);
   }
 
   @Get('settings/me')
   @UseGuards(JwtAuthGuard)
-  async getMySettings(@Req() req: any): Promise<UserSettingsDto> {
+  async getMySettings(@Req() req: RequestWithUser): Promise<UserSettingsDto> {
     return this.userService.getSettings(req.user.userId);
   }
 
   @Get('plan/me')
   @UseGuards(JwtAuthGuard)
-  async getMyPlan(@Req() req: any): Promise<UserPlanDto> {
+  async getMyPlan(@Req() req: RequestWithUser): Promise<UserPlanDto> {
     return this.userService.getPlan(req.user.userId);
   }
 
@@ -78,19 +83,23 @@ export class UserController {
   async getUsernameSuggestions(
     @Query('name') name: string,
   ): Promise<{ suggestions: string[] }> {
-    const suggestions = await this.userService.generateUsernameSuggestions(name || 'Explorer');
+    const suggestions = await this.userService.generateUsernameSuggestions(
+      name || 'Explorer',
+    );
     return { suggestions };
   }
 
   @Get('profile/:userId')
-  async getProfile(@Param('userId') userId: string): Promise<UserProfileResponseDto> {
+  async getProfile(
+    @Param('userId') userId: string,
+  ): Promise<UserProfileResponseDto> {
     return this.userService.getProfileByUserId(userId);
   }
 
   @Patch('profile/me')
   @UseGuards(JwtAuthGuard)
   async updateMyProfile(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Body() dto: UpdateProfileRequestDto,
   ): Promise<UserProfileResponseDto> {
     return this.userService.updateProfile(req.user.userId, dto);
@@ -99,7 +108,7 @@ export class UserController {
   @Patch('profile/:userId')
   @UseGuards(JwtAuthGuard)
   async updateProfile(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('userId') userId: string,
     @Body() dto: UpdateProfileRequestDto,
   ): Promise<UserProfileResponseDto> {
@@ -111,7 +120,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadMyAvatar(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<UserProfileResponseDto> {
     return this.userService.uploadAvatar(req.user.userId, file);
@@ -121,7 +130,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async uploadMyCoverImage(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @UploadedFile() file: Express.Multer.File,
   ): Promise<UserProfileResponseDto> {
     return this.userService.uploadCoverImage(req.user.userId, file);
@@ -135,7 +144,7 @@ export class UserController {
   @Patch('settings/me')
   @UseGuards(JwtAuthGuard)
   async updateMySettings(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Body() partial: Partial<UserSettingsDto>,
   ): Promise<UserSettingsDto> {
     return this.userService.updateSettings(req.user.userId, partial);
@@ -144,7 +153,7 @@ export class UserController {
   @Patch('settings/:userId')
   @UseGuards(JwtAuthGuard)
   async updateSettings(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('userId') userId: string,
     @Body() partial: Partial<UserSettingsDto>,
   ): Promise<UserSettingsDto> {
@@ -160,7 +169,7 @@ export class UserController {
   @Patch('plan/me')
   @UseGuards(JwtAuthGuard)
   async updateMyPlan(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Body() partial: Partial<UserPlanDto>,
   ): Promise<UserPlanDto> {
     return this.userService.updatePlan(req.user.userId, partial);
@@ -169,7 +178,7 @@ export class UserController {
   @Patch('plan/:userId')
   @UseGuards(JwtAuthGuard)
   async updatePlan(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('userId') userId: string,
     @Body() partial: Partial<UserPlanDto>,
   ): Promise<UserPlanDto> {
@@ -180,7 +189,7 @@ export class UserController {
   @Get('profile/username/:username')
   @UseGuards(OptionalJwtAuthGuard)
   async getPublicProfile(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('username') username: string,
   ): Promise<PublicProfileResponseDto> {
     const currentUserId = req.user?.userId || null;
@@ -190,7 +199,7 @@ export class UserController {
   @Get('relationship/:username')
   @UseGuards(JwtAuthGuard)
   async getRelationshipState(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('username') username: string,
   ): Promise<RelationshipResponseDto> {
     return this.followService.getRelationshipState(req.user.userId, username);
@@ -200,7 +209,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async followUser(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('username') username: string,
   ): Promise<RelationshipResponseDto> {
     return this.followService.followUser(req.user.userId, username);
@@ -210,7 +219,7 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async unfollowUser(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('username') username: string,
   ): Promise<RelationshipResponseDto> {
     return this.followService.unfollowUser(req.user.userId, username);
@@ -224,7 +233,12 @@ export class UserController {
     @Query('search') search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
     const parsedLimit = parseInt(limit, 10) || 10;
-    return this.followService.getFollowers(username, parsedLimit, cursor, search);
+    return this.followService.getFollowers(
+      username,
+      parsedLimit,
+      cursor,
+      search,
+    );
   }
 
   @Get('/:username/following')
@@ -235,6 +249,11 @@ export class UserController {
     @Query('search') search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
     const parsedLimit = parseInt(limit, 10) || 10;
-    return this.followService.getFollowing(username, parsedLimit, cursor, search);
+    return this.followService.getFollowing(
+      username,
+      parsedLimit,
+      cursor,
+      search,
+    );
   }
 }

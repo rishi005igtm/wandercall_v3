@@ -22,7 +22,10 @@ import { RolesGuard } from './guards/roles.guard';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('jwt.secret', 'wandercall_jwt_secret_key_2026'),
+        secret: configService.get<string>(
+          'jwt.secret',
+          'wandercall_jwt_secret_key_2026',
+        ),
         signOptions: {
           expiresIn: configService.get<number>('jwt.expiresIn', 3600),
         },
@@ -30,7 +33,26 @@ import { RolesGuard } from './guards/roles.guard';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, MailService, JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard],
-  exports: [AuthService, AuthRepository, MailService, JwtStrategy, JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard, PassportModule, JwtModule, TypeOrmModule],
+  providers: [
+    AuthService,
+    AuthRepository,
+    MailService,
+    JwtStrategy,
+    JwtAuthGuard,
+    OptionalJwtAuthGuard,
+    RolesGuard,
+  ],
+  exports: [
+    AuthService,
+    AuthRepository,
+    MailService,
+    JwtStrategy,
+    JwtAuthGuard,
+    OptionalJwtAuthGuard,
+    RolesGuard,
+    PassportModule,
+    JwtModule,
+    TypeOrmModule,
+  ],
 })
 export class AuthModule {}

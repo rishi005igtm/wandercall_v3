@@ -1,8 +1,17 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CommunityRepository } from '../repositories/community.repository';
 import { CommunityMemberRepository } from '../repositories/community-member.repository';
 import { CommunityRoleRepository } from '../repositories/community-role.repository';
-import { CommunityMemberEntity, CommunityMemberStatus } from '../entities/community-member.entity';
+import {
+  CommunityMemberEntity,
+  CommunityMemberStatus,
+} from '../entities/community-member.entity';
 import { CommunityRoleEntity } from '../entities/community-role.entity';
 
 @Injectable()
@@ -29,12 +38,17 @@ export class CommunityPermissionService {
     communityId: string,
     userId: string,
     requiredPermission: string,
-  ): Promise<{ member: CommunityMemberEntity; role: CommunityRoleEntity | null }> {
+  ): Promise<{
+    member: CommunityMemberEntity;
+    role: CommunityRoleEntity | null;
+  }> {
     const id = await this.resolveCommunityId(communityId);
     const member = await this.memberRepo.findByUserAndCommunity(userId, id);
 
     if (!member || member.status !== CommunityMemberStatus.ACTIVE) {
-      throw new ForbiddenException('You are not an active member of this community');
+      throw new ForbiddenException(
+        'You are not an active member of this community',
+      );
     }
 
     if (member.isOwner) {
@@ -42,10 +56,14 @@ export class CommunityPermissionService {
       return { member, role: ownerRole };
     }
 
-    const role = member.roleId ? await this.roleRepo.findById(member.roleId) : null;
+    const role = member.roleId
+      ? await this.roleRepo.findById(member.roleId)
+      : null;
 
     if (!role) {
-      throw new ForbiddenException('You do not have a valid role in this community');
+      throw new ForbiddenException(
+        'You do not have a valid role in this community',
+      );
     }
 
     // Check wildcard '*' or exact match or uppercase match
@@ -59,7 +77,9 @@ export class CommunityPermissionService {
       return { member, role };
     }
 
-    throw new ForbiddenException(`You do not have permission: ${requiredPermission}`);
+    throw new ForbiddenException(
+      `You do not have permission: ${requiredPermission}`,
+    );
   }
 
   /**
@@ -75,7 +95,9 @@ export class CommunityPermissionService {
     actionDescription = 'moderate',
   ): void {
     if (targetIsOwner) {
-      throw new BadRequestException(`Cannot ${actionDescription} the community owner`);
+      throw new BadRequestException(
+        `Cannot ${actionDescription} the community owner`,
+      );
     }
 
     if (actorIsOwner) {

@@ -1,10 +1,10 @@
 export const RANKING_CONFIG = {
   weights: {
-    interest: 0.30,
-    following: 0.20,
+    interest: 0.3,
+    following: 0.2,
     freshness: 0.15,
     popularity: 0.15,
-    authorAffinity: 0.10,
+    authorAffinity: 0.1,
     aiQuality: 0.05,
     diversityBoost: 0.05,
   },
@@ -18,27 +18,27 @@ export const RANKING_CONFIG = {
     follow: 5.0,
   },
   freshness: {
-    decayRate: 0.15,     // Daily exponential decay factor for post score
-    newPostBoost: 1.5,   // Temporary multiplier for very new posts
+    decayRate: 0.15, // Daily exponential decay factor for post score
+    newPostBoost: 1.5, // Temporary multiplier for very new posts
     newPostWindowHours: 24, // Window where new post boost applies
   },
   penalties: {
-    seen1x: 1.0,         // No penalty for first view
-    seen2x: 0.8,         // Slight penalty
-    seen3x: 0.4,         // Larger penalty
-    seen4xPlus: 0.1,     // Significant penalty
-    authorFatigue: 0.7,  // Penalty if showing same author repeatedly
+    seen1x: 1.0, // No penalty for first view
+    seen2x: 0.8, // Slight penalty
+    seen3x: 0.4, // Larger penalty
+    seen4xPlus: 0.1, // Significant penalty
+    authorFatigue: 0.7, // Penalty if showing same author repeatedly
   },
   diversity: {
     maxConsecutiveAuthor: 2,
     maxConsecutiveCategory: 3,
   },
   feedComposition: {
-    interest: 0.65,      // 65% user interest content
-    explore: 0.25,       // 25% exploratory content
-    trending: 0.10,      // 10% trending content
+    interest: 0.65, // 65% user interest content
+    explore: 0.25, // 25% exploratory content
+    trending: 0.1, // 10% trending content
   },
   interestLearning: {
     timeDecayFactor: 0.95, // Decay factor per week for old interests
-  }
+  },
 };

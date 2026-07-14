@@ -10,12 +10,16 @@ export class CommunityStatisticsRepository {
     private readonly repo: Repository<CommunityStatisticsEntity>,
   ) {}
 
-  async create(data: Partial<CommunityStatisticsEntity>): Promise<CommunityStatisticsEntity> {
+  async create(
+    data: Partial<CommunityStatisticsEntity>,
+  ): Promise<CommunityStatisticsEntity> {
     const stats = this.repo.create(data);
     return this.repo.save(stats);
   }
 
-  async findByCommunityId(communityId: string): Promise<CommunityStatisticsEntity | null> {
+  async findByCommunityId(
+    communityId: string,
+  ): Promise<CommunityStatisticsEntity | null> {
     return this.repo.findOne({ where: { communityId } });
   }
 

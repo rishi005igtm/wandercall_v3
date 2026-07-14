@@ -28,9 +28,14 @@ export class FriendService {
     cursor?: string,
     search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
-    const { items, nextCursor } = await this.followRepository.getMutualFollows(userId, limit, cursor, search);
+    const { items, nextCursor } = await this.followRepository.getMutualFollows(
+      userId,
+      limit,
+      cursor,
+      search,
+    );
     return {
-      items: items.map(item => this.mapToPreviewDto(item.profile)),
+      items: items.map((item) => this.mapToPreviewDto(item.profile)),
       nextCursor,
     };
   }
@@ -41,9 +46,15 @@ export class FriendService {
     cursor?: string,
     search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
-    const { items, nextCursor } = await this.followRepository.getIncomingRequests(userId, limit, cursor, search);
+    const { items, nextCursor } =
+      await this.followRepository.getIncomingRequests(
+        userId,
+        limit,
+        cursor,
+        search,
+      );
     return {
-      items: items.map(item => this.mapToPreviewDto(item.profile)),
+      items: items.map((item) => this.mapToPreviewDto(item.profile)),
       nextCursor,
     };
   }
@@ -54,9 +65,15 @@ export class FriendService {
     cursor?: string,
     search?: string,
   ): Promise<{ items: FollowerPreviewDto[]; nextCursor?: string }> {
-    const { items, nextCursor } = await this.followRepository.getOutgoingRequests(userId, limit, cursor, search);
+    const { items, nextCursor } =
+      await this.followRepository.getOutgoingRequests(
+        userId,
+        limit,
+        cursor,
+        search,
+      );
     return {
-      items: items.map(item => this.mapToPreviewDto(item.profile)),
+      items: items.map((item) => this.mapToPreviewDto(item.profile)),
       nextCursor,
     };
   }

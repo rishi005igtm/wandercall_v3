@@ -1,5 +1,10 @@
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
-import { CampfireCategory, CampfireMood, CampfireStatus, CampfireVisibility } from '../constants/campfire.constant';
+import {
+  CampfireCategory,
+  CampfireMood,
+  CampfireStatus,
+  CampfireVisibility,
+} from '../constants/campfire.constant';
 
 export class UpdateCampfireDto {
   @IsString()
@@ -26,7 +31,7 @@ export class UpdateCampfireDto {
   @IsEnum(CampfireStatus)
   @IsOptional()
   status?: CampfireStatus;
-  
+
   @IsString()
   @IsOptional()
   livekitRoom?: string;

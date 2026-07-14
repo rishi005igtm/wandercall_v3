@@ -18,7 +18,10 @@ export interface UserSearchQueryDto {
 @Injectable()
 export class UserSearchService {
   private readonly logger = new Logger(UserSearchService.name);
-  private readonly queryCache = new Map<string, { timestamp: number; data: { items: any[]; nextCursor?: string } }>();
+  private readonly queryCache = new Map<
+    string,
+    { timestamp: number; data: { items: any[]; nextCursor?: string } }
+  >();
   private readonly CACHE_TTL_MS = 45 * 1000; // 45 seconds short-lived cache
 
   constructor(
@@ -51,7 +54,6 @@ export class UserSearchService {
       }
     }
 
-
     // Record search history if query is meaningful
     if (searchQuery.length >= 2 && offset === 0) {
       try {
@@ -69,36 +71,41 @@ export class UserSearchService {
     let blockedIds = new Set<string>();
     try {
       const blockedList = await this.privacyService.getBlockedUsers(userId);
-      blockedIds = new Set(blockedList.items.map(u => u.targetUserId));
+      blockedIds = new Set(blockedList.items.map((u) => u.targetUserId));
     } catch (e) {
       this.logger.warn(`Could not fetch blocked users: ${e.message}`);
     }
 
     const excludeUserIds = [userId, ...Array.from(blockedIds)];
-    
+
     // Enterprise Semantic DB Search (ILIKE matching across fields)
-    const dbProfiles = await this.userRepository.searchActiveProfiles(searchQuery, limit + 1, offset, excludeUserIds);
-    
+    const dbProfiles = await this.userRepository.searchActiveProfiles(
+      searchQuery,
+      limit + 1,
+      offset,
+      excludeUserIds,
+    );
+
     const hasMore = dbProfiles.length > limit;
     let slice = hasMore ? dbProfiles.slice(0, limit) : dbProfiles;
 
     // Optional JS re-ranking for exact/prefix matches to boost them above partial ILIKE matches
     if (searchQuery) {
-      const scored = slice.map(u => {
+      const scored = slice.map((u) => {
         let score = u.reputationScore; // Baseline
         const uname = u.username.toLowerCase();
         const dname = u.displayName.toLowerCase();
-        
+
         if (uname === searchQuery) score += 1000;
         else if (uname.startsWith(searchQuery)) score += 500;
-        
+
         if (dname === searchQuery) score += 900;
         else if (dname.startsWith(searchQuery)) score += 450;
-        
+
         return { profile: u, score };
       });
       scored.sort((a, b) => b.score - a.score);
-      slice = scored.map(item => item.profile);
+      slice = scored.map((item) => item.profile);
     }
 
     const result = {
@@ -134,16 +141,18 @@ export class UserSearchService {
   }
 
   private mapToDto(profiles: UserProfileEntity[]): any[] {
-    return profiles.map(p => ({
+    return profiles.map((p) => ({
       userId: p.userId,
       username: p.username,
       displayName: p.displayName,
-      avatarUrl: p.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      avatarUrl:
+        p.avatarUrl ||
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
       level: p.level,
       reputationScore: p.reputationScore,
       locationFormatted: p.locationFormatted || 'Bangalore, India',
       bio: p.bio || 'Passionate explorer chasing scenic trails.',
-      compatibility: Math.min(98, 70 + (p.level * 3)),
+      compatibility: Math.min(98, 70 + p.level * 3),
     }));
   }
 
@@ -155,9 +164,14 @@ export class UserSearchService {
     userId: string,
     dto: UserSearchQueryDto,
   ): Promise<{ items: any[]; nextCursor?: string }> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(communityId);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        communityId,
+      );
     if (!isUuid) {
-      const comm = await this.dataSource.getRepository('communities').findOne({ where: { slug: communityId }, select: ['id'] });
+      const comm = await this.dataSource
+        .getRepository('communities')
+        .findOne({ where: { slug: communityId }, select: ['id'] });
       if (!comm) return { items: [] };
       communityId = comm.id;
     }
@@ -167,8 +181,22 @@ export class UserSearchService {
 
     let queryBuilder = this.dataSource
       .createQueryBuilder()
-      .select(['cm.id', 'cm.roleId', 'cm.isOwner', 'cm.isMuted', 'cm.joinedAt', 'cm.status'])
-      .addSelect(['up.userId', 'up.username', 'up.displayName', 'up.avatarUrl', 'up.level', 'cr.name as "roleName"'])
+      .select([
+        'cm.id',
+        'cm.roleId',
+        'cm.isOwner',
+        'cm.isMuted',
+        'cm.joinedAt',
+        'cm.status',
+      ])
+      .addSelect([
+        'up.userId',
+        'up.username',
+        'up.displayName',
+        'up.avatarUrl',
+        'up.level',
+        'cr.name as "roleName"',
+      ])
       .from('community_members', 'cm')
       .innerJoin('users_profile', 'up', 'cm.userId = up.userId')
       .leftJoin('community_roles', 'cr', 'cm.roleId = cr.id')
@@ -178,7 +206,7 @@ export class UserSearchService {
     if (searchQuery) {
       queryBuilder = queryBuilder.andWhere(
         '(LOWER(up.username) LIKE :q OR LOWER(up.displayName) LIKE :q OR LOWER(cm.nickname) LIKE :q)',
-        { q: `%${searchQuery}%` }
+        { q: `%${searchQuery}%` },
       );
     }
 
@@ -192,7 +220,7 @@ export class UserSearchService {
     const slice = hasMore ? members.slice(0, limit) : members;
 
     return {
-      items: slice.map(m => ({
+      items: slice.map((m) => ({
         id: m.cm_id,
         userId: m.up_userId,
         username: m.up_username,

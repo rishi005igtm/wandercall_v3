@@ -16,7 +16,10 @@ export class CommunityRepository {
   }
 
   async findById(idOrSlug: string): Promise<CommunityEntity | null> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        idOrSlug,
+      );
     if (isUuid) {
       return this.repo.findOne({ where: { id: idOrSlug } });
     }
@@ -24,7 +27,10 @@ export class CommunityRepository {
   }
 
   async findBySlug(slugOrId: string): Promise<CommunityEntity | null> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slugOrId);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        slugOrId,
+      );
     if (isUuid) {
       return this.repo.findOne({ where: { id: slugOrId } });
     }
@@ -32,9 +38,15 @@ export class CommunityRepository {
   }
 
   async resolveId(idOrSlug: string): Promise<string | null> {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        idOrSlug,
+      );
     if (isUuid) return idOrSlug;
-    const community = await this.repo.findOne({ where: { slug: idOrSlug }, select: ['id'] });
+    const community = await this.repo.findOne({
+      where: { slug: idOrSlug },
+      select: ['id'],
+    });
     return community ? community.id : null;
   }
 
@@ -55,8 +67,14 @@ export class CommunityRepository {
   }
 
   async findJoinedByUser(userId: string): Promise<CommunityEntity[]> {
-    return this.repo.createQueryBuilder('c')
-      .innerJoin('community_members', 'cm', 'cm."communityId" = c.id AND cm."userId" = :userId AND cm.status = :status', { userId, status: 'ACTIVE' })
+    return this.repo
+      .createQueryBuilder('c')
+      .innerJoin(
+        'community_members',
+        'cm',
+        'cm."communityId" = c.id AND cm."userId" = :userId AND cm.status = :status',
+        { userId, status: 'ACTIVE' },
+      )
       .orderBy('cm."joinedAt"', 'DESC')
       .getMany();
   }

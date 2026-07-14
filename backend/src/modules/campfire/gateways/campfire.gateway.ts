@@ -10,11 +10,31 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
-import { CampfireEventDispatcher, CampfireEvents, CampfireParticipantEventPayload } from '../events/campfire-event.dispatcher';
+import {
+  CampfireEventDispatcher,
+  CampfireEvents,
+  CampfireParticipantEventPayload,
+} from '../events/campfire-event.dispatcher';
 import { CampfirePresenceService } from '../services/campfire-presence.service';
 import { CampfireChatService } from '../services/campfire-chat.service';
 import { LivekitService } from '../services/livekit.service';
+import { CampfireEntity } from '../entities/campfire.entity';
 
+export interface CampfireUserProfile {
+  hostId?: string;
+  avatar?: string;
+  displayName?: string;
+  role?: string;
+  [key: string]: unknown;
+}
+
+export interface CampfireSocketData {
+  userId: string | null;
+  roomId: string | null;
+  userProfile: CampfireUserProfile | null; // TODO: refine userProfile type if possible, or leave as explicit any for now
+}
+
+export type CampfireSocket = Socket<any, any, any, CampfireSocketData>;
 @WebSocketGateway({
   // REMOVED namespace: '/campfires' — now uses default '/' namespace like chat
   // This allows single socket connection for all features
@@ -24,10 +44,12 @@ import { LivekitService } from '../services/livekit.service';
   pingTimeout: 60000,
   pingInterval: 25000,
 })
-export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
+export class CampfireGateway
+  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
+{
   @WebSocketServer()
   server: Server;
-  
+
   private readonly logger = new Logger(CampfireGateway.name);
 
   // Maps roomId -> Timeout to handle host grace period
@@ -43,62 +65,109 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   }
 
   private registerEventListeners() {
-    this.eventDispatcher.on(CampfireEvents.CREATED, (campfire) => {
-      this.server.emit('CAMPFIRE_CREATED', campfire);
-      this.server.emit('DISCOVERY_FEED_UPDATED', { type: 'CREATED', data: campfire });
-    });
+    this.eventDispatcher.on<CampfireEntity>(
+      CampfireEvents.CREATED,
+      (campfire) => {
+        this.server.emit('CAMPFIRE_CREATED', campfire);
+        this.server.emit('DISCOVERY_FEED_UPDATED', {
+          type: 'CREATED',
+          data: campfire,
+        });
+      },
+    );
 
-    this.eventDispatcher.on(CampfireEvents.DELETED, (payload) => {
-      this.server.emit('CAMPFIRE_DELETED', payload);
-      this.server.emit('DISCOVERY_FEED_UPDATED', { type: 'DELETED', id: payload.id });
-    });
+    this.eventDispatcher.on<{ id: string }>(
+      CampfireEvents.DELETED,
+      (payload) => {
+        this.server.emit('CAMPFIRE_DELETED', payload);
+        this.server.emit('DISCOVERY_FEED_UPDATED', {
+          type: 'DELETED',
+          id: payload.id,
+        });
+      },
+    );
 
-    this.eventDispatcher.on(CampfireEvents.STARTED, (campfire) => {
-      this.server.emit('CAMPFIRE_STARTED', campfire);
-      this.server.emit('DISCOVERY_FEED_UPDATED', { type: 'STARTED', data: campfire });
-    });
+    this.eventDispatcher.on<CampfireEntity>(
+      CampfireEvents.STARTED,
+      (campfire) => {
+        this.server.emit('CAMPFIRE_STARTED', campfire);
+        this.server.emit('DISCOVERY_FEED_UPDATED', {
+          type: 'STARTED',
+          data: campfire,
+        });
+      },
+    );
 
-    this.eventDispatcher.on(CampfireEvents.ENDED, (campfire) => {
-      this.server.emit('CAMPFIRE_ENDED', campfire);
-      this.server.emit('DISCOVERY_FEED_UPDATED', { type: 'ENDED', data: campfire });
-    });
+    this.eventDispatcher.on<CampfireEntity>(
+      CampfireEvents.ENDED,
+      (campfire) => {
+        this.server.emit('CAMPFIRE_ENDED', campfire);
+        this.server.emit('DISCOVERY_FEED_UPDATED', {
+          type: 'ENDED',
+          data: campfire,
+        });
+      },
+    );
 
-    this.eventDispatcher.on(CampfireEvents.RESTARTED, (campfire) => {
-      this.server.emit('CAMPFIRE_RESTARTED', campfire);
-      this.server.emit('DISCOVERY_FEED_UPDATED', { type: 'RESTARTED', data: campfire });
-    });
+    this.eventDispatcher.on<CampfireEntity>(
+      CampfireEvents.RESTARTED,
+      (campfire) => {
+        this.server.emit('CAMPFIRE_RESTARTED', campfire);
+        this.server.emit('DISCOVERY_FEED_UPDATED', {
+          type: 'RESTARTED',
+          data: campfire,
+        });
+      },
+    );
 
-    this.eventDispatcher.on(CampfireEvents.PARTICIPANT_JOINED, (payload: CampfireParticipantEventPayload) => {
-      this.server.to(payload.campfireId).emit('CAMPFIRE_PARTICIPANT_JOINED', payload);
-    });
+    this.eventDispatcher.on(
+      CampfireEvents.PARTICIPANT_JOINED,
+      (payload: CampfireParticipantEventPayload) => {
+        this.server
+          .to(payload.campfireId)
+          .emit('CAMPFIRE_PARTICIPANT_JOINED', payload);
+      },
+    );
 
-    this.eventDispatcher.on(CampfireEvents.PARTICIPANT_LEFT, (payload: CampfireParticipantEventPayload) => {
-      this.server.to(payload.campfireId).emit('CAMPFIRE_PARTICIPANT_LEFT', payload);
-    });
+    this.eventDispatcher.on(
+      CampfireEvents.PARTICIPANT_LEFT,
+      (payload: CampfireParticipantEventPayload) => {
+        this.server
+          .to(payload.campfireId)
+          .emit('CAMPFIRE_PARTICIPANT_LEFT', payload);
+      },
+    );
   }
 
-  afterInit(server: Server) {
-  }
+  afterInit() {}
 
-  handleConnection(client: Socket) {
+  handleConnection(client: CampfireSocket) {
     client.data = { userId: null, roomId: null, userProfile: null };
   }
 
   // In-memory map to track room participants for presence
   private roomParticipants = new Map<string, Set<string>>();
 
-  async handleDisconnect(client: Socket) {
-    
+  async handleDisconnect(client: CampfireSocket) {
     const { roomId, userId, userProfile } = client.data || {};
     if (roomId && userId) {
-      await this.presenceService.registerParticipantLeave(roomId, userId, client.id);
-      const snapshot = await this.presenceService.getRoomPresenceSnapshot(roomId, userProfile?.hostId);
+      await this.presenceService.registerParticipantLeave(
+        roomId,
+        userId,
+        client.id,
+      );
+      const snapshot = await this.presenceService.getRoomPresenceSnapshot(
+        roomId,
+        userProfile?.hostId,
+      );
       this.server.to(roomId).emit('room_presence_snapshot', snapshot);
-      
+
       if (userId === userProfile?.hostId) {
-        const timeout = setTimeout(async () => {
-          await this.livekitService.endLiveSession(roomId);
-          this.hostDisconnectTimeouts.delete(roomId);
+        const timeout = setTimeout(() => {
+          void (async () => {
+            await this.livekitService.endLiveSession(roomId);
+            this.hostDisconnectTimeouts.delete(roomId);
+          })().catch((e) => this.logger.error('Timeout task failed', e));
         }, 60000);
         this.hostDisconnectTimeouts.set(roomId, timeout);
       }
@@ -108,19 +177,26 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     this.roomParticipants.forEach((participants, rId) => {
       if (participants.has(client.id)) {
         participants.delete(client.id);
-        this.server.to(rId).emit('user_left', { userId: userId || client.id, socketId: client.id, userProfile });
-        this.server.to(rId).emit('room_stats_update', { participantsCount: participants.size });
+        this.server.to(rId).emit('user_left', {
+          userId: userId || client.id,
+          socketId: client.id,
+          userProfile,
+        });
+        this.server
+          .to(rId)
+          .emit('room_stats_update', { participantsCount: participants.size });
       }
     });
   }
 
   @SubscribeMessage('campfire:join_room')
   async handleJoinRoom(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userId: string; userProfile: any }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody()
+    data: { roomId: string; userId: string; userProfile: CampfireUserProfile },
   ) {
     const { roomId, userId, userProfile } = data;
-    
+
     let participants = this.roomParticipants.get(roomId);
     if (!participants) {
       participants = new Set<string>();
@@ -129,18 +205,25 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
     // Capacity check: Max 50 Listeners/Participants
     if (participants.size >= 50 && !participants.has(client.id)) {
-      client.emit('room_error', { message: 'Campfire is at full capacity (50)' });
+      client.emit('room_error', {
+        message: 'Campfire is at full capacity (50)',
+      });
       return { success: false, error: 'Full capacity' };
     }
 
     participants.add(client.id);
-    client.join(roomId);
+    void client.join(roomId);
 
     // Store identity in socket session
     client.data = { userId, roomId, userProfile };
 
-    await this.presenceService.registerParticipantJoin(roomId, userId, userProfile, client.id);
-    
+    await this.presenceService.registerParticipantJoin(
+      roomId,
+      userId,
+      userProfile,
+      client.id,
+    );
+
     if (userId === userProfile?.hostId) {
       const existingTimeout = this.hostDisconnectTimeouts.get(roomId);
       if (existingTimeout) {
@@ -149,17 +232,26 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       }
     }
 
-    const snapshot = await this.presenceService.getRoomPresenceSnapshot(roomId, userProfile?.hostId);
+    const snapshot = await this.presenceService.getRoomPresenceSnapshot(
+      roomId,
+      userProfile?.hostId,
+    );
     this.server.to(roomId).emit('room_presence_snapshot', snapshot);
 
-    this.server.to(roomId).emit('user_joined', { userId: userId || client.id, socketId: client.id, userProfile });
-    this.server.to(roomId).emit('room_stats_update', { participantsCount: participants.size });
+    this.server.to(roomId).emit('user_joined', {
+      userId: userId || client.id,
+      socketId: client.id,
+      userProfile,
+    });
+    this.server
+      .to(roomId)
+      .emit('room_stats_update', { participantsCount: participants.size });
 
     // Emit chat history to the newly joined client
     try {
       const history = await this.chatService.getChatHistory(roomId);
       client.emit('chat_history', history);
-    } catch (e) {
+    } catch {
       this.logger.error(`Error fetching chat history for room ${roomId}`);
     }
 
@@ -167,7 +259,7 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
     try {
       const seats = await this.presenceService.getRoomSeatsSnapshot(roomId);
       client.emit('room_seats_snapshot', seats);
-    } catch (e) {
+    } catch {
       this.logger.error(`Error fetching seats snapshot for room ${roomId}`);
     }
 
@@ -176,22 +268,31 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   @SubscribeMessage('campfire:leave_room')
   async handleLeaveRoom(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userId: string; userProfile?: any }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody()
+    data: { roomId: string; userId: string; userProfile?: CampfireUserProfile },
   ) {
     const { roomId, userId } = data;
-    
+
     const participants = this.roomParticipants.get(roomId);
     if (participants) {
       participants.delete(client.id);
-      this.server.to(roomId).emit('user_left', { userId: userId || client.data?.userId || client.id, socketId: client.id, userProfile: client.data?.userProfile });
-      this.server.to(roomId).emit('room_stats_update', { participantsCount: participants.size });
-      
+      this.server.to(roomId).emit('user_left', {
+        userId: userId || client.data?.userId || client.id,
+        socketId: client.id,
+        userProfile: client.data?.userProfile,
+      });
+      this.server
+        .to(roomId)
+        .emit('room_stats_update', { participantsCount: participants.size });
+
       const up = client.data?.userProfile || data.userProfile;
       if (userId === up?.hostId) {
-        const timeout = setTimeout(async () => {
-          await this.livekitService.endLiveSession(roomId);
-          this.hostDisconnectTimeouts.delete(roomId);
+        const timeout = setTimeout(() => {
+          void (async () => {
+            await this.livekitService.endLiveSession(roomId);
+            this.hostDisconnectTimeouts.delete(roomId);
+          })().catch((e) => this.logger.error('Timeout task failed', e));
         }, 60000);
         this.hostDisconnectTimeouts.set(roomId, timeout);
       }
@@ -201,85 +302,133 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
       client.data.roomId = null;
     }
 
-    await this.presenceService.registerParticipantLeave(roomId, userId, client.id);
+    await this.presenceService.registerParticipantLeave(
+      roomId,
+      userId,
+      client.id,
+    );
 
-    // After leaving, the auto-evict from seat already ran. We should broadcast a seat update to be safe, 
+    // After leaving, the auto-evict from seat already ran. We should broadcast a seat update to be safe,
     // or just let clients handle the user's departure. For robustness, send full snapshot.
     try {
       const seats = await this.presenceService.getRoomSeatsSnapshot(roomId);
       this.server.to(roomId).emit('room_seats_snapshot', seats);
-    } catch (e) {}
+    } catch (e: unknown) {
+      this.logger.error(
+        `Failed to broadcast seat snapshot for room ${roomId}`,
+        e instanceof Error ? e.stack : undefined,
+      );
+    }
 
-    const snapshot = await this.presenceService.getRoomPresenceSnapshot(roomId, client.data?.userProfile?.hostId);
+    const snapshot = await this.presenceService.getRoomPresenceSnapshot(
+      roomId,
+      client.data?.userProfile?.hostId,
+    );
     this.server.to(roomId).emit('room_presence_snapshot', snapshot);
 
-    client.leave(roomId);
+    void client.leave(roomId);
     return { success: true };
   }
 
   @SubscribeMessage('campfire:take_seat')
   async handleTakeSeat(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userId: string; seatIndex: number; userProfile: any }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody()
+    data: {
+      roomId: string;
+      userId: string;
+      seatIndex: number;
+      userProfile: CampfireUserProfile;
+    },
   ) {
     const { roomId, userId, seatIndex, userProfile } = data;
-    const result = await this.presenceService.takeSeat(roomId, userId, seatIndex);
-    
+    const result = await this.presenceService.takeSeat(
+      roomId,
+      userId,
+      seatIndex,
+    );
+
     if (result.success) {
       // Update LiveKit permissions dynamically FIRST before notifying frontend
-      await this.livekitService.updateParticipantPermissions(roomId, userId, true);
-      
-      this.server.to(roomId).emit('seat_taken', { userId, seatIndex, userProfile });
-      
+      await this.livekitService.updateParticipantPermissions(
+        roomId,
+        userId,
+        true,
+      );
+
+      this.server
+        .to(roomId)
+        .emit('seat_taken', { userId, seatIndex, userProfile });
+
       return { success: true };
     } else {
-      client.emit('room_error', { message: result.error || 'Could not take seat' });
+      client.emit('room_error', {
+        message: result.error || 'Could not take seat',
+      });
       return { success: false, error: result.error };
     }
   }
 
   @SubscribeMessage('campfire:leave_seat')
   async handleLeaveSeatEvent(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userId: string }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody() data: { roomId: string; userId: string },
   ) {
     const { roomId, userId } = data;
     await this.presenceService.leaveSeat(roomId, userId);
     this.server.to(roomId).emit('seat_left', { userId });
-    
+
     // Revoke LiveKit publish permission
-    await this.livekitService.updateParticipantPermissions(roomId, userId, false);
-    
+    await this.livekitService.updateParticipantPermissions(
+      roomId,
+      userId,
+      false,
+    );
+
     return { success: true };
   }
 
   @SubscribeMessage('campfire:update_profile')
   handleUpdateProfile(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userId: string; userProfile: any }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody()
+    data: { roomId: string; userId: string; userProfile: CampfireUserProfile },
   ) {
     const { roomId, userId, userProfile } = data;
-    this.server.to(roomId).emit('profile_updated', { userId: client.id, userProfile });
+    this.server
+      .to(roomId)
+      .emit('profile_updated', { userId: userId || client.id, userProfile });
   }
 
   @SubscribeMessage('campfire:send_message')
   async handleSendMessage(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; userId: string; userProfile: any; text: string }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody()
+    data: {
+      roomId: string;
+      userId: string;
+      userProfile: CampfireUserProfile;
+      text: string;
+    },
   ) {
     const { roomId, userId, userProfile, text } = data;
     try {
-      const savedMessage = await this.chatService.saveMessage(roomId, userId, userProfile, text);
+      const savedMessage = await this.chatService.saveMessage(
+        roomId,
+        userId,
+        userProfile,
+        text,
+      );
       this.server.to(roomId).emit('campfire:new_message', {
         id: savedMessage.id,
         userId: savedMessage.senderId,
         userProfile: {
           name: savedMessage.senderName,
           avatar: savedMessage.senderAvatar,
-          role: savedMessage.senderRole
+          role: savedMessage.senderRole,
         },
         text: savedMessage.text,
-        time: savedMessage.createdAt
+        time: savedMessage.createdAt,
       });
     } catch (e) {
       this.logger.error(`Error saving message in room ${roomId}:`, e);
@@ -288,18 +437,18 @@ export class CampfireGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   @SubscribeMessage('campfire:send_reaction')
   handleSendReaction(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { roomId: string; emoji: string }
+    @ConnectedSocket() client: CampfireSocket,
+    @MessageBody() data: { roomId: string; emoji: string },
   ) {
     const { roomId, emoji } = data;
-    this.server.to(roomId).emit('campfire:new_reaction', { 
-      userId: client.id, 
-      emoji 
+    this.server.to(roomId).emit('campfire:new_reaction', {
+      userId: client.id,
+      emoji,
     });
   }
 
   @SubscribeMessage('campfire:heartbeat')
-  handleHeartbeat(@ConnectedSocket() client: Socket) {
+  handleHeartbeat() {
     // Basic keep-alive
     return { success: true };
   }

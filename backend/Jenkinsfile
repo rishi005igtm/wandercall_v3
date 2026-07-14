@@ -38,10 +38,10 @@ pipeline {
 
         stage('Dependency & Cache Hydration') {
             steps {
-                echo 'Installing dependencies...'
-                // Local dev install to allow testing and linting
+                echo 'Installing dependencies with persistent workspace cache...'
+                // Local dev install to allow testing and linting, utilizing workspace cache
                 dir('backend') {
-                    sh 'npm ci'
+                    sh 'npm ci --cache ~/.npm --prefer-offline'
                 }
             }
         }
@@ -111,9 +111,7 @@ pipeline {
         stage('Registry Push') {
             steps {
                 echo 'Pushing images to Docker Registry...'
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                    sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-
+                withDockerRegistry([credentialsId: 'dockerhub-credentials', url: '']) {
                     sh "docker push ${DOCKER_IMAGE}:${BUILD_TAG}"
                     sh "docker push ${DOCKER_IMAGE}:${COMMIT_SHA}"
                     sh "docker push ${DOCKER_IMAGE}:latest"
@@ -158,24 +156,27 @@ pipeline {
                 sleep time: 10, unit: 'SECONDS'
 
                 script {
-                    if (env.DEPLOY_TARGET == 'local') {
-                        // Poll readiness endpoint
-                        sh '''
-                        MAX_RETRIES=5
-                        count=0
-                        while [ $count -lt $MAX_RETRIES ]; do
-                            if curl -s http://localhost:5000/api/v1/health/ready | grep '"status":"ok"'; then
-                                echo "Health check PASSED."
-                                exit 0
-                            fi
-                            count=$((count+1))
-                            echo "Waiting for backend... ($count/$MAX_RETRIES)"
-                            sleep 5
-                        done
-                        echo "Health check FAILED."
-                        exit 1
-                        '''
+                    String targetUrl = 'http://localhost:5000'
+                    if (env.DEPLOY_TARGET == 'ec2') {
+                        targetUrl = 'http://ec2-placeholder:5000'
+                    } else if (env.DEPLOY_TARGET == 'eks') {
+                        targetUrl = 'http://api.wandercall.internal'
                     }
+                    sh """
+                    MAX_RETRIES=5
+                    count=0
+                    while [ \$count -lt \$MAX_RETRIES ]; do
+                        if curl -s ${targetUrl}/api/v1/health/ready | grep '"status":"ok"'; then
+                            echo "Health check PASSED for ${env.DEPLOY_TARGET} at ${targetUrl}."
+                            exit 0
+                        fi
+                        count=\$((count+1))
+                        echo "Waiting for backend at ${targetUrl}... (\$count/\$MAX_RETRIES)"
+                        sleep 5
+                    done
+                    echo "Health check FAILED for ${env.DEPLOY_TARGET}."
+                    exit 1
+                    """
                 }
             }
         }
