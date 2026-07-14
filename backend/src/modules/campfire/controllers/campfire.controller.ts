@@ -77,7 +77,9 @@ export class CampfireController {
   @Post(':id/join-session')
   async joinSession(@Req() req: AuthRequest, @Param('id') id: string) {
     const userId = (req.user.userId || req.user.id) as string;
-    const name = (req.user.name || req.user.displayName || 'Explorer') as string;
+    const name = (req.user.name ||
+      req.user.displayName ||
+      'Explorer') as string;
     const campfire = await this.campfireService.findById(id);
 
     // The role at join is primarily Listener unless host.
