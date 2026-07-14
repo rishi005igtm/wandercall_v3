@@ -2,6 +2,7 @@
 // Wandercall Enterprise CI/CD Pipeline
 // Targets: Local Docker → AWS EC2 → AWS EKS Kubernetes
 // ═══════════════════════════════════════════════════════════════════════════════
+// groovylint-disable CompileStatic, DuplicateStringLiteral, NestedBlockDepth, LineLength, CouldBeSwitchStatement
 
 pipeline {
     agent any
@@ -10,11 +11,11 @@ pipeline {
         // App Settings
         APP_NAME = 'wandercall-backend'
         DOCKER_IMAGE = "anmol8733/${APP_NAME}"
-        
+
         // Dynamic Versioning
         BUILD_TAG = "build-${BUILD_NUMBER}"
         COMMIT_SHA = sh(script: 'git rev-parse --short HEAD || echo "local"', returnStdout: true).trim()
-        
+
         // Target Environment Abstraction (local, ec2, eks)
         DEPLOY_TARGET = 'local'
     }
@@ -22,22 +23,26 @@ pipeline {
     stages {
         stage('Repository Checkout & Validation') {
             steps {
-                echo "Checking out latest code from SCM..."
+                echo 'Checking out latest code from SCM...'
                 checkout scm
-                
+
                 // Fail immediately if critical files are missing
-                sh '''
-                if [ ! -f "Dockerfile" ]; then echo "Dockerfile missing" && exit 1; fi
-                if [ ! -f "package.json" ]; then echo "package.json missing" && exit 1; fi
-                '''
+                dir('backend') {
+                    sh '''
+                    test -f Dockerfile
+                    test -f package.json
+                    '''
+                }
             }
         }
 
         stage('Dependency & Cache Hydration') {
             steps {
-                echo "Installing dependencies..."
+                echo 'Installing dependencies...'
                 // Local dev install to allow testing and linting
-                sh 'npm ci'
+                dir('backend') {
+                    sh 'npm ci'
+                }
             }
         }
 
@@ -46,24 +51,30 @@ pipeline {
                 stage('NPM Audit') {
                     steps {
                         // Scan for vulnerabilities, failing only on High/Critical
-                        sh 'npm audit --audit-level=high || echo "Audit warnings found"'
+                        dir('backend') {
+                            sh 'npm audit --audit-level=high || echo "Audit warnings found"'
+                        }
                     }
                 }
                 stage('Linting') {
                     steps {
-                        sh 'npm run lint || echo "Linting warnings"'
+                        dir('backend') {
+                            sh 'npm run lint || echo "Linting warnings"'
+                        }
                     }
                 }
                 stage('Type Check') {
                     steps {
-                        sh 'npx tsc --noEmit'
+                        dir('backend') {
+                            sh 'npx tsc --noEmit'
+                        }
                     }
                 }
-                // stage('Unit Tests') {
-                //     steps {
-                //         sh 'npm run test'
-                //     }
-                // }
+            // stage('Unit Tests') {
+            //     steps {
+            //         sh 'npm run test'
+            //     }
+            // }
             }
         }
 
@@ -74,33 +85,35 @@ pipeline {
                 script {
                     env.DOCKER_BUILDKIT = '1'
                 }
-                
-                sh """
-                docker build \\
-                    --target production \\
-                    -t ${DOCKER_IMAGE}:latest \\
-                    -t ${DOCKER_IMAGE}:${BUILD_TAG} \\
-                    -t ${DOCKER_IMAGE}:${COMMIT_SHA} \\
-                    .
-                """
+
+                dir('backend') {
+                    sh """
+                    docker build \\
+                        --target production \\
+                        -t ${DOCKER_IMAGE}:latest \\
+                        -t ${DOCKER_IMAGE}:${BUILD_TAG} \\
+                        -t ${DOCKER_IMAGE}:${COMMIT_SHA} \\
+                        .
+                    """
+                }
             }
         }
 
         stage('Container Security Scan') {
             steps {
-                echo "Scanning Docker Image for vulnerabilities..."
+                echo 'Scanning Docker Image for vulnerabilities...'
                 // Placeholder for Trivy or Docker Scout
                 // sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${BUILD_TAG}"
-                echo "Image scanned successfully."
+                echo 'Image scanned successfully.'
             }
         }
 
         stage('Registry Push') {
             steps {
-                echo "Pushing images to Docker Registry..."
+                echo 'Pushing images to Docker Registry...'
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                     sh "echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin"
-                    
+
                     sh "docker push ${DOCKER_IMAGE}:${BUILD_TAG}"
                     sh "docker push ${DOCKER_IMAGE}:${COMMIT_SHA}"
                     sh "docker push ${DOCKER_IMAGE}:latest"
@@ -112,11 +125,11 @@ pipeline {
             steps {
                 script {
                     if (env.DEPLOY_TARGET == 'local') {
-                        echo "Deploying to Local Docker..."
+                        echo 'Deploying to Local Docker...'
                         // Stop existing container if running
                         sh 'docker stop wandercall-api-prod || true'
                         sh 'docker rm wandercall-api-prod || true'
-                        
+
                         // Start new container injecting local .env.production
                         sh """
                         docker run -d \\
@@ -126,14 +139,14 @@ pipeline {
                             --restart unless-stopped \\
                             ${DOCKER_IMAGE}:${BUILD_TAG}
                         """
-                    } 
+                    }
                     else if (env.DEPLOY_TARGET == 'ec2') {
-                        echo "Deploying to AWS EC2 (Placeholder)..."
-                        // SSH into EC2, pull image, run docker-compose up -d
+                        echo 'Deploying to AWS EC2 (Placeholder)...'
+                    // SSH into EC2, pull image, run docker-compose up -d
                     }
                     else if (env.DEPLOY_TARGET == 'eks') {
-                        echo "Deploying to AWS EKS (Placeholder)..."
-                        // sh "kubectl set image deployment/wandercall-api api=${DOCKER_IMAGE}:${BUILD_TAG} -n production"
+                        echo 'Deploying to AWS EKS (Placeholder)...'
+                    // sh "kubectl set image deployment/wandercall-api api=${DOCKER_IMAGE}:${BUILD_TAG} -n production"
                     }
                 }
             }
@@ -141,9 +154,9 @@ pipeline {
 
         stage('Health & Smoke Verification') {
             steps {
-                echo "Waiting for container to boot gracefully..."
+                echo 'Waiting for container to boot gracefully...'
                 sleep time: 10, unit: 'SECONDS'
-                
+
                 script {
                     if (env.DEPLOY_TARGET == 'local') {
                         // Poll readiness endpoint
@@ -170,22 +183,22 @@ pipeline {
 
     post {
         success {
-            echo "Deployment Pipeline completed successfully."
-            // TODO: Add Slack/Discord webhook notifications
+            echo 'Deployment Pipeline completed successfully.'
+        // TODO: Add Slack/Discord webhook notifications
         }
         failure {
-            echo "Deployment Pipeline FAILED."
-            
+            echo 'Deployment Pipeline FAILED.'
+
             // Automated Rollback Stage if Health Verification Failed
             script {
                 if (env.DEPLOY_TARGET == 'local') {
-                    echo "Triggering Auto-Rollback to previous state..."
-                    // Rollback logic (e.g., redeploying PREVIOUS_TAG) would go here
+                    echo 'Triggering Auto-Rollback to previous state...'
+                // Rollback logic (e.g., redeploying PREVIOUS_TAG) would go here
                 }
             }
         }
         always {
-            echo "Cleaning up workspace..."
+            echo 'Cleaning up workspace...'
             cleanWs()
         }
     }
