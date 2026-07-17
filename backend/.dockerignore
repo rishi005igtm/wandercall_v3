@@ -51,6 +51,14 @@ Thumbs.db
 .git/
 .gitignore
 
+# ─── CI/CD & Deploy ─────────────────────────────────────────────────────────────
+Jenkinsfile
+docker-compose*.yml
+npm-audit-report.txt
+eslint-report.json
+tsc-report.txt
+.github/
+
 # ─── Scratch / scripts ────────────────────────────────────────────────────────
 scratch_query.js
 scripts/

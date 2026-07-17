@@ -71,8 +71,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
   }
 
   onModuleDestroy() {
-    this.tcpClient?.disconnect();
-    this.tcpSubscriber?.disconnect();
+    this.tcpClient?.quit();
+    this.tcpSubscriber?.quit();
   }
 
   get client(): Redis {
