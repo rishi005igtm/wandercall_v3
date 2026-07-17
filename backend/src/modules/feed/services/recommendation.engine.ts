@@ -25,6 +25,33 @@ export interface FeedQueryDto {
   feedSessionId?: string; // Stage 11: Feed Session Stability
 }
 
+export interface FeedItemDto {
+  id: string;
+  category: string;
+  title?: string;
+  content?: string;
+  images: string[];
+  imagePublicIds: string[];
+  audioUrl?: string;
+  audioDuration?: number;
+  locationName?: string;
+  locationLat?: number;
+  locationLon?: number;
+  visibility: string;
+  status: string;
+  likeCount: number;
+  commentCount: number;
+  saveCount: number;
+  shareCount: number;
+  aiQualityScore: number;
+  publishedAt: Date;
+  createdAt: Date;
+  hasLiked?: boolean;
+  hasSaved?: boolean;
+  author: Record<string, unknown>;
+  recommendationScore: number;
+}
+
 interface FeedCursor {
   timestamp: number;
   offset: number;
@@ -52,7 +79,7 @@ export class RecommendationEngine {
   async getPersonalizedFeed(
     viewerId: string | null,
     query: FeedQueryDto,
-  ): Promise<{ items: any[]; nextCursor?: string }> {
+  ): Promise<{ items: FeedItemDto[]; nextCursor?: string }> {
     const feedType = query.feedType || 'global';
     const limit = Number(query.limit) || 10;
 
@@ -101,9 +128,9 @@ export class RecommendationEngine {
         for (const id of followedCreatorIds) {
           followedSet.add(id);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.logger.warn(
-          `Failed to fetch follows for user ${viewerId}: ${err.message}`,
+          `Failed to fetch follows for user ${viewerId}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
 
@@ -114,18 +141,18 @@ export class RecommendationEngine {
           viewCounts.set(imp.postId, imp.impressionCount);
           seenSet.add(imp.postId);
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.logger.warn(
-          `Failed to fetch impressions for user ${viewerId}: ${err.message}`,
+          `Failed to fetch impressions for user ${viewerId}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
 
       // Fetch interest affinities gracefully
       try {
         userInterests = await this.interestEngine.getUserInterestMap(viewerId);
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.logger.warn(
-          `Failed to fetch user interests for user ${viewerId}: ${err.message}`,
+          `Failed to fetch user interests for user ${viewerId}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -135,9 +162,9 @@ export class RecommendationEngine {
       try {
         authorAffinityMap =
           await this.interestEngine.getUserAuthorAffinityMap(viewerId);
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.logger.warn(
-          `Failed to fetch author affinity map for user ${viewerId}: ${err.message}`,
+          `Failed to fetch author affinity map for user ${viewerId}: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
     }
@@ -391,10 +418,10 @@ export class RecommendationEngine {
    */
   public buildDTOs(
     paginatedSlice: { post: PostEntity; score: number }[],
-    profilesMap: Map<string, any>,
+    profilesMap: Map<string, Record<string, unknown>>,
     likedPostIds: Set<string>,
     savedPostIds: Set<string>,
-  ): any[] {
+  ): FeedItemDto[] {
     return paginatedSlice.map((item) => {
       const authorProfile = profilesMap.get(item.post.authorId) || {
         username: 'unknown',
@@ -440,7 +467,7 @@ export class RecommendationEngine {
     viewerId: string | null,
     username: string,
     query: FeedQueryDto,
-  ): Promise<{ items: any[]; nextCursor?: string }> {
+  ): Promise<{ items: FeedItemDto[]; nextCursor?: string }> {
     const limit = Number(query.limit) || 10;
 
     // Resolve target username

@@ -101,7 +101,9 @@ export class AuthController {
 
   @Get('sessions')
   @UseGuards(JwtAuthGuard)
-  async getActiveSessions(@Req() req: RequestWithUser): Promise<any[]> {
+  async getActiveSessions(
+    @Req() req: RequestWithUser,
+  ): Promise<Array<UserSessionEntity & { isCurrent: boolean }>> {
     const sessions = await this.authService.getActiveSessions(req.user.userId);
     return sessions.map((sess) => ({
       ...sess,

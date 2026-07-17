@@ -14,6 +14,42 @@ import { CommunityPresenceTracker } from './community-presence.tracker';
 import { CommunityRankingEngine } from './community-ranking.engine';
 import { COMMUNITY_RANKING_CONFIG } from '../config/community-ranking.config';
 
+export type CommunityDiscoveryDto = CommunityEntity & {
+  isLive?: boolean;
+  onlineMemberCount?: number;
+  recommendationScore?: number;
+  recommendationBreakdown?: Record<string, number>;
+};
+
+export interface ClusterCoordinate {
+  coordinateId: string;
+  position: { x: number; y: number };
+  radius: number;
+  color: string;
+  glow: string;
+  pulse: boolean;
+  onlineCount: number;
+  community: Record<string, unknown>;
+}
+
+export interface ClusterData {
+  id: string;
+  name: string;
+  category: string;
+  theme: string;
+  color: string;
+  glow: string;
+  icon: string;
+  totalActiveCommunities: number;
+  coordinates: ClusterCoordinate[];
+  pagination: Record<string, unknown>;
+}
+
+export interface GalaxyClustersResponse {
+  clusters: ClusterData[];
+  legacy: Record<string, Record<string, unknown>[]>;
+}
+
 @Injectable()
 export class CommunityDiscoveryService {
   private readonly logger = new Logger(CommunityDiscoveryService.name);
@@ -31,7 +67,7 @@ export class CommunityDiscoveryService {
     query: string,
     limit = 20,
     cursor?: string,
-  ): Promise<CommunityEntity[]> {
+  ): Promise<CommunityDiscoveryDto[]> {
     const qb = this.communityRepo
       .createQueryBuilder('c')
       .where('c.visibility = :visibility', {
@@ -69,11 +105,12 @@ export class CommunityDiscoveryService {
         onlineMemberCount: liveStats.onlineMemberCount,
         isLive: liveStats.isLive,
       });
-      (c as any).isLive = liveStats.isLive;
-      (c as any).onlineMemberCount = liveStats.onlineMemberCount;
-      (c as any).recommendationScore = scoring.recommendationScore;
-      (c as any).recommendationBreakdown = scoring.breakdown;
-      return c;
+      const dto: CommunityDiscoveryDto = Object.assign({}, c);
+      dto.isLive = liveStats.isLive;
+      dto.onlineMemberCount = liveStats.onlineMemberCount;
+      dto.recommendationScore = scoring.recommendationScore;
+      dto.recommendationBreakdown = scoring.breakdown;
+      return dto;
     });
   }
 
@@ -88,7 +125,7 @@ export class CommunityDiscoveryService {
     categoryId?: string,
     cursor?: string,
     limit = 5,
-  ): Promise<any> {
+  ): Promise<GalaxyClustersResponse> {
     const qb = this.communityRepo
       .createQueryBuilder('c')
       .leftJoinAndMapOne(
@@ -150,7 +187,7 @@ export class CommunityDiscoveryService {
 
     // Group into clusters by category
     const clusterCategories = COMMUNITY_RANKING_CONFIG.clusterCategories;
-    const clusterMap: Record<string, any> = {};
+    const clusterMap: Record<string, ClusterData> = {};
 
     // Initialize clusters
     clusterCategories.forEach((cat) => {
@@ -187,7 +224,9 @@ export class CommunityDiscoveryService {
         { entity, isLive, onlineCount, recommendationScore, breakdown },
         index,
       ) => {
-        const catName = (entity as any).primaryCategory?.name || 'Adventure';
+        const catName =
+          (entity as CommunityEntity & { primaryCategory?: { name: string } })
+            .primaryCategory?.name || 'Adventure';
         const cluster = clusterMap[catName] || clusterMap['Adventure'];
         if (!cluster) return;
 
@@ -281,9 +320,9 @@ export class CommunityDiscoveryService {
     });
 
     // Keep legacy backward-compatibility format if client expects direct key-value array of coordinates
-    const legacyMap: Record<string, any[]> = {};
+    const legacyMap: Record<string, Record<string, unknown>[]> = {};
     paginatedClusters.forEach((cluster) => {
-      legacyMap[cluster.id] = cluster.coordinates.map((c: any) => ({
+      legacyMap[cluster.id] = cluster.coordinates.map((c) => ({
         id: c.community.id,
         name: c.community.name,
         slug: c.community.slug,
@@ -311,7 +350,13 @@ export class CommunityDiscoveryService {
     return this.categoryRepo.findAll();
   }
 
-  async getCoordinates(categoryId?: string): Promise<any[]> {
+  async getCoordinates(
+    categoryId?: string,
+  ): Promise<
+    Array<
+      CommunityCoordinateEntity & { isLive: boolean; onlineMemberCount: number }
+    >
+  > {
     const coords = categoryId
       ? await this.coordinateRepo.findByCategoryId(categoryId)
       : await this.coordinateRepo.findAll();

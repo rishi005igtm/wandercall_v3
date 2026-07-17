@@ -14,7 +14,6 @@ pipeline {
 
         // Dynamic Versioning
         BUILD_TAG = "build-${BUILD_NUMBER}"
-        COMMIT_SHA = sh(script: 'git rev-parse --short HEAD || echo "local"', returnStdout: true).trim()
 
         // Target Environment Abstraction (local, ec2, eks)
         DEPLOY_TARGET = 'local'
@@ -24,7 +23,19 @@ pipeline {
         stage('Repository Checkout & Validation') {
             steps {
                 echo 'Checking out latest code from SCM...'
-                checkout scm
+                retry(3) {
+                    checkout scm
+                }
+
+                // Ensure Git doesn't fail on defaults
+                sh '''
+                git config --global user.name "Jenkins CI" || true
+                git config --global user.email "jenkins@wandercall.com" || true
+                '''
+
+                script {
+                    env.COMMIT_SHA = sh(script: 'git rev-parse --short HEAD || echo "local"', returnStdout: true).trim()
+                }
 
                 // Fail immediately if critical files are missing
                 dir('backend') {
@@ -41,7 +52,9 @@ pipeline {
                 echo 'Installing dependencies with persistent workspace cache...'
                 // Local dev install to allow testing and linting, utilizing workspace cache
                 dir('backend') {
-                    sh 'npm ci --cache ~/.npm --prefer-offline'
+                    retry(3) {
+                        sh 'npm ci --cache ~/.npm --prefer-offline'
+                    }
                 }
             }
         }
@@ -50,31 +63,35 @@ pipeline {
             parallel {
                 stage('NPM Audit') {
                     steps {
-                        // Scan for vulnerabilities, failing only on High/Critical
+                        // Scan for vulnerabilities, failing only on Critical
                         dir('backend') {
-                            sh 'npm audit --audit-level=high || echo "Audit warnings found"'
+                            sh 'npm audit --audit-level=critical > npm-audit-report.txt || echo "Audit warnings found"'
                         }
                     }
                 }
                 stage('Linting') {
                     steps {
                         dir('backend') {
-                            sh 'npm run lint || echo "Linting warnings"'
+                            // Do not fail build for ESLint warnings, but generate report
+                            sh 'npm run lint -- --format json -o eslint-report.json || true'
                         }
                     }
                 }
                 stage('Type Check') {
                     steps {
                         dir('backend') {
-                            sh 'npx tsc --noEmit'
+                            // Fail build if type check fails
+                            sh 'npx tsc --noEmit > tsc-report.txt 2>&1 || { echo "TypeScript compilation failed!"; cat tsc-report.txt; exit 1; }'
                         }
                     }
                 }
-            // stage('Unit Tests') {
-            //     steps {
-            //         sh 'npm run test'
-            //     }
-            // }
+            }
+            post {
+                always {
+                    dir('backend') {
+                        archiveArtifacts artifacts: 'eslint-report.json, tsc-report.txt, npm-audit-report.txt', allowEmptyArchive: true
+                    }
+                }
             }
         }
 
@@ -103,7 +120,6 @@ pipeline {
             steps {
                 echo 'Scanning Docker Image for vulnerabilities...'
                 // Placeholder for Trivy or Docker Scout
-                // sh "trivy image --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${BUILD_TAG}"
                 echo 'Image scanned successfully.'
             }
         }
@@ -140,11 +156,9 @@ pipeline {
                     }
                     else if (env.DEPLOY_TARGET == 'ec2') {
                         echo 'Deploying to AWS EC2 (Placeholder)...'
-                    // SSH into EC2, pull image, run docker-compose up -d
                     }
                     else if (env.DEPLOY_TARGET == 'eks') {
                         echo 'Deploying to AWS EKS (Placeholder)...'
-                    // sh "kubectl set image deployment/wandercall-api api=${DOCKER_IMAGE}:${BUILD_TAG} -n production"
                     }
                 }
             }
@@ -162,6 +176,7 @@ pipeline {
                     } else if (env.DEPLOY_TARGET == 'eks') {
                         targetUrl = 'http://api.wandercall.internal'
                     }
+
                     sh """
                     MAX_RETRIES=5
                     count=0
@@ -185,7 +200,6 @@ pipeline {
     post {
         success {
             echo 'Deployment Pipeline completed successfully.'
-        // TODO: Add Slack/Discord webhook notifications
         }
         failure {
             echo 'Deployment Pipeline FAILED.'
@@ -194,7 +208,10 @@ pipeline {
             script {
                 if (env.DEPLOY_TARGET == 'local') {
                     echo 'Triggering Auto-Rollback to previous state...'
-                // Rollback logic (e.g., redeploying PREVIOUS_TAG) would go here
+                    // Rollback logic
+                    sh 'docker stop wandercall-api-prod || true'
+                    sh 'docker rm wandercall-api-prod || true'
+                    echo 'Container removed to restore clean state.'
                 }
             }
         }

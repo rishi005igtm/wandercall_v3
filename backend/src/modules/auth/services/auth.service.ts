@@ -209,13 +209,18 @@ export class AuthService implements IAuthService {
   async refreshToken(
     dto: RefreshTokenRequestDto,
     ipAddress?: string,
-    userAgent?: string,
+    _userAgent?: string,
   ): Promise<AuthResponseDto> {
     if (!dto.refreshToken) {
       throw new UnauthorizedException('Refresh token is missing');
     }
 
-    let payload: any;
+    interface JwtPayload {
+      sub?: string;
+      sessionId?: string;
+    }
+
+    let payload: JwtPayload;
     try {
       payload = this.jwtService.verify(dto.refreshToken);
     } catch {
@@ -285,7 +290,7 @@ export class AuthService implements IAuthService {
   async logout(userId: string, refreshToken?: string): Promise<void> {
     if (refreshToken) {
       try {
-        const payload: any = this.jwtService.decode(refreshToken);
+        const payload = this.jwtService.decode(refreshToken);
         if (payload?.sessionId) {
           await this.authRepository.deleteSessionByIdAndUser(
             payload.sessionId,

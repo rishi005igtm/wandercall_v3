@@ -42,8 +42,10 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         await queryRunner.query(
           `UPDATE users_auth SET role = 'INDIVIDUAL' WHERE role IS NULL`,
         );
-      } catch (err: any) {
-        this.logger.warn(`Database backfill notice: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Database backfill notice: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
 
       // Backfill missing relational logs from user_post_state
@@ -55,9 +57,9 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
           WHERE "hasSaved" = true
           ON CONFLICT ("postId", "userId") DO NOTHING;
         `);
-      } catch (err: any) {
+      } catch (err: unknown) {
         this.logger.warn(
-          `Database backfill notice for relational logs: ${err.message}`,
+          `Database backfill notice for relational logs: ${err instanceof Error ? err.message : String(err)}`,
         );
       }
 
@@ -73,8 +75,10 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // ─────────────────────────────────────────────────────────────────────────
       try {
         await this.runChatIntegrityMigration();
-      } catch (err: any) {
-        this.logger.warn(`Chat integrity migration notice: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Chat integrity migration notice: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
 
       // ─────────────────────────────────────────────────────────────────────────
@@ -83,8 +87,10 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // ─────────────────────────────────────────────────────────────────────────
       try {
         await this.seedCommunityCategories();
-      } catch (err: any) {
-        this.logger.warn(`Community category seed notice: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Community category seed notice: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
 
       // ─────────────────────────────────────────────────────────────────────────
@@ -93,8 +99,10 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // ─────────────────────────────────────────────────────────────────────────
       try {
         await this.roleSeeder.seedSystemRoles();
-      } catch (err: any) {
-        this.logger.warn(`Community role seed notice: ${err.message}`);
+      } catch (err: unknown) {
+        this.logger.warn(
+          `Community role seed notice: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
     } catch (error) {
       this.logger.error(
@@ -119,7 +127,7 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
 
       // Step 2: Find all DIRECT conversations grouped by their participant pairs
       // For each pair, find the canonical conversation (has most messages; tie-break by oldest createdAt)
-      const duplicateGroups = await queryRunner.query(`
+      const duplicateGroups = (await queryRunner.query(`
         SELECT
           string_agg(c.id::text, ',' ORDER BY
             (SELECT COUNT(*) FROM chat_messages m WHERE m."conversationId" = c.id) DESC,
@@ -132,7 +140,7 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         WHERE c.type = 'DIRECT'
         GROUP BY c.id
         HAVING COUNT(p.id) = 2
-      `);
+      `)) as Array<{ conv_ids: string; participant_key: string }>;
 
       // Re-group by participant key to find duplicates
       const groupsByKey: Record<string, string[]> = {};
@@ -144,7 +152,7 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       }
 
       // Collect all conversations per participant key
-      const allConvsByKey = await queryRunner.query(`
+      const allConvsByKey = (await queryRunner.query(`
         SELECT
           c.id,
           c."createdAt",
@@ -157,10 +165,13 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         FROM chat_conversations c
         WHERE c.type = 'DIRECT'
         ORDER BY participant_key, msg_count DESC, c."createdAt" ASC
-      `);
+      `)) as Array<{ id: string; participant_key: string }>;
 
       // Group conversations by participant key
-      const convsByParticipantKey: Record<string, any[]> = {};
+      const convsByParticipantKey: Record<
+        string,
+        Array<{ id: string; participant_key: string }>
+      > = {};
       for (const row of allConvsByKey) {
         if (!row.participant_key) continue;
         if (!convsByParticipantKey[row.participant_key])
@@ -244,12 +255,19 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
           ON chat_conversations ("participantKey")
           WHERE "participantKey" IS NOT NULL
         `);
-      } catch (err: any) {
+      } catch (err: unknown) {
         // Index may already exist — that's fine
+        this.logger.debug(
+          `Index notice: ${err instanceof Error ? err.message : String(err)}`,
+        );
       }
 
       if (deletedCount > 0) {
+        this.logger.log(
+          `Merged ${mergedCount} messages and deleted ${deletedCount} orphan conversations.`,
+        );
       } else {
+        this.logger.debug('No orphan conversations found to merge.');
       }
     } finally {
       await queryRunner.release();

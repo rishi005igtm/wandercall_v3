@@ -37,6 +37,7 @@ import {
   MessageReadEvent,
   MessageEditedEvent,
   MessageDeletedEvent,
+  CommunityMessageCreatedEvent,
 } from './interfaces/chat-event.interface';
 import { PresenceStatus } from './interfaces/presence.interface';
 
@@ -175,13 +176,14 @@ export class ChatGateway
         status: message.status,
         createdAt: message.createdAt,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; status?: number };
       this.logger.error(
-        `[SendMsg:Fail] socketId=${socket.id} error=${error.message}`,
+        `[SendMsg:Fail] socketId=${socket.id} error=${err.message || String(error)}`,
       );
       return this.ackError(
-        error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
-        error.message,
+        err.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
+        err.message || String(error),
       );
     }
   }
@@ -309,11 +311,12 @@ export class ChatGateway
         conversationId: data.conversationId,
         messages: items,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string };
       this.logger.error(
-        `[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${error.message}`,
+        `[OpenConv:Fail] convId=${data.conversationId} userId=${userId} error=${err.message || String(error)}`,
       );
-      return this.ackError('OPEN_FAILED', error.message);
+      return this.ackError('OPEN_FAILED', err.message || String(error));
     }
   }
 
@@ -334,8 +337,9 @@ export class ChatGateway
       await socket.join(`room:community:${data.communityId}`);
       await socket.join(`community:${data.communityId}`);
       return { success: true };
-    } catch (error: any) {
-      return this.ackError('JOIN_FAILED', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      return this.ackError('JOIN_FAILED', err.message || String(error));
     }
   }
 
@@ -352,8 +356,9 @@ export class ChatGateway
       await socket.leave(`room:community:${data.communityId}`);
       await socket.leave(`community:${data.communityId}`);
       return { success: true };
-    } catch (error: any) {
-      return this.ackError('LEAVE_FAILED', error.message);
+    } catch (error: unknown) {
+      const err = error as { message?: string };
+      return this.ackError('LEAVE_FAILED', err.message || String(error));
     }
   }
 
@@ -386,13 +391,14 @@ export class ChatGateway
         dto,
       );
       return message;
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as { message?: string; status?: number };
       this.logger.error(
-        `[CommSendMsg:Fail] socketId=${socket.id} error=${error.message}`,
+        `[CommSendMsg:Fail] socketId=${socket.id} error=${err.message || String(error)}`,
       );
       return this.ackError(
-        error.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
-        error.message,
+        err.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
+        err.message || String(error),
       );
     }
   }
@@ -407,7 +413,7 @@ export class ChatGateway
     await socket.join(`community:${data.communityId}`);
     await socket.join(`room:community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
-      type: 'COMMUNITY_JOIN_LOBBY' as any,
+      type: 'COMMUNITY_JOIN_LOBBY',
       payload: {
         communityId: data.communityId,
         userId,
@@ -428,7 +434,7 @@ export class ChatGateway
     await socket.leave(`community:${data.communityId}`);
     await socket.leave(`room:community:${data.communityId}`);
     this.chatEventDispatcher.dispatch({
-      type: 'COMMUNITY_LEAVE_LOBBY' as any,
+      type: 'COMMUNITY_LEAVE_LOBBY',
       payload: { communityId: data.communityId, userId, socketId: socket.id },
     });
     return { success: true };
@@ -531,7 +537,7 @@ export class ChatGateway
     );
 
     /** COMMUNITY_MESSAGE_CREATED → broadcast to all sockets in the community room */
-    this.chatEventDispatcher.subscribe<any>(
+    this.chatEventDispatcher.subscribe<CommunityMessageCreatedEvent>(
       'COMMUNITY_MESSAGE_CREATED',
       (payload) => {
         const { communityId, message } = payload;

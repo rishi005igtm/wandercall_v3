@@ -52,11 +52,11 @@ export class CommunityPresenceTracker implements OnModuleInit {
       this.handleUserDisconnected.bind(this),
     );
     this.chatDispatcher.subscribe(
-      'COMMUNITY_JOIN_LOBBY' as any,
+      'COMMUNITY_JOIN_LOBBY',
       this.handleJoinLobby.bind(this),
     );
     this.chatDispatcher.subscribe(
-      'COMMUNITY_LEAVE_LOBBY' as any,
+      'COMMUNITY_LEAVE_LOBBY',
       this.handleLeaveLobby.bind(this),
     );
 
