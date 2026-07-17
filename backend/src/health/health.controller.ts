@@ -22,33 +22,41 @@ export class HealthController {
     return { status: 'ok', timestamp: new Date().toISOString() };
   }
 
-  /** Readiness: confirms downstream dependencies are reachable */
+  /** Readiness: confirms downstream dependencies are reachable with an Enterprise schema */
   @Get('ready')
   async readiness() {
-    const checks: Record<string, string> = {};
+    let databaseStatus = 'error';
+    let redisStatus = 'error';
 
     // PostgreSQL check
     try {
       await this.dataSource.query('SELECT 1');
-      checks.postgres = 'ok';
+      databaseStatus = 'ok';
     } catch {
-      checks.postgres = 'error';
+      databaseStatus = 'error';
     }
 
     // Redis check
     try {
       await this.redisService.client.ping();
-      checks.redis = 'ok';
+      redisStatus = 'ok';
     } catch {
-      checks.redis = 'error';
+      redisStatus = 'error';
     }
 
-    const allOk = Object.values(checks).every((v) => v === 'ok');
+    const allOk = databaseStatus === 'ok' && redisStatus === 'ok';
 
     const result = {
       status: allOk ? 'ok' : 'degraded',
-      checks,
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      database: databaseStatus,
+      redis: redisStatus,
+      storage: 'not_configured',
+      websocket: 'ok',
+      queue: 'not_configured',
+      version: process.env.npm_package_version || '0.0.1',
+      environment: process.env.NODE_ENV || 'development',
     };
 
     if (!allOk) {

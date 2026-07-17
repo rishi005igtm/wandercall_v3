@@ -2,10 +2,16 @@
 // Wandercall Enterprise CI/CD Pipeline
 // Targets: Local Docker → AWS EC2 → AWS EKS Kubernetes
 // ═══════════════════════════════════════════════════════════════════════════════
-// groovylint-disable CompileStatic, DuplicateStringLiteral, NestedBlockDepth, LineLength, CouldBeSwitchStatement
+// groovylint-disable CompileStatic, DuplicateStringLiteral, NestedBlockDepth, LineLength, CouldBeSwitchStatement, DuplicateNumberLiteral
 
 pipeline {
     agent any
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
 
     environment {
         // App Settings
@@ -124,23 +130,77 @@ pipeline {
             }
         }
 
-        stage('Registry Push') {
+        stage('Local Pre-Push Verification') {
             steps {
-                echo 'Pushing images to Docker Registry...'
-                withDockerRegistry([credentialsId: 'dockerhub-credentials', url: '']) {
-                    sh "docker push ${DOCKER_IMAGE}:${BUILD_TAG}"
-                    sh "docker push ${DOCKER_IMAGE}:${COMMIT_SHA}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
+                echo 'Spinning up container locally to verify health BEFORE pushing...'
+                script {
+                    sh """
+                    # Cleanup any old test container
+                    docker rm -f wandercall-test-container || true
+
+                    # Start detached
+                    docker run -d \\
+                        --name wandercall-test-container \\
+                        -p 5050:5000 \\
+                        --env-file /opt/wandercall/.env.production \\
+                        ${DOCKER_IMAGE}:${BUILD_TAG}
+                    """
+
+                    echo 'Waiting for test container to boot gracefully...'
+                    sleep(10)
+
+                    sh """
+                    MAX_RETRIES=5
+                    count=0
+                    while [ \$count -lt \$MAX_RETRIES ]; do
+                        if curl -s http://localhost:5050/api/v1/health/ready | grep '"status":"ok"'; then
+                            echo "Pre-push verification PASSED!"
+                            exit 0
+                        fi
+                        count=\$((count+1))
+                        echo "Waiting for test container health... (\$count/\$MAX_RETRIES)"
+                        sleep 5
+                    done
+                    echo "Pre-push verification FAILED! Broken image will NOT be pushed."
+                    docker logs wandercall-test-container
+                    exit 1
+                    """
+                }
+            }
+            post {
+                always {
+                    sh 'docker rm -f wandercall-test-container || true'
                 }
             }
         }
 
-        stage('Abstracted Deployment') {
+        stage('Registry Push') {
+            steps {
+                echo 'Authenticating and Pushing images to Docker Registry...'
+                retry(3) {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+                        sh '''
+                        echo "$DOCKERHUB_PSW" | docker login -u "$DOCKERHUB_USR" --password-stdin
+                        '''
+                        sh "docker push ${DOCKER_IMAGE}:${BUILD_TAG}"
+                        sh "docker push ${DOCKER_IMAGE}:${COMMIT_SHA}"
+                        sh "docker push ${DOCKER_IMAGE}:latest"
+                        sh 'docker logout'
+                    }
+                }
+            }
+        }
+
+        stage('Enterprise Deployment') {
             steps {
                 script {
                     if (env.DEPLOY_TARGET == 'local') {
                         echo 'Deploying to Local Docker...'
-                        // Stop existing container if running
+
+                        // Keep track of the currently running image for rollback
+                        env.PREVIOUS_IMAGE = sh(script: "docker inspect --format='{{.Config.Image}}' wandercall-api-prod 2>/dev/null || echo 'none'", returnStdout: true).trim()
+
+                        // Stop existing container if running gracefully
                         sh 'docker stop wandercall-api-prod || true'
                         sh 'docker rm wandercall-api-prod || true'
 
@@ -166,8 +226,8 @@ pipeline {
 
         stage('Health & Smoke Verification') {
             steps {
-                echo 'Waiting for container to boot gracefully...'
-                sleep time: 10, unit: 'SECONDS'
+                echo 'Waiting for production container to boot gracefully...'
+                sleep(10)
 
                 script {
                     String targetUrl = 'http://localhost:5000'
@@ -208,10 +268,23 @@ pipeline {
             script {
                 if (env.DEPLOY_TARGET == 'local') {
                     echo 'Triggering Auto-Rollback to previous state...'
-                    // Rollback logic
                     sh 'docker stop wandercall-api-prod || true'
                     sh 'docker rm wandercall-api-prod || true'
-                    echo 'Container removed to restore clean state.'
+
+                    if (env.PREVIOUS_IMAGE != null && env.PREVIOUS_IMAGE != 'none') {
+                        echo "Rolling back to previous image: ${env.PREVIOUS_IMAGE}"
+                        sh """
+                        docker run -d \\
+                            --name wandercall-api-prod \\
+                            -p 5000:5000 \\
+                            --env-file /opt/wandercall/.env.production \\
+                            --restart unless-stopped \\
+                            ${env.PREVIOUS_IMAGE}
+                        """
+                        echo 'Rollback initiated. Please manually verify stability.'
+                    } else {
+                        echo 'No previous image detected. Container removed to restore clean state.'
+                    }
                 }
             }
         }
