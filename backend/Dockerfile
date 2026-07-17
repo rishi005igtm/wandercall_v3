@@ -86,8 +86,14 @@ USER node
 EXPOSE 5000
 
 # ── Health check (polls the /api/v1/health/ready endpoint every 30s) ────────────────
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD wget -qO- http://localhost:${PORT:-5000}/api/v1/health/ready || exit 1
+# - interval=30s: Standard polling interval.
+# - timeout=10s: Allows time for app/DB to respond under load.
+# - start-period=120s: Generous grace period for NestJS, DB, and Redis to initialize.
+# - retries=3: Number of consecutive failures before marking as unhealthy.
+# Note: We use 127.0.0.1 instead of localhost to bypass Node/Alpine IPv6 resolution issues.
+# We pipe to grep to strictly verify the "status":"ok" JSON payload.
+HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:${PORT:-5000}/api/v1/health/ready | grep '"status":"ok"' || exit 1
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 # Use dumb-init to wrap node, so signals are passed down efficiently and zombie processes are reaped
