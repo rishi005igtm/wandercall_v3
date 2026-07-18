@@ -124,7 +124,7 @@ export default function Navbar({
     return pathname.startsWith(href);
   };
 
-  const showBottomNav = pathname === "/" || pathname.startsWith("/experiences") || pathname.startsWith("/feed");
+  const showBottomNav = pathname === "/" || pathname === "/experiences" || pathname.startsWith("/feed");
 
   return (
     <>
@@ -404,28 +404,28 @@ export default function Navbar({
             animate={{ y: 0 }}
             exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="lg:hidden fixed bottom-6 left-4 right-4 z-50 glass-panel bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-2 flex items-center justify-between shadow-2xl"
+            className="lg:hidden fixed bottom-6 left-4 right-4 z-50 glass-panel bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-1.5 px-3 flex items-center justify-between shadow-2xl"
           >
-            <button onClick={() => router.push('/')} className={`flex flex-col items-center gap-1 flex-1 py-2 transition-colors cursor-pointer ${pathname === '/' ? 'text-brand-cyan' : 'text-zinc-400 hover:text-white'}`}>
-              <Home className="h-5 w-5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Home</span>
+            <button onClick={() => router.push('/')} className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors cursor-pointer ${pathname === '/' ? 'text-brand-cyan' : 'text-zinc-400 hover:text-white'}`}>
+              <Home className="h-4 w-4" />
+              <span className="text-[8px] font-bold uppercase tracking-wider">Home</span>
             </button>
-            <button className="flex flex-col items-center gap-1 flex-1 py-2 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-              <Search className="h-5 w-5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Search</span>
+            <button className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
+              <Search className="h-4 w-4" />
+              <span className="text-[8px] font-bold uppercase tracking-wider">Search</span>
             </button>
-            <div className="flex-1 flex justify-center -mt-8 relative z-50">
-              <button onClick={() => router.push('/experiences')} className={`h-14 w-14 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-xl shadow-brand-indigo/30 border-4 cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'border-brand-cyan scale-105 shadow-brand-cyan/20' : 'border-[#0B0B0B]'}`}>
-                <Sparkles className="h-6 w-6 text-white" />
+            <div className="flex-1 flex justify-center -mt-6 relative z-50">
+              <button onClick={() => router.push('/experiences')} className={`h-12 w-12 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-xl shadow-brand-indigo/30 border-4 cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'border-brand-cyan scale-105 shadow-brand-cyan/20' : 'border-[#0B0B0B]'}`}>
+                <Sparkles className="h-5 w-5 text-white" />
               </button>
             </div>
-            <button onClick={() => router.push('/feed')} className={`flex flex-col items-center gap-1 flex-1 py-2 transition-colors cursor-pointer ${pathname.startsWith('/feed') ? 'text-brand-cyan' : 'text-zinc-400 hover:text-white'}`}>
-              <Radio className="h-5 w-5" />
-              <span className="text-[9px] font-bold uppercase tracking-wider">Feed</span>
+            <button onClick={() => router.push('/feed')} className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors cursor-pointer ${pathname.startsWith('/feed') ? 'text-brand-cyan' : 'text-zinc-400 hover:text-white'}`}>
+              <Radio className="h-4 w-4" />
+              <span className="text-[8px] font-bold uppercase tracking-wider">Feed</span>
             </button>
-            <button className="flex flex-col items-center gap-1 flex-1 py-2 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span className="text-[9px] font-bold uppercase tracking-wider">Near Me</span>
+            <button className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span className="text-[8px] font-bold uppercase tracking-wider">Near Me</span>
             </button>
           </motion.div>
         )}

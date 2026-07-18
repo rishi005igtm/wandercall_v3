@@ -44,12 +44,7 @@ export default function CreatePostPage() {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
 
-  // Redirect if not logged in
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/feed");
-    }
-  }, [isAuthenticated, router]);
+  // AuthGuard handles redirecting to login if not authenticated
 
   // Form states
   const [postType, setPostType] = useState<string>("story");

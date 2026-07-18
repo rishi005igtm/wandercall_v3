@@ -12,6 +12,7 @@ const AUTH_ONLY_ROUTES = [
   '/bookings',
   '/wishlist',
   '/checkout',
+  '/feed/create-post'
 ];
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
