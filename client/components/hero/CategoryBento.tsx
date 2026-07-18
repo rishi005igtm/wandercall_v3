@@ -7,7 +7,6 @@ import { ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
 import Image from "next/image";
 
 export default function CategoryBento() {
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
   const ITEMS_PER_PAGE = 12;
@@ -83,10 +82,9 @@ export default function CategoryBento() {
                 transition={{ 
                   type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 
                 }}
-                onClick={() => setActiveCategory(activeCategory === cat.id ? null : cat.id)}
                 className={`
                   relative cursor-pointer group glass-panel rounded-2xl overflow-hidden border border-white/10 shine-card flex flex-col justify-between
-                  ${isLarge ? "col-span-2 h-[90px] p-3.5" : "col-span-1 h-[90px] p-3"}
+                  ${isLarge ? "col-span-2 h-[105px] p-3.5" : "col-span-1 h-[105px] p-3"}
                 `}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -125,39 +123,6 @@ export default function CategoryBento() {
           })}
         </div>
       </div>
-
-      {/* Expandable Preview Panel */}
-      <AnimatePresence>
-        {activeCategory && (
-          <motion.div
-            initial={{ opacity: 0, height: 0, marginTop: 0 }}
-            animate={{ opacity: 1, height: "auto", marginTop: 12 }}
-            exit={{ opacity: 0, height: 0, marginTop: 0 }}
-            className="w-full glass-panel rounded-3xl border border-brand-indigo/30 p-5 overflow-hidden relative"
-          >
-            <div className="absolute inset-0 bg-brand-indigo/5 blur-3xl z-0 pointer-events-none" />
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-white font-bold text-sm">Trending in {HERO_CATEGORIES.find(c => c.id === activeCategory)?.name}</h4>
-                <button className="text-[10px] font-bold text-brand-cyan hover:text-white transition-colors uppercase tracking-widest">See All →</button>
-              </div>
-              <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-                {[1,2,3].map((item) => (
-                  <div key={item} className="min-w-[180px] h-28 rounded-2xl bg-white/5 border border-white/10 p-3 flex flex-col justify-end relative overflow-hidden group cursor-pointer hover:border-brand-cyan/50 transition-colors">
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent z-10" />
-                    {/* Placeholder for real images later */}
-                    <div className="absolute inset-0 bg-zinc-800" />
-                    <div className="relative z-20">
-                      <p className="text-xs font-bold text-white group-hover:text-brand-cyan transition-colors line-clamp-1">Experience {item}</p>
-                      <p className="text-[10px] text-zinc-400 font-mono">Starting at ₹1,999</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </>
   );
 }

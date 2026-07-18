@@ -18,7 +18,7 @@ export default function Hero() {
       </div>
 
       {/* Main Content Area */}
-      <div className="relative z-10 w-full max-w-[1440px] px-0 lg:px-12 flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-6 lg:gap-16 lg:h-[75vh] max-h-[850px] lg:mt-8">
+      <div className="relative z-10 w-full max-w-[1440px] px-0 lg:px-6 flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-6 lg:gap-8 lg:h-[75vh] max-h-[850px] lg:mt-8">
         
         {/* Left Side: Discovery Hub */}
         <div className="w-full lg:flex-1 flex flex-col justify-center">
