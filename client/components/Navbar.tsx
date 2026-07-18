@@ -193,9 +193,7 @@ export default function Navbar({
             {/* Search Toggle */}
             <button
               onClick={() => setSearchOpen(!searchOpen)}
-              className={`p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors ${
-                showBackButton ? "hidden lg:inline-flex" : ""
-              }`}
+              className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors hidden lg:inline-flex"
               aria-label="Search"
             >
               <Search className="h-5 w-5" />

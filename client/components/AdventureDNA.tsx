@@ -67,7 +67,7 @@ export default function AdventureDNA() {
   const activePoints = getPointsString(activePreset.traits);
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="adventure-dna">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="adventure-dna">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom,_rgba(6,182,212,0.02)_0%,_transparent_65%)] pointer-events-none" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">

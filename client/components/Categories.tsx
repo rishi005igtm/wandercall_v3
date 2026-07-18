@@ -33,7 +33,7 @@ export default function Categories() {
   };
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="explore">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="explore">
       <div className="absolute top-0 right-0 w-80 h-80 rounded-full bg-brand-cyan/5 blur-[120px] pointer-events-none" />
 
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -54,7 +54,7 @@ export default function Categories() {
       </div>
 
       {/* Grid of category cards */}
-      <motion.div 
+      <motion.div
         variants={containerVariants}
         initial="hidden"
         whileInView="show"
@@ -72,7 +72,7 @@ export default function Categories() {
             >
               {/* Background Gradient overlay */}
               <div className={`absolute inset-0 bg-gradient-to-tr ${cat.color} opacity-30 group-hover:opacity-50 transition-opacity duration-300 pointer-events-none`} />
-              
+
               {/* Glowing Hover Dot effect */}
               <div className="absolute -right-12 -top-12 w-24 h-24 rounded-full bg-white/5 group-hover:bg-white/10 blur-xl transition-all duration-300 pointer-events-none" />
 

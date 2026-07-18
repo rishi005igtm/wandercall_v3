@@ -33,7 +33,7 @@ export default function Quests() {
   };
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="quests">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="quests">
       <div className="absolute top-[30%] left-[-10%] w-96 h-96 rounded-full bg-brand-purple/5 blur-[150px] pointer-events-none" />
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">

@@ -88,7 +88,7 @@ export default function CommunityStories() {
   ];
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="community">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="community">
       <div className="absolute top-[20%] left-[10%] w-80 h-80 rounded-full bg-brand-indigo/5 blur-[120px] pointer-events-none" />
 
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">

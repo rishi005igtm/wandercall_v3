@@ -43,7 +43,7 @@ export default function Campfires() {
   };
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="campfires">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="campfires">
       <div className="absolute top-[10%] right-[-10%] w-[450px] h-[450px] rounded-full bg-brand-indigo/5 blur-[150px] pointer-events-none" />
 
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">

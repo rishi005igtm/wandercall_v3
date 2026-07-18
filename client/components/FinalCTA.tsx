@@ -6,7 +6,7 @@ import { Sparkles, ArrowRight, UserCheck } from "lucide-react";
 
 export default function FinalCTA() {
   return (
-    <section className="relative py-32 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full text-center flex flex-col items-center" id="final-cta">
+    <section className="relative py-16 lg:py-32 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full text-center flex flex-col items-center" id="final-cta">
       {/* Background visual overlay glows */}
       <div className="absolute top-[20%] w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-brand-indigo/5 to-brand-purple/5 blur-[150px] pointer-events-none" />
 

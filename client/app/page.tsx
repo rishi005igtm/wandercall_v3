@@ -3,11 +3,8 @@
 import React from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
-import AIDiscovery from "../components/AIDiscovery";
-import Categories from "../components/Categories";
 import Trending from "../components/Trending";
 import AdventureDNA from "../components/AdventureDNA";
-import Campfires from "../components/Campfires";
 import CommunityStories from "../components/CommunityStories";
 import FeaturedHosts from "../components/FeaturedHosts";
 import UpcomingEvents from "../components/UpcomingEvents";
@@ -33,11 +30,7 @@ export default function Home() {
         {/* Section 2: Immersive Hero Section */}
         <Hero />
 
-        {/* Section 3: AI Experience Discovery */}
-        <AIDiscovery />
-
-        {/* Section 4: Experience Categories */}
-        <Categories />
+        {/* Section 4: Experience Categories (Removed) */}
 
         {/* Section 5: Trending Experiences */}
         <Trending />
@@ -45,8 +38,7 @@ export default function Home() {
         {/* Section 7: Adventure DNA */}
         <AdventureDNA />
 
-        {/* Section 8: Campfire Communities */}
-        <Campfires />
+        {/* Section 8: Campfire Communities (Removed) */}
 
         {/* Section 9: Community Stories */}
         <CommunityStories />

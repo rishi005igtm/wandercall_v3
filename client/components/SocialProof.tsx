@@ -46,7 +46,7 @@ export default function SocialProof() {
   ];
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="social-proof">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="social-proof">
       <div className="absolute top-[20%] right-[-5%] w-80 h-80 rounded-full bg-brand-cyan/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center mb-16">

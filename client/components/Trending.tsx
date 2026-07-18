@@ -116,7 +116,7 @@ export default function Trending() {
   };
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="experiences">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="experiences">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
         <div className="text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 mb-4">
@@ -125,7 +125,7 @@ export default function Trending() {
               Highly Demanded Memories
             </span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white">
+          <h2 className="text-2xl md:text-5xl font-extrabold tracking-tight text-white">
             Trending Adventures
           </h2>
         </div>

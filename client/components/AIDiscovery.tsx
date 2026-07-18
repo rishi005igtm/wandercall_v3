@@ -88,7 +88,7 @@ export default function AIDiscovery() {
   };
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="ai-assistant">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="ai-assistant">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.03)_0%,_transparent_65%)] pointer-events-none" />
 
       <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center">

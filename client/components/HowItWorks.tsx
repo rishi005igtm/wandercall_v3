@@ -30,7 +30,7 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="relative py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="how-it-works">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="how-it-works">
       <div className="absolute top-[40%] left-[20%] w-72 h-72 rounded-full bg-brand-purple/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center mb-16">
