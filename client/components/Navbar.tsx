@@ -129,12 +129,7 @@ export default function Navbar({
   return (
     <>
       <motion.nav
-        initial={{
-          y: 0,
-          backgroundColor: "rgba(11, 11, 11, 0)",
-          backdropFilter: "blur(0px)",
-          boxShadow: "0 0 0px rgba(0,0,0,0)",
-        }}
+        initial={false}
         animate={{
           y: isVisible ? 0 : -100,
           backgroundColor: isScrolled ? "rgba(11, 11, 11, 0.85)" : "rgba(11, 11, 11, 0)",
@@ -405,7 +400,7 @@ export default function Navbar({
       <AnimatePresence>
         {showBottomNav && (
           <motion.div 
-            initial={{ y: 100 }}
+            initial={false}
             animate={{ y: 0 }}
             exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}

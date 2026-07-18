@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { HERO_CATEGORIES } from "@/data/heroData";
 import {
   Compass,
   MapPin,
@@ -195,13 +196,46 @@ const experiencesCatalog: ExperienceItem[] = [
 ];
 
 export default function ExperiencesPage() {
-  // Filters states
   const [showMobileFilters, setShowMobileFilters] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  // Categories state (applies instantly)
   const [activeCategory, setActiveCategory] = useState("All");
+
+  // Draft Filters states (for Modal)
+  const [searchQuery, setSearchQuery] = useState("");
   const [activeDifficulty, setActiveDifficulty] = useState("All");
   const [priceRange, setPriceRange] = useState(25000);
   const [activeSort, setActiveSort] = useState("Popularity");
+  
+  // Applied Filters states (used for actual filtering)
+  const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
+  const [appliedDifficulty, setAppliedDifficulty] = useState("All");
+  const [appliedPriceRange, setAppliedPriceRange] = useState(25000);
+  const [appliedSort, setAppliedSort] = useState("Popularity");
+
+  // Loader state
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Initial loader
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleCategoryClick = (cat: string) => {
+    setActiveCategory(cat);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 600);
+  };
+
+  const applyModalFilters = () => {
+    setAppliedSearchQuery(searchQuery);
+    setAppliedDifficulty(activeDifficulty);
+    setAppliedPriceRange(priceRange);
+    setAppliedSort(activeSort);
+    setShowMobileFilters(false);
+    setIsLoading(true);
+    setTimeout(() => setIsLoading(false), 800);
+  };
   
   // Wishlist local state tracking
   const [wishlist, setWishlist] = useState<string[]>([]);
@@ -220,8 +254,8 @@ export default function ExperiencesPage() {
     let list = [...experiencesCatalog];
 
     // Search query match
-    if (searchQuery.trim().length > 0) {
-      const q = searchQuery.toLowerCase();
+    if (appliedSearchQuery.trim().length > 0) {
+      const q = appliedSearchQuery.toLowerCase();
       list = list.filter(
         (exp) =>
           exp.title.toLowerCase().includes(q) ||
@@ -236,24 +270,24 @@ export default function ExperiencesPage() {
     }
 
     // Difficulty match
-    if (activeDifficulty !== "All") {
-      list = list.filter((exp) => exp.difficulty === activeDifficulty);
+    if (appliedDifficulty !== "All") {
+      list = list.filter((exp) => exp.difficulty === appliedDifficulty);
     }
 
     // Price range match
-    list = list.filter((exp) => exp.price <= priceRange);
+    list = list.filter((exp) => exp.price <= appliedPriceRange);
 
     // Sorting logic
-    if (activeSort === "Price: Low to High") {
+    if (appliedSort === "Price: Low to High") {
       list.sort((a, b) => a.price - b.price);
-    } else if (activeSort === "Price: High to Low") {
+    } else if (appliedSort === "Price: High to Low") {
       list.sort((a, b) => b.price - a.price);
-    } else if (activeSort === "Rating") {
+    } else if (appliedSort === "Rating") {
       list.sort((a, b) => b.rating - a.rating);
     }
 
     return list;
-  }, [searchQuery, activeCategory, activeDifficulty, priceRange, activeSort]);
+  }, [appliedSearchQuery, activeCategory, appliedDifficulty, appliedPriceRange, appliedSort]);
 
   const getDifficultyStyles = (diff: string) => {
     switch (diff) {
@@ -271,163 +305,136 @@ export default function ExperiencesPage() {
 
       <main className="flex-1 w-full flex flex-col items-center pt-28 pb-20 px-4 md:px-12">
         
-        {/* Banner Section */}
-        <div className="w-full max-w-[1440px] text-center md:text-left mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 mb-4 animate-pulse">
-            <Compass className="h-4 w-4 text-brand-cyan" />
-            <span className="text-xs font-bold text-zinc-300 uppercase tracking-widest">
-              Adventure Directory
-            </span>
+        {/* Categories & Filter Bar */}
+        <div className="w-full max-w-[1440px] mb-8">
+          <div className="flex items-center justify-between mb-4 px-2">
+            <h2 className="text-sm md:text-base font-black tracking-widest text-white uppercase flex items-center gap-2 whitespace-nowrap">
+              <Compass className="h-5 w-5 text-brand-cyan shrink-0" />
+              Adventure Categories
+            </h2>
+            <button 
+              onClick={() => setShowMobileFilters(true)}
+              className="hidden md:flex items-center gap-2 px-5 py-2 bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-brand-cyan/20 transition-colors cursor-pointer shrink-0"
+            >
+              <SlidersHorizontal className="h-4 w-4" />
+              Filters
+            </button>
           </div>
-          <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight">
-            Explore Outdoor Experiences
-          </h1>
-          <p className="text-sm text-zinc-400 font-medium mt-2 max-w-xl">
-            Book curated adventure stories, treks, camps, and water sports guided by certified local hosts. Filter your way to the next thrill.
-          </p>
+          <div className="w-full overflow-x-auto no-scrollbar py-2">
+            <div className="flex gap-3 w-max px-2">
+              <motion.button
+                onClick={() => handleCategoryClick("All")}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full border glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap cursor-pointer ${activeCategory === "All" ? 'bg-brand-cyan/20 border-brand-cyan/50' : 'border-white/10'}`}
+              >
+                <span className="text-xs font-bold text-white uppercase tracking-wider">All Experiences</span>
+              </motion.button>
+              {HERO_CATEGORIES.map((cat, i) => {
+                const Icon = cat.icon;
+                const isActive = activeCategory === cat.name;
+                return (
+                  <motion.button
+                    key={cat.id}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.02 }}
+                    onClick={() => handleCategoryClick(cat.name)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full border glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap cursor-pointer ${isActive ? 'bg-brand-cyan/20 border-brand-cyan/50' : 'border-white/10'}`}
+                  >
+                    <div className={`p-1 rounded-full bg-gradient-to-br ${cat.color}`}>
+                      <Icon className="h-3 w-3 text-white" />
+                    </div>
+                    <span className="text-xs font-bold text-white">{cat.name}</span>
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         {/* Directory Dashboard */}
         <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* LEFT SIDEBAR: FILTERS CONTROLS */}
-          <aside className={`w-full lg:w-[320px] glass-panel p-5 md:p-6 rounded-3xl flex-col gap-6 sticky top-28 shrink-0 lg:flex ${showMobileFilters ? "flex" : "hidden"}`}>
-            <div className="flex items-center justify-between border-b border-white/5 pb-3">
-              <span className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-2">
-                <SlidersHorizontal className="h-4 w-4 text-brand-cyan" />
-                Filter Options
-              </span>
-              <button 
-                onClick={() => {
-                  setSearchQuery("");
-                  setActiveCategory("All");
-                  setActiveDifficulty("All");
-                  setPriceRange(25000);
-                  setActiveSort("Popularity");
-                }}
-                className="text-[10px] font-mono font-bold text-zinc-500 hover:text-white transition-colors"
-              >
-                Reset All
-              </button>
-            </div>
-
-            {/* Keyword Search */}
-            <div className="hidden md:flex flex-col gap-2">
-              <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Keyword Search</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Gokarna, Hampi, Diving..."
-                  className="w-full h-10 bg-zinc-950/50 border border-white/5 rounded-xl pl-10 pr-4 text-xs text-white outline-none focus:border-brand-cyan transition-all"
-                />
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-              </div>
-            </div>
-
-            {/* Category Selector */}
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Adventure Category</label>
-              <div className="flex flex-wrap gap-1.5">
-                {categories.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border shrink-0 cursor-pointer ${
-                      activeCategory === cat
-                        ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan font-black"
-                        : "bg-white/[0.01] border-white/5 text-zinc-400 hover:text-zinc-200"
-                    }`}
-                  >
-                    {cat}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Difficulty Level */}
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Difficulty Level</label>
-              <div className="flex flex-wrap gap-1.5">
-                {difficulties.map((diff) => (
-                  <button
-                    key={diff}
-                    onClick={() => setActiveDifficulty(diff)}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                      activeDifficulty === diff
-                        ? "bg-brand-purple/10 border-brand-purple/20 text-brand-purple font-black"
-                        : "bg-white/[0.01] border-white/5 text-zinc-400 hover:text-zinc-200"
-                    }`}
-                  >
-                    {diff}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Max Budget Limit */}
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
-                <span>Max Budget Limit</span>
-                <span className="text-brand-cyan">₹{priceRange.toLocaleString("en-IN")}</span>
-              </div>
-              <input
-                type="range"
-                min="1000"
-                max="25000"
-                step="500"
-                value={priceRange}
-                onChange={(e) => setPriceRange(parseInt(e.target.value))}
-                className="w-full accent-brand-cyan h-1 bg-white/5 rounded-lg appearance-none cursor-pointer"
-              />
-              <div className="flex justify-between text-[9px] text-zinc-600 font-bold font-mono">
-                <span>₹1,000</span>
-                <span>₹25,000</span>
-              </div>
-            </div>
-
-            {/* Sort Order */}
-            <div className="flex flex-col gap-2">
-              <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Sort By</label>
-              <div className="relative">
-                <select
-                  value={activeSort}
-                  onChange={(e) => setActiveSort(e.target.value)}
-                  className="w-full h-10 bg-zinc-950/50 border border-white/5 rounded-xl px-3 text-xs text-zinc-300 font-bold outline-none cursor-pointer hover:border-white/10 transition-colors"
-                >
-                  <option value="Popularity">Popularity</option>
-                  <option value="Rating">Rating Score</option>
-                  <option value="Price: Low to High">Price: Low to High</option>
-                  <option value="Price: High to Low">Price: High to Low</option>
-                </select>
-              </div>
-            </div>
-          </aside>
-
           {/* RIGHT PANELS: EXPERIENCES GRID */}
           <div className="flex-1 w-full flex flex-col gap-6">
             
-            {/* Catalog Info Bar */}
-            <div className="w-full flex items-center text-xs text-zinc-500 font-mono font-bold uppercase tracking-wider bg-white/[0.01] border border-white/5 p-4 rounded-2xl">
-              <span>Verified Adventures: {processedCatalog.length}</span>
-            </div>
-
             {/* Main responsive grid columns */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full items-stretch">
-              <AnimatePresence mode="popLayout">
-                {processedCatalog.map((exp) => {
-                  const isWishlisted = wishlist.includes(exp.id);
-                  return (
-                    <motion.div
-                      key={exp.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      transition={{ duration: 0.3 }}
-                      className={`glass-panel rounded-3xl overflow-hidden flex flex-col justify-between group/card transition-all duration-300 shine-card ${exp.glow}`}
-                    >
+            <div className="w-full">
+              <AnimatePresence mode="wait">
+                {isLoading ? (
+                  <motion.div
+                    key="skeleton-grid"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full items-stretch"
+                  >
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div
+                        key={`skeleton-${i}`}
+                        className="glass-panel rounded-3xl overflow-hidden flex flex-col justify-between border border-white/5 animate-pulse h-full min-h-[380px]"
+                      >
+                        {/* Thumbnail Zone */}
+                        <div className="h-44 w-full bg-white/5 relative">
+                          <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
+                            <div className="h-5 w-16 bg-white/10 rounded-full" />
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-12 bg-white/10 rounded-full" />
+                              <div className="h-7 w-7 bg-white/10 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Metadata Card Area */}
+                        <div className="p-5 flex flex-col justify-between flex-1">
+                          <div>
+                            <div className="h-5 w-3/4 bg-white/10 rounded-md mb-3" />
+                            <div className="h-3 w-1/2 bg-white/5 rounded-md mb-4" />
+                            <div className="space-y-2">
+                              <div className="h-2 w-full bg-white/5 rounded-md" />
+                              <div className="h-2 w-4/5 bg-white/5 rounded-md" />
+                            </div>
+                          </div>
+
+                          {/* Detail Metrics */}
+                          <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-5">
+                            <div className="flex items-center gap-2">
+                              <div className="h-4 w-16 bg-white/10 rounded-md" />
+                              <div className="h-4 w-12 bg-white/10 rounded-full" />
+                            </div>
+                            <div className="text-right flex flex-col items-end gap-1">
+                              <div className="h-2 w-10 bg-white/10 rounded-md" />
+                              <div className="h-4 w-16 bg-white/10 rounded-md" />
+                            </div>
+                          </div>
+
+                          {/* View Experience CTA */}
+                          <div className="mt-4 w-full h-9 rounded-xl bg-white/5" />
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="content-grid"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 w-full items-stretch"
+                  >
+                    {processedCatalog.map((exp) => {
+                      const isWishlisted = wishlist.includes(exp.id);
+                      return (
+                        <motion.div
+                          key={exp.id}
+                          layout
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.95 }}
+                          transition={{ duration: 0.3 }}
+                          className={`glass-panel rounded-3xl overflow-hidden flex flex-col justify-between group/card transition-all duration-300 shine-card ${exp.glow} min-h-[380px]`}
+                        >
                       {/* Thumbnail Zone */}
                       <div className="h-44 w-full relative overflow-hidden bg-zinc-950">
                         <img src={exp.image} alt={exp.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
@@ -501,13 +508,15 @@ export default function ExperiencesPage() {
                         </Link>
                       </div>
                     </motion.div>
-                  );
-                })}
+                      );
+                    })}
+                  </motion.div>
+                )}
               </AnimatePresence>
             </div>
 
             {/* Empty state panel */}
-            {processedCatalog.length === 0 && (
+            {!isLoading && processedCatalog.length === 0 && (
               <div className="flex flex-col items-center justify-center p-12 border border-white/5 bg-white/[0.01] rounded-3xl max-w-md mx-auto my-12 text-center shadow-lg w-full">
                 <div className="h-12 w-12 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 mb-4 animate-bounce">
                   <Compass className="h-6 w-6" />
@@ -534,6 +543,128 @@ export default function ExperiencesPage() {
       </main>
 
       <Footer />
+
+      {/* Filter Modal Overlay */}
+      <AnimatePresence>
+        {showMobileFilters && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar flex flex-col gap-6 relative"
+            >
+              <button 
+                onClick={() => setShowMobileFilters(false)}
+                className="absolute top-6 right-6 h-8 w-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              
+              <div className="flex items-center gap-2 border-b border-white/5 pb-4">
+                <SlidersHorizontal className="h-5 w-5 text-brand-cyan" />
+                <h2 className="text-base font-black text-white uppercase tracking-wider">Filter Experiences</h2>
+              </div>
+              
+              {/* Keyword Search */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Keyword Search</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Gokarna, Hampi, Diving..."
+                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 text-sm text-white outline-none focus:border-brand-cyan transition-all"
+                  />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                </div>
+              </div>
+
+              {/* Difficulty Level */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Difficulty Level</label>
+                <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 w-full">
+                  {difficulties.map((diff) => (
+                    <button
+                      key={diff}
+                      onClick={() => setActiveDifficulty(diff)}
+                      className={`px-2.5 py-1.5 rounded-lg text-[9px] whitespace-nowrap flex-1 font-bold uppercase tracking-wider border transition-all cursor-pointer ${
+                        activeDifficulty === diff
+                          ? "bg-brand-purple/20 border-brand-purple/40 text-brand-purple"
+                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
+                      }`}
+                    >
+                      {diff}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Max Budget Limit */}
+              <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                  <span>Max Budget Limit</span>
+                  <span className="text-brand-cyan text-xs font-bold">₹{priceRange.toLocaleString("en-IN")}</span>
+                </div>
+                <input
+                  type="range"
+                  min="1000"
+                  max="25000"
+                  step="500"
+                  value={priceRange}
+                  onChange={(e) => setPriceRange(parseInt(e.target.value))}
+                  className="w-full accent-brand-cyan h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer mt-2"
+                />
+                <div className="flex justify-between text-[10px] text-zinc-500 font-bold font-mono mt-1">
+                  <span>₹1,000</span>
+                  <span>₹25,000</span>
+                </div>
+              </div>
+
+              {/* Sort Order */}
+              <div className="flex flex-col gap-2">
+                <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Sort By</label>
+                <select
+                  value={activeSort}
+                  onChange={(e) => setActiveSort(e.target.value)}
+                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm text-white font-bold outline-none cursor-pointer hover:border-white/20 transition-colors"
+                >
+                  <option value="Popularity" className="bg-zinc-900">Popularity</option>
+                  <option value="Rating" className="bg-zinc-900">Rating Score</option>
+                  <option value="Price: Low to High" className="bg-zinc-900">Price: Low to High</option>
+                  <option value="Price: High to Low" className="bg-zinc-900">Price: High to Low</option>
+                </select>
+              </div>
+              
+              <div className="flex gap-3 mt-4">
+                <button 
+                  onClick={() => {
+                    setSearchQuery("");
+                    setActiveDifficulty("All");
+                    setPriceRange(25000);
+                    setActiveSort("Popularity");
+                  }}
+                  className="flex-1 h-12 rounded-xl bg-white/5 text-xs font-bold text-white uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  Reset
+                </button>
+                <button 
+                  onClick={applyModalFilters}
+                  className="flex flex-[2] h-12 rounded-xl bg-brand-cyan text-zinc-950 text-xs font-black uppercase tracking-wider hover:brightness-110 transition-colors px-8 items-center justify-center cursor-pointer"
+                >
+                  Apply Filters
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
