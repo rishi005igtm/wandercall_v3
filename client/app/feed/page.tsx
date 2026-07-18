@@ -111,6 +111,7 @@ export default function ImmersiveFeedPage() {
   
   // Refs for intersection observer
   const observerRef = useRef<IntersectionObserver | null>(null);
+  const elementsRef = useRef<Set<HTMLDivElement>>(new Set());
   const leftPanelRef = useRef<HTMLDivElement>(null);
 
   const triggerToast = (msg: string) => {
@@ -180,7 +181,9 @@ export default function ImmersiveFeedPage() {
 
   // Intersection Observer for Scroll Snapping State Sync
   useEffect(() => {
-    observerRef.current = new IntersectionObserver((entries) => {
+    if (!leftPanelRef.current) return;
+    
+    const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting && entry.intersectionRatio >= 0.5) {
           const postId = entry.target.getAttribute('data-post-id');
@@ -189,15 +192,24 @@ export default function ImmersiveFeedPage() {
           }
         }
       });
-    }, { threshold: 0.5 });
+    }, { 
+      root: leftPanelRef.current,
+      threshold: 0.5 
+    });
+    
+    observerRef.current = observer;
+    elementsRef.current.forEach(node => observer.observe(node));
 
-    return () => observerRef.current?.disconnect();
+    return () => observer.disconnect();
   }, []);
 
   // Observe post elements
   const observePost = useCallback((node: HTMLDivElement | null) => {
-    if (node && observerRef.current) {
-      observerRef.current.observe(node);
+    if (node) {
+      elementsRef.current.add(node);
+      if (observerRef.current) {
+        observerRef.current.observe(node);
+      }
     }
   }, []);
 
@@ -235,10 +247,10 @@ export default function ImmersiveFeedPage() {
   // Infinite Scroll Trigger
   const loaderRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (!hasNextPage || isLoading) return;
+    if (!hasNextPage || isLoading || !leftPanelRef.current) return;
     const observer = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && !isFetchingNextPage) fetchNextPage();
-    }, { rootMargin: "1000px", threshold: 0 });
+    }, { rootMargin: "1000px", threshold: 0, root: leftPanelRef.current });
     if (loaderRef.current) observer.observe(loaderRef.current);
     return () => observer.disconnect();
   }, [hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]);
@@ -412,14 +424,14 @@ export default function ImmersiveFeedPage() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="pr-16 md:pr-0">
                         <h2 className="text-xl md:text-2xl font-black text-white drop-shadow-lg leading-tight mb-2">{post.title}</h2>
                         <div className="relative">
                           <p className="text-xs md:text-sm text-zinc-200 drop-shadow-md font-medium leading-relaxed max-w-xl">
-                            {post.content && post.content.length > 50 
-                              ? post.content.substring(0, 50) + "..." 
+                            {post.content && post.content.length > 60 
+                              ? post.content.substring(0, 60) + "..." 
                               : post.content}
-                            {post.content && post.content.length > 50 && (
+                            {post.content && post.content.length > 60 && (
                               <button 
                                 onClick={() => setStoryModalContent({ title: post.title, content: post.content || "" })}
                                 className="text-[10px] md:text-xs font-bold text-brand-cyan uppercase tracking-wider ml-2 hover:text-white transition-colors drop-shadow-md"
