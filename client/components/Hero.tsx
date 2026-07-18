@@ -9,7 +9,7 @@ import { Compass, Search, Sparkles } from "lucide-react";
 export default function Hero() {
   return (
     <div 
-      className="relative min-h-[100dvh] w-full flex flex-col items-center justify-start lg:justify-center overflow-hidden bg-brand-bg select-none pt-24 lg:pt-0 pb-12 lg:pb-0"
+      className="relative min-h-[auto] lg:min-h-[100dvh] w-full flex flex-col items-center justify-start lg:justify-center overflow-hidden bg-brand-bg select-none pt-24 lg:pt-0 pb-12 lg:pb-0"
       id="hero"
     >
       {/* Background elements are handled within the slideshow on desktop for seamless transitions */}
