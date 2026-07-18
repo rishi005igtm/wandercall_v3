@@ -969,30 +969,9 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
       {/* 1. FRIENDS COMMAND CENTER (STATUS RIBBON) - Hidden on desktop sizes */}
       <div className="md:hidden glass-panel rounded-2xl p-4 border border-white/5 shadow-md flex items-center justify-between gap-4 w-full shrink-0 flex-wrap sm:flex-nowrap">
-        <div className="flex items-center gap-8 w-full sm:w-auto justify-around sm:justify-start">
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Total Friends</span>
-            <span className="text-lg font-black text-white">{companions.length}</span>
-          </div>
 
-          <div className="h-8 w-px bg-white/10 hidden sm:block" />
 
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Partners</span>
-            <span className="text-lg font-black text-brand-purple">
-              {companions.filter(f => f.isAdventurePartner).length}
-            </span>
-          </div>
-
-          <div className="h-8 w-px bg-white/10 hidden sm:block" />
-
-          <div className="flex flex-col gap-1 text-left">
-            <span className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider">Requests</span>
-            <span className="text-lg font-black text-brand-cyan">{incomingRequests.length}</span>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 w-full sm:max-w-[340px]">
+        <div className="flex items-center gap-2 w-full">
           <div className="flex flex-1 items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl focus-within:border-brand-cyan/50 transition-colors">
             <Search className="h-3.5 w-3.5 text-zinc-500" />
             <input

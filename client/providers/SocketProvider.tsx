@@ -12,7 +12,6 @@ import {
 } from '@/lib/store/slices/chatSlice';
 import { useQueryClient } from '@tanstack/react-query';
 import { CHAT_QUERY_KEYS } from '@/hooks/api/useDirectChat';
-import { COMMUNITY_CHAT_QUERY_KEYS } from '@/hooks/api/useCommunityChat';
 import { QUERY_KEYS } from '@/lib/api/queryKeys';
 import { Message } from '@/lib/services/chat.service';
 
@@ -176,46 +175,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           ],
         };
       };
-
-      if (communityId) {
-        queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
-      } else {
         queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
         queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
-      }
     });
 
-    // Community-specific event (deprecated, but kept for backwards compatibility)
-    socket.on('community:message:new', ({ message, conversationId, communityId }: any) => {
-      if (!communityId) return;
-      queryClientRef.current.setQueryData(
-        COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId),
-        (old: any) => {
-          if (!old) {
-            return {
-              pages: [{ items: [message], nextCursor: undefined, hasMore: false }],
-              pageParams: [undefined],
-            };
-          }
-
-          // STRICT DEDUPLICATION
-          const allItems: Message[] = old.pages.flatMap((p: any) => p.items);
-          const alreadyExists = allItems.some(
-            (m: any) => m.id === message.id || (m.clientMessageId && m.clientMessageId === message.clientMessageId)
-          );
-          if (alreadyExists) return old;
-
-          const lastPage = old.pages[old.pages.length - 1];
-          return {
-            ...old,
-            pages: [
-              ...old.pages.slice(0, -1),
-              { ...lastPage, items: [...lastPage.items, message] },
-            ],
-          };
-        }
-      );
-    });
 
     socket.on('message:delivered', ({ messageId, conversationId, deliveredAt, communityId }: any) => {
       const updater = (old: any) => {
@@ -230,8 +193,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           })),
         };
       };
-      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
-      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
+      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
     socket.on('message:read', ({ messageId, conversationId, readAt, communityId }: any) => {
@@ -247,8 +209,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           })),
         };
       };
-      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
-      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
+      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
     socket.on('message:edited', ({ messageId, conversationId, newText, communityId }: any) => {
@@ -264,8 +225,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           })),
         };
       };
-      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
-      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
+      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
     socket.on('message:deleted', ({ messageId, conversationId, communityId }: any) => {
@@ -283,8 +243,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
           })),
         };
       };
-      if (communityId) queryClientRef.current.setQueryData(COMMUNITY_CHAT_QUERY_KEYS.MESSAGES(communityId, conversationId), updater);
-      else queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
+      queryClientRef.current.setQueryData(CHAT_QUERY_KEYS.MESSAGES(conversationId), updater);
     });
 
     socket.on('typing:start', ({ userId, conversationId }: any) => {
@@ -303,27 +262,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
     });
 
-    const handleCommunitySync = (payload?: any) => {
-      queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
-      queryClientRef.current.invalidateQueries({ queryKey: ['community', 'me'] });
-      if (payload?.communityId) {
-        queryClientRef.current.invalidateQueries({ queryKey: ['communities', payload.communityId] });
-        queryClientRef.current.invalidateQueries({ queryKey: ['communities', payload.communityId, 'members'] });
-      }
-    };
 
-    socket.on('COMMUNITY_UPDATED', handleCommunitySync);
-    socket.on('community:role:updated', handleCommunitySync);
-    socket.on('community:moderation:action', handleCommunitySync);
-    socket.on('community:member:joined', handleCommunitySync);
-    socket.on('community:member:left', handleCommunitySync);
-    socket.on('community:ownership:transferred', handleCommunitySync);
-    socket.on('community:updated', handleCommunitySync);
-    socket.on('community:settings:updated', handleCommunitySync);
-
-    socket.on('COMMUNITY_LIVE_STATE_CHANGED', () => {
-      queryClientRef.current.invalidateQueries({ queryKey: QUERY_KEYS.COMMUNITIES.ALL });
-    });
 
     return () => {
       if (socketRef.current) {

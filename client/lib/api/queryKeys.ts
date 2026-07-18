@@ -18,16 +18,6 @@ export const QUERY_KEYS = {
     ALL: ['experiences'] as const,
     DETAIL: (id: string) => ['experiences', id] as const,
   },
-  COMMUNITIES: {
-    ALL: ['communities'] as const,
-    DETAIL: (slug: string) => ['communities', 'detail', slug] as const,
-    SETTINGS: (id: string) => ['communities', 'settings', id] as const,
-    SEARCH: (query: string) => ['communities', 'search', query] as const,
-    GALAXY: (categoryId?: string) => ['communities', 'galaxy', { categoryId }] as const,
-    CATEGORIES: ['communities', 'categories'] as const,
-    COORDINATES: (categoryId?: string) => ['communities', 'coordinates', { categoryId }] as const,
-    MEMBERS: (communityId: string, query?: string) => ['communities', 'members', communityId, { query }] as const,
-  },
   BOOKINGS: {
     USER: ['bookings', 'user'] as const,
   },
@@ -48,17 +38,6 @@ export const QUERY_KEYS = {
     MESSAGES: (conversationId: string) => ['chat', 'messages', conversationId] as const,
     PRESENCE: (userId: string) => ['chat', 'presence', userId] as const,
   },
-  CAMPFIRES: {
-    ALL: ['campfires'] as const,
-    DETAIL: (id: string) => ['campfires', 'detail', id] as const,
-    SEARCH: (params: any) => ['campfires', 'search', params] as const,
-    TRENDING: (params: any) => ['campfires', 'trending', params] as const,
-    LIVE: (params: any) => ['campfires', 'live', params] as const,
-    RECOMMENDED: (params: any) => ['campfires', 'recommended', params] as const,
-    CATEGORY: (category: string) => ['campfires', 'category', category] as const,
-    USER: (userId: string) => ['campfires', 'user', userId] as const,
-    HOST: (hostId: string) => ['campfires', 'host', hostId] as const,
-    WORKSPACE: (tab: string) => ['campfires', 'workspace', tab] as const,
-  },
+
 } as const;
 

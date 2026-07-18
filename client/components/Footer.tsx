@@ -38,8 +38,7 @@ export default function Footer() {
       links: [
         { name: "Create Experience", href: "#" },
         { name: "Host Dashboard", href: "#" },
-        { name: "Safety Guidelines", href: "#" },
-        { name: "Community Forum", href: "#" }
+        { name: "Safety Guidelines", href: "#" }
       ]
     },
     {

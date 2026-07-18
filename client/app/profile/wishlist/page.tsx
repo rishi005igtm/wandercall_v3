@@ -23,6 +23,7 @@ import {
   PlusCircle,
   AlertTriangle
 } from "lucide-react";
+import { HERO_CATEGORIES } from "@/data/heroData";
 
 // Interfaces
 interface Host {
@@ -245,32 +246,19 @@ const initialExperiences: Experience[] = [
   }
 ];
 
-// Visible inline collections
-const mainCollections = ["Travel", "Food", "Adventure", "Nightlife"];
-
-// Remaining default collections
-const initialDropdownCollections = ["Photography", "Learning", "Roadtrips", "Date Ideas"];
-
 export default function WishlistPage() {
   // Page States
   const [experiences, setExperiences] = useState<Experience[]>(initialExperiences);
-  const [collections, setCollections] = useState<string[]>(mainCollections);
-  const [dropdownCollections, setDropdownCollections] = useState<string[]>(initialDropdownCollections);
   const [activeCollection, setActiveCollection] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [difficultyFilter, setDifficultyFilter] = useState<string>("All");
   const [sortOption, setSortOption] = useState<string>("Rating");
 
-  // Custom Collection Creator States
-  const [isCreatorOpen, setIsCreatorOpen] = useState<boolean>(false);
-  const [newCollectionName, setNewCollectionName] = useState<string>("");
-
   // Dropdown States
-  const [isMoreOpen, setIsMoreOpen] = useState<boolean>(false);
   const [activeCardMenuId, setActiveCardMenuId] = useState<string | null>(null);
 
   // Infinite Scroll States
-  const [visibleCount, setVisibleCount] = useState<number>(8);
+  const [visibleCount, setVisibleCount] = useState<number>(9);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const loaderRef = useRef<HTMLDivElement>(null);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
@@ -279,7 +267,6 @@ export default function WishlistPage() {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Dropdown menus and modals closure reference
-  const collectionsMenuRef = useRef<HTMLDivElement>(null);
   const cardMenuRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
   // Dynamic Toast trigger
@@ -300,13 +287,6 @@ export default function WishlistPage() {
   // Close menus on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        collectionsMenuRef.current &&
-        !collectionsMenuRef.current.contains(event.target as Node)
-      ) {
-        setIsMoreOpen(false);
-      }
-
       if (activeCardMenuId) {
         const currentRef = cardMenuRefs.current[activeCardMenuId];
         if (currentRef && !currentRef.contains(event.target as Node)) {
@@ -321,28 +301,6 @@ export default function WishlistPage() {
     };
   }, [activeCardMenuId]);
 
-  // Create Collection logic
-  const handleCreateCollection = (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = newCollectionName.trim();
-    if (!name) return;
-
-    if (
-      collections.some(c => c.toLowerCase() === name.toLowerCase()) ||
-      dropdownCollections.some(c => c.toLowerCase() === name.toLowerCase()) ||
-      name.toLowerCase() === "all"
-    ) {
-      triggerToast("Collection already exists!");
-      return;
-    }
-
-    setDropdownCollections(prev => [...prev, name]);
-    setNewCollectionName("");
-    setIsCreatorOpen(false);
-    triggerToast(`Collection "${name}" created!`);
-  };
-
-  // Move experience to a different collection
   const handleMoveCollection = (id: string, targetCol: string) => {
     setExperiences(prev =>
       prev.map(exp => {
@@ -444,221 +402,54 @@ export default function WishlistPage() {
     };
   }, [isLoadingMore, visibleCount, processedExperiences.length]);
 
-  // Dynamic calculations for Stats Row based on filtered cards
-  const stats = useMemo(() => {
-    const count = processedExperiences.length;
-    const hours = processedExperiences.reduce((acc, exp) => acc + exp.durationHours, 0);
-    const avgBudget = count > 0
-      ? Math.round(processedExperiences.reduce((acc, exp) => acc + exp.price, 0) / count)
-      : 0;
-    const closuresCount = processedExperiences.filter(exp => exp.seasonClosure).length;
-
-    return {
-      count,
-      hours,
-      avgBudget,
-      closuresCount
-    };
-  }, [processedExperiences]);
-
-  // Is active collection in dropdown?
-  const isDropdownActive = useMemo(() => {
-    return dropdownCollections.includes(activeCollection);
-  }, [activeCollection, dropdownCollections]);
-
   return (
     <div className="w-full px-3 md:px-12 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-5 overflow-y-visible relative text-white">
 
-      {/* 1. HEADER PANEL */}
-      <header className="bg-white/[0.01] border border-white/5 p-4 md:p-5 rounded-2xl flex flex-col gap-4 text-left shadow-md w-full">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <Heart className="h-5 w-5 text-brand-cyan fill-brand-cyan/20 animate-pulse" />
-              Wishlist
-            </h1>
-            <p className="text-xs text-zinc-400 font-medium mt-0.5">
-              Organize, evaluate, and plan your upcoming real-life adventure maps.
-            </p>
-          </div>
+      {/* COLLECTION SWITCHER CONTAINER */}
+      <section className="relative w-full border-b border-white/5 pb-4 pt-2">
+        <div className="flex items-center gap-3 overflow-x-auto no-scrollbar scroll-smooth w-full px-1">
+          {/* "ALL" */}
+          <button
+            onClick={() => {
+              setActiveCollection("ALL");
+              setVisibleCount(9);
+            }}
+            className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-2 shrink-0 ${activeCollection === "ALL"
+                ? "bg-brand-cyan/20 border-brand-cyan/30 text-brand-cyan"
+                : "bg-white/[0.02] border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.05]"
+              }`}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            ALL EXPERIENCES
+          </button>
 
-          {/* Action Row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-            {/* Search */}
-            <div className="relative w-full sm:w-[220px] md:w-[320px] max-w-[320px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setVisibleCount(8);
-                }}
-                placeholder="Search experiences..."
-                className="w-full bg-zinc-950/60 border border-white/5 rounded-lg pl-9 pr-3 py-2 text-xs outline-none text-zinc-300 placeholder-zinc-500 focus:border-white/10 transition-colors"
-              />
-            </div>
-
-            {/* Filter Dropdown */}
-            <select
-              value={difficultyFilter}
-              onChange={(e) => {
-                setDifficultyFilter(e.target.value);
-                setVisibleCount(8);
-              }}
-              className="bg-zinc-950/60 border border-white/5 rounded-lg px-3 py-2 text-xs text-zinc-300 font-bold outline-none cursor-pointer hover:border-white/10 transition-colors w-full sm:w-[130px] max-w-[140px]"
-            >
-              <option value="All">All Difficulty</option>
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-
-            {/* Sort Dropdown */}
-            <select
-              value={sortOption}
-              onChange={(e) => {
-                setSortOption(e.target.value);
-                setVisibleCount(8);
-              }}
-              className="bg-zinc-950/60 border border-white/5 rounded-lg px-3 py-2 text-xs text-zinc-300 font-bold outline-none cursor-pointer hover:border-white/10 transition-colors w-full sm:w-[170px] max-w-[180px]"
-            >
-              <option value="Rating">Sort: Top Rated</option>
-              <option value="Price: Low to High">Sort: Price Low-High</option>
-              <option value="Price: High to Low">Sort: Price High-Low</option>
-            </select>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. STATS ROW (Height 90px max, 4 equal cards) */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full shrink-0">
-        {/* Stat 1 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-brand-cyan">{stats.count}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Saved Experiences</span>
-        </div>
-
-        {/* Stat 2 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-brand-purple">{stats.hours} hrs</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Estimated Hours</span>
-        </div>
-
-        {/* Stat 3 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-brand-amber">₹{stats.avgBudget.toLocaleString("en-IN")}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Average Budget</span>
-        </div>
-
-        {/* Stat 4 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left relative overflow-hidden group">
-          <span className={`text-xl font-black font-mono ${stats.closuresCount > 0 ? "text-rose-500" : "text-brand-emerald"}`}>
-            {stats.closuresCount > 0 ? `${stats.closuresCount} Soon` : "None"}
-          </span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Upcoming Closures</span>
-          {stats.closuresCount > 0 && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-rose-500/10 group-hover:text-rose-500/25 transition-colors pointer-events-none">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* 3. COLLECTION SWITCHER CONTAINER */}
-      <section className="relative w-full border-b border-white/5 pb-2">
-        <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar scroll-smooth snap-x">
-          <div className="flex gap-2">
-            {/* "ALL" */}
-            <button
-              onClick={() => {
-                setActiveCollection("ALL");
-                setVisibleCount(8);
-              }}
-              style={activeCollection === "ALL" ? { backgroundColor: "rgba(6, 182, 212, 0.15)" } : {}}
-              className={`px-4 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border ${activeCollection === "ALL"
-                  ? "border-brand-cyan/30 text-brand-cyan"
-                  : "bg-transparent border-transparent text-zinc-500 hover:text-zinc-300"
-                }`}
-            >
-              ALL
-            </button>
-
-            {/* Inline Collections */}
-            {collections.map(col => {
-              const isActive = activeCollection === col;
-              return (
-                <button
-                  key={col}
-                  onClick={() => {
-                    setActiveCollection(col);
-                    setVisibleCount(8);
-                  }}
-                  style={isActive ? { backgroundColor: "rgba(6, 182, 212, 0.15)" } : {}}
-                  className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border snap-align-start ${isActive
-                      ? "border-brand-cyan/30 text-brand-cyan font-black"
-                      : "bg-transparent border-transparent text-zinc-500 hover:text-zinc-300"
-                    }`}
-                >
-                  {col}
-                </button>
-              );
-            })}
-
-            {/* More Dropdown Switcher */}
-            <div className="relative" ref={collectionsMenuRef}>
+          {/* Inline Categories mapped from HERO_CATEGORIES */}
+          {HERO_CATEGORIES.map(cat => {
+            const isActive = activeCollection === cat.name;
+            const Icon = cat.icon;
+            return (
               <button
-                onClick={() => setIsMoreOpen(prev => !prev)}
-                style={isDropdownActive ? { backgroundColor: "rgba(139, 92, 246, 0.15)" } : {}}
-                className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-1.5 ${isDropdownActive
-                    ? "border-brand-purple/30 text-brand-purple font-black"
-                    : "bg-transparent border-white/5 text-zinc-400 hover:text-zinc-200"
+                key={cat.id}
+                onClick={() => {
+                  setActiveCollection(cat.name);
+                  setVisibleCount(9);
+                }}
+                className={`px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-2 shrink-0 ${isActive
+                    ? "bg-brand-cyan/20 border-brand-cyan/30 text-brand-cyan"
+                    : "bg-white/[0.02] border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.05]"
                   }`}
               >
-                <span>{isDropdownActive ? activeCollection : `+${dropdownCollections.length} More`}</span>
-                <ChevronDown className={`h-3 w-3 transition-transform ${isMoreOpen ? "rotate-180" : ""}`} />
+                <Icon className="h-3.5 w-3.5" />
+                {cat.name}
               </button>
-
-              <AnimatePresence>
-                {isMoreOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    className="absolute left-0 mt-2 w-44 bg-zinc-950 border border-white/5 rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-1 backdrop-blur-xl"
-                  >
-                    {dropdownCollections.map(col => {
-                      const isActive = activeCollection === col;
-                      return (
-                        <button
-                          key={col}
-                          onClick={() => {
-                            setActiveCollection(col);
-                            setIsMoreOpen(false);
-                            setVisibleCount(8);
-                          }}
-                          style={isActive ? { backgroundColor: "rgba(139, 92, 246, 0.15)" } : {}}
-                          className={`w-full text-left px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-colors border ${isActive
-                              ? "border-brand-purple/30 text-brand-purple font-black"
-                              : "bg-transparent border-transparent text-zinc-400 hover:text-white"
-                            }`}
-                        >
-                          {col}
-                        </button>
-                      );
-                    })}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* 4. WISHLIST GRID (Exactly 2 cols desktop/tablet, 1 mobile) */}
       <section className="w-full relative min-h-[260px]">
         {processedExperiences.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full items-stretch justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full items-stretch justify-items-center">
             {processedExperiences.slice(0, visibleCount).map((exp) => {
               const isClosing = exp.seasonClosure;
               const isCardMenuOpen = activeCardMenuId === exp.id;
@@ -923,37 +714,27 @@ export default function WishlistPage() {
       {processedExperiences.length > visibleCount && (
         <div ref={loaderRef} className="py-6 w-full flex flex-col items-center justify-center shrink-0">
           {isLoadingMore && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
-              {/* Skeleton Placeholder 1 */}
-              <div className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden h-[340px] p-3.5 flex flex-col justify-between animate-pulse">
-                <div className="h-[40%] bg-zinc-900/60 rounded-xl w-full" />
-                <div className="h-[60%] flex flex-col justify-between pt-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="h-3.5 bg-zinc-900 rounded-md w-3/4" />
-                    <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
-                  </div>
-                  <div className="h-6 bg-zinc-900 rounded-md w-full" />
-                  <div className="flex gap-2">
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                  </div>
-                </div>
-              </div>
-              {/* Skeleton Placeholder 2 */}
-              <div className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden h-[340px] p-3.5 flex flex-col justify-between animate-pulse">
-                <div className="h-[40%] bg-zinc-900/60 rounded-xl w-full" />
-                <div className="h-[60%] flex flex-col justify-between pt-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="h-3.5 bg-zinc-900 rounded-md w-3/4" />
-                    <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
-                  </div>
-                  <div className="h-6 bg-zinc-900 rounded-md w-full" />
-                  <div className="flex gap-2">
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full items-stretch justify-items-center">
+              {[1, 2, 3].map((key) => (
+                <div 
+                  key={key} 
+                  className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-between animate-pulse w-full"
+                  style={{ height: '340px', position: 'relative', maxWidth: '480px', margin: '0 auto' }}
+                >
+                  <div className="h-[128px] bg-zinc-900/60 rounded-xl w-full shrink-0" />
+                  <div className="h-[212px] flex flex-col justify-between pt-3 shrink-0">
+                    <div className="flex flex-col gap-2">
+                      <div className="h-4 bg-zinc-900 rounded-md w-3/4" />
+                      <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
+                    </div>
+                    <div className="h-10 bg-zinc-900 rounded-md w-full my-2" />
+                    <div className="flex gap-2 border-t border-white/5 pt-2 mt-auto shrink-0">
+                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
         </div>
@@ -968,62 +749,7 @@ export default function WishlistPage() {
 
       {/* 6. MODALS & OVERLAYS */}
 
-      {/* Create Collection Dialog Overlay */}
-      <AnimatePresence>
-        {isCreatorOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setIsCreatorOpen(false)}
-              className="absolute inset-0 bg-zinc-950/70 backdrop-blur-sm"
-            />
 
-            {/* Dialog Content */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 15 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-zinc-950 border border-white/10 p-5 rounded-3xl shadow-2xl w-full max-w-sm relative z-50 text-left flex flex-col gap-4"
-            >
-              <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                  <FolderHeart className="h-3 w-3" /> New Collection
-                </span>
-                <button
-                  onClick={() => setIsCreatorOpen(false)}
-                  className="p-1 rounded-full text-zinc-500 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateCollection} className="flex flex-col gap-3.5">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Collection Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={newCollectionName}
-                    onChange={(e) => setNewCollectionName(e.target.value)}
-                    placeholder="E.g., Roadtrips, Date Ideas, Photography..."
-                    className="bg-zinc-900 border border-white/5 rounded-xl px-3 py-2 text-xs outline-none text-zinc-200 focus:border-white/10"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full h-10 rounded-xl bg-white text-zinc-950 font-black text-[10px] uppercase tracking-wider hover:bg-zinc-200 transition-colors cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <span>Create Collection</span>
-                  <PlusCircle className="h-4 w-4" />
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* TOAST PANEL */}
       <AnimatePresence>

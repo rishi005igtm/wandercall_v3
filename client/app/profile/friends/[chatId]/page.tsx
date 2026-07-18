@@ -608,20 +608,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            onClick={() => triggerToast(`Calling ${activeFriend.name}...`)}
-            className="p-2 rounded-xl bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
-            title="Voice Call"
-          >
-            <Phone className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setShowInviteModal(true)}
-            className="p-2 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold transition-all cursor-pointer flex items-center gap-1"
-            title="Invite to Campfire"
-          >
-            <Flame className="h-4 w-4" /> Invite
-          </button>
+
           <button
             onClick={() => setShowInspector(true)}
             className="p-2 rounded-xl border border-white/5 text-zinc-400 hover:text-white cursor-pointer"

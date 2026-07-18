@@ -301,7 +301,7 @@ export default function Navbar({
                         </Link>
 
                         <Link
-                          href={isAuthenticated ? "/profile/settings" : "/login"}
+                          href={isAuthenticated ? "/profile/bookings" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
                         >
@@ -310,7 +310,7 @@ export default function Navbar({
                         </Link>
 
                         <Link
-                          href={isAuthenticated ? "/profile/settings" : "/login"}
+                          href={isAuthenticated ? "/profile/wishlist" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
                         >

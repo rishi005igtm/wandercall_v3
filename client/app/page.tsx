@@ -5,7 +5,6 @@ import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Trending from "../components/Trending";
 import AdventureDNA from "../components/AdventureDNA";
-import CommunityStories from "../components/CommunityStories";
 import FeaturedHosts from "../components/FeaturedHosts";
 import UpcomingEvents from "../components/UpcomingEvents";
 import HowItWorks from "../components/HowItWorks";
@@ -39,9 +38,6 @@ export default function Home() {
         <AdventureDNA />
 
         {/* Section 8: Campfire Communities (Removed) */}
-
-        {/* Section 9: Community Stories */}
-        <CommunityStories />
 
         {/* Section 10: Featured Hosts */}
         <FeaturedHosts />

@@ -324,7 +324,7 @@ export default function BookingsPage() {
   const [hoveredCardId, setHoveredCardId] = useState<string | null>(null);
 
   // Simulated Infinite Scroll
-  const [visibleCount, setVisibleCount] = useState<number>(8);
+  const [visibleCount, setVisibleCount] = useState<number>(9);
   const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
   const loaderRef = useRef<HTMLDivElement | null>(null);
   const cardMenuRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -396,21 +396,6 @@ export default function BookingsPage() {
     return list;
   }, [bookings, searchQuery, activeTab]);
 
-  // Statistics calculation
-  const stats = useMemo(() => {
-    const upcoming = bookings.filter(b => b.status === "Upcoming" || b.status === "Confirmed").length;
-    const completed = bookings.filter(b => b.status === "Completed").length;
-    const pending = bookings.filter(b => b.status === "Pending").length;
-    const total = bookings.filter(b => b.status !== "Cancelled").length;
-
-    return {
-      upcoming,
-      completed,
-      pending,
-      total
-    };
-  }, [bookings]);
-
   // Simulated scroll loading trigger
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -418,7 +403,7 @@ export default function BookingsPage() {
         if (entries[0].isIntersecting && !isLoadingMore && visibleCount < processedBookings.length) {
           setIsLoadingMore(true);
           setTimeout(() => {
-            setVisibleCount(prev => prev + 4);
+            setVisibleCount(prev => prev + 9);
             setIsLoadingMore(false);
           }, 800);
         }
@@ -467,76 +452,7 @@ export default function BookingsPage() {
   return (
     <div className="w-full px-3 md:px-12 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-5 overflow-y-visible relative text-white">
 
-      {/* 1. HEADER PANEL */}
-      <header className="bg-white/[0.01] border border-white/5 p-4 md:p-5 rounded-2xl flex flex-col gap-4 text-left shadow-md w-full">
-        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
-          <div>
-            <h1 className="text-xl md:text-2xl font-black text-white tracking-tight flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-brand-cyan" />
-              Bookings
-            </h1>
-            <p className="text-xs text-zinc-400 font-medium mt-0.5">
-              Manage your upcoming adventures and completed experiences.
-            </p>
-          </div>
-
-          {/* Action Row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-            {/* Search */}
-            <div className="relative w-full sm:w-[200px] md:w-[280px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setVisibleCount(8);
-                }}
-                placeholder="Search name, host, ID..."
-                className="w-full bg-zinc-950/60 border border-white/5 rounded-lg pl-9 pr-3 py-2 text-xs outline-none text-zinc-300 placeholder-zinc-500 focus:border-white/10 transition-colors"
-              />
-            </div>
-
-            {/* Export Tickets Button */}
-            <button
-              onClick={() => triggerToast("All active tickets exported as ZIP successfully!")}
-              className="h-9 px-4 rounded-lg bg-zinc-900 border border-white/5 text-[10px] font-black uppercase tracking-wider text-white hover:bg-zinc-800 transition-all flex items-center justify-center gap-1.5 cursor-pointer w-full sm:w-auto shrink-0"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export Tickets</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* 2. BOOKING SUMMARY ROW (Max 80px desktop height, 4 compact cards) */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 w-full shrink-0">
-        {/* Card 1 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-brand-cyan">{stats.upcoming}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Upcoming Adventures</span>
-        </div>
-
-        {/* Card 2 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-brand-purple">{stats.completed}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Completed Journeys</span>
-        </div>
-
-        {/* Card 3 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-brand-amber">{stats.pending}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Pending Approval</span>
-        </div>
-
-        {/* Card 4 */}
-        <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex flex-col justify-center h-[70px] md:h-[80px] shadow-sm text-left">
-          <span className="text-xl font-black font-mono text-white">{stats.total}</span>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-500 mt-0.5">Total Registered</span>
-        </div>
-      </section>
-
-      {/* 3. STATUS FILTERS TABS ROW */}
+      {/* STATUS FILTERS TABS ROW */}
       <div className="w-full border-b border-white/5 pb-2 shrink-0">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1" style={{ WebkitOverflowScrolling: "touch" }}>
           {filterTabs.map((tab) => {
@@ -546,9 +462,9 @@ export default function BookingsPage() {
                 key={tab}
                 onClick={() => {
                   setActiveTab(tab);
-                  setVisibleCount(8);
+                  setVisibleCount(9);
                 }}
-                className={`px-4 py-2 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap`}
+                className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap`}
                 style={{
                   background: isActive ? "rgba(6, 182, 212, 0.15)" : "rgba(255, 255, 255, 0.02)",
                   border: isActive ? "1px solid rgba(6, 182, 212, 0.3)" : "1px solid rgba(255, 255, 255, 0.05)",
@@ -562,10 +478,10 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* 4. BOOKINGS GRID */}
+      {/* BOOKINGS GRID */}
       <section className="w-full relative min-h-[260px]">
         {processedBookings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-stretch justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full items-stretch justify-items-center">
             {processedBookings.slice(0, visibleCount).map((b) => {
               const isCardMenuOpen = activeCardMenuId === b.id;
               const isHovered = hoveredCardId === b.id;
@@ -874,45 +790,27 @@ export default function BookingsPage() {
       {processedBookings.length > visibleCount && (
         <div ref={loaderRef} className="py-6 w-full flex flex-col items-center justify-center shrink-0">
           {isLoadingMore && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-              {/* Skeleton Booking Card 1 */}
-              <div className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden h-[340px] p-3.5 flex flex-col justify-between animate-pulse">
-                <div className="h-[38%] bg-zinc-900/60 rounded-xl w-full" />
-                <div className="h-[62%] flex flex-col justify-between pt-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="h-3.5 bg-zinc-900 rounded-md w-3/4" />
-                    <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
-                  </div>
-                  <div className="h-8 bg-zinc-900/40 rounded-xl w-full" />
-                  <div className="flex justify-between items-center">
-                    <div className="h-5 bg-zinc-900 rounded-full w-12" />
-                    <div className="h-3 bg-zinc-900 rounded-md w-16" />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                  </div>
-                </div>
-              </div>
-              {/* Skeleton Booking Card 2 */}
-              <div className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden h-[340px] p-3.5 flex flex-col justify-between animate-pulse">
-                <div className="h-[38%] bg-zinc-900/60 rounded-xl w-full" />
-                <div className="h-[62%] flex flex-col justify-between pt-3">
-                  <div className="flex flex-col gap-2">
-                    <div className="h-3.5 bg-zinc-900 rounded-md w-3/4" />
-                    <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
-                  </div>
-                  <div className="h-8 bg-zinc-900/40 rounded-xl w-full" />
-                  <div className="flex justify-between items-center">
-                    <div className="h-5 bg-zinc-900 rounded-full w-12" />
-                    <div className="h-3 bg-zinc-900 rounded-md w-16" />
-                  </div>
-                  <div className="flex gap-2">
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                    <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full items-stretch justify-items-center">
+              {[1, 2, 3].map((i) => (
+                <div key={i} style={{ height: '340px', position: 'relative', maxWidth: '480px', margin: '0 auto' }} className="w-full bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-between animate-pulse">
+                  <div className="h-[38%] bg-zinc-900/60 rounded-xl w-full shrink-0" />
+                  <div className="h-[62%] flex flex-col justify-between pt-3">
+                    <div className="flex flex-col gap-2">
+                      <div className="h-3.5 bg-zinc-900 rounded-md w-3/4" />
+                      <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
+                    </div>
+                    <div className="h-8 bg-zinc-900/40 rounded-xl w-full" />
+                    <div className="flex justify-between items-center">
+                      <div className="h-5 bg-zinc-900 rounded-full w-12" />
+                      <div className="h-3 bg-zinc-900 rounded-md w-16" />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           )}
         </div>

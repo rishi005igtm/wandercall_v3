@@ -31,9 +31,7 @@ const navItems = [
   { name: "Profile", icon: User, href: "/profile" },
   { name: "Wishlist", icon: Heart, href: "/profile/wishlist" },
   { name: "Bookings", icon: Calendar, href: "/profile/bookings" },
-  { name: "Quests", icon: Award, href: "/profile/quests" },
-  { name: "Communities", icon: Users, href: "/profile/community" },
-  { name: "Campfires", icon: Radio, href: "/profile/campfires" },
+  { name: "Quests", icon: Award, href: "/profile/quests", comingSoon: true },
   { name: "Friends", icon: UserPlus, href: "/profile/friends" },
   { name: "Settings", icon: Settings, href: "/profile/settings" },
 ];
@@ -48,7 +46,6 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const router = useRouter();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [mobileMenuPage, setMobileMenuPage] = useState(0);
 
   const authState = useAppSelector((state) => state.auth);
   const { data: currentUser } = useCurrentUserQuery(authState.isAuthenticated);
@@ -61,30 +58,29 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const xpNext = currentUser?.xpNext || 2000;
   const xpPercentage = Math.min(Math.round((xpCurrent / xpNext) * 100), 100);
 
-  // Generate active mobile group dynamically using modulo logic (exactly 4 menu items)
-  const activeGroup = useMemo(() => {
-    const len = navItems.length;
-    const start = (mobileMenuPage * 4) % len;
-    const items = [];
-    for (let i = 0; i < 4; i++) {
-      const idx = (start + i) % len;
-      items.push(navItems[idx]);
-    }
-    return items;
-  }, [mobileMenuPage]);
+  // Mobile Bottom Nav items ordered explicitly: Profile (left), Wishlist, Home (middle), Bookings, Friends (right)
+  const mobileNavItems = useMemo(() => {
+    const getNavItem = (name: string) => navItems.find(item => item.name === name)!;
+    return [
+      getNavItem("Profile"),
+      getNavItem("Wishlist"),
+      getNavItem("Home"),
+      getNavItem("Bookings"),
+      getNavItem("Friends"),
+    ];
+  }, []);
 
   // Trigger interactive coming-soon toast for future nested pages
   const handleNavClick = (e: React.MouseEvent, item: typeof navItems[0]) => {
     if (
+      item.comingSoon || (
       item.href !== "/" &&
       item.href !== "/profile" &&
       item.href !== "/profile/wishlist" &&
       item.href !== "/profile/bookings" &&
-      item.href !== "/profile/quests" &&
-      item.href !== "/profile/community" &&
-      item.href !== "/profile/campfires" &&
       item.href !== "/profile/friends" &&
       item.href !== "/profile/settings"
+      )
     ) {
       e.preventDefault();
       setToastMessage(`${item.name} module will unlock in the next phase!`);
@@ -93,15 +89,14 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   };
 
   const isChatRoute = pathname?.includes('/profile/friends/chat:');
-  const isCampfireActiveRoute = pathname?.startsWith('/profile/campfires/') && pathname !== '/profile/campfires' && pathname !== '/profile/campfires/' && pathname !== '/profile/campfires/create';
   
-  const staticSubPaths = ['wishlist', 'bookings', 'quests', 'community', 'campfires', 'friends', 'settings'];
+  const staticSubPaths = ['wishlist', 'bookings', 'quests', 'friends', 'settings'];
   const isDynamicProfileRoute = pathname?.startsWith('/profile/') && 
     !staticSubPaths.some(sub => pathname === `/profile/${sub}` || pathname.startsWith(`/profile/${sub}/`)) && 
     pathname !== '/profile' && 
     pathname !== '/profile/';
 
-  const shouldShowBottomNav = !isCampfireActiveRoute && !isDynamicProfileRoute;
+  const shouldShowBottomNav = !isDynamicProfileRoute;
 
   if (isChatRoute) {
     return (
@@ -182,7 +177,12 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
                   <Icon className={`h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-105 z-10 ${isActive ? "text-brand-cyan" : "text-zinc-500 group-hover:text-zinc-300"
                     }`} />
-                  <span className="hidden lg:inline truncate z-10">{item.name}</span>
+                  <span className="hidden lg:inline truncate z-10 flex-1">{item.name}</span>
+                  {(item as any).comingSoon && (
+                    <span className="hidden lg:inline z-10 text-[8px] font-black uppercase text-brand-amber bg-brand-amber/10 px-1.5 py-0.5 rounded-md border border-brand-amber/20 ml-auto">
+                      Soon
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -257,10 +257,10 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
       {/* 3. MOBILE FLOATING BOTTOM NAVIGATION: Visually clean mobile bar with paginated menus and loop next button */}
       {shouldShowBottomNav && (
-        <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-zinc-950/80 backdrop-blur-xl border border-white/5 shadow-2xl rounded-2xl h-14 flex items-center justify-between px-2 overflow-hidden">
+        <div className="md:hidden fixed bottom-4 left-4 right-4 z-40 bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 flex items-center justify-between px-2 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
-              key={mobileMenuPage}
+              key="mobile-nav"
               initial="initial"
               animate="animate"
               exit="exit"
@@ -278,9 +278,12 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
               }}
               className="flex w-full items-center justify-around h-full"
             >
-              {activeGroup.map((item) => {
+              {mobileNavItems.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href || (item.href === "/profile/community" && pathname?.startsWith("/profile/community"));
+                const isActive = 
+                  item.href === "/" ? pathname === "/" : 
+                  item.href === "/profile" ? pathname === "/profile" || pathname === "/profile/" : 
+                  pathname?.startsWith(item.href);
 
                 return (
                   <motion.div
@@ -295,14 +298,14 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                     <Link
                       href={item.href}
                       onClick={(e) => handleNavClick(e, item)}
-                      className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] ${isActive ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
+                      className={`relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] ${isActive ? "text-white" : "text-zinc-900 hover:text-black"
                         }`}
                       aria-label={item.name}
                     >
                       {isActive && (
                         <motion.div
                           layoutId="mobile-nav-pill"
-                          className="absolute inset-0 bg-white/5 border border-white/5 rounded-xl z-0"
+                          className="absolute inset-0 bg-black border border-black rounded-xl z-0"
                           transition={{ type: "spring", stiffness: 380, damping: 30 }}
                         />
                       )}
@@ -312,27 +315,6 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
                   </motion.div>
                 );
               })}
-
-              {/* Next Button Loop */}
-              <motion.div
-                variants={{
-                  initial: { scale: 0.85, opacity: 0 },
-                  animate: { scale: 1, opacity: 1 },
-                  exit: { scale: 0.85, opacity: 0 }
-                }}
-                className="flex-1 flex justify-center"
-              >
-                <button
-                  onClick={() => {
-                    setMobileMenuPage(prev => (prev + 1) % 9);
-                  }}
-                  className="relative flex flex-col items-center justify-center py-1.5 px-2 rounded-xl transition-all cursor-pointer group w-full max-w-[60px] text-zinc-400 hover:text-white"
-                  aria-label="Next Menu"
-                >
-                  <ArrowRight className="h-4.5 w-4.5 z-10 text-brand-purple group-hover:translate-x-0.5 transition-transform" />
-                  <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10 text-brand-purple">Next</span>
-                </button>
-              </motion.div>
             </motion.div>
           </AnimatePresence>
         </div>
