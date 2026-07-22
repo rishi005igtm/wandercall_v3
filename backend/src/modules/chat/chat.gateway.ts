@@ -714,10 +714,10 @@ export class ChatGateway
 
       if (!token) return null;
 
-      const secret = this.configService.get<string>(
-        'jwt.secret',
-        'wandercall_jwt_secret_key_2026',
-      );
+      const secret =
+        this.configService.get<string>('jwt.secret') ||
+        process.env.JWT_SECRET ||
+        'wandercall_jwt_secret_key_2026';
       const payload = this.jwtService.verify<{ sub: string; email: string }>(
         token,
         { secret },

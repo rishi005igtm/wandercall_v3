@@ -14,8 +14,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CHAT_QUERY_KEYS } from '@/hooks/api/useDirectChat';
 import { QUERY_KEYS } from '@/lib/api/queryKeys';
 import { Message } from '@/lib/services/chat.service';
-
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:5000';
+import { getResolvedSocketUrl } from '@/lib/socket';
 
 interface SocketContextValue {
   socket: Socket | null;
@@ -86,7 +85,8 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     }
 
     // Create ONE socket connection for this authenticated session
-    const socket = io(SOCKET_URL, {
+    const targetUrl = getResolvedSocketUrl();
+    const socket = io(targetUrl, {
       auth: { token: accessToken },
       transports: ['websocket', 'polling'],
       // Reconnection is allowed for network blips, but NOT for auth failures

@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import * as dns from 'dns';
 import { AppModule } from './app.module';
+import { RedisIoAdapter } from './common/adapters/redis-io.adapter';
 
 // FIX for Node 18+ Docker IPv6 resolution ETIMEDOUT bugs
 dns.setDefaultResultOrder('ipv4first');
@@ -10,6 +11,11 @@ dns.setDefaultResultOrder('ipv4first');
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  // Configure Redis IoAdapter for multi-node Socket.IO horizontal scaling
+  const redisIoAdapter = new RedisIoAdapter(app, configService);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   // Configure Global CORS Policy
   const corsOrigins = configService.get<string[]>('app.corsOrigins', [
