@@ -413,33 +413,65 @@ export default function Navbar({
             animate={{ y: 0 }}
             exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="lg:hidden fixed bottom-6 left-4 right-4 z-50 glass-panel bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-1.5 px-3 flex items-center justify-between shadow-2xl"
+            className="lg:hidden fixed bottom-4 left-4 right-4 z-50 bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden"
           >
-            <button onClick={() => router.push('/')} className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors cursor-pointer ${pathname === '/' ? 'text-brand-cyan' : 'text-zinc-400 hover:text-white'}`}>
-              <Home className="h-4 w-4" />
-              <span className="text-[8px] font-bold uppercase tracking-wider">Home</span>
+            <button onClick={() => router.push('/')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+              {pathname === '/' && (
+                <motion.div
+                  layoutId="navbar-mobile-pill"
+                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <Home className="h-4 w-4 z-10" />
+              <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
             </button>
-            <button className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-              <Search className="h-4 w-4" />
-              <span className="text-[8px] font-bold uppercase tracking-wider">Search</span>
+
+            <button onClick={() => router.push('/profile/friends/search')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+              {pathname.startsWith('/profile/friends/search') && (
+                <motion.div
+                  layoutId="navbar-mobile-pill"
+                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <Search className="h-4 w-4 z-10" />
+              <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Search</span>
             </button>
-            <div className="flex-1 flex justify-center -mt-6 relative z-50">
-              <button onClick={() => router.push('/experiences')} className={`h-12 w-12 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-xl shadow-brand-indigo/30 border-4 cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'border-brand-cyan scale-105 shadow-brand-cyan/20' : 'border-[#0B0B0B]'}`}>
-                <Sparkles className="h-5 w-5 text-white" />
+
+            <div className="flex-1 flex justify-center relative z-50">
+              <button onClick={() => router.push('/experiences')} className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-black scale-105' : ''}`}>
+                <Compass className="h-5 w-5 text-white" />
               </button>
             </div>
-            <button onClick={() => router.push('/feed')} className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors cursor-pointer ${pathname.startsWith('/feed') ? 'text-brand-cyan' : 'text-zinc-400 hover:text-white'}`}>
-              <Radio className="h-4 w-4" />
-              <span className="text-[8px] font-bold uppercase tracking-wider">Feed</span>
+
+            <button onClick={() => router.push('/feed')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+              {pathname.startsWith('/feed') && (
+                <motion.div
+                  layoutId="navbar-mobile-pill"
+                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <Radio className="h-4 w-4 z-10" />
+              <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
             </button>
+
             <button
               onClick={() => router.push(isAuthenticated ? "/profile/friends" : "/login")}
-              className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors cursor-pointer ${
-                pathname.startsWith("/profile/friends") ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
+              className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${
+                pathname.startsWith("/profile/friends") ? "text-white" : "text-zinc-800 hover:text-black"
               }`}
             >
-              <MessageSquare className="h-4 w-4" />
-              <span className="text-[8px] font-bold uppercase tracking-wider">Chat</span>
+              {pathname.startsWith('/profile/friends') && (
+                <motion.div
+                  layoutId="navbar-mobile-pill"
+                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                />
+              )}
+              <MessageSquare className="h-4 w-4 z-10" />
+              <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Chat</span>
             </button>
           </motion.div>
         )}

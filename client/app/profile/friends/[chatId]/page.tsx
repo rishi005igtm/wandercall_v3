@@ -589,7 +589,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
       <header className="h-14 w-full border-b border-white/10 px-3 flex items-center justify-between bg-zinc-950/95 backdrop-blur-xl shrink-0 z-30 shadow-md">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
-            onClick={() => router.push('/profile/friends')}
+            onClick={() => router.replace('/profile/friends')}
             className="p-1.5 rounded-full hover:bg-white/10 text-zinc-300 hover:text-white shrink-0 transition-colors cursor-pointer"
             title="Go Back"
             aria-label="Go Back"

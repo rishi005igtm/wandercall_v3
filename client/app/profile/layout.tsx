@@ -106,6 +106,20 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
 
   const shouldShowBottomNav = !isDynamicProfileRoute && !isChatRoute && !isSearchRoute;
 
+  const handleSmartBack = () => {
+    if (pathname === '/profile/friends/search') {
+      router.replace('/profile/friends');
+    } else if (pathname === '/profile/friends' || pathname === '/profile/friends/') {
+      router.push('/profile');
+    } else if (pathname === '/profile' || pathname === '/profile/') {
+      router.push('/');
+    } else if (pathname?.startsWith('/profile/')) {
+      router.push('/profile');
+    } else {
+      router.push('/profile');
+    }
+  };
+
   if (isChatRoute) {
     return (
       <div className="fixed inset-0 h-[100dvh] w-full bg-brand-bg text-white overflow-hidden touch-none">
@@ -218,7 +232,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         <header className={`h-16 w-full border-b border-white/5 px-4 lg:px-8 ${pathname?.startsWith('/profile/friends/search') ? "hidden md:flex" : "flex"} items-center justify-between bg-zinc-950/20 backdrop-blur-md shrink-0`}>
           <div className="flex items-center gap-3">
             <button
-              onClick={() => router.back()}
+              onClick={handleSmartBack}
               className="md:hidden flex h-9 w-9 rounded-full border border-white/5 bg-zinc-900/50 hover:bg-white/5 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0"
               aria-label="Back"
             >

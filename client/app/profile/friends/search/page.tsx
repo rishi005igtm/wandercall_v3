@@ -104,7 +104,7 @@ export default function FriendsSearchPage() {
         {/* Back Button + Search Bar */}
         <div className="flex items-center gap-2.5 w-full">
           <button
-            onClick={() => router.push("/profile/friends")}
+            onClick={() => router.replace("/profile/friends")}
             className="p-2.5 rounded-xl bg-zinc-900/80 border border-white/10 hover:border-brand-cyan/40 text-zinc-400 hover:text-white transition-all cursor-pointer shrink-0 flex items-center justify-center"
             title="Back to Friends"
           >

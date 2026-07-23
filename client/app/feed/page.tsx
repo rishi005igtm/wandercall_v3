@@ -677,33 +677,38 @@ export default function ImmersiveFeedPage() {
           </>
         )}
       </AnimatePresence>
-
       {/* Global Mobile Floating Bottom Action Row */}
-      <div className="md:hidden fixed bottom-6 left-4 right-4 z-[90] glass-panel bg-black/80 backdrop-blur-xl border border-white/10 rounded-full p-1.5 px-3 flex items-center justify-between shadow-2xl">
-        <button onClick={() => router.push('/')} className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-          <Home className="h-4 w-4" />
-          <span className="text-[8px] font-bold uppercase tracking-wider">Home</span>
+      <div className="md:hidden fixed bottom-4 left-4 right-4 z-[90] bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden">
+        <button onClick={() => router.push('/')} className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
+          <Home className="h-4 w-4 z-10" />
+          <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
         </button>
-        <button className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-          <Search className="h-4 w-4" />
-          <span className="text-[8px] font-bold uppercase tracking-wider">Search</span>
+
+        <button onClick={() => router.push('/profile/friends/search')} className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
+          <Search className="h-4 w-4 z-10" />
+          <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Search</span>
         </button>
-        <div className="flex-1 flex justify-center -mt-6 relative z-[90]">
-          <button onClick={() => router.push('/experiences')} className="h-12 w-12 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-xl shadow-brand-indigo/30 border-4 border-[#0B0B0B] cursor-pointer hover:scale-105 transition-all duration-300">
-            <Sparkles className="h-5 w-5 text-white" />
+
+        <div className="flex-1 flex justify-center relative z-50">
+          <button onClick={() => router.push('/experiences')} className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300">
+            <Compass className="h-5 w-5 text-white" />
           </button>
         </div>
-        <button className="flex flex-col items-center gap-1 flex-1 py-1 text-brand-cyan transition-colors cursor-pointer">
-          <Radio className="h-4 w-4" />
-          <span className="text-[8px] font-bold uppercase tracking-wider">Feed</span>
+
+        <button onClick={() => router.push('/feed')} className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-white">
+          <div className="absolute inset-0 bg-black border border-black rounded-xl z-0" />
+          <Radio className="h-4 w-4 z-10" />
+          <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
         </button>
-        <button className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-          <span className="text-[8px] font-bold uppercase tracking-wider">Near Me</span>
+
+        <button
+          onClick={() => router.push(isAuthenticated ? "/profile/friends" : "/login")}
+          className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black"
+        >
+          <MessageSquare className="h-4 w-4 z-10" />
+          <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Chat</span>
         </button>
       </div>
-
-      {/* Story Modal */}
       <AnimatePresence>
         {storyModalContent && (
           <motion.div 
