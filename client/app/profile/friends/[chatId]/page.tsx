@@ -25,7 +25,9 @@ import {
   Flag,
   ShieldAlert,
   Play,
-  Pause
+  Pause,
+  ArrowLeft,
+  ChevronLeft
 } from "lucide-react";
 
 // Mock Companion Data definition matching friends/page.tsx
@@ -580,38 +582,41 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
       </div>
 
       {/* Mobile view rendering the immersive phone-only full screen chat */}
-      <div className="block lg:hidden h-full w-full">
-        <div className="flex flex-col h-screen w-screen bg-brand-bg text-white relative overflow-hidden">
+      <div className="block lg:hidden fixed inset-0 h-[100dvh] w-full z-50 bg-[#0b0f12] text-white overflow-hidden overscroll-none touch-none">
+        <div className="flex flex-col h-full w-full relative overflow-hidden">
 
-      {/* 1. HEADER SECTION */}
-      <header className="h-16 w-full border-b border-white/5 px-4 flex items-center justify-between bg-zinc-950/20 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-3 min-w-0">
+      {/* 1. WHATSAPP-STYLE FIXED HEADER */}
+      <header className="h-14 w-full border-b border-white/10 px-3 flex items-center justify-between bg-zinc-950/95 backdrop-blur-xl shrink-0 z-30 shadow-md">
+        <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={() => router.push('/profile/friends')}
-            className="p-2 rounded-xl border border-white/10 text-zinc-400 hover:text-white shrink-0 cursor-pointer animate-none"
+            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-300 hover:text-white shrink-0 transition-colors cursor-pointer"
             title="Go Back"
+            aria-label="Go Back"
           >
-            <X className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </button>
-          <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95 animate-none shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
-            <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-8 w-8 text-[11px]" />
+          <div className="relative cursor-pointer transition-transform active:scale-95 shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
+            <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-9 w-9 text-xs" />
+            <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
           </div>
           <div 
             onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
-            className="min-w-0 cursor-pointer group/name"
+            className="min-w-0 cursor-pointer flex flex-col justify-center"
           >
-            <h3 className="text-sm font-black text-white truncate flex items-center gap-1.5 group-hover/name:text-brand-cyan transition-colors">
+            <h3 className="text-sm font-bold text-white truncate leading-tight flex items-center gap-1.5">
               {activeFriend.name}
             </h3>
-            <p className="text-[9px] text-zinc-500 truncate group-hover/name:text-brand-cyan/80 transition-colors">{activeFriend.username}</p>
+            <p className="text-[10px] text-brand-cyan font-medium truncate leading-tight">
+              {activeFriend.status === "Available" ? "Online" : activeFriend.username}
+            </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
-
+        <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => setShowInspector(true)}
-            className="p-2 rounded-xl border border-white/5 text-zinc-400 hover:text-white cursor-pointer"
+            className="p-2 rounded-full hover:bg-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
             title="Explorer Info"
           >
             <Info className="h-4 w-4" />
@@ -622,11 +627,11 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
       {/* 2. MESSAGES STREAM */}
       <div
         ref={chatStreamRef}
-        className="flex-1 py-4 overflow-y-auto space-y-3 custom-scrollbar px-4"
+        className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 custom-scrollbar overscroll-contain touch-pan-y"
         data-lenis-prevent
       >
         {realMessages.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {realMessages.map((msg) => {
               const isMe = msg.senderId === currentUserId;
               const CustomRenderer = getMessageRenderer(msg.type);
@@ -634,18 +639,18 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               return (
                 <div
                   key={msg.id}
-                  className={`flex flex-col max-w-[85%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
+                  className={`flex flex-col max-w-[82%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
                 >
                   {CustomRenderer ? (
                     <CustomRenderer message={msg} currentUserId={currentUserId} />
                   ) : (
                     <>
                       {(msg.type === "text" || msg.type === "TEXT") && (
-                        <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
-                            ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
-                            : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
+                        <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${isMe
+                            ? "bg-brand-cyan text-zinc-950 rounded-tr-xs font-semibold"
+                            : "bg-zinc-900 text-zinc-100 rounded-tl-xs border border-white/5"
                           }`}>
-                          {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
+                          {msg.isDeleted ? <span className="italic text-zinc-400">Message deleted</span> : msg.text}
                         </div>
                       )}
 
@@ -663,7 +668,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                       </div>
                       <div className="p-3 space-y-2">
                         <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
-                        <p className="text-[9px] text-zinc-500">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
+                        <p className="text-[9px] text-zinc-400">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
                         <button
                           onClick={() => triggerToast(`Booking slot for ${msg.metadata?.title}...`)}
                           className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
@@ -684,10 +689,10 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                       </div>
                       <div className="space-y-1">
                         <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
-                        <p className="text-[9px] text-zinc-500 flex items-center gap-1">
+                        <p className="text-[9px] text-zinc-400 flex items-center gap-1">
                           <MapPin className="h-3 w-3 text-zinc-400" /> {msg.metadata?.location}
                         </p>
-                        <p className="text-[9px] text-zinc-500 font-mono">Date: {msg.metadata?.date}</p>
+                        <p className="text-[9px] text-zinc-400 font-mono">Date: {msg.metadata?.date}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         {(msg.metadata?.companions || []).map((name: string, i: number) => (
@@ -720,14 +725,14 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               )}
 
                   {/* Status + timestamp */}
-                  <span className="text-[8px] text-zinc-500 mt-1 font-mono flex items-center gap-1">
+                  <span className="text-[8px] text-zinc-400 mt-1 font-mono flex items-center justify-end gap-1 select-none">
                     {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     {isMe && (
-                      <span className={`ml-1 ${
+                      <span className={`ml-1 font-bold ${
                         msg.status === 'READ' ? 'text-brand-cyan' :
                         msg.status === 'DELIVERED' ? 'text-zinc-400' :
                         msg.status === 'FAILED' ? 'text-rose-500' :
-                        'text-zinc-600'
+                        'text-zinc-500'
                       }`}>
                         {msg.status === 'SENDING' && '◷'}
                         {msg.status === 'SENT' && '✓'}
@@ -744,12 +749,12 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         ) : (
           <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-none">
             {/* Premium enterprise-level glowing SVG illustration representing digital alignment */}
-            <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+            <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
               {/* Inner glowing pulse */}
               <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl animate-pulse" />
               
               {/* Custom Animated SVG Illustration */}
-              <svg className="w-32 h-32 relative z-10 text-brand-cyan" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-28 h-28 relative z-10 text-brand-cyan" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
                 {/* Orbital Ring 1 */}
                 <circle cx="100" cy="100" r="70" stroke="currentColor" strokeWidth="1" strokeOpacity="0.1" strokeDasharray="4 4" className="animate-[spin_40s_linear_infinite]" />
                 {/* Orbital Ring 2 */}
@@ -812,7 +817,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               Connect with {activeFriend.name}
             </h3>
             <p className="text-[10px] text-zinc-400 max-w-[280px] leading-relaxed mt-1">
-              Establish coordinate link alignment & collaborate on treks. Send an icebreaker below to invite them as an Adventure Partner!
+              Establish coordinate link alignment & collaborate on treks. Send an icebreaker below to start chatting!
             </p>
 
             {/* Icebreaker Suggestions */}
@@ -835,27 +840,24 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         )}
       </div>
 
-      {/* 3. INPUT CONTROLS */}
-      <div className="p-4 border-t border-white/5 flex flex-col gap-2 bg-zinc-950/40 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleSendExperience}
-            className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"
-          >
-            <Share2 className="h-3 w-3 text-brand-cyan" /> Experience
-          </button>
+      {/* 3. WHATSAPP-STYLE FIXED INPUT CONTROLS */}
+      <footer className="shrink-0 bg-zinc-950/95 border-t border-white/10 p-2 sm:p-3 space-y-2 z-30 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {/* Quick Action Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <button
             onClick={handleSendPlan}
-            className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"
+            className="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold uppercase tracking-wider rounded-full text-zinc-300 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0 active:scale-95"
           >
             <Calendar className="h-3 w-3 text-brand-purple" /> Plan Trek
           </button>
         </div>
 
-        <div className="flex items-center gap-2 bg-zinc-950/80 border border-white/10 p-1.5 rounded-2xl w-full">
+        {/* Input Row */}
+        <div className="flex items-center gap-2 bg-zinc-900/90 border border-white/10 focus-within:border-brand-cyan/60 rounded-full px-3 py-1.5 transition-all shadow-inner">
           <button
             onClick={() => triggerToast("Simulating mic trigger...")}
-            className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-zinc-200 cursor-pointer transition-colors"
+            title="Voice note"
           >
             <Mic className="h-4 w-4" />
           </button>
@@ -863,20 +865,33 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           <input
             type="text"
             value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
+            onChange={(e) => {
+              setChatInput(e.target.value);
+              emitTyping();
+            }}
+            onFocus={() => {
+              setTimeout(() => {
+                if (chatStreamRef.current) {
+                  chatStreamRef.current.scrollTop = chatStreamRef.current.scrollHeight;
+                }
+              }, 200);
+            }}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-            placeholder="Write message to explorer..."
-            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold px-2"
+            enterKeyHint="send"
+            placeholder="Write message..."
+            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-medium px-1"
           />
 
           <button
             onClick={handleSendMessage}
-            className="p-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 rounded-xl cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-md shadow-brand-cyan/15"
+            disabled={!chatInput.trim()}
+            className="h-8 w-8 bg-brand-cyan hover:bg-cyan-400 disabled:opacity-30 text-zinc-950 rounded-full flex items-center justify-center shrink-0 shadow-md shadow-brand-cyan/20 active:scale-90 transition-all cursor-pointer"
+            title="Send message"
           >
-            <Send className="h-3.5 w-3.5 fill-current" />
+            <Send className="h-3.5 w-3.5 fill-current ml-0.5" />
           </button>
         </div>
-      </div>
+      </footer>
 
       {/* 4. DETAILS OVERLAY PANEL (INSPECTOR) */}
       {showInspector && (

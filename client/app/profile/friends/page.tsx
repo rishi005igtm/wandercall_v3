@@ -1229,21 +1229,6 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => triggerToast(`Calling ${activeFriend.name}...`)}
-                        className="p-2 rounded-xl bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer"
-                        title="Voice Call"
-                      >
-                        <Phone className="h-3.5 w-3.5" />
-                      </button>
-                      <button
-                        onClick={() => setShowInviteModal(true)}
-                        className="p-2 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold transition-all cursor-pointer flex items-center gap-1"
-                        title="Invite to Campfire"
-                      >
-                        <Flame className="h-3.5 w-3.5" /> Invite
-                      </button>
-
                       {/* Mobile view inspector toggle */}
                       <button
                         onClick={() => setActiveMobileView("inspector")}
@@ -1540,13 +1525,6 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     <div className="hidden lg:flex absolute bottom-[-14px] left-0 lg:right-8 right-0 mx-auto z-40 w-[95%] max-w-[480px] transition-opacity duration-300 opacity-65 hover:opacity-100 focus-within:opacity-100 select-none">
                       <div className="glass-panel border border-white/10 p-2.5 rounded-2xl flex flex-col gap-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl bg-zinc-950/90 w-full">
                         <div className="flex items-center gap-2">
-                          {/* Short shortcuts */}
-                          <button
-                            onClick={handleSendExperience}
-                            className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"
-                          >
-                            <Share2 className="h-3 w-3 text-brand-cyan" /> Experience
-                          </button>
                           <button
                             onClick={handleSendPlan}
                             className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"

@@ -88,7 +88,10 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     }
   };
 
-  const isChatRoute = pathname?.includes('/profile/friends/chat:');
+  const isChatRoute =
+    pathname?.startsWith('/profile/friends/') &&
+    pathname !== '/profile/friends' &&
+    pathname !== '/profile/friends/';
   
   const staticSubPaths = ['wishlist', 'bookings', 'quests', 'friends', 'settings'];
   const isDynamicProfileRoute = pathname?.startsWith('/profile/') && 
@@ -96,11 +99,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     pathname !== '/profile' && 
     pathname !== '/profile/';
 
-  const shouldShowBottomNav = !isDynamicProfileRoute;
+  const shouldShowBottomNav = !isDynamicProfileRoute && !isChatRoute;
 
   if (isChatRoute) {
     return (
-      <div className="min-h-screen bg-brand-bg text-white relative">
+      <div className="fixed inset-0 h-[100dvh] w-full bg-brand-bg text-white overflow-hidden touch-none">
         {children}
       </div>
     );

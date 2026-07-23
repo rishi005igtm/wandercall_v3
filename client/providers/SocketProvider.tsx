@@ -282,11 +282,11 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         return null;
       }
       
-      // Implement robust Socket ACKs with a 5000ms timeout
-      const ack = await socket.timeout(5000).emitWithAck(event, data);
+      // Enterprise 15,000ms timeout for Socket.IO ACK responses in production
+      const ack = await socket.timeout(15000).emitWithAck(event, data);
       return ack as T;
     } catch (err) {
-      console.error(`Socket timeout or error emitting ${event}:`, err);
+      console.warn(`Socket emission timed out or errored for ${event} (15s limit reached):`, err);
       return null;
     }
   }, []);
