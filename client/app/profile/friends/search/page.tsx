@@ -181,7 +181,7 @@ export default function FriendsSearchPage() {
         </div>
 
         {/* Scrollable Results Stream (ONLY THIS SCROLLS - 2 Column Grid on Desktop) */}
-        <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pt-3 pr-1 pb-24 md:pb-4 overscroll-contain touch-pan-y">
+        <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pt-3 pr-1 pb-3 md:pb-4 overscroll-contain touch-pan-y">
           {isSearchLoading ? (
             <div className="p-12 text-center text-zinc-500 text-xs font-mono animate-pulse">
               Searching Wandercall global network...

@@ -13,6 +13,7 @@ import {
   Radio,
   User,
   UserPlus,
+  MessageSquare,
   Settings,
   LogOut,
   Bell,
@@ -32,7 +33,7 @@ const navItems = [
   { name: "Wishlist", icon: Heart, href: "/profile/wishlist" },
   { name: "Bookings", icon: Calendar, href: "/profile/bookings" },
   { name: "Quests", icon: Award, href: "/profile/quests", comingSoon: true },
-  { name: "Friends", icon: UserPlus, href: "/profile/friends" },
+  { name: "Chat", icon: MessageSquare, href: "/profile/friends" },
   { name: "Settings", icon: Settings, href: "/profile/settings" },
 ];
 
@@ -58,7 +59,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const xpNext = currentUser?.xpNext || 2000;
   const xpPercentage = Math.min(Math.round((xpCurrent / xpNext) * 100), 100);
 
-  // Mobile Bottom Nav items ordered explicitly: Profile (left), Wishlist, Home (middle), Bookings, Friends (right)
+  // Mobile Bottom Nav items ordered explicitly: Profile (left), Wishlist, Home (middle), Bookings, Chat (right)
   const mobileNavItems = useMemo(() => {
     const getNavItem = (name: string) => navItems.find(item => item.name === name)!;
     return [
@@ -66,7 +67,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       getNavItem("Wishlist"),
       getNavItem("Home"),
       getNavItem("Bookings"),
-      getNavItem("Friends"),
+      getNavItem("Chat"),
     ];
   }, []);
 
@@ -100,7 +101,10 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
     pathname !== '/profile' && 
     pathname !== '/profile/';
 
-  const shouldShowBottomNav = !isDynamicProfileRoute && !isChatRoute;
+  const isSearchRoute = pathname?.startsWith('/profile/friends/search');
+  const isFriendsWorkspace = pathname?.startsWith('/profile/friends');
+
+  const shouldShowBottomNav = !isDynamicProfileRoute && !isChatRoute && !isSearchRoute;
 
   if (isChatRoute) {
     return (
@@ -206,7 +210,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* 2. TOP HEADER & MAIN WORKSPACE AREA */}
-      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-none flex flex-col overflow-hidden ${shouldShowBottomNav ? "pb-20 md:pb-0" : "pb-0"} md:pb-0`}>
+      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] flex flex-col ${
+        isFriendsWorkspace
+          ? "h-[100dvh] md:h-screen max-h-[100dvh] md:max-h-screen overflow-hidden"
+          : "h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-none overflow-hidden md:overflow-visible"
+      } ${shouldShowBottomNav ? "pb-20 md:pb-0" : "pb-0"} md:pb-0`}>
         <header className={`h-16 w-full border-b border-white/5 px-4 lg:px-8 ${pathname?.startsWith('/profile/friends/search') ? "hidden md:flex" : "flex"} items-center justify-between bg-zinc-950/20 backdrop-blur-md shrink-0`}>
           <div className="flex items-center gap-3">
             <button
@@ -255,7 +263,11 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Nested route content */}
-        <div className="w-full flex-1 relative overflow-hidden flex flex-col min-h-0">
+        <div className={`w-full flex-1 relative flex flex-col min-h-0 ${
+          isFriendsWorkspace
+            ? "overflow-hidden"
+            : "overflow-y-auto md:overflow-visible overscroll-contain"
+        }`}>
           {children}
         </div>
       </main>
