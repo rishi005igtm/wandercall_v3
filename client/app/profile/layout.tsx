@@ -91,7 +91,8 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const isChatRoute =
     pathname?.startsWith('/profile/friends/') &&
     pathname !== '/profile/friends' &&
-    pathname !== '/profile/friends/';
+    pathname !== '/profile/friends/' &&
+    !pathname?.startsWith('/profile/friends/search');
   
   const staticSubPaths = ['wishlist', 'bookings', 'quests', 'friends', 'settings'];
   const isDynamicProfileRoute = pathname?.startsWith('/profile/') && 
@@ -204,38 +205,39 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         </div>
       </aside>
 
-      {/* 2. SCROLLABLE RIGHT CONTENT AREA */}
-      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] min-h-screen flex flex-col ${(!shouldShowBottomNav) ? "pb-0" : "pb-20"} md:pb-0`}>
-        <header className="h-16 w-full border-b border-white/5 px-4 md:px-12 flex items-center justify-between z-30 bg-zinc-950/10 backdrop-blur-md">
+      {/* 2. TOP HEADER & MAIN WORKSPACE AREA */}
+      <main className={`flex-1 md:pl-[80px] lg:pl-[280px] h-[100dvh] md:h-auto max-h-[100dvh] md:max-h-none flex flex-col overflow-hidden ${shouldShowBottomNav ? "pb-20 md:pb-0" : "pb-0"} md:pb-0`}>
+        <header className={`h-16 w-full border-b border-white/5 px-4 lg:px-8 ${pathname?.startsWith('/profile/friends/search') ? "hidden md:flex" : "flex"} items-center justify-between bg-zinc-950/20 backdrop-blur-md shrink-0`}>
           <div className="flex items-center gap-3">
             <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                if (pathname.startsWith("/profile/campfires/") && pathname !== "/profile/campfires") {
-                  router.push("/profile/campfires");
-                } else {
-                  router.back();
-                }
-              }}
-              className="h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
-              aria-label="Go Back"
+              onClick={() => router.back()}
+              className="md:hidden flex h-9 w-9 rounded-full border border-white/5 bg-zinc-900/50 hover:bg-white/5 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0"
+              aria-label="Back"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
-            <h2 className="text-sm font-black uppercase tracking-widest text-zinc-400 flex items-center">
-              Explorer Dashboard
-            </h2>
+            <div className="flex flex-col">
+              <h1 className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-2">
+                Explorer Dashboard
+              </h1>
+            </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Mobile-only Settings Link */}
-            <Link
-              href="/profile/settings"
-              className="flex md:hidden h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0"
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Quick Status Pill */}
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-mono text-zinc-400">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-emerald animate-pulse" />
+              <span>Node Active</span>
+            </div>
+
+            {/* Quick Settings Icon */}
+            <button
+              onClick={() => router.push('/profile/settings')}
+              className="flex h-9 w-9 rounded-full border border-white/5 hover:bg-white/5 hover:border-white/10 text-zinc-400 hover:text-white transition-all cursor-pointer items-center justify-center shrink-0"
               aria-label="Settings"
             >
               <Settings className="h-4 w-4" />
-            </Link>
+            </button>
 
             {/* Notifications Button */}
             <button
@@ -253,7 +255,7 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Nested route content */}
-        <div className="w-full flex-1 relative">
+        <div className="w-full flex-1 relative overflow-hidden flex flex-col min-h-0">
           {children}
         </div>
       </main>

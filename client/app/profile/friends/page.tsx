@@ -965,31 +965,24 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   };
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 lg:pb-6 pb-24 text-white flex flex-col gap-6 select-none font-sans overflow-x-hidden">
+    <div className="flex-1 min-h-0 h-full w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-3 md:py-6 text-white flex flex-col gap-3 md:gap-6 select-none font-sans overflow-hidden">
 
       {/* 1. FRIENDS COMMAND CENTER (STATUS RIBBON) - Hidden on desktop sizes */}
-      <div className="md:hidden glass-panel rounded-2xl p-4 border border-white/5 shadow-md flex items-center justify-between gap-4 w-full shrink-0 flex-wrap sm:flex-nowrap">
-
-
-        <div className="flex items-center gap-2 w-full">
-          <div className="flex flex-1 items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl focus-within:border-brand-cyan/50 transition-colors">
-            <Search className="h-3.5 w-3.5 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Search friends & DNA..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(inputValue)}
-              className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
-            />
+      <div className="md:hidden glass-panel rounded-2xl p-2.5 border border-white/5 shadow-md flex items-center justify-between gap-3 w-full shrink-0">
+        <button
+          onClick={() => router.push('/profile/friends/search')}
+          className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/10 hover:border-brand-cyan/40 rounded-xl transition-all cursor-pointer group shadow-sm text-left"
+        >
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Search className="h-3.5 w-3.5 text-zinc-400 group-hover:text-brand-cyan transition-colors shrink-0" />
+            <span className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors truncate">
+              Search friends & travel DNA...
+            </span>
           </div>
-          <button 
-            onClick={() => setSearchQuery(inputValue)}
-            className="bg-brand-cyan hover:bg-brand-cyan/80 text-black px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
-          >
-            Search
-          </button>
-        </div>
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 group-hover:text-white transition-all shrink-0">
+            ⌘K
+          </span>
+        </button>
       </div>
 
       {/* 2. CATEGORY HORIZONTAL SELECTOR MENU BAR */}
@@ -1029,45 +1022,42 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         })}
 
         {/* Relocated Search Bar - Visible on desktop only */}
-        <div className="hidden md:flex items-center gap-2 max-w-[340px] ml-auto shrink-0">
-          <div className="flex flex-1 items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-xl focus-within:border-brand-cyan/50 transition-colors">
-            <Search className="h-3.5 w-3.5 text-zinc-500" />
-            <input
-              type="text"
-              placeholder="Search friends & DNA..."
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && setSearchQuery(inputValue)}
-              className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold"
-            />
-          </div>
-          <button 
-            onClick={() => setSearchQuery(inputValue)}
-            className="bg-brand-cyan hover:bg-brand-cyan/80 text-black px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors shrink-0"
+        <div className="hidden md:flex items-center gap-2 w-full max-w-[280px] ml-auto shrink-0">
+          <button
+            onClick={() => router.push('/profile/friends/search')}
+            className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/10 hover:border-brand-cyan/40 rounded-xl transition-all cursor-pointer group shadow-sm text-left"
           >
-            Search
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Search className="h-3.5 w-3.5 text-zinc-400 group-hover:text-brand-cyan transition-colors shrink-0" />
+              <span className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors truncate">
+                Search friends & DNA...
+              </span>
+            </div>
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 group-hover:text-white transition-all shrink-0">
+              ⌘K
+            </span>
           </button>
         </div>
       </div>
 
       {/* 3. FRIENDS WORKSPACE (OPERATIONAL CONTAINER) */}
-      <div className="w-full flex flex-col gap-4 lg:min-h-[570px] min-h-[500px]">
+      <div className="w-full flex-1 min-h-0 flex flex-col gap-4">
 
         {/* Right Side: Active Workspace */}
-        <main className="flex-1 min-w-0 flex flex-col">
-          <div className="glass-panel rounded-3xl p-5 border border-white/5 flex flex-col justify-between overflow-hidden lg:h-[570px] h-[650px]">
+        <main className="flex-1 min-w-0 flex flex-col min-h-0">
+          <div className="glass-panel rounded-2xl md:rounded-3xl p-3 sm:p-5 border border-white/5 flex flex-col justify-between overflow-hidden flex-1 min-h-0 h-full">
 
             {/* VIEW A: CHAT WORKSPACE & CONVERSATION */}
             {(["all", "favorites", "partners", "online", "recent"].includes(selectedCategory)) && (
-              <div className="flex flex-col lg:flex-row gap-5 items-stretch flex-1 w-full min-w-0 h-full">
+              <div className="flex flex-col lg:flex-row gap-5 items-stretch flex-1 w-full min-w-0 h-full min-h-0">
 
                 {/* 1. Sub-left Friend Selection List (Hidden on mobile when chat is active) */}
-                <div className={`w-full lg:w-[240px] shrink-0 flex flex-col gap-2 lg:border-r lg:border-white/5 lg:pr-4 ${activeMobileView === "chat" || activeMobileView === "inspector" ? "hidden lg:flex" : "flex"
+                <div className={`w-full lg:w-[240px] shrink-0 flex flex-col gap-2 lg:border-r lg:border-white/5 lg:pr-4 flex-1 lg:flex-none min-h-0 ${activeMobileView === "chat" || activeMobileView === "inspector" ? "hidden lg:flex" : "flex"
                   }`}>
-                  <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500 pb-2 border-b border-white/5">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500 pb-2 border-b border-white/5 shrink-0">
                     Select Companion
                   </div>
-                  <div ref={companionListRef} className="flex flex-col gap-1.5 overflow-y-auto flex-1 no-scrollbar pr-1">
+                  <div ref={companionListRef} className="flex flex-col gap-1.5 overflow-y-auto flex-1 min-h-0 no-scrollbar pr-1 pb-4 md:pb-2 overscroll-contain touch-pan-y">
                     {filteredListCompanions.map(friend => {
                       const isSelected = activeFriendId === friend.id;
                       const inbox = getInboxState(friend.id);

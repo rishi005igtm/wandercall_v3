@@ -292,6 +292,15 @@ export default function Navbar({
                         </Link>
 
                         <Link
+                          href={isAuthenticated ? "/profile/friends" : "/login"}
+                          onClick={() => setProfileMenuOpen(false)}
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <MessageSquare className="h-4 w-4 text-brand-cyan" />
+                          <span>Friends & Chats</span>
+                        </Link>
+
+                        <Link
                           href={isAuthenticated ? "/profile" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
                           className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
@@ -423,9 +432,14 @@ export default function Navbar({
               <Radio className="h-4 w-4" />
               <span className="text-[8px] font-bold uppercase tracking-wider">Feed</span>
             </button>
-            <button className="flex flex-col items-center gap-1 flex-1 py-1 text-zinc-400 hover:text-white transition-colors cursor-pointer">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span className="text-[8px] font-bold uppercase tracking-wider">Near Me</span>
+            <button
+              onClick={() => router.push(isAuthenticated ? "/profile/friends" : "/login")}
+              className={`flex flex-col items-center gap-1 flex-1 py-1 transition-colors cursor-pointer ${
+                pathname.startsWith("/profile/friends") ? "text-brand-cyan" : "text-zinc-400 hover:text-white"
+              }`}
+            >
+              <MessageSquare className="h-4 w-4" />
+              <span className="text-[8px] font-bold uppercase tracking-wider">Chat</span>
             </button>
           </motion.div>
         )}
