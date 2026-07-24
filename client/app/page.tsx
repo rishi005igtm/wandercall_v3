@@ -4,7 +4,7 @@ import React from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Trending from "../components/Trending";
-import AdventureDNA from "../components/AdventureDNA";
+
 import FeaturedHosts from "../components/FeaturedHosts";
 import UpcomingEvents from "../components/UpcomingEvents";
 import HowItWorks from "../components/HowItWorks";
@@ -34,8 +34,6 @@ export default function Home() {
         {/* Section 5: Trending Experiences */}
         <Trending />
 
-        {/* Section 7: Adventure DNA */}
-        <AdventureDNA />
 
         {/* Section 8: Campfire Communities (Removed) */}
 
@@ -43,7 +41,7 @@ export default function Home() {
         <FeaturedHosts />
 
         {/* Section 11: Upcoming Events */}
-        <UpcomingEvents />
+        {/* <UpcomingEvents /> */}
 
         {/* Section 12: How It Works */}
         <HowItWorks />

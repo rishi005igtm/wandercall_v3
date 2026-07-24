@@ -59,7 +59,7 @@ export default function CategoryBento() {
               >
                 {/* Background Image */}
                 <div className="absolute inset-0 z-0">
-                  <Image src={cat.image} alt={cat.name} fill className="object-cover opacity-60" sizes="(max-width: 1024px) 150px, 0px" />
+                  <Image priority src={cat.image} alt={cat.name} fill className="object-cover opacity-60" sizes="(max-width: 1024px) 150px, 0px" />
                 </div>
                 
                 {/* Gradients to ensure text visibility */}
@@ -102,7 +102,7 @@ export default function CategoryBento() {
               >
                 {/* Background Image */}
                 <div className="absolute inset-0 z-0 overflow-hidden">
-                  <Image src={cat.image} alt={cat.name} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" sizes="(max-width: 1024px) 0vw, 25vw" />
+                  <Image priority src={cat.image} alt={cat.name} fill className="object-cover opacity-60 group-hover:scale-110 transition-transform duration-700" sizes="(max-width: 1024px) 0vw, 25vw" />
                 </div>
                 
                 {/* Gradients to ensure text visibility */}

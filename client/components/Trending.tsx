@@ -97,6 +97,13 @@ export default function Trending() {
     }
   ];
 
+  // Simulate loading for skeleton
+  const [isLoading, setIsLoading] = useState(true);
+  React.useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Wishlist local state tracking
   const [wishlist, setWishlist] = useState<string[]>([]);
   const toggleWishlist = (id: string) => {
@@ -139,7 +146,9 @@ export default function Trending() {
 
       {/* Horizontal Carousel */}
       <div className="w-full overflow-x-auto pb-8 no-scrollbar cursor-grab active:cursor-grabbing flex gap-6 snap-x snap-mandatory">
-        {experiences.map((exp) => {
+        {isLoading 
+          ? Array.from({ length: 4 }).map((_, i) => <TrendingSkeletonCard key={i} />)
+          : experiences.map((exp) => {
           const isWishlisted = wishlist.includes(exp.id);
           return (
             <motion.div
@@ -232,5 +241,52 @@ export default function Trending() {
         </Link>
       </div>
     </section>
+  );
+}
+
+function TrendingSkeletonCard() {
+  return (
+    <div className="snap-start shrink-0 w-[290px] sm:w-[320px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden bg-zinc-900/50 animate-pulse">
+      {/* Thumbnail Zone */}
+      <div className="h-44 w-full relative bg-white/5 border-b border-white/5">
+        <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
+          <div className="h-4 w-20 bg-white/10 rounded-full" />
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-12 bg-white/10 rounded-full" />
+            <div className="h-7 w-7 bg-white/10 rounded-full" />
+          </div>
+        </div>
+      </div>
+
+      {/* Metadata Card Area */}
+      <div className="p-5 flex flex-col justify-between flex-1 text-left">
+        <div>
+          <div className="h-5 w-3/4 bg-white/10 rounded-md mb-2" />
+          <div className="flex items-center gap-1 mt-1.5 mb-3">
+            <div className="h-3.5 w-3.5 bg-white/10 rounded-sm shrink-0" />
+            <div className="h-3 w-1/2 bg-white/10 rounded-sm" />
+          </div>
+          <div className="space-y-1.5">
+            <div className="h-2.5 w-full bg-white/10 rounded-sm" />
+            <div className="h-2.5 w-5/6 bg-white/10 rounded-sm" />
+          </div>
+        </div>
+
+        {/* Detail Metrics */}
+        <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-5">
+          <div className="flex items-center gap-2">
+            <div className="h-4 w-16 bg-white/10 rounded-full" />
+            <div className="h-4 w-14 bg-white/10 rounded-full" />
+          </div>
+          <div className="flex flex-col items-end gap-1">
+            <div className="h-2 w-10 bg-white/10 rounded-sm" />
+            <div className="h-3 w-14 bg-white/10 rounded-sm" />
+          </div>
+        </div>
+
+        {/* View Experience CTA */}
+        <div className="mt-4 w-full h-9 rounded-xl bg-white/10" />
+      </div>
+    </div>
   );
 }

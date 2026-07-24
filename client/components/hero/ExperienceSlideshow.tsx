@@ -8,15 +8,32 @@ import Image from "next/image";
 
 export default function ExperienceSlideshow() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Simulate network delay for skeleton loader demonstration
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isLoading) return;
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % HERO_SLIDES.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isLoading]);
 
   const slide = HERO_SLIDES[currentIndex];
+
+  if (isLoading) {
+    return (
+      <>
+        <MobileSkeleton />
+        <DesktopSkeleton />
+      </>
+    );
+  }
 
   return (
     <>
@@ -173,5 +190,72 @@ function ChevronRightIcon() {
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="m9 18 6-6-6-6"/>
     </svg>
+  );
+}
+
+function MobileSkeleton() {
+  return (
+    <div className="lg:hidden w-full mt-6 px-4">
+      <h3 className="text-sm font-bold text-white mb-3">Featured Experiences</h3>
+      <div className="relative w-full h-[340px] rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-xl bg-zinc-900/50 animate-pulse">
+        <div className="absolute bottom-0 left-0 right-0 p-5">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="h-4 w-16 bg-white/10 rounded-full" />
+            <div className="h-4 w-12 bg-white/10 rounded-full" />
+          </div>
+          <div className="h-6 w-3/4 bg-white/10 rounded-lg mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-2 w-1/2">
+              <div className="h-3 w-3/4 bg-white/10 rounded" />
+              <div className="h-3 w-1/2 bg-white/10 rounded" />
+            </div>
+            <div className="h-10 w-10 rounded-full bg-white/10" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DesktopSkeleton() {
+  return (
+    <div className="hidden lg:flex w-full h-full min-h-[550px] relative rounded-[32px] glass-panel border border-white/10 overflow-hidden shadow-2xl group flex-col justify-end bg-zinc-900/50 animate-pulse">
+      <div className="relative z-10 w-full p-8 flex flex-col justify-end h-full">
+        <div className="absolute top-8 left-8 right-8 flex items-center justify-between z-20">
+          <div className="flex gap-1.5">
+            <div className="h-1 w-8 bg-white/10 rounded-full" />
+            <div className="h-1 w-3 bg-white/10 rounded-full" />
+            <div className="h-1 w-3 bg-white/10 rounded-full" />
+          </div>
+          <div className="h-10 w-10 rounded-full bg-white/10" />
+        </div>
+        <div className="flex flex-col gap-4 mt-auto">
+          <div className="flex items-center gap-3">
+            <div className="h-5 w-20 bg-white/10 rounded-full" />
+            <div className="h-5 w-16 bg-white/10 rounded-full" />
+          </div>
+          <div>
+            <div className="h-10 w-2/3 bg-white/10 rounded-xl mb-3" />
+            <div className="h-5 w-1/3 bg-white/10 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-4 gap-3 mt-2">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center justify-center gap-1.5">
+                <div className="h-5 w-5 bg-white/10 rounded-md" />
+                <div className="h-3 w-12 bg-white/10 rounded" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex items-center gap-4">
+            <div className="flex-1 h-14 bg-white/10 rounded-2xl" />
+            <div className="flex -space-x-3">
+              <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-white/10 z-30" />
+              <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-white/10 z-20" />
+              <div className="h-12 w-12 rounded-full border-2 border-zinc-900 bg-white/10 z-10" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star, Quote, ShieldCheck, Heart } from "lucide-react";
 
@@ -15,6 +15,12 @@ interface Testimonial {
 }
 
 export default function SocialProof() {
+  const [isLoading, setIsLoading] = useState(true);
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
   const testimonials: Testimonial[] = [
     {
       id: "p1",
@@ -66,7 +72,9 @@ export default function SocialProof() {
 
       {/* Grid of reviews */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-        {testimonials.map((test, index) => (
+        {isLoading
+          ? Array.from({ length: 3 }).map((_, i) => <SocialProofSkeletonCard key={i} />)
+          : testimonials.map((test, index) => (
           <motion.div
             key={test.id}
             initial={{ opacity: 0, y: 15 }}
@@ -121,5 +129,35 @@ export default function SocialProof() {
         </button>
       </div>
     </section>
+  );
+}
+
+function SocialProofSkeletonCard() {
+  return (
+    <div className="p-6 rounded-3xl glass-panel border-white/5 flex flex-col justify-between h-[280px] bg-zinc-900/50 animate-pulse relative">
+      <div>
+        <div className="flex gap-1 mb-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="h-4 w-4 bg-white/10 rounded-sm" />
+          ))}
+        </div>
+        <div className="space-y-2 mb-6 mt-2">
+          <div className="h-2 w-full bg-white/10 rounded-sm" />
+          <div className="h-2 w-full bg-white/10 rounded-sm" />
+          <div className="h-2 w-5/6 bg-white/10 rounded-sm" />
+          <div className="h-2 w-3/4 bg-white/10 rounded-sm" />
+        </div>
+      </div>
+      <div className="flex items-center justify-between pt-4 border-t border-white/5">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-full bg-white/10 shrink-0" />
+          <div className="flex flex-col gap-1.5">
+            <div className="h-3 w-16 bg-white/10 rounded-sm" />
+            <div className="h-2 w-12 bg-white/10 rounded-sm" />
+          </div>
+        </div>
+        <div className="h-5 w-14 rounded-full bg-white/10" />
+      </div>
+    </div>
   );
 }

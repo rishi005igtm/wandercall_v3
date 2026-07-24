@@ -55,29 +55,64 @@ const CATEGORIES = [
 // COMPONENTS
 // ==========================================
 
-// Immersive Image Viewer (Apple Photos style)
+// Immersive Media Viewer
 const ImmersiveMediaViewer = ({ images, onImageClick }: { images: string[], onImageClick?: (idx: number) => void }) => {
   const [activeIdx, setActiveIdx] = useState(0);
+  const [isPortrait, setIsPortrait] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!images || !images[activeIdx]) return;
+    const img = new Image();
+    img.onload = () => {
+      // If height > width, it's portrait (e.g. 9:16). Otherwise landscape (e.g. 16:9).
+      setIsPortrait(img.naturalHeight > img.naturalWidth);
+    };
+    img.src = images[activeIdx];
+  }, [activeIdx, images]);
 
   if (!images || images.length === 0) return null;
 
+  // Determine dynamic object-fit classes based on orientation and device
+  // isPortrait: Mobile -> cover, Desktop -> contain
+  // !isPortrait: Mobile -> contain, Desktop -> cover
+  const objectFitClass = isPortrait === null 
+    ? "object-cover" // Default while loading
+    : isPortrait 
+      ? "object-cover md:object-contain" 
+      : "object-contain md:object-cover";
+
   return (
-    <div className="relative w-full h-full md:h-[70vh] md:rounded-[32px] rounded-none overflow-hidden bg-black/40 md:border md:border-white/10 border-none group shadow-2xl">
+    <div className="relative w-full h-[100dvh] md:h-[75vh] md:rounded-[32px] rounded-none overflow-hidden bg-black md:border md:border-white/10 border-none group shadow-2xl flex items-center justify-center">
       <AnimatePresence mode="wait">
-        <motion.img
+        <motion.div
           key={activeIdx}
-          src={images[activeIdx]}
-          initial={{ opacity: 0, scale: 1.05 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="absolute inset-0 w-full h-full object-cover"
-          onClick={() => onImageClick && onImageClick(activeIdx)}
-        />
+          transition={{ duration: 0.6 }}
+          className="absolute inset-0 w-full h-full"
+        >
+          {/* Blurred Background to fill empty space seamlessly */}
+          <img
+            src={images[activeIdx]}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-40 scale-110 pointer-events-none"
+          />
+          {/* Foreground properly contained/covered based on orientation */}
+          <motion.img
+            src={images[activeIdx]}
+            alt=""
+            initial={{ scale: 1.05 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            className={`absolute inset-0 w-full h-full z-10 transition-all duration-300 ${objectFitClass}`}
+            onClick={() => onImageClick && onImageClick(activeIdx)}
+          />
+        </motion.div>
       </AnimatePresence>
       
       {/* Dark gradient overlay for text readability at bottom */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/10 to-transparent pointer-events-none z-10" />
 
       {images.length > 1 && (
         <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20">
@@ -303,10 +338,6 @@ export default function ImmersiveFeedPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Removed redundant explore button on mobile */}
-              <button onClick={() => router.push('/search')} className="hidden md:flex h-10 w-10 rounded-full bg-white/5 border border-white/10 items-center justify-center backdrop-blur-md hover:bg-white/10 transition-colors">
-                <Compass className="h-4 w-4 text-white" />
-              </button>
               <button onClick={() => router.push('/feed/create-post')} className="h-10 px-4 rounded-full bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-zinc-200 transition-transform hover:scale-105 shadow-xl shadow-white/10">
                 <Plus className="h-4 w-4" /> Create
               </button>
@@ -608,9 +639,7 @@ export default function ImmersiveFeedPage() {
               </div>
             </div>
           ) : (
-            <div className="h-full w-full flex items-center justify-center text-zinc-500">
-              <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
+            <ExperienceContextSkeleton />
           )}
       </div>
 
@@ -754,6 +783,75 @@ export default function ImmersiveFeedPage() {
         )}
       </AnimatePresence>
 
+    </div>
+  );
+}
+
+function ExperienceContextSkeleton() {
+  return (
+    <div className="flex flex-col h-full w-full animate-in fade-in duration-300 animate-pulse">
+      {/* Context Header */}
+      <div className="p-6 border-b border-white/5 bg-[#0a0a0c] z-10 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-4 rounded-sm bg-white/10" />
+          <div className="h-3 w-32 bg-white/10 rounded-sm" />
+        </div>
+        <div className="flex gap-4 mt-4 pt-1">
+          <div className="h-4 w-20 bg-white/10 rounded-sm" />
+          <div className="h-4 w-16 bg-white/10 rounded-sm" />
+          <div className="ml-auto h-4 w-16 bg-white/10 rounded-sm" />
+        </div>
+      </div>
+
+      {/* Scrollable Context (Story + Comments) */}
+      <div className="flex-1 overflow-hidden p-6 space-y-8">
+        
+        {/* Story Section */}
+        <div className="space-y-3">
+          <div className="h-2.5 w-24 bg-white/10 rounded-sm" />
+          <div className="space-y-2 pt-1">
+            <div className="h-3 w-full bg-white/10 rounded-sm" />
+            <div className="h-3 w-full bg-white/10 rounded-sm" />
+            <div className="h-3 w-5/6 bg-white/10 rounded-sm" />
+            <div className="h-3 w-2/3 bg-white/10 rounded-sm" />
+          </div>
+        </div>
+
+        {/* Details Section */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1 overflow-hidden">
+            <div className="flex items-center gap-1">
+              <div className="h-3 w-3 bg-white/10 rounded-sm" />
+              <div className="h-2 w-16 bg-white/10 rounded-sm" />
+            </div>
+            <div className="h-3 w-24 bg-white/10 rounded-sm mt-1" />
+          </div>
+          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
+            <div className="flex items-center gap-1">
+              <div className="h-3 w-3 bg-white/10 rounded-sm" />
+              <div className="h-2 w-16 bg-white/10 rounded-sm" />
+            </div>
+            <div className="h-3 w-20 bg-white/10 rounded-sm mt-1" />
+          </div>
+        </div>
+
+        {/* Comments Section */}
+        <div className="space-y-4 pt-4 border-t border-white/5">
+          <div className="h-2.5 w-32 bg-white/10 rounded-sm" />
+          <div className="w-full py-4 mt-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center gap-2">
+            <div className="h-4 w-4 bg-white/10 rounded-sm" />
+            <div className="h-3 w-24 bg-white/10 rounded-sm" />
+          </div>
+        </div>
+      </div>
+
+      {/* Comment Input */}
+      <div className="p-4 border-t border-white/5 bg-[#0a0a0c] z-10 shrink-0">
+        <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-2xl p-1.5 h-11">
+          <div className="flex-1 ml-2 h-3 w-1/3 bg-white/10 rounded-sm" />
+          <div className="h-8 w-8 rounded-xl bg-white/10 shrink-0" />
+        </div>
+      </div>
     </div>
   );
 }

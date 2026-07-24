@@ -50,8 +50,10 @@ export default function Navbar({
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
 
-  const { isAuthenticated, userId } = useAppSelector((state) => state.auth);
-  const { data: currentUser } = useCurrentUserQuery(isAuthenticated);
+  const { isAuthenticated, userId, isAuthReady } = useAppSelector((state) => state.auth);
+  const { data: currentUser, isLoading: isUserLoading } = useCurrentUserQuery(isAuthenticated);
+
+  const isProfileLoading = !isAuthReady || (isAuthenticated && isUserLoading);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -112,6 +114,7 @@ export default function Navbar({
     { name: "Home", icon: Home, href: "/" },
     { name: "Experiences", icon: Calendar, href: "/experiences" },
     { name: "Feed", icon: Radio, href: "/feed" },
+    { name: "Chat", icon: MessageSquare, href: "/profile/friends" },
     { name: "About Us", icon: Info, href: "/about" },
   ];
 
@@ -235,23 +238,30 @@ export default function Navbar({
 
                 {/* Profile Avatar Dropdown for both Auth Users and Guests */}
                 <div className="relative" ref={dropdownRef}>
-                  <button
-                    onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                    className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900 border border-white/10 hover:border-brand-purple/40 transition-all cursor-pointer"
-                  >
-                    <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center text-xs font-bold text-white shadow-md overflow-hidden">
-                      {isAuthenticated ? (
-                        currentUser?.avatarUrl ? (
-                          <img src={currentUser.avatarUrl} alt={currentUser.displayName || "Avatar"} className="h-full w-full object-cover" />
-                        ) : (
-                          currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : "E"
-                        )
-                      ) : (
-                        <User className="h-4 w-4 text-white" />
-                      )}
+                  {isProfileLoading ? (
+                    <div className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900/50 border border-white/5 animate-pulse cursor-wait">
+                      <div className="h-7 w-7 rounded-full bg-white/10" />
+                      <div className="h-3.5 w-3.5 rounded-full bg-white/5" />
                     </div>
-                    <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
-                  </button>
+                  ) : (
+                    <button
+                      onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+                      className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900 border border-white/10 hover:border-brand-purple/40 transition-all cursor-pointer"
+                    >
+                      <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center text-xs font-bold text-white shadow-md overflow-hidden">
+                        {isAuthenticated ? (
+                          currentUser?.avatarUrl ? (
+                            <img src={currentUser.avatarUrl} alt={currentUser.displayName || "Avatar"} className="h-full w-full object-cover" />
+                          ) : (
+                            currentUser?.displayName ? currentUser.displayName.charAt(0).toUpperCase() : "E"
+                          )
+                        ) : (
+                          <User className="h-4 w-4 text-white" />
+                        )}
+                      </div>
+                      <ChevronDown className="h-3.5 w-3.5 text-zinc-400" />
+                    </button>
+                  )}
 
                   <AnimatePresence>
                     {profileMenuOpen && (

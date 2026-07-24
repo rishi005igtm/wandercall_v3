@@ -72,19 +72,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     }
   }, [isAuthenticated, isAuthReady, accountStatus, isEmailVerified, pathname, router]);
 
-  if (!isAuthReady) {
-    return (
-      <div className="min-h-screen w-full bg-brand-bg flex flex-col items-center justify-center gap-4 text-white select-none">
-        <div className="relative h-12 w-12 flex items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-indigo to-brand-purple shadow-xl shadow-brand-indigo/30">
-          <Globe className="h-7 w-7 text-white animate-pulse" />
-        </div>
-        <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-widest text-zinc-400">
-          <Loader2 className="h-4 w-4 animate-spin text-brand-cyan" />
-          <span>Verifying Wandercall Identity Node...</span>
-        </div>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 }
