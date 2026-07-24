@@ -41,6 +41,12 @@ Guests visiting a community (reading chat without clicking "Join Guild") are now
 - `profile/community/page.tsx` strictly consumes the paginated, clustered response from `/discovery/communities/galaxy`.
 - Pulse animations (`framer-motion`) and coordinate mapping are derived straight from the backend `CommunityDiscoveryService`, ensuring the server remains the source of truth for all spatial rendering.
 
+### 2.3 Socket Lifecycle & Reconnect Workflow (Phase 7.7)
+To ensure seamless real-time message delivery across network drops and client sleep states:
+- **Automatic State Synchronization**: Upon `connect` and `chat:connected` socket events (if it's a reconnection), `SocketProvider` automatically invalidates the TanStack `CHAT_QUERY_KEYS.CONVERSATIONS` to pull missed last messages and unread counts, and invalidates `CHAT_QUERY_KEYS.PRESENCE` to restore fresh online statuses.
+- **Active Room Re-join**: For the currently viewed conversation (`activeConversationId`), `SocketProvider` immediately invalidates `CHAT_QUERY_KEYS.MESSAGES` and re-emits `open-conversation` to the backend.
+- **Backend Bulk Delivery**: The `ChatGateway` receives the `open-conversation` event, re-joins the user's socket to the specific `conv:{conversationId}` room, marks any pending `SENT` messages as `DELIVERED`, updates `lastReadAt`, and clears unread counts, ensuring no missed messages or stuck delivery receipts upon waking from offline mode.
+
 ## 3. Recommended Next Steps
 - **Graphify Knowledge Base**: The codebase has shifted significantly. Run the `/graphify` workflow (or `graphify update .` locally) to rebuild the relationship graph between `PresenceTracker`, `RedisService`, and `DiscoveryService`.
 - **Load Testing**: Monitor the Redis connection pooling during high chat volumes to ensure `CommunityEventDispatcher` publishes scale efficiently.

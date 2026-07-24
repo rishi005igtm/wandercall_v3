@@ -59,13 +59,13 @@ export default function ProfileLayout({ children }: { children: React.ReactNode 
   const xpNext = currentUser?.xpNext || 2000;
   const xpPercentage = Math.min(Math.round((xpCurrent / xpNext) * 100), 100);
 
-  // Mobile Bottom Nav items ordered explicitly: Profile (left), Wishlist, Home (middle), Bookings, Chat (right)
+  // Mobile Bottom Nav items ordered explicitly: Home (left), Wishlist, Profile (middle), Bookings, Chat (right)
   const mobileNavItems = useMemo(() => {
     const getNavItem = (name: string) => navItems.find(item => item.name === name)!;
     return [
-      getNavItem("Profile"),
-      getNavItem("Wishlist"),
       getNavItem("Home"),
+      getNavItem("Wishlist"),
+      getNavItem("Profile"),
       getNavItem("Bookings"),
       getNavItem("Chat"),
     ];

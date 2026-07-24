@@ -42,16 +42,21 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const isAuthReady = useAppSelector((state) => state.auth.isAuthReady);
   const isConnected = useAppSelector((state) => state.chat.isSocketConnected);
   const currentUserId = useAppSelector((state) => state.auth.userId);
+  const activeConversationId = useAppSelector((state) => state.chat.activeConversationId);
 
   const socketRef = useRef<Socket | null>(null);
   // Track which token the current socket was created with
   const connectedTokenRef = useRef<string | null>(null);
+  const hasConnectedPreviously = useRef(false);
 
   // Stable mutable refs — event handlers always read latest values without re-registering
   const dispatchRef = useRef(dispatch);
   const queryClientRef = useRef(queryClient);
+  const activeConversationIdRef = useRef(activeConversationId);
+  
   dispatchRef.current = dispatch;
   queryClientRef.current = queryClient;
+  activeConversationIdRef.current = activeConversationId;
 
   useEffect(() => {
     // GUARD 1: Auth bootstrap hasn't finished yet — wait, do nothing
@@ -103,12 +108,39 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     connectedTokenRef.current = accessToken;
 
     // ── Connection lifecycle ───────────────────────────────────────────────
+    const syncRealtimeState = () => {
+      // 1. Refetch conversation list (updates unread counts, latest messages)
+      queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
+      // 2. Refetch presence for all users globally
+      queryClientRef.current.invalidateQueries({ queryKey: ['chat', 'presence'] });
+
+      const currentActiveConv = activeConversationIdRef.current;
+      if (currentActiveConv) {
+        // 3. Refetch messages for the active conversation
+        queryClientRef.current.invalidateQueries({
+          queryKey: CHAT_QUERY_KEYS.MESSAGES(currentActiveConv),
+        });
+
+        // 4. Re-join the active conversation room to restore typing/read receipts 
+        // and trigger bulk delivery of missed messages on the server side
+        socket.emit('open-conversation', { conversationId: currentActiveConv });
+      }
+    };
+
     socket.on('connect', () => {
       dispatchRef.current(setSocketConnected(true));
+      if (hasConnectedPreviously.current) {
+        syncRealtimeState();
+      }
+      hasConnectedPreviously.current = true;
     });
 
     socket.on('chat:connected', () => {
       dispatchRef.current(setSocketConnected(true));
+      // Fallback state sync in case connection was restored via auth events
+      if (hasConnectedPreviously.current) {
+        syncRealtimeState();
+      }
     });
 
     socket.on('disconnect', (reason) => {

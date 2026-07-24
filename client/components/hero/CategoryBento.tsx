@@ -46,7 +46,7 @@ export default function CategoryBento() {
       </div>
 
       <div className="lg:hidden w-full overflow-x-auto no-scrollbar py-2">
-        <div className="flex gap-2 w-max px-4">
+        <div className="flex gap-3 w-max px-4">
           {HERO_CATEGORIES.map((cat, i) => {
             const Icon = cat.icon;
             return (
@@ -55,12 +55,23 @@ export default function CategoryBento() {
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-full border border-white/10 glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap`}
+                className={`relative overflow-hidden flex items-center gap-2.5 px-5 py-3 rounded-full border border-white/10 glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap`}
               >
-                <div className={`p-1 rounded-full bg-gradient-to-br ${cat.color}`}>
-                  <Icon className="h-3 w-3 text-white" />
+                {/* Background Image */}
+                <div className="absolute inset-0 z-0">
+                  <Image src={cat.image} alt={cat.name} fill className="object-cover opacity-60" sizes="(max-width: 1024px) 150px, 0px" />
                 </div>
-                <span className="text-xs font-bold text-white">{cat.name}</span>
+                
+                {/* Gradients to ensure text visibility */}
+                <div className="absolute inset-0 z-0 bg-black/40" />
+                <div className={`absolute inset-0 z-0 opacity-30 bg-gradient-to-br ${cat.color}`} />
+
+                <div className="relative z-10 flex items-center gap-2.5">
+                  <div className={`p-1.5 rounded-full bg-gradient-to-br ${cat.color} shadow-sm`}>
+                    <Icon className="h-3.5 w-3.5 text-white" />
+                  </div>
+                  <span className="text-sm font-bold text-white drop-shadow-md">{cat.name}</span>
+                </div>
               </motion.button>
             );
           })}
