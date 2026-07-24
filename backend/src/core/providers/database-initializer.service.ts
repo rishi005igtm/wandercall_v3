@@ -37,6 +37,27 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       // Synchronize database schema once on server boot if needed
       await this.dataSource.synchronize();
 
+      // ─────────────────────────────────────────────────────────────────────────
+      // SEARCH ENGINE OPTIMIZATION (pg_trgm)
+      // Enable pg_trgm extension and create trigram indexes for fast fuzzy search
+      // ─────────────────────────────────────────────────────────────────────────
+      try {
+        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS pg_trgm;`);
+        // We create GIN trigram indexes on the heavily searched fields
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS "idx_user_profile_username_trgm" 
+          ON "users_profile" USING gin (username gin_trgm_ops);
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS "idx_user_profile_displayname_trgm" 
+          ON "users_profile" USING gin ("displayName" gin_trgm_ops);
+        `);
+      } catch (err: unknown) {
+        this.logger.warn(
+          `pg_trgm setup notice: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+
       // Ensure all existing users have a role assigned
       try {
         await queryRunner.query(

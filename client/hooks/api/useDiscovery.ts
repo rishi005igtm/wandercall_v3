@@ -87,7 +87,7 @@ export const useFriendRecommendations = (limit = 20) => {
   });
 };
 
-export const useUserSearch = (query = '', filter = '', limit = 20) => {
+export const useUserSearch = (query = '', filter = '', limit = 20, options?: { enabled?: boolean }) => {
   return useInfiniteQuery({
     queryKey: ['search', 'users', query, filter],
     queryFn: async ({ pageParam = undefined, signal }): Promise<{ items: SearchUserItem[]; nextCursor?: string }> => {
@@ -120,7 +120,7 @@ export const useUserSearch = (query = '', filter = '', limit = 20) => {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    enabled: true,
+    enabled: options?.enabled ?? true,
   });
 };
 

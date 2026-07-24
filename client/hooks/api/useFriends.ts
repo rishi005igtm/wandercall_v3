@@ -1,4 +1,4 @@
-import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { httpClient } from '@/lib/api/httpClient';
 
 export interface FriendPreview {
@@ -28,6 +28,23 @@ export const useFriends = (limit = 10, search = '') => {
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
+  });
+};
+
+export const useFriendsPaginated = (limit = 10, cursor?: string, search = '', options?: { enabled?: boolean }) => {
+  return useQuery({
+    queryKey: ['friends', 'paginated', search, limit, cursor],
+    queryFn: async (): Promise<FriendsResponse> => {
+      const params = new URLSearchParams();
+      params.append('limit', limit.toString());
+      if (cursor) params.append('cursor', cursor);
+      if (search) params.append('search', search);
+
+      const response = await httpClient.get(`/friends?${params.toString()}`);
+      return response.data;
+    },
+    enabled: options?.enabled ?? true,
+    staleTime: 5 * 60 * 1000,
   });
 };
 

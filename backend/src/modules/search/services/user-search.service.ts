@@ -6,6 +6,7 @@ import { FollowRepository } from '../../user/repositories/follow.repository';
 import { PrivacyService } from '../../privacy/services/privacy.service';
 import { UserSearchHistoryEntity } from '../entities/user-search-history.entity';
 import { UserProfileEntity } from '../../user/entities/user-profile.entity';
+import { RedisService } from '../../redis/redis-core.service';
 
 export interface UserSearchQueryDto {
   q?: string;
@@ -31,6 +32,7 @@ export class UserSearchService {
     @InjectRepository(UserSearchHistoryEntity)
     private readonly historyRepo: Repository<UserSearchHistoryEntity>,
     private readonly dataSource: DataSource,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -41,16 +43,19 @@ export class UserSearchService {
     dto: UserSearchQueryDto,
   ): Promise<{ items: any[]; nextCursor?: string }> {
     const searchQuery = (dto.q || dto.query || '').trim().toLowerCase();
-    const limit = Number(dto.limit) || 20;
+    const limit = 10; // Hard limit mandated by requirements
     const offset = dto.cursor ? parseInt(dto.cursor, 10) || 0 : 0;
 
-    // Check short-lived cache for popular/repeated queries
-    const cacheKey = `${searchQuery}_${dto.filter || 'all'}_${limit}_${offset}`;
+    // Check short-lived cache in Redis for popular/repeated queries
+    const cacheKey = `search:${searchQuery}_${dto.filter || 'all'}_${limit}_${offset}`;
     if (searchQuery.length >= 2) {
-      const now = Date.now();
-      const cached = this.queryCache.get(cacheKey);
-      if (cached && now - cached.timestamp < this.CACHE_TTL_MS) {
-        return cached.data;
+      try {
+        const cached = await this.redisService.client.get(cacheKey);
+        if (cached) {
+          return JSON.parse(cached);
+        }
+      } catch (e) {
+        this.logger.warn(`Redis cache fetch failed: ${e.message}`);
       }
     }
 
@@ -78,35 +83,41 @@ export class UserSearchService {
 
     const excludeUserIds = [userId, ...Array.from(blockedIds)];
 
-    // Enterprise Semantic DB Search (ILIKE matching across fields)
+    // Enterprise Semantic DB Search (fetch pool for ranking)
     const dbProfiles = await this.userRepository.searchActiveProfiles(
       searchQuery,
-      limit + 1,
-      offset,
+      50, // Fetch top 50 for JS ranking pool
+      0,
       excludeUserIds,
     );
 
-    const hasMore = dbProfiles.length > limit;
-    let slice = hasMore ? dbProfiles.slice(0, limit) : dbProfiles;
-
-    // Optional JS re-ranking for exact/prefix matches to boost them above partial ILIKE matches
+    // Advanced JS re-ranking
+    let totalRanked = dbProfiles;
     if (searchQuery) {
-      const scored = slice.map((u) => {
+      const tokens = searchQuery.split(/\s+/);
+      const scored = dbProfiles.map((u) => {
         let score = u.reputationScore; // Baseline
         const uname = u.username.toLowerCase();
         const dname = u.displayName.toLowerCase();
 
-        if (uname === searchQuery) score += 1000;
-        else if (uname.startsWith(searchQuery)) score += 500;
-
-        if (dname === searchQuery) score += 900;
-        else if (dname.startsWith(searchQuery)) score += 450;
+        // Exact Matches
+        if (uname === searchQuery) score += 10000;
+        else if (dname === searchQuery) score += 9000;
+        // Prefix Matches
+        else if (uname.startsWith(searchQuery) || dname.startsWith(searchQuery)) score += 5000;
+        // Token Prefix matches
+        else if (tokens.some((t) => uname.includes(t) || dname.includes(t))) score += 3000;
+        // Infix / Substring Matches
+        else if (uname.includes(searchQuery) || dname.includes(searchQuery)) score += 1000;
 
         return { profile: u, score };
       });
       scored.sort((a, b) => b.score - a.score);
-      slice = scored.map((item) => item.profile);
+      totalRanked = scored.map((item) => item.profile);
     }
+
+    const hasMore = offset + limit < totalRanked.length;
+    const slice = totalRanked.slice(offset, offset + limit);
 
     const result = {
       items: this.mapToDto(slice),
@@ -114,14 +125,15 @@ export class UserSearchService {
     };
 
     if (searchQuery.length >= 2) {
-      const now = Date.now();
-      this.queryCache.set(cacheKey, { timestamp: now, data: result });
-      if (this.queryCache.size > 500) {
-        for (const [key, entry] of this.queryCache.entries()) {
-          if (now - entry.timestamp >= this.CACHE_TTL_MS) {
-            this.queryCache.delete(key);
-          }
-        }
+      try {
+        await this.redisService.client.set(
+          cacheKey,
+          JSON.stringify(result),
+          'PX',
+          this.CACHE_TTL_MS,
+        );
+      } catch (e) {
+        this.logger.warn(`Redis cache set failed: ${e.message}`);
       }
     }
 

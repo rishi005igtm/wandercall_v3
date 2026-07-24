@@ -56,10 +56,13 @@ export class UserRepository {
     }
 
     if (query) {
-      qb.andWhere(
-        '(profile.username ILIKE :query OR profile.displayName ILIKE :query OR profile.bio ILIKE :query)',
-        { query: `%${query}%` },
-      );
+      const terms = query.split(/\\s+/).filter((t) => t.length > 0);
+      terms.forEach((term, index) => {
+        qb.andWhere(
+          `(profile.username ILIKE :term${index} OR profile.displayName ILIKE :term${index} OR profile.bio ILIKE :term${index})`,
+          { [`term${index}`]: `%${term}%` },
+        );
+      });
     }
 
     return qb
