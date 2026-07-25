@@ -110,13 +110,7 @@ export class ChatGateway
       status: PresenceStatus.ONLINE,
     });
 
-    // Notify only users who share a conversation with this user, not ALL sockets globally.
-    // For now we broadcast to the server room for this user — presence is lightweight.
-    this.server.to(`user:${userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
-      userId,
-      status: PresenceStatus.ONLINE,
-    });
-
+    // Dispatch to Redis — event subscribers will handle broadcasting to `presence:${userId}`
     this.chatEventDispatcher.dispatchUserConnected(userId, socket.id);
   }
 
@@ -127,25 +121,56 @@ export class ChatGateway
     this.presenceService.disconnect(userId, socket.id);
     const isStillOnline = this.presenceService.isOnline(userId);
 
+    // The event dispatcher handles emitting USER_DISCONNECTED to Redis,
+    // which will broadcast to the `presence:${userId}` room.
     this.chatEventDispatcher.dispatchUserDisconnected(
       userId,
       socket.id,
       isStillOnline,
     );
-
-    if (!isStillOnline) {
-      const presence = this.presenceService.getPresence(userId);
-      this.server.to(`user:${userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
-        userId,
-        status: PresenceStatus.OFFLINE,
-        lastSeen: presence?.lastSeen,
-      });
-    }
   }
 
   // ─────────────────────────────────────────────────────────
   // SOCKET EVENT HANDLERS
   // ─────────────────────────────────────────────────────────
+
+  @SubscribeMessage('subscribe-presence')
+  async handleSubscribePresence(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { targetUserId: string },
+  ): Promise<Record<string, unknown>> {
+    const userId = socket.data.userId;
+    if (!userId || !data?.targetUserId) return { success: false };
+    
+    // Join the dynamic presence room for this target user
+    await socket.join(`presence:${data.targetUserId}`);
+    
+    // Instantly return the current presence status of the target user
+    const presence = this.presenceService.getPresence(data.targetUserId);
+    const status = this.presenceService.isOnline(data.targetUserId) 
+      ? PresenceStatus.ONLINE 
+      : PresenceStatus.OFFLINE;
+      
+    socket.emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+      userId: data.targetUserId,
+      status,
+      lastSeen: presence?.lastSeen,
+    });
+    
+    return { success: true };
+  }
+
+  @SubscribeMessage('unsubscribe-presence')
+  async handleUnsubscribePresence(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { targetUserId: string },
+  ): Promise<Record<string, unknown>> {
+    const userId = socket.data.userId;
+    if (!userId || !data?.targetUserId) return { success: false };
+    
+    await socket.leave(`presence:${data.targetUserId}`);
+    return { success: true };
+  }
 
   @SubscribeMessage(SOCKET_EVENTS.SEND_MESSAGE)
   async handleSendMessage(
@@ -445,6 +470,36 @@ export class ChatGateway
   // ─────────────────────────────────────────────────────────
 
   private registerEventSubscribers(): void {
+    /**
+     * USER_CONNECTED -> Broadcast to presence subscribers
+     */
+    this.chatEventDispatcher.subscribe(
+      'USER_CONNECTED',
+      (payload: any) => {
+        this.server.to(`presence:${payload.userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+          userId: payload.userId,
+          status: PresenceStatus.ONLINE,
+        });
+      }
+    );
+
+    /**
+     * USER_DISCONNECTED -> Broadcast to presence subscribers
+     */
+    this.chatEventDispatcher.subscribe(
+      'USER_DISCONNECTED',
+      (payload: any) => {
+        if (!payload.isStillOnline) {
+          const presence = this.presenceService.getPresence(payload.userId);
+          this.server.to(`presence:${payload.userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+            userId: payload.userId,
+            status: PresenceStatus.OFFLINE,
+            lastSeen: presence?.lastSeen,
+          });
+        }
+      }
+    );
+
     /**
      * MESSAGE_CREATED
      *

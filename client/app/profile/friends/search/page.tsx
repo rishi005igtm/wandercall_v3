@@ -246,26 +246,32 @@ export default function FriendsSearchPage() {
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
-                  className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-3 animate-pulse"
+                  className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-3 relative overflow-hidden animate-pulse"
                 >
                   {/* Left: Avatar & Details Skeleton */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="relative shrink-0">
                       <div className="h-10 w-10 rounded-full bg-white/10" />
+                      <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-white/20" />
                     </div>
 
-                    <div className="min-w-0 flex-1 py-0.5">
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <div className="h-3.5 w-28 bg-white/10 rounded-md" />
-                        <div className="h-2.5 w-16 bg-white/5 rounded-md hidden sm:block" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
+                        <div className="h-3 w-24 bg-white/10 rounded-md" />
+                        <div className="h-2 w-16 bg-white/5 rounded-md" />
                       </div>
-                      <div className="h-3 w-16 bg-white/5 rounded-full" />
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <div className="h-3 w-14 bg-brand-cyan/10 rounded-full" />
+                      </div>
                     </div>
                   </div>
 
                   {/* Right: Actions Skeleton */}
-                  <div className="shrink-0">
-                    <div className="h-7 w-16 bg-white/10 rounded-xl" />
+                  <div className="flex items-center gap-2 shrink-0">
+                    {activeFilter === "friends" && (
+                      <div className="h-8 w-16 bg-white/5 rounded-xl hidden sm:block" />
+                    )}
+                    <div className="h-8 w-20 sm:w-24 bg-white/10 rounded-xl" />
                   </div>
                 </div>
               ))}
@@ -328,26 +334,25 @@ export default function FriendsSearchPage() {
                       </div>
 
                       {/* Right: Actions */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        {explorer.isFriend ? (
+                      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 self-center">
+                        {explorer.isFriend && (
                           <button suppressHydrationWarning
                             onClick={(e) => {
                               e.stopPropagation();
                               router.push(`/profile/friends/chat:${explorer.id}`);
                             }}
-                            className="px-3 py-1.5 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
+                            className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan text-[10px] sm:text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer h-8"
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
-                            <span>Chat</span>
+                            <span className="hidden sm:inline">Chat</span>
                           </button>
-                        ) : (
-                          <div onClick={(e) => e.stopPropagation()}>
-                            <RelationshipButton 
-                              username={explorer.username.replace("@", "")} 
-                              className="text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl h-8 font-extrabold tracking-wider" 
-                            />
-                          </div>
                         )}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <RelationshipButton 
+                            username={explorer.username.replace("@", "")} 
+                            className="text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl h-8 font-extrabold tracking-wider whitespace-nowrap" 
+                          />
+                        </div>
                       </div>
                     </motion.div>
                   );

@@ -148,46 +148,6 @@ interface Companion {
 }
 
 
-
-const INITIAL_MESSAGES: Record<string, any[]> = {
-  "f-1": [
-    { id: "m-1", sender: "friend", text: "Hey! Are you heading to Coorg this weekend? The coffee estate trails are fully open.", type: "text", timestamp: "10:24 AM" },
-    { id: "m-2", sender: "me", text: "Yes! Planning a 14km loop through the valleys. The weather looks perfect.", type: "text", timestamp: "10:26 AM" },
-    {
-      id: "m-3",
-      sender: "friend",
-      type: "experience",
-      timestamp: "10:28 AM",
-      metadata: {
-        title: "Western Ghats Ridge Walk",
-        host: "Tenzing N.",
-        date: "Tomorrow at 8:00 AM",
-        category: "Adventure",
-        image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=300&auto=format&fit=crop"
-      }
-    },
-    { id: "m-4", sender: "friend", text: "Here is the audio description of the steep ridge sections. Check this out:", type: "text", timestamp: "10:29 AM" },
-    { id: "m-5", sender: "friend", type: "audio", timestamp: "10:29 AM", metadata: { duration: "0:42", waves: [20, 45, 15, 60, 80, 25, 40, 70, 95, 30, 50, 10] } },
-    {
-      id: "m-6",
-      sender: "me",
-      type: "plan",
-      timestamp: "10:31 AM",
-      metadata: {
-        title: "Weekend Coorg Ridge Trek",
-        date: "June 27-28",
-        location: "Kakkabe, Coorg",
-        companions: ["Rishiraj", "Arjun Mehta"],
-        status: "Planning"
-      }
-    }
-  ],
-  "f-2": [
-    { id: "m2-1", sender: "friend", text: "Hey Rishiraj, did you check the twilight photography guidelines I posted?", type: "text", timestamp: "Yesterday" },
-    { id: "m2-2", sender: "me", text: "Yes! Loved the exposure timings guide. Planning to try it next week.", type: "text", timestamp: "Yesterday" }
-  ]
-};
-
 // Helper to generate dynamic, unique icebreaker prompts based on companion profile details
 function getIcebreakers(friend: Companion) {
   const name = friend.name.split(" ")[0];

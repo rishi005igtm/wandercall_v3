@@ -63,6 +63,17 @@ export function useChatConversation({ targetUserId }: UseChatConversationOptions
     return () => { cancelled = true; };
   }, [targetUserId, currentUserId, isAuthReady]);
 
+  // Step 1.5: Subscribe to presence for the target user
+  useEffect(() => {
+    if (!targetUserId || !isConnected) return;
+    
+    emit('subscribe-presence', { targetUserId });
+    
+    return () => {
+      emit('unsubscribe-presence', { targetUserId });
+    };
+  }, [targetUserId, isConnected, emit]);
+
   // Step 2: Join socket room when connected
   useEffect(() => {
     if (!conversationId || !isConnected) return;

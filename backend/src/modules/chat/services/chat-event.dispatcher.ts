@@ -25,34 +25,49 @@ export class ChatEventDispatcher
 
   private initializeRedisSubscriber() {
     const subscriber = this.redisService.subscriber;
-    // Subscribe to all community events using pattern
-    subscriber.psubscribe('community:*:events', (err, count) => {
-      if (err) {
-        this.logger.error(
-          'Failed to subscribe to Redis community events pattern',
-          err,
-        );
-      } else {
-      }
+    
+    // Subscribe to all community events and chat events
+    subscriber.psubscribe('community:*:events', (err) => {
+      if (err) this.logger.error('Failed to subscribe to community events', err);
+    });
+    
+    subscriber.subscribe('chat:events', (err) => {
+      if (err) this.logger.error('Failed to subscribe to chat events', err);
     });
 
     subscriber.on('pmessage', (pattern, channel, message) => {
       try {
         const payload = JSON.parse(message);
-        // Forward the Redis event to our local in-process EventEmitter
-        // so that the local Gateway can emit it to connected sockets on THIS node.
         if (payload.type === 'COMMUNITY_MESSAGE_CREATED') {
           this.emit('COMMUNITY_MESSAGE_CREATED', payload.data);
         }
       } catch (err) {
-        this.logger.error('Failed to parse Redis pub/sub message', err);
+        this.logger.error('Failed to parse Redis pub/sub pmessage', err);
+      }
+    });
+    
+    subscriber.on('message', (channel, message) => {
+      if (channel === 'chat:events') {
+        try {
+          const payload = JSON.parse(message);
+          // Emit locally so this node's gateway handles it
+          this.emit(payload.type, payload.payload);
+          this.emit('*', payload);
+        } catch (err) {
+          this.logger.error('Failed to parse Redis pub/sub message', err);
+        }
       }
     });
   }
 
   dispatch<T extends ChatEvent>(event: T): void {
-    this.emit(event.type, event.payload);
-    this.emit('*', event);
+    // We publish everything to Redis instead of emitting locally immediately.
+    // The Redis subscriber will pick it up and emit locally on all nodes.
+    this.redisService.client
+      .publish('chat:events', JSON.stringify(event))
+      .catch((err) => {
+        this.logger.error(`Failed to publish chat event to Redis: ${err.message}`);
+      });
   }
 
   subscribe<T extends ChatEvent>(
