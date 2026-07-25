@@ -189,7 +189,7 @@ export default function UpcomingEvents() {
                       <p className="text-[9px] uppercase font-bold text-zinc-500">Starts At</p>
                       <p className="text-sm font-black text-white">{evt.price}</p>
                     </div>
-                    <button
+                    <button suppressHydrationWarning
                       disabled={isClosed}
                       className={`h-9 sm:h-11 px-4 sm:px-5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 w-full sm:w-auto flex-1 sm:flex-none ${
                         isClosed

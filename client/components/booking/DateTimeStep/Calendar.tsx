@@ -142,7 +142,7 @@ export default function Calendar({
         
         {/* Month navigation */}
         <div className="flex items-center gap-2 self-end xs:self-auto select-none">
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={currentMonthView === 0}
             onClick={() => setCurrentMonthView((prev) => prev - 1)}
@@ -155,7 +155,7 @@ export default function Calendar({
             {monthData[currentMonthView].name}
           </span>
 
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={currentMonthView === 2}
             onClick={() => setCurrentMonthView((prev) => prev + 1)}

@@ -97,7 +97,7 @@ export default function InviteFriendsModal({ isOpen, onClose }: InviteFriendsMod
               </div>
             </div>
 
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={onClose}
               className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center border border-white/5 cursor-pointer transition-colors"
@@ -111,7 +111,7 @@ export default function InviteFriendsModal({ isOpen, onClose }: InviteFriendsMod
             <span className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest block">Direct Trip Link</span>
             <div className="flex gap-2">
               <div className="relative flex-1 flex items-center">
-                <input
+                <input suppressHydrationWarning
                   type="text"
                   readOnly
                   value={tripUrl}
@@ -119,7 +119,7 @@ export default function InviteFriendsModal({ isOpen, onClose }: InviteFriendsMod
                 />
               </div>
 
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={handleCopyLink}
                 className="h-10 px-4 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
@@ -128,7 +128,7 @@ export default function InviteFriendsModal({ isOpen, onClose }: InviteFriendsMod
                 <span>{copied ? "Copied!" : "Copy"}</span>
               </button>
 
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={handleShareWeb}
                 className="h-10 px-4 rounded-xl bg-brand-cyan/20 hover:bg-brand-cyan/30 border border-brand-cyan/30 text-brand-cyan text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 shadow-lg shadow-brand-cyan/10"
@@ -146,14 +146,14 @@ export default function InviteFriendsModal({ isOpen, onClose }: InviteFriendsMod
             </span>
             <form onSubmit={handleSendInvite} className="relative flex items-center">
               <Search className="absolute left-3.5 h-4 w-4 text-zinc-500" />
-              <input
+              <input suppressHydrationWarning
                 type="text"
                 placeholder="Enter friend's email or @username..."
                 value={friendSearch}
                 onChange={(e) => setFriendSearch(e.target.value)}
                 className="w-full h-11 bg-zinc-900 border border-white/10 rounded-xl pl-10 pr-28 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-cyan transition-all"
               />
-              <button
+              <button suppressHydrationWarning
                 type="submit"
                 disabled={!friendSearch.trim()}
                 className="absolute right-1.5 h-8 px-3 rounded-lg bg-brand-cyan hover:bg-brand-cyan/85 text-zinc-950 text-[10px] font-black uppercase transition-all disabled:opacity-40 cursor-pointer flex items-center gap-1 shadow-md shadow-brand-cyan/20"
@@ -186,7 +186,7 @@ export default function InviteFriendsModal({ isOpen, onClose }: InviteFriendsMod
                       </div>
                     </div>
 
-                    <button
+                    <button suppressHydrationWarning
                       type="button"
                       onClick={() => toggleSuggestedInvite(friend.handle)}
                       className={`h-7 px-3 rounded-lg text-[9px] font-mono font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1 border ${

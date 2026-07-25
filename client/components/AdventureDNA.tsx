@@ -190,7 +190,7 @@ export default function AdventureDNA() {
             {presets.map((preset, index) => {
               const isActive = index === activePresetIndex;
               return (
-                <button
+                <button suppressHydrationWarning
                   key={preset.name}
                   onClick={() => setActivePresetIndex(index)}
                   className={`w-full p-4 rounded-2xl border text-left flex justify-between items-center transition-all ${
@@ -219,7 +219,7 @@ export default function AdventureDNA() {
             })}
           </div>
 
-          <button className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-brand-cyan transition-colors">
+          <button suppressHydrationWarning className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-brand-cyan transition-colors">
             <ShieldCheck className="h-4 w-4 text-brand-emerald" />
             Locked in with Better Auth Session
           </button>

@@ -146,7 +146,7 @@ export default function Navbar({
           {/* Logo */}
           <div className="flex items-center gap-2">
             {showBackButton && (
-              <button
+              <button suppressHydrationWarning
                 onClick={() => {
                   if (backHref) {
                     router.push(backHref);
@@ -195,7 +195,7 @@ export default function Navbar({
           {/* Right side interactions */}
           <div className="flex items-center gap-3">
             {/* Search Toggle */}
-            <button
+            <button suppressHydrationWarning
               onClick={() => setSearchOpen(!searchOpen)}
               className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors hidden lg:inline-flex"
               aria-label="Search"
@@ -218,7 +218,7 @@ export default function Navbar({
                 {isAuthenticated && (
                   <>
                     {/* Notification Bell */}
-                    <button
+                    <button suppressHydrationWarning
                       onClick={() => router.push("/profile/settings")}
                       className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all cursor-pointer"
                       aria-label="Notifications"
@@ -244,7 +244,7 @@ export default function Navbar({
                       <div className="h-3.5 w-3.5 rounded-full bg-white/5" />
                     </div>
                   ) : (
-                    <button
+                    <button suppressHydrationWarning
                       onClick={() => setProfileMenuOpen(!profileMenuOpen)}
                       className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900 border border-white/10 hover:border-brand-purple/40 transition-all cursor-pointer"
                     >
@@ -350,7 +350,7 @@ export default function Navbar({
 
                         {/* Action Button: Logout for Auth, Login for Guest */}
                         {isAuthenticated ? (
-                          <button
+                          <button suppressHydrationWarning
                             onClick={handleLogout}
                             className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-all w-full text-left cursor-pointer"
                           >
@@ -375,7 +375,7 @@ export default function Navbar({
 
             {/* Mobile Filter Button if active */}
             {showFilterButton && (
-              <button
+              <button suppressHydrationWarning
                 onClick={onFilterToggle}
                 className="lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 aria-label="Filter"
@@ -396,14 +396,14 @@ export default function Navbar({
               className="absolute left-0 right-0 top-full bg-brand-bg/95 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-center"
             >
               <div className="w-full max-w-2xl relative">
-                <input
+                <input suppressHydrationWarning
                   type="text"
                   placeholder="Search adventures, hosts, campfire topics..."
                   autoFocus
                   className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-brand-cyan focus:ring-1 focus:ring-brand-cyan transition-all"
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
-                <button
+                <button suppressHydrationWarning
                   onClick={() => setSearchOpen(false)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs font-semibold"
                 >
@@ -425,7 +425,7 @@ export default function Navbar({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="lg:hidden fixed bottom-4 left-4 right-4 z-50 bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden"
           >
-            <button onClick={() => router.push('/')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <button suppressHydrationWarning onClick={() => router.push('/')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
               {pathname === '/' && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
@@ -437,7 +437,7 @@ export default function Navbar({
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
             </button>
 
-            <button onClick={() => router.push('/profile/friends/search')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <button suppressHydrationWarning onClick={() => router.push('/profile/friends/search')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
               {pathname.startsWith('/profile/friends/search') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
@@ -450,12 +450,12 @@ export default function Navbar({
             </button>
 
             <div className="flex-1 flex justify-center relative z-50">
-              <button onClick={() => router.push('/experiences')} className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-black scale-105' : ''}`}>
+              <button suppressHydrationWarning onClick={() => router.push('/experiences')} className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-black scale-105' : ''}`}>
                 <Compass className="h-5 w-5 text-white" />
               </button>
             </div>
 
-            <button onClick={() => router.push('/feed')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <button suppressHydrationWarning onClick={() => router.push('/feed')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
               {pathname.startsWith('/feed') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
@@ -467,7 +467,7 @@ export default function Navbar({
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
             </button>
 
-            <button
+            <button suppressHydrationWarning
               onClick={() => router.push(isAuthenticated ? "/profile/friends" : "/login")}
               className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${
                 pathname.startsWith("/profile/friends") ? "text-white" : "text-zinc-800 hover:text-black"

@@ -152,7 +152,7 @@ export default function FeaturedHosts() {
 
                 {/* Footer action buttons */}
                 <div className="flex gap-3">
-                  <button
+                  <button suppressHydrationWarning
                     onClick={() => toggleFollow(host.id)}
                     className={`flex-1 h-10 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 ${
                       isFollowing 
@@ -163,7 +163,7 @@ export default function FeaturedHosts() {
                     <UserCheck className="h-4 w-4" />
                     {isFollowing ? "Following" : "Follow"}
                   </button>
-                  <button className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 hover:bg-white hover:text-black flex items-center justify-center transition-all">
+                  <button suppressHydrationWarning className="h-10 w-10 rounded-xl bg-white/5 border border-white/10 hover:bg-white hover:text-black flex items-center justify-center transition-all">
                     <MessageSquare className="h-4.5 w-4.5" />
                   </button>
                 </div>
@@ -175,7 +175,7 @@ export default function FeaturedHosts() {
 
       {/* Show More Button */}
       <div className="flex justify-center mt-12">
-        <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
+        <button suppressHydrationWarning className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
           <Users className="h-4 w-4 text-brand-purple animate-pulse" />
           View All Verified Hosts
         </button>

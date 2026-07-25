@@ -59,7 +59,7 @@ export function AudioMessagePlayer({ duration, compact = false }: AudioMessagePl
     <div
       className={`bg-white/5 border border-white/5 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 ${containerWidth}`}
     >
-      <button
+      <button suppressHydrationWarning
         onClick={handlePlayToggle}
         className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-all ${
           isPlaying

@@ -458,7 +458,13 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
     return baseList;
   }, [friendsData, favoritesData, blockedIds, userId, targetProfileData]);
 
-  const [activeFriend, setActiveFriend] = useState<Companion | null>(null);
+  const activeFriend = React.useMemo(() => {
+    if (companions.length > 0) {
+      return companions.find(c => c.id === userId || c.username === `@${userId}` || c.username === userId) || companions[0];
+    }
+    return null;
+  }, [userId, companions]);
+
   const [chatInput, setChatInput] = useState("");
   const [showInspector, setShowInspector] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -507,13 +513,6 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
   const chatStreamRef = useRef<HTMLDivElement>(null);
 
-  // Initialize activeFriend on mount
-  useEffect(() => {    if (companions.length > 0) {
-      const friend = companions.find(c => c.id === userId || c.username === `@${userId}` || c.username === userId) || companions[0];
-      setActiveFriend(friend);
-    }
-  }, [userId, companions]);
-
   // Scroll to bottom when real messages update
   useEffect(() => {
     const container = chatStreamRef.current;
@@ -524,9 +523,35 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
   if (!activeFriend) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-brand-bg text-zinc-400">
-        Loading Chat...
-      </div>
+      <>
+        {/* Desktop view immediately delegates to FriendsPage */}
+        <div className="hidden lg:block h-screen w-screen overflow-hidden">
+          <FriendsPage activeChatId={chatId} />
+        </div>
+        {/* Mobile view skeleton loader while fetching companion details */}
+        <div className="block lg:hidden fixed inset-0 h-[100dvh] w-full z-50 bg-[#0b0f12] text-white">
+          <header className="h-14 w-full border-b border-white/10 px-3 flex items-center bg-zinc-950/95 shadow-md">
+            <button onClick={() => router.replace('/profile/friends')} className="p-1.5 rounded-full hover:bg-white/10 text-zinc-300">
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          </header>
+          <div className="h-[calc(100%-3.5rem)] w-full flex flex-col items-center justify-center text-center px-4 py-8 animate-pulse">
+            <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+              <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
+              <div className="w-28 h-28 rounded-full border border-white/5 bg-white/[0.01]" />
+            </div>
+            <div className="h-3 w-48 bg-white/10 rounded-sm mt-4 mb-2" />
+            <div className="space-y-1 mt-1 flex flex-col items-center">
+              <div className="h-2 w-64 bg-white/5 rounded-sm" />
+              <div className="h-2 w-56 bg-white/5 rounded-sm" />
+            </div>
+            <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
+              <div className="h-2 w-48 bg-white/5 rounded-sm mb-2" />
+              <div className="w-full h-8 bg-white/[0.02] border border-white/5 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </>
     );
   }
 
@@ -630,7 +655,23 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 custom-scrollbar overscroll-contain touch-pan-y"
         data-lenis-prevent
       >
-        {realMessages.length > 0 ? (
+        {isLoadingMessages ? (
+          <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
+            <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+              <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
+              <div className="w-28 h-28 rounded-full border border-white/5 bg-white/[0.01]" />
+            </div>
+            <div className="h-3 w-48 bg-white/10 rounded-sm mt-4 mb-2" />
+            <div className="space-y-1 mt-1 flex flex-col items-center">
+              <div className="h-2 w-64 bg-white/5 rounded-sm" />
+              <div className="h-2 w-56 bg-white/5 rounded-sm" />
+            </div>
+            <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
+              <div className="h-2 w-48 bg-white/5 rounded-sm mb-2" />
+              <div className="w-full h-8 bg-white/[0.02] border border-white/5 rounded-xl" />
+            </div>
+          </div>
+        ) : realMessages.length > 0 ? (
           <div className="space-y-2.5">
             {realMessages.map((msg) => {
               const isMe = msg.senderId === currentUserId;
@@ -991,7 +1032,6 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                       onSuccess: () => triggerToast(`Added ${activeFriend.name} to favorites!`)
                     });
                   }
-                  setActiveFriend(prev => prev ? { ...prev, isFavorite: !prev.isFavorite } : null);
                   setShowInspector(false);
                 }}
                 className="w-full py-2 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-zinc-400 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"

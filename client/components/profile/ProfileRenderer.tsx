@@ -409,14 +409,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
           {isOwner && (
             <>
-              <input 
+              <input suppressHydrationWarning
                 type="file" 
                 ref={coverInputRef} 
                 accept="image/*" 
                 onChange={handleCoverFileChange} 
                 className="hidden" 
               />
-              <button 
+              <button suppressHydrationWarning
                 onClick={handleCoverClick} 
                 disabled={uploadCoverMutation.isPending}
                 className="absolute top-4 right-4 p-2.5 rounded-full bg-zinc-950/80 border border-white/10 hover:bg-zinc-900 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-md shadow-xl z-20 group disabled:opacity-50" 
@@ -454,14 +454,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               
               {isOwner && (
                 <>
-                  <input 
+                  <input suppressHydrationWarning
                     type="file" 
                     ref={avatarInputRef} 
                     accept="image/*" 
                     onChange={handleAvatarFileChange} 
                     className="hidden" 
                   />
-                  <button 
+                  <button suppressHydrationWarning
                     onClick={(e) => {
                       e.stopPropagation();
                       handleAvatarClick();
@@ -529,13 +529,13 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
           <div className="flex items-center justify-center lg:justify-start gap-2.5 w-full lg:w-auto">
             {isOwner ? (
               <>
-                <button 
+                <button suppressHydrationWarning
                   onClick={() => router.push("/profile/settings")}
                   className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none"
                 >
                   Edit Profile
                 </button>
-                <button 
+                <button suppressHydrationWarning
                   onClick={handleShareProfile}
                   className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0" 
                   aria-label="Share profile"
@@ -550,14 +550,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   variant="default"
                   className="h-10 px-6 rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex-1 sm:flex-none flex items-center justify-center gap-1.5"
                 />
-                <button 
+                <button suppressHydrationWarning
                   onClick={handleMessageClick}
                   className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none flex items-center justify-center gap-1.5"
                 >
                   <MessageCircle className="h-3.5 w-3.5 text-brand-cyan" />
                   Message
                 </button>
-                <button 
+                <button suppressHydrationWarning
                   onClick={handleShareProfile}
                   className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0" 
                   aria-label="Share profile"
@@ -691,7 +691,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
             </div>
             
             {/* More Button */}
-            <button
+            <button suppressHydrationWarning
               onClick={() => router.push(`/profile/memories/${profile.username}`)}
               className="h-9 px-4 rounded-xl border border-white/12 bg-white/[0.02] hover:bg-white/5 text-xs font-bold uppercase tracking-wider text-brand-cyan hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0"
             >
@@ -717,10 +717,10 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   <div className="border-t border-white/5 pt-2 flex items-center justify-between text-zinc-500">
                     <span className="text-[8.5px] font-bold truncate flex items-center gap-1"><MapPin className="h-3 w-3 text-brand-purple" /> {item.location}</span>
                     <div className="flex items-center gap-2 ml-2 shrink-0">
-                      <button onClick={() => handleLikeMemory(item.id, item.liked)} className={`hover:text-rose-500 transition-colors p-1 cursor-pointer ${item.liked ? "text-rose-500" : ""}`} aria-label="Like memory">
+                      <button suppressHydrationWarning onClick={() => handleLikeMemory(item.id, item.liked)} className={`hover:text-rose-500 transition-colors p-1 cursor-pointer ${item.liked ? "text-rose-500" : ""}`} aria-label="Like memory">
                         <Heart className="h-3.5 w-3.5 fill-current" />
                       </button>
-                      <button onClick={() => handleSaveMemory(item.id, item.saved)} className={`hover:text-brand-cyan transition-colors p-1 cursor-pointer ${item.saved ? "text-brand-cyan" : ""}`} aria-label="Save memory">
+                      <button suppressHydrationWarning onClick={() => handleSaveMemory(item.id, item.saved)} className={`hover:text-brand-cyan transition-colors p-1 cursor-pointer ${item.saved ? "text-brand-cyan" : ""}`} aria-label="Save memory">
                         <Bookmark className="h-3.5 w-3.5 fill-current" />
                       </button>
                     </div>
@@ -741,14 +741,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               <p className="text-xs text-zinc-400 font-medium leading-relaxed">Completed treks, accomplishments, and milestones.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-4">
-              <button
+              <button suppressHydrationWarning
                 onClick={() => setJourneyIndex(prev => Math.max(0, prev - 1))}
                 disabled={journeyIndex === 0}
                 className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
-              <button
+              <button suppressHydrationWarning
                 onClick={() => setJourneyIndex(prev => Math.min(Math.ceil(timelineJourney.length / 2) - 1, prev + 1))}
                 disabled={journeyIndex >= Math.ceil(timelineJourney.length / 2) - 1}
                 className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
@@ -804,7 +804,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               className="bg-zinc-950 border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
             >
               {/* Close Button */}
-              <button 
+              <button suppressHydrationWarning
                 onClick={() => setShowConnectionsModal(false)}
                 className="absolute top-4 right-4 p-1.5 rounded-xl bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
               >
@@ -813,7 +813,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
               {/* Tabs Switcher */}
               <div className="flex border-b border-white/5 p-2 gap-2 mt-10">
-                <button
+                <button suppressHydrationWarning
                   onClick={() => {
                     setConnectionsActiveTab("followers");
                     setSearchQuery("");
@@ -826,7 +826,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                 >
                   Followers ({followersCount})
                 </button>
-                <button
+                <button suppressHydrationWarning
                   onClick={() => {
                     setConnectionsActiveTab("following");
                     setSearchQuery("");
@@ -843,7 +843,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
               {/* Search input */}
               <div className="px-4 py-2 border-b border-white/5 flex items-center bg-white/[0.01]">
-                <input
+                <input suppressHydrationWarning
                   type="text"
                   placeholder={`Search ${connectionsActiveTab}...`}
                   value={searchQuery}
@@ -851,7 +851,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   className="w-full bg-zinc-900/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-cyan/30 transition-colors"
                 />
                 {searchQuery && (
-                  <button
+                  <button suppressHydrationWarning
                     onClick={() => setSearchQuery("")}
                     className="text-zinc-500 hover:text-zinc-300 transition-colors text-[10px] ml-2 font-bold uppercase shrink-0"
                   >
@@ -905,7 +905,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                     ))}
 
                     {hasNextPage && (
-                      <button
+                      <button suppressHydrationWarning
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNext}
                         className="w-full py-2.5 rounded-xl border border-white/5 hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.04] text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
@@ -950,7 +950,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                 alt={zoomedAvatar.name} 
                 className="w-full h-full object-cover"
               />
-              <button 
+              <button suppressHydrationWarning
                 onClick={() => setZoomedAvatar(null)}
                 className="absolute top-4 right-4 p-2 rounded-full bg-zinc-950/80 border border-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
                 aria-label="Close zoomed view"

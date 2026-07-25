@@ -123,7 +123,7 @@ export default function SocialProof() {
 
       {/* Show More Button */}
       <div className="flex justify-center mt-12">
-        <button className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
+        <button suppressHydrationWarning className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
           <Heart className="h-4 w-4 text-rose-500 fill-rose-500" />
           View More Reviews
         </button>

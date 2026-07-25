@@ -56,7 +56,7 @@ export default function ExplorerCounter({
             <span className="text-[10px] font-mono text-zinc-500">Age 12+ years</span>
           </div>
           <div className="flex items-center gap-3 bg-zinc-950/60 p-1.5 rounded-xl border border-white/10">
-            <button
+            <button suppressHydrationWarning
               type="button"
               disabled={adultsCount <= 1}
               onClick={() => handleAdultsChange(-1)}
@@ -65,7 +65,7 @@ export default function ExplorerCounter({
               <Minus className="h-3.5 w-3.5" />
             </button>
             <span className="text-sm font-mono font-black text-white w-4 text-center">{adultsCount}</span>
-            <button
+            <button suppressHydrationWarning
               type="button"
               disabled={total >= maxSlots}
               onClick={() => handleAdultsChange(1)}
@@ -83,7 +83,7 @@ export default function ExplorerCounter({
             <span className="text-[10px] font-mono text-zinc-500">Age 5-11 years</span>
           </div>
           <div className="flex items-center gap-3 bg-zinc-950/60 p-1.5 rounded-xl border border-white/10">
-            <button
+            <button suppressHydrationWarning
               type="button"
               disabled={childrenCount <= 0}
               onClick={() => handleChildrenChange(-1)}
@@ -92,7 +92,7 @@ export default function ExplorerCounter({
               <Minus className="h-3.5 w-3.5" />
             </button>
             <span className="text-sm font-mono font-black text-white w-4 text-center">{childrenCount}</span>
-            <button
+            <button suppressHydrationWarning
               type="button"
               disabled={total >= maxSlots}
               onClick={() => handleChildrenChange(1)}

@@ -72,7 +72,7 @@ export default function ExperienceSlideshow() {
                     <span className="flex items-center gap-1"><MapPin className="h-3 w-3" />{slide.location}</span>
                     <span className="flex items-center gap-1"><Users className="h-3 w-3" />{slide.slots} Slots</span>
                   </div>
-                  <button className="h-10 w-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                  <button suppressHydrationWarning className="h-10 w-10 rounded-full bg-white text-black flex items-center justify-center shadow-lg active:scale-95 transition-transform">
                      <ChevronRightIcon />
                   </button>
                 </div>
@@ -114,7 +114,7 @@ export default function ExperienceSlideshow() {
                 <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i === currentIndex ? "w-8 bg-white" : "w-3 bg-white/30"}`} />
               ))}
             </div>
-            <button className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors border border-white/20 hover:scale-105">
+            <button suppressHydrationWarning className="h-10 w-10 rounded-full bg-black/40 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors border border-white/20 hover:scale-105">
               <Heart className="h-4 w-4" />
             </button>
           </div>
@@ -168,7 +168,7 @@ export default function ExperienceSlideshow() {
               </div>
               
               <div className="mt-4 flex items-center gap-4">
-                 <button className="flex-1 bg-white text-black font-bold py-3.5 rounded-2xl hover:bg-zinc-200 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl">
+                 <button suppressHydrationWarning className="flex-1 bg-white text-black font-bold py-3.5 rounded-2xl hover:bg-zinc-200 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-xl">
                     View Experience
                  </button>
                  <div className="flex -space-x-3 hover:-space-x-1 transition-all duration-300 cursor-pointer">

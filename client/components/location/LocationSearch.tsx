@@ -135,7 +135,7 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
         <div className="w-full relative">
           <div className="w-full flex items-center h-12 px-4 rounded-2xl bg-zinc-950/40 border border-white/10 focus-within:border-brand-purple focus-within:ring-1 focus-within:ring-brand-purple/50 focus-within:shadow-[0_0_12px_rgba(139,92,246,0.15)] transition-all gap-3">
             <Search className="h-5 w-5 text-zinc-500 shrink-0" />
-            <input
+            <input suppressHydrationWarning
               ref={inputRef}
               type="text"
               value={inputValue}
@@ -146,7 +146,7 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
               className="bg-transparent border-none outline-none text-sm text-white placeholder-zinc-500 w-full font-semibold"
             />
             {inputValue && (
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={handleClear}
                 className="p-1 rounded-md text-zinc-500 hover:text-white hover:bg-white/5 transition-all shrink-0 cursor-pointer"
@@ -190,7 +190,7 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
                 const secondary = commaIdx !== -1 ? item.formatted.substring(commaIdx + 1).trim() : "";
 
                 return (
-                  <button
+                  <button suppressHydrationWarning
                     key={`suggestion-${idx}`}
                     type="button"
                     onClick={() => handleSelectSuggestion(item)}
@@ -220,7 +220,7 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
               {selectedLocation.formatted_address}
             </span>
           </div>
-          <button
+          <button suppressHydrationWarning
             type="button"
             onClick={handleClear}
             className="h-7 w-7 rounded-lg border border-white/5 bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10 transition-all shrink-0 cursor-pointer flex items-center justify-center"

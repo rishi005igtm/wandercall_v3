@@ -109,7 +109,7 @@ export default function CashfreeSection({
       </div>
 
       {/* Modern High-Impact Cashfree Pay CTA Button inside Card */}
-      <button
+      <button suppressHydrationWarning
         type="button"
         onClick={handleInitiateCashfree}
         className="w-full h-12 sm:h-14 rounded-2xl bg-gradient-to-r from-brand-indigo via-brand-purple to-brand-cyan hover:brightness-110 active:scale-[0.99] text-white font-bold text-xs sm:text-sm uppercase tracking-widest transition-all flex items-center justify-center gap-2 sm:gap-3 cursor-pointer shadow-xl shadow-brand-indigo/25 select-none relative overflow-hidden group px-3"
@@ -174,14 +174,14 @@ export default function CashfreeSection({
 
                   <div className="flex flex-col gap-2.5">
                     <span className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Select Sandbox Action</span>
-                    <button
+                    <button suppressHydrationWarning
                       type="button"
                       onClick={onSimulateSuccess}
                       className="w-full h-12 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:brightness-115 text-zinc-950 font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-500/20"
                     >
                       <Check className="h-4.5 w-4.5 stroke-[3]" /> Simulate Payment Success
                     </button>
-                    <button
+                    <button suppressHydrationWarning
                       type="button"
                       onClick={() => setPaymentStep("idle")}
                       className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest flex items-center justify-center transition-colors cursor-pointer border border-white/5"

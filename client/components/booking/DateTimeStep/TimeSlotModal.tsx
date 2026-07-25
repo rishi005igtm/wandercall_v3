@@ -103,7 +103,7 @@ export default function TimeSlotModal({
               <span className="text-[9px] font-mono font-bold text-brand-cyan uppercase tracking-widest block">Select Departure Slot</span>
               <h3 className="text-base font-black text-white uppercase tracking-tight mt-0.5">{formattedDate}</h3>
             </div>
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={onClose}
               className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center border border-white/5 cursor-pointer transition-colors"

@@ -52,7 +52,7 @@ export default function TravelerForm({
         </div>
 
         {/* Add Friends Button at Top Right Corner */}
-        <button
+        <button suppressHydrationWarning
           type="button"
           onClick={() => setIsInviteModalOpen(true)}
           className="h-8 px-3 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/20 text-brand-cyan text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer select-none"
@@ -78,7 +78,7 @@ export default function TravelerForm({
               <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Full Name {isLead && <span className="text-red-400">*</span>}
               </label>
-              <input
+              <input suppressHydrationWarning
                 type="text"
                 placeholder="Enter full legal name"
                 value={currentTraveler.name}
@@ -92,7 +92,7 @@ export default function TravelerForm({
               <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Age (Years) {isLead && <span className="text-red-400">*</span>}
               </label>
-              <input
+              <input suppressHydrationWarning
                 type="number"
                 min="1"
                 max="100"
@@ -108,7 +108,7 @@ export default function TravelerForm({
               <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Phone Number {isLead && <span className="text-red-400">*</span>}
               </label>
-              <input
+              <input suppressHydrationWarning
                 type="tel"
                 placeholder="+91 98765 43210"
                 value={currentTraveler.phone}
@@ -122,7 +122,7 @@ export default function TravelerForm({
               <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">
                 Emergency Contact {isLead && <span className="text-red-400">*</span>}
               </label>
-              <input
+              <input suppressHydrationWarning
                 type="tel"
                 placeholder="Relative / Guardian phone"
                 value={currentTraveler.emergencyContact}
@@ -137,7 +137,7 @@ export default function TravelerForm({
       {/* Internal Navigation Controls for switching between Explorer forms */}
       {total > 1 && (
         <div className="flex items-center justify-between border-t border-white/5 pt-4">
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={activeIndex === 0}
             onClick={() => setActiveIndex((prev) => prev - 1)}
@@ -150,7 +150,7 @@ export default function TravelerForm({
             Explorer {activeIndex + 1} of {total}
           </span>
 
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={activeIndex === total - 1}
             onClick={() => setActiveIndex((prev) => prev + 1)}

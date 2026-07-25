@@ -132,7 +132,7 @@ export default function BookingSummary({
           <Ticket className="h-4 w-4 text-brand-cyan shrink-0" /> Coupon Code
         </label>
         <div className="relative flex items-center">
-          <input
+          <input suppressHydrationWarning
             type="text"
             placeholder="Enter code (e.g. WANDER20)"
             value={couponCode}
@@ -146,7 +146,7 @@ export default function BookingSummary({
             }`}
           />
           {appliedCoupon ? (
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={handleRemoveCoupon}
               className="absolute right-1.5 h-6 px-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[9px] font-black uppercase transition-all tracking-wider cursor-pointer flex items-center gap-1"
@@ -154,7 +154,7 @@ export default function BookingSummary({
               <X className="h-2.5 w-2.5" /> Clear
             </button>
           ) : (
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={handleApplyCoupon}
               className="absolute right-1.5 h-6 px-2.5 rounded-lg bg-brand-cyan hover:bg-brand-cyan/85 text-zinc-950 text-[9px] font-black uppercase transition-all tracking-wider cursor-pointer"
@@ -184,7 +184,7 @@ export default function BookingSummary({
         <div className="flex flex-wrap gap-1 items-center">
           <span className="text-[8px] text-zinc-500 font-bold uppercase select-none">Available:</span>
           {Object.keys(coupons).map((code) => (
-            <button
+            <button suppressHydrationWarning
               key={code}
               type="button"
               onClick={() => handleSelectCoupon(code)}

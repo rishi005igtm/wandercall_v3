@@ -82,7 +82,7 @@ export default function Quests() {
           {/* Tab selector & Redeem Row */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
             <div className="flex gap-2 p-1.5 rounded-full bg-white/5 border border-white/5 backdrop-blur-sm">
-              <button
+              <button suppressHydrationWarning
                 onClick={() => setActiveTab("daily")}
                 className={`px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                   activeTab === "daily" 
@@ -92,7 +92,7 @@ export default function Quests() {
               >
                 Daily Quests
               </button>
-              <button
+              <button suppressHydrationWarning
                 onClick={() => setActiveTab("weekly")}
                 className={`px-6 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
                   activeTab === "weekly" 
@@ -104,7 +104,7 @@ export default function Quests() {
               </button>
             </div>
 
-            <button className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-brand-amber to-amber-500 hover:brightness-110 text-white shadow-lg shadow-brand-amber/20 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0">
+            <button suppressHydrationWarning className="flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-brand-amber to-amber-500 hover:brightness-110 text-white shadow-lg shadow-brand-amber/20 transition-all hover:scale-[1.02] active:scale-[0.98] shrink-0">
               <Sparkles className="h-4 w-4 animate-pulse text-white" />
               Redeem Rewards
             </button>

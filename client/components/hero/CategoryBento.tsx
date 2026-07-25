@@ -27,14 +27,14 @@ export default function CategoryBento() {
         {/* Desktop Pagination Controls */}
         {totalPages > 1 && (
           <div className="hidden lg:flex items-center gap-2">
-            <button 
+            <button suppressHydrationWarning
               onClick={handlePrev}
               className="h-8 w-8 rounded-full border border-white/10 glass-panel flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all"
               aria-label="Previous categories"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
-            <button 
+            <button suppressHydrationWarning
               onClick={handleNext}
               className="h-8 w-8 rounded-full border border-white/10 glass-panel flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all"
               aria-label="Next categories"

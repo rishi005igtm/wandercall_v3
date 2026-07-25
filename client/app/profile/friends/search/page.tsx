@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useFollowBackMutation, useFriendsPaginated } from "@/hooks/api/useFriends";
 import { useUserSearch } from "@/hooks/api/useDiscovery";
+import { RelationshipButton } from "@/components/shared/RelationshipButton";
 
 // Companion Avatar helper component
 function SearchCompanionAvatar({ avatar, name, className = "h-11 w-11 text-xs" }: { avatar?: string; name: string; className?: string }) {
@@ -241,8 +242,33 @@ export default function FriendsSearchPage() {
         {/* Scrollable Results Stream (ONLY THIS SCROLLS - 2 Column Grid on Desktop) */}
         <div className="flex-1 overflow-y-auto min-h-0 no-scrollbar pt-3 pr-1 pb-3 md:pb-4 overscroll-contain touch-pan-y flex flex-col">
           {isLoading ? (
-            <div className="flex-1 flex items-center justify-center p-12 text-center text-zinc-500 text-xs font-mono animate-pulse">
-              {activeFilter === "all" ? "Searching Wandercall global network..." : "Loading friends network..."}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 flex-1 content-start">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div
+                  key={i}
+                  className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-3 animate-pulse"
+                >
+                  {/* Left: Avatar & Details Skeleton */}
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="relative shrink-0">
+                      <div className="h-10 w-10 rounded-full bg-white/10" />
+                    </div>
+
+                    <div className="min-w-0 flex-1 py-0.5">
+                      <div className="flex items-center gap-1.5 mb-1.5">
+                        <div className="h-3.5 w-28 bg-white/10 rounded-md" />
+                        <div className="h-2.5 w-16 bg-white/5 rounded-md hidden sm:block" />
+                      </div>
+                      <div className="h-3 w-16 bg-white/5 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Right: Actions Skeleton */}
+                  <div className="shrink-0">
+                    <div className="h-7 w-16 bg-white/10 rounded-xl" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : explorersList.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-3">
@@ -269,7 +295,8 @@ export default function FriendsSearchPage() {
                       key={explorer.id}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-brand-cyan/20 transition-all flex items-center justify-between gap-3 group"
+                      onClick={() => router.push(`/profile/${explorer.username.replace("@", "")}`)}
+                      className="p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-brand-cyan/20 transition-all flex items-center justify-between gap-3 group cursor-pointer"
                     >
                       {/* Left: Avatar & Details */}
                       <div className="flex items-center gap-3 min-w-0">
@@ -303,29 +330,23 @@ export default function FriendsSearchPage() {
                       {/* Right: Actions */}
                       <div className="flex items-center gap-2 shrink-0">
                         {explorer.isFriend ? (
-                          <button
-                            onClick={() => router.push(`/profile/friends/chat:${explorer.id}`)}
+                          <button suppressHydrationWarning
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/profile/friends/chat:${explorer.id}`);
+                            }}
                             className="px-3 py-1.5 rounded-xl bg-brand-cyan/10 hover:bg-brand-cyan/20 border border-brand-cyan/30 text-brand-cyan text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                           >
                             <MessageSquare className="h-3.5 w-3.5" />
                             <span>Chat</span>
                           </button>
-                        ) : isReqSent ? (
-                          <button
-                            disabled
-                            className="px-3 py-1.5 rounded-xl bg-white/5 border border-white/10 text-emerald-400 text-xs font-bold flex items-center gap-1.5"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                            <span>Sent</span>
-                          </button>
                         ) : (
-                          <button
-                            onClick={() => handleSendRequest(explorer.username, explorer.id)}
-                            className="px-3 py-1.5 rounded-xl bg-brand-cyan hover:bg-cyan-400 text-zinc-950 text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-md shadow-brand-cyan/10 cursor-pointer active:scale-95"
-                          >
-                            <UserPlus className="h-3.5 w-3.5" />
-                            <span>Add</span>
-                          </button>
+                          <div onClick={(e) => e.stopPropagation()}>
+                            <RelationshipButton 
+                              username={explorer.username.replace("@", "")} 
+                              className="text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl h-8 font-extrabold tracking-wider" 
+                            />
+                          </div>
                         )}
                       </div>
                     </motion.div>

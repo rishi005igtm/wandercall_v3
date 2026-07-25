@@ -29,7 +29,7 @@ export default function NavigationFooter({
     <div className="fixed bottom-0 left-0 right-0 z-40 bg-zinc-950/95 backdrop-blur-xl border-t border-white/10 p-4 sm:relative sm:z-auto sm:bg-transparent sm:backdrop-blur-none sm:border-t sm:border-white/5 sm:p-0 sm:pt-6 sm:mt-4 flex flex-col gap-3 w-full shadow-2xl sm:shadow-none">
       <div className="flex gap-3 sm:gap-4 w-full max-w-[1440px] mx-auto px-0 sm:px-0">
         {currentStep > 1 && (
-          <button
+          <button suppressHydrationWarning
             type="button"
             onClick={() => setCurrentStep((prev) => (prev - 1) as StepId)}
             className="h-12 px-4 sm:px-6 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-widest transition-all cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2 select-none shrink-0"
@@ -51,7 +51,7 @@ export default function NavigationFooter({
         )}
 
         {currentStep === 1 && (
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={!canGoToStep2}
             onClick={() => setCurrentStep(2)}
@@ -64,7 +64,7 @@ export default function NavigationFooter({
         )}
 
         {currentStep === 2 && (
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={!canGoToStep3}
             onClick={() => setCurrentStep(3)}
@@ -77,7 +77,7 @@ export default function NavigationFooter({
         )}
 
         {currentStep === 3 && (
-          <button
+          <button suppressHydrationWarning
             type="button"
             disabled={!isFormValid || isSubmitting}
             onClick={onProceedPayment}

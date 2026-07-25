@@ -491,6 +491,8 @@ interface FriendsPageProps {
   activeChatId?: string;
 }
 
+let hasInitialLoadedFriends = false;
+
 export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const companionListRef = useNestedScroll();
   const chatStreamRef = useNestedScroll();
@@ -511,6 +513,17 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [campfireList, setCampfireList] = useState<any[]>(DEFAULT_CAMPFIRES);
+
+  const [isLoading, setIsLoading] = useState(!hasInitialLoadedFriends);
+  useEffect(() => {
+    if (!hasInitialLoadedFriends) {
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+        hasInitialLoadedFriends = true;
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
   const [zoomedAvatar, setZoomedAvatar] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => {
@@ -1058,7 +1071,18 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     Select Companion
                   </div>
                   <div ref={companionListRef} className="flex flex-col gap-1.5 overflow-y-auto flex-1 min-h-0 no-scrollbar pr-1 pb-4 md:pb-2 overscroll-contain touch-pan-y">
-                    {filteredListCompanions.map(friend => {
+                    {isLoading ? Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-white/5 bg-white/[0.01] animate-pulse">
+                        <div className="h-8 w-8 rounded-full bg-white/10 shrink-0" />
+                        <div className="min-w-0 flex-1 py-0.5">
+                          <div className="flex items-center justify-between gap-1 mb-1.5">
+                            <div className="h-3 w-24 bg-white/10 rounded-sm" />
+                            <div className="h-2 w-10 bg-white/10 rounded-sm shrink-0" />
+                          </div>
+                          <div className="h-2 w-40 bg-white/10 rounded-sm mt-0.5" />
+                        </div>
+                      </div>
+                    )) : filteredListCompanions.map(friend => {
                       const isSelected = activeFriendId === friend.id;
                       const inbox = getInboxState(friend.id);
                       const unreadCount = isSelected ? 0 : inbox.unreadCount;
@@ -1234,7 +1258,23 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     ref={chatStreamRef}
                     className="flex-1 py-4 overflow-y-auto custom-scrollbar pr-2 pb-20"
                   >
-                    {realMessages.length > 0 ? (
+                    {isChatLoading ? (
+                      <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
+                        <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+                          <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
+                          <div className="w-28 h-28 rounded-full border border-white/5 bg-white/[0.01]" />
+                        </div>
+                        <div className="h-3 w-48 bg-white/10 rounded-sm mt-4 mb-2" />
+                        <div className="space-y-1 mt-1 flex flex-col items-center">
+                          <div className="h-2 w-64 bg-white/5 rounded-sm" />
+                          <div className="h-2 w-56 bg-white/5 rounded-sm" />
+                        </div>
+                        <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
+                          <div className="h-2 w-48 bg-white/5 rounded-sm mb-2" />
+                          <div className="w-full h-8 bg-white/[0.02] border border-white/5 rounded-xl" />
+                        </div>
+                      </div>
+                    ) : realMessages.length > 0 ? (
                       <div className="space-y-3">
                         {realMessages.map((msg: any) => {
                           const isMe = msg.senderId === currentUserId;

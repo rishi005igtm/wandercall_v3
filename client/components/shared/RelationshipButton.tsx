@@ -24,7 +24,7 @@ export const RelationshipButton: React.FC<RelationshipButtonProps> = ({
 
   if (isLoading) {
     return (
-      <button className={`${className} opacity-50 cursor-not-allowed`} disabled>
+      <button suppressHydrationWarning className={`${className} opacity-50 cursor-not-allowed`} disabled>
         <Loader2 className="h-4 w-4 animate-spin" />
       </button>
     );
@@ -100,7 +100,7 @@ export const RelationshipButton: React.FC<RelationshipButtonProps> = ({
   const config = getButtonConfig();
 
   const getButtonClasses = () => {
-    const baseClasses = className || "";
+    const baseClasses = `inline-flex items-center justify-center transition-all ${className || ""}`;
     
     // The previous design in ProfileRenderer:
     const followingClasses = "bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800";
@@ -122,8 +122,7 @@ export const RelationshipButton: React.FC<RelationshipButtonProps> = ({
   };
 
   return (
-    <button
-      className={getButtonClasses()}
+    <button suppressHydrationWarning      className={getButtonClasses()}
       onClick={handleToggle}
       disabled={isPending || relationship.state === 'BLOCKED' || relationship.state === 'BLOCKED_BY'}
     >

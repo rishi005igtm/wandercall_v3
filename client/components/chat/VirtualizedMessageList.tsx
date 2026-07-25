@@ -130,7 +130,7 @@ export const VirtualizedMessageList = ({ messages }: { messages: any[] }) => {
                               <p className="text-[9px] text-zinc-400">{msg.metadata.location} • {msg.metadata.duration}</p>
                               <div className="flex justify-between items-center pt-1">
                                 <span className="text-xs font-black text-brand-cyan">{msg.metadata.price}</span>
-                                <button className="px-3 py-1 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 font-black text-[9px] rounded-lg transition-all">
+                                <button suppressHydrationWarning className="px-3 py-1 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 font-black text-[9px] rounded-lg transition-all">
                                   Book Now
                                 </button>
                               </div>
@@ -150,7 +150,7 @@ export const VirtualizedMessageList = ({ messages }: { messages: any[] }) => {
                               <h4 className="text-xs font-bold text-white leading-tight">{msg.metadata.title}</h4>
                               <p className="text-[8px] text-zinc-500 truncate">Members: {msg.metadata.participants}</p>
                             </div>
-                            <button className="w-full py-1.5 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 text-[9px] font-black rounded-lg transition-all flex items-center justify-center gap-1 shadow-md">
+                            <button suppressHydrationWarning className="w-full py-1.5 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 text-[9px] font-black rounded-lg transition-all flex items-center justify-center gap-1 shadow-md">
                               Join Voice Channel
                             </button>
                           </div>
@@ -174,7 +174,7 @@ export const VirtualizedMessageList = ({ messages }: { messages: any[] }) => {
 
       {/* Floating "New Messages" button when scrolled up */}
       {!isScrolledToBottom && (
-        <button 
+        <button suppressHydrationWarning
           onClick={() => {
             virtualizer.scrollToIndex(groupedMessages.length - 1, { align: 'end' });
             setIsScrolledToBottom(true);

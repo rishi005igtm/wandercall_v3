@@ -114,7 +114,7 @@ export default function AIDiscovery() {
         >
           <div className="flex-1 flex items-center pl-4">
             <Search className="h-5 w-5 text-zinc-500 mr-3" />
-            <input
+            <input suppressHydrationWarning
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -122,7 +122,7 @@ export default function AIDiscovery() {
               className="w-full bg-transparent border-none text-white text-sm md:text-base placeholder-zinc-500 focus:outline-none focus:ring-0 py-3"
             />
           </div>
-          <button
+          <button suppressHydrationWarning
             type="submit"
             className="h-12 px-6 rounded-2xl bg-gradient-to-r from-brand-indigo to-brand-purple hover:brightness-110 text-white flex items-center justify-center gap-2 text-sm font-bold tracking-wider uppercase transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
@@ -134,7 +134,7 @@ export default function AIDiscovery() {
         {/* Suggestion list */}
         <div className="flex flex-wrap gap-2 justify-center max-w-2xl mb-16">
           {suggestions.map((item) => (
-            <button
+            <button suppressHydrationWarning
               key={item.label}
               type="button"
               onClick={() => handleSuggestionClick(item.text, item.label)}

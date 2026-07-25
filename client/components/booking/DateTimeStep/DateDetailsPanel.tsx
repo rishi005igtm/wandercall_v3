@@ -89,7 +89,7 @@ export default function DateDetailsPanel({
             <span className="text-[9px] font-mono font-bold text-brand-cyan uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="h-3 w-3 animate-pulse" /> Chosen Departure Time
             </span>
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={onOpenSlotModal}
               className="text-[9px] font-mono font-black text-white hover:text-brand-cyan underline uppercase tracking-wider cursor-pointer"
@@ -109,7 +109,7 @@ export default function DateDetailsPanel({
               </span>
             </div>
           ) : (
-            <button
+            <button suppressHydrationWarning
               type="button"
               onClick={onOpenSlotModal}
               className="w-full h-10 rounded-xl bg-brand-cyan text-zinc-950 font-black text-xs uppercase tracking-widest hover:bg-brand-cyan/90 transition-all cursor-pointer shadow-lg shadow-brand-cyan/20 flex items-center justify-center gap-1.5 mt-1"

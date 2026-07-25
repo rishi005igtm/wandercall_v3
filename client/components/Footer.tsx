@@ -78,7 +78,7 @@ export default function Footer() {
             ) : (
               <form onSubmit={handleSubscribe} className="flex gap-2 max-w-sm">
                 <div className="relative flex-1">
-                  <input
+                  <input suppressHydrationWarning
                     type="email"
                     required
                     value={email}
@@ -88,7 +88,7 @@ export default function Footer() {
                   />
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
                 </div>
-                <button
+                <button suppressHydrationWarning
                   type="submit"
                   className="h-9 px-4 rounded-xl bg-white text-black text-xs font-bold uppercase tracking-wider hover:brightness-110 active:scale-95 transition-all flex items-center justify-center"
                 >

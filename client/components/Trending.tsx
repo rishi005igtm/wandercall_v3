@@ -171,7 +171,7 @@ export default function Trending() {
                       <Star className="h-3 w-3 fill-brand-amber text-brand-amber" />
                       {exp.rating}
                     </div>
-                    <button
+                    <button suppressHydrationWarning
                       onClick={(e) => {
                         e.stopPropagation();
                         toggleWishlist(exp.id);

@@ -60,7 +60,7 @@ export default function BookingStepper({
 
           return (
             <div key={step.id} className="relative flex flex-col items-center">
-              <button
+              <button suppressHydrationWarning
                 type="button"
                 onClick={() => handleNodeClick(step.id, isClickable, step.lockedMsg)}
                 className={`relative z-10 flex flex-col items-center group cursor-pointer focus:outline-none transition-transform active:scale-95 ${
