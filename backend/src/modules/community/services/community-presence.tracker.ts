@@ -125,8 +125,7 @@ export class CommunityPresenceTracker implements OnModuleInit {
       displayName: user?.displayName || user?.username || 'Traveler',
       username: user?.username || 'traveler',
       avatarUrl:
-        user?.avatarUrl ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200',
+        user?.avatarUrl || null,
       roleName:
         user?.roleName ||
         (user?.isOwner ? 'OWNER' : user?.isMember ? 'MEMBER' : 'GUEST'),

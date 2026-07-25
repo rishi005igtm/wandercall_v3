@@ -235,9 +235,7 @@ export class SocialDiscoveryService {
       userId: item.profile.userId,
       username: item.profile.username,
       displayName: item.profile.displayName,
-      avatarUrl:
-        item.profile.avatarUrl ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      avatarUrl: item.profile.avatarUrl || null,
       compatibility: item.score,
       level: item.profile.level,
       reputationScore: item.profile.reputationScore,
@@ -351,9 +349,7 @@ export class SocialDiscoveryService {
           id: mf.profile.userId,
           name: mf.profile.displayName,
           username: mf.profile.username,
-          avatar:
-            mf.profile.avatarUrl ||
-            'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+          avatar: mf.profile.avatarUrl || '',
           compatibility: 95,
           sharedDNA: 'Explorer',
           mutualExperiences: 6,

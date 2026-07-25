@@ -78,10 +78,7 @@ export class CampfirePresenceService implements OnModuleInit {
 
     const displayName =
       userProfile?.name || userProfile?.displayName || 'Explorer';
-    const avatar =
-      userProfile?.avatar ||
-      userProfile?.avatarUrl ||
-      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80';
+    const avatar = userProfile?.avatar || userProfile?.avatarUrl || '';
     const role = userProfile?.role
       ? userProfile.role.toUpperCase()
       : 'LISTENER';
@@ -230,8 +227,7 @@ export class CampfirePresenceService implements OnModuleInit {
       userId,
       displayName: participantData?.displayName || 'Explorer',
       avatar:
-        participantData?.avatar ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+        participantData?.avatar || '',
       role: participantData?.role || 'LISTENER',
       action: 'LEFT',
       timestamp: new Date().toISOString(),

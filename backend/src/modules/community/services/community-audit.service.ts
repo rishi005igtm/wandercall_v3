@@ -93,14 +93,12 @@ export class CommunityAuditService {
         actorName:
           actor?.displayName || actor?.username || item.actorId.slice(0, 8),
         actorAvatar:
-          actor?.avatarUrl ||
-          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          actor?.avatarUrl || null,
         targetName: target
           ? target.displayName || target.username
           : item.targetUserId?.slice(0, 8),
         targetAvatar:
-          target?.avatarUrl ||
-          'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80',
+          target?.avatarUrl || null,
       };
     });
 

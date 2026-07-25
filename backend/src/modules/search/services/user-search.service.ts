@@ -157,9 +157,7 @@ export class UserSearchService {
       userId: p.userId,
       username: p.username,
       displayName: p.displayName,
-      avatarUrl:
-        p.avatarUrl ||
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80',
+      avatarUrl: p.avatarUrl || null,
       level: p.level,
       reputationScore: p.reputationScore,
       locationFormatted: p.locationFormatted || 'Bangalore, India',
