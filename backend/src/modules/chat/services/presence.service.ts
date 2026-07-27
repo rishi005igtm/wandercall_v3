@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import {
   IPresenceService,
   PresenceStatus,
@@ -8,7 +8,7 @@ import { RedisService } from '../../redis/redis-core.service';
 import { TYPING_AUTO_CLEAR_MS } from '../constants/chat.constants';
 
 @Injectable()
-export class PresenceService implements IPresenceService {
+export class PresenceService implements IPresenceService, OnModuleInit {
   private readonly logger = new Logger(PresenceService.name);
 
   // Typing indicators are ephemeral and handled primarily via pub/sub events.
@@ -17,6 +17,20 @@ export class PresenceService implements IPresenceService {
   private readonly localTypingMap = new Map<string, string[]>();
 
   constructor(private readonly redisService: RedisService) {}
+
+  async onModuleInit() {
+    try {
+      // Clear all stale presence data on server startup to prevent ghost online users
+      const keys = await this.redisService.client.keys('presence:sockets:*');
+      if (keys.length > 0) {
+        await this.redisService.client.del(...keys);
+      }
+      await this.redisService.client.del('presence:status');
+      this.logger.log('Cleared stale presence data from Redis on startup');
+    } catch (e) {
+      this.logger.error('Failed to clear presence data on startup', e);
+    }
+  }
 
   async connect(userId: string, socketId: string): Promise<void> {
     const socketsKey = `presence:sockets:${userId}`;
