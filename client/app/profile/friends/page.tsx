@@ -9,6 +9,7 @@ import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useChatConversation } from '@/hooks/api/useChatConversation';
 import { useChatInbox, formatMessagePreview, formatInboxTime } from '@/hooks/api/useChatInbox';
+import { usePresenceSync } from '@/hooks/api/usePresenceSync';
 import { useAppSelector } from '@/lib/store/store';
 import { getMessageRenderer } from '@/components/chat/renderers/registry';
 import {
@@ -462,6 +463,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   const router = useRouter();
   const [isMobile, setIsMobile] = useState(false);
   const currentUserId = useAppSelector((state) => state.auth.userId);
+  const presenceMap = useAppSelector((state) => state.chat.presenceMap);
   const { getInboxState, totalUnread, sortedByRecent } = useChatInbox(currentUserId);
 
   useEffect(() => {
@@ -581,7 +583,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         name: f.displayName || f.username || 'Unknown User',
         username: f.username ? `@${f.username}` : '',
         avatar: f.avatarUrl || '',
-        status: "Available" as any,
+        status: (presenceMap[f.userId]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
         compatibility: f.compatibility || 90,
         sharedDNA: "Explorer" as any,
         mutualExperiences: 0,
@@ -594,6 +596,32 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         lastActive: "Active now"
       }));
 
+    // Add users from active direct conversations that aren't already in the friends list
+    sortedByRecent.forEach(id => {
+      if (!baseList.some(c => c.id === id) && !blockedIds.has(id)) {
+        const inbox = getInboxState(id);
+        if (inbox.targetUser) {
+          baseList.push({
+            id: inbox.targetUser.id,
+            name: inbox.targetUser.displayName || inbox.targetUser.username || 'Explorer',
+            username: inbox.targetUser.username ? `@${inbox.targetUser.username}` : '',
+            avatar: inbox.targetUser.avatarUrl || '',
+            status: (presenceMap[id]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
+            compatibility: 80,
+            sharedDNA: "Explorer" as any,
+            mutualExperiences: 0,
+            mutualCommunities: 0,
+            bio: "An explorer on Wandercall.",
+            location: "Earth",
+            tags: ["Explorer"],
+            isFavorite: favList.some((fav: any) => fav.friendId === id || fav.userId === id || fav.id === id),
+            isAdventurePartner: false,
+            lastActive: "Active recently"
+          });
+        }
+      }
+    });
+
     if (activeFriendId && !baseList.some(c => c.id === activeFriendId || c.username === `@${activeFriendId}` || c.username === activeFriendId)) {
       if (targetProfileData && (targetProfileData.userId === activeFriendId || targetProfileData.username === activeFriendId || `@${targetProfileData.username}` === activeFriendId)) {
         baseList.unshift({
@@ -601,7 +629,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
           name: targetProfileData.displayName || targetProfileData.username || 'Explorer',
           username: targetProfileData.username ? `@${targetProfileData.username}` : '',
           avatar: targetProfileData.avatarUrl || '',
-          status: "Available" as any,
+          status: (presenceMap[targetProfileData.userId]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
           compatibility: 88,
           sharedDNA: "Explorer" as any,
           mutualExperiences: targetProfileData.adventuresCompleted || 1,
@@ -619,7 +647,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
           name: activeFriendId.startsWith("f-") ? `Explorer (${activeFriendId})` : "Connecting Explorer...",
           username: `@${activeFriendId}`,
           avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-          status: "Available" as any,
+          status: (presenceMap[activeFriendId]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
           compatibility: 85,
           sharedDNA: "Explorer" as any,
           mutualExperiences: 1,
@@ -635,7 +663,11 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
     }
 
     return baseList;
-  }, [friendsData, favoritesData, blockedIds, activeFriendId, targetProfileData]);
+  }, [friendsData, favoritesData, blockedIds, activeFriendId, targetProfileData, presenceMap, sortedByRecent, getInboxState]);
+
+  // Sync presence for all visible friends
+  const friendIds = useMemo(() => companions.map(c => c.id), [companions]);
+  usePresenceSync(friendIds);
 
   const incomingRequests = useMemo(() => {
     if (!incomingData) return [];
@@ -648,7 +680,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         avatar: f.avatarUrl || '',
         compatibility: f.compatibility || 90,
         mutualFriends: 0,
-        bio: "Wants to connect with you.",
+        bio: f.lastMessageText ? `"${f.lastMessageText}"` : "Wants to connect with you.",
         status: "Incoming"
       }));
   }, [incomingData, blockedIds]);
@@ -663,6 +695,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         username: `@${f.username}`,
         avatar: f.avatarUrl || '',
         compatibility: f.compatibility || 90,
+        bio: f.lastMessageText ? `"${f.lastMessageText}"` : "Pending Follow Request",
         status: "Pending Sent"
       }));
   }, [outgoingData, blockedIds]);
@@ -674,6 +707,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   // Use activeFriendId directly (declared above) — not activeFriend which is computed later
   const {
     conversationId: activeChatConversationId,
+    isInitializing: isChatInitializing,
     messages: realMessages,
     isLoadingMessages: isChatLoading,
     sendTextMessage: sendRealTextMessage,
@@ -1217,7 +1251,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     ref={chatStreamRef}
                     className="flex-1 py-4 overflow-y-auto custom-scrollbar pr-2 pb-20"
                   >
-                    {isChatLoading ? (
+                    {isChatLoading || isChatInitializing ? (
                       <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
                         <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
                           <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
@@ -1811,6 +1845,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                               <div className="min-w-0">
                                 <h4 className="text-xs font-bold text-white truncate">{req.name}</h4>
                                 <p className="text-[9px] text-zinc-400 mt-0.5">{req.compatibility}% match • {req.username}</p>
+                                <p className="text-[9px] text-zinc-500 truncate mt-1">{req.bio}</p>
                               </div>
                             </div>
                             <span className="text-[8px] uppercase tracking-wider font-extrabold bg-zinc-900 border border-white/10 text-zinc-500 px-2.5 py-1 rounded-full shrink-0">

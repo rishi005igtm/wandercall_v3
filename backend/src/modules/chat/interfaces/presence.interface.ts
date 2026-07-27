@@ -20,29 +20,29 @@ export interface UserPresence {
 
 export interface IPresenceService {
   /** Register a socket connection for a user */
-  connect(userId: string, socketId: string): void;
+  connect(userId: string, socketId: string): Promise<void>;
 
   /** Remove a socket connection; update lastSeen if no sockets remain */
-  disconnect(userId: string, socketId: string): void;
+  disconnect(userId: string, socketId: string): Promise<void>;
 
   /** Get all socket IDs for a user across devices */
-  getSocketIds(userId: string): Set<string>;
+  getSocketIds(userId: string): Promise<Set<string>>;
 
   /** Whether the user has at least one active socket */
-  isOnline(userId: string): boolean;
+  isOnline(userId: string): Promise<boolean>;
 
   /** Set the user's presence status */
-  setStatus(userId: string, status: PresenceStatus): void;
+  setStatus(userId: string, status: PresenceStatus): Promise<void>;
 
   /** Get the user's current presence */
-  getPresence(userId: string): UserPresence | null;
+  getPresence(userId: string): Promise<UserPresence | null>;
 
   /** Mark user as typing in a conversation */
-  startTyping(userId: string, conversationId: string): void;
+  startTyping(userId: string, conversationId: string): Promise<void>;
 
   /** Remove typing indicator */
-  stopTyping(userId: string, conversationId: string): void;
+  stopTyping(userId: string, conversationId: string): Promise<void>;
 
   /** Get all users currently typing in a conversation */
-  getTypingUsers(conversationId: string): string[];
+  getTypingUsers(conversationId: string): Promise<string[]>;
 }

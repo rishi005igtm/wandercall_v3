@@ -17,6 +17,8 @@ import {
 import { useFollowBackMutation, useFriendsPaginated } from "@/hooks/api/useFriends";
 import { useUserSearch } from "@/hooks/api/useDiscovery";
 import { RelationshipButton } from "@/components/shared/RelationshipButton";
+import { usePresenceSync } from "@/hooks/api/usePresenceSync";
+import { useAppSelector } from "@/lib/store/store";
 
 // Companion Avatar helper component
 function SearchCompanionAvatar({ avatar, name, className = "h-11 w-11 text-xs" }: { avatar?: string; name: string; className?: string }) {
@@ -71,6 +73,7 @@ export default function FriendsSearchPage() {
   const followMutation = useFollowBackMutation();
 
   const isLoading = activeFilter === "all" ? isSearchLoading : isFriendsLoading;
+  const presenceMap = useAppSelector((state) => state.chat.presenceMap);
 
   // Execute Search action (triggered only on SEARCH button click or Enter key)
   const handleExecuteSearch = () => {
@@ -128,6 +131,10 @@ export default function FriendsSearchPage() {
       }));
     }
   }, [searchData, friendsData, activeFilter]);
+
+  // Hook to sync presence dynamically for visible users
+  const explorerIds = useMemo(() => explorersList.map((e) => e.id), [explorersList]);
+  usePresenceSync(explorerIds);
 
   const hasNextPage = activeFilter === "friends" ? !!friendsData?.nextCursor : false;
   const hasPrevPage = activeFilter === "friends" ? currentCursorIndex > 0 : false;
@@ -312,7 +319,9 @@ export default function FriendsSearchPage() {
                             name={explorer.name}
                             className="h-10 w-10 text-xs"
                           />
-                          <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
+                          {presenceMap[explorer.id]?.status === 'ONLINE' && (
+                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
+                          )}
                         </div>
 
                         <div className="min-w-0">

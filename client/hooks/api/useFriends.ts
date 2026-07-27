@@ -7,6 +7,8 @@ export interface FriendPreview {
   displayName: string;
   avatarUrl?: string;
   compatibility: number;
+  lastMessageText?: string;
+  lastMessageAt?: string;
 }
 
 export interface FriendsResponse {

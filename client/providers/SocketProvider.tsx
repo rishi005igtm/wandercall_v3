@@ -294,7 +294,21 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       queryClientRef.current.invalidateQueries({ queryKey: CHAT_QUERY_KEYS.CONVERSATIONS });
     });
 
+    // ── Friend Request events ─────────────────────────────────────────────
+    socket.on('friend_request:new', () => {
+      queryClientRef.current.invalidateQueries({ queryKey: ['friends'] });
+      queryClientRef.current.invalidateQueries({ queryKey: ['relationship'] });
+    });
 
+    socket.on('friend_request:accepted', () => {
+      queryClientRef.current.invalidateQueries({ queryKey: ['friends'] });
+      queryClientRef.current.invalidateQueries({ queryKey: ['relationship'] });
+    });
+
+    socket.on('friend_request:removed', () => {
+      queryClientRef.current.invalidateQueries({ queryKey: ['friends'] });
+      queryClientRef.current.invalidateQueries({ queryKey: ['relationship'] });
+    });
 
     return () => {
       if (socketRef.current) {

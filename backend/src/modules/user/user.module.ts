@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { StorageModule } from '../storage/storage.module';
 import { PrivacyModule } from '../privacy/privacy.module';
+import { FriendModule } from '../friend/friend.module';
 import { UserController } from './controllers/user.controller';
 import { UserService } from './services/user.service';
 import { UserRepository } from './repositories/user.repository';
@@ -19,6 +20,7 @@ import { RelationshipService } from './services/relationship.service';
     AuthModule,
     StorageModule,
     forwardRef(() => PrivacyModule),
+    forwardRef(() => FriendModule),
     TypeOrmModule.forFeature([
       UserProfileEntity,
       UserSettingsEntity,

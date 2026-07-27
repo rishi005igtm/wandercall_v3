@@ -198,10 +198,10 @@ export class ChatController {
    */
   @Get('presence/:userId')
   async getPresence(@Param('userId') userId: string) {
-    const presence = this.presenceService.getPresence(userId);
+    const presence = await this.presenceService.getPresence(userId);
     return {
       userId,
-      isOnline: this.presenceService.isOnline(userId),
+      isOnline: await this.presenceService.isOnline(userId),
       status: presence?.status ?? 'OFFLINE',
       lastSeen: presence?.lastSeen,
     };

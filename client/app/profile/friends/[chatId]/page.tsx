@@ -7,6 +7,7 @@ import { useFriends, useFavorites, useAddFavoriteMutation, useRemoveFavoriteMuta
 import { useBlockedUsers, useBlockMutation } from '@/hooks/api/usePrivacy';
 import { useUserProfileQuery } from '@/hooks/api/useUserQueries';
 import { useChatConversation } from '@/hooks/api/useChatConversation';
+import { usePresenceSync } from '@/hooks/api/usePresenceSync';
 import { useAppSelector } from '@/lib/store/store';
 import { getMessageRenderer } from '@/components/chat/renderers/registry';
 import { motion, AnimatePresence } from "framer-motion";
@@ -345,6 +346,12 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
     setTimeout(() => setToastMessage(null), 3500);
   };
 
+  const currentUserId = useAppSelector((state) => state.auth.userId);
+  const presenceMap = useAppSelector((state) => state.chat.presenceMap);
+
+  // Sync presence for the target user (especially important for mobile view)
+  usePresenceSync(userId ? [userId] : []);
+
   const blockedIds = React.useMemo(() => {
     if (!blockedData) return new Set<string>();
     return new Set(blockedData.pages.flatMap(page => page.items || []).map(b => b.targetUserId));
@@ -362,7 +369,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         name: f.displayName || f.username || 'Unknown User',
         username: f.username ? `@${f.username}` : '',
         avatar: f.avatarUrl || '',
-        status: "Available" as const,
+        status: (presenceMap[f.userId]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
         compatibility: f.compatibility || 85,
         sharedDNA: "Explorer" as const,
         mutualExperiences: 3,
@@ -382,7 +389,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           name: targetProfileData.displayName || targetProfileData.username || 'Explorer',
           username: targetProfileData.username ? `@${targetProfileData.username}` : '',
           avatar: targetProfileData.avatarUrl || '',
-          status: "Available" as const,
+          status: (presenceMap[targetProfileData.userId]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
           compatibility: 88,
           sharedDNA: "Explorer" as const,
           mutualExperiences: targetProfileData.adventuresCompleted || 1,
@@ -400,7 +407,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           name: userId.startsWith("f-") ? `Explorer (${userId})` : "Connecting Explorer...",
           username: `@${userId}`,
           avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-          status: "Available" as const,
+          status: (presenceMap[userId]?.status === 'ONLINE' ? 'Available' : 'Offline') as any,
           compatibility: 85,
           sharedDNA: "Explorer" as const,
           mutualExperiences: 1,
@@ -416,7 +423,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
     }
 
     return baseList;
-  }, [friendsData, favoritesData, blockedIds, userId, targetProfileData]);
+  }, [friendsData, favoritesData, blockedIds, userId, targetProfileData, presenceMap]);
 
   const activeFriend = React.useMemo(() => {
     if (companions.length > 0) {
@@ -434,8 +441,9 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
   // ─── Real-time Chat ────────────────────────────────────────────────────────
   // Use userId from URL param directly — this is the target userId
   // Only actually active on mobile (desktop renders FriendsPage which has its own useChatConversation)
-  const currentUserId = useAppSelector((state) => state.auth.userId);
+
   const {
+    isInitializing,
     messages: realMessages,
     isLoadingMessages,
     sendTextMessage,
@@ -583,7 +591,9 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           </button>
           <div className="relative cursor-pointer transition-transform active:scale-95 shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
             <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-9 w-9 text-xs" />
-            <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
+            {presenceMap[userId]?.status === 'ONLINE' && (
+              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
+            )}
           </div>
           <div 
             onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
@@ -615,7 +625,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5 custom-scrollbar overscroll-contain touch-pan-y"
         data-lenis-prevent
       >
-        {isLoadingMessages ? (
+        {isLoadingMessages || isInitializing ? (
           <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
             <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
               <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />

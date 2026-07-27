@@ -33,6 +33,7 @@ import { PrivacyModule } from '../privacy/privacy.module';
 import { CommunityModule } from '../community/community.module';
 import { RedisModule } from '../redis/redis.module';
 import { CommunityChatService } from './services/community-chat.service';
+import { FriendModule } from '../friend/friend.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { CommunityChatService } from './services/community-chat.service';
     PrivacyModule,
     RedisModule, // Added RedisModule
     forwardRef(() => CommunityModule), // Added CommunityModule with forwardRef
+    forwardRef(() => FriendModule),
     // JwtModule for socket authentication
     JwtModule.registerAsync({
       imports: [ConfigModule],

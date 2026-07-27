@@ -209,7 +209,7 @@ export class FollowRepository {
     cursor?: string,
     search?: string,
   ): Promise<{
-    items: { follow: FollowEntity; profile: UserProfileEntity }[];
+    items: { follow: FollowEntity; profile: UserProfileEntity; lastMessageText?: string; lastMessageAt?: Date }[];
     nextCursor?: string;
   }> {
     const query = this.followRepo
@@ -231,6 +231,13 @@ export class FollowRepository {
         '((privacy.userId = :userId AND privacy.targetUserId = f1.followerId) OR (privacy.userId = f1.followerId AND privacy.targetUserId = :userId)) AND privacy.isBlocked = :isBlocked',
         { userId, isBlocked: true },
       )
+      .leftJoin(
+        'chat_conversations',
+        'conv',
+        'conv.type = :directType AND conv."participantKey" = CASE WHEN f1."followerId" < f1."followingId" THEN f1."followerId" || \':\' || f1."followingId" ELSE f1."followingId" || \':\' || f1."followerId" END',
+        { directType: 'DIRECT' }
+      )
+      .addSelect(['conv.lastMessageText', 'conv.lastMessageAt'])
       .where('f1.followingId = :userId', { userId })
       .andWhere('f2.id IS NULL')
       .andWhere('privacy.id IS NULL');
@@ -249,18 +256,21 @@ export class FollowRepository {
 
     query.orderBy('f1.createdAt', 'DESC').limit(limit + 1);
 
-    const follows = await query.getMany();
+    const { entities, raw } = await query.getRawAndEntities();
+    
     let nextCursor: string | undefined;
 
-    if (follows.length > limit) {
-      const lastItem = follows[limit - 1];
+    if (entities.length > limit) {
+      const lastItem = entities[limit - 1];
       nextCursor = lastItem.createdAt.toISOString();
-      follows.pop();
+      entities.pop();
     }
 
-    const items = follows.map((f) => ({
+    const items = entities.map((f, index) => ({
       follow: f,
       profile: (f as unknown as { profile: UserProfileEntity }).profile,
+      lastMessageText: raw[index]?.conv_lastMessageText,
+      lastMessageAt: raw[index]?.conv_lastMessageAt ? new Date(raw[index].conv_lastMessageAt) : undefined,
     }));
 
     return { items, nextCursor };
@@ -272,7 +282,7 @@ export class FollowRepository {
     cursor?: string,
     search?: string,
   ): Promise<{
-    items: { follow: FollowEntity; profile: UserProfileEntity }[];
+    items: { follow: FollowEntity; profile: UserProfileEntity; lastMessageText?: string; lastMessageAt?: Date }[];
     nextCursor?: string;
   }> {
     const query = this.followRepo
@@ -294,6 +304,13 @@ export class FollowRepository {
         '((privacy.userId = :userId AND privacy.targetUserId = f1.followingId) OR (privacy.userId = f1.followingId AND privacy.targetUserId = :userId)) AND privacy.isBlocked = :isBlocked',
         { userId, isBlocked: true },
       )
+      .leftJoin(
+        'chat_conversations',
+        'conv',
+        'conv.type = :directType AND conv."participantKey" = CASE WHEN f1."followerId" < f1."followingId" THEN f1."followerId" || \':\' || f1."followingId" ELSE f1."followingId" || \':\' || f1."followerId" END',
+        { directType: 'DIRECT' }
+      )
+      .addSelect(['conv.lastMessageText', 'conv.lastMessageAt'])
       .where('f1.followerId = :userId', { userId })
       .andWhere('f2.id IS NULL')
       .andWhere('privacy.id IS NULL');
@@ -312,18 +329,21 @@ export class FollowRepository {
 
     query.orderBy('f1.createdAt', 'DESC').limit(limit + 1);
 
-    const follows = await query.getMany();
+    const { entities, raw } = await query.getRawAndEntities();
+
     let nextCursor: string | undefined;
 
-    if (follows.length > limit) {
-      const lastItem = follows[limit - 1];
+    if (entities.length > limit) {
+      const lastItem = entities[limit - 1];
       nextCursor = lastItem.createdAt.toISOString();
-      follows.pop();
+      entities.pop();
     }
 
-    const items = follows.map((f) => ({
+    const items = entities.map((f, index) => ({
       follow: f,
       profile: (f as unknown as { profile: UserProfileEntity }).profile,
+      lastMessageText: raw[index]?.conv_lastMessageText,
+      lastMessageAt: raw[index]?.conv_lastMessageAt ? new Date(raw[index].conv_lastMessageAt) : undefined,
     }));
 
     return { items, nextCursor };

@@ -20,6 +20,13 @@ export interface FriendInboxState {
   isTyping: boolean;
   /** Raw presence status string */
   presenceStatus: string;
+  /** Populated for DIRECT chats when user details are available */
+  targetUser?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
 }
 
 const EMPTY_STATE: FriendInboxState = {
@@ -85,6 +92,7 @@ export function useChatInbox(currentUserId: string | null) {
             : false,
           isTyping,
           presenceStatus: presence?.status ?? 'OFFLINE',
+          targetUser: conv.targetUser,
         };
       }
     }

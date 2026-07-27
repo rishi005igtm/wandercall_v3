@@ -22,6 +22,7 @@ import {
   CommunityEventDispatcher,
   CommunityEvents,
 } from '../community/events/community-event.dispatcher';
+import { FriendEventDispatcher } from '../friend/events/friend-event.dispatcher';
 import { ConversationRepository } from './repositories/conversation.repository';
 import {
   SendMessageDto,
@@ -77,6 +78,7 @@ export class ChatGateway
     private readonly chatEventDispatcher: ChatEventDispatcher,
     @Inject(forwardRef(() => CommunityEventDispatcher))
     private readonly communityEventDispatcher: CommunityEventDispatcher,
+    private readonly friendEventDispatcher: FriendEventDispatcher,
     private readonly conversationRepository: ConversationRepository,
   ) {}
 
@@ -101,7 +103,7 @@ export class ChatGateway
     }
 
     socket.data.userId = userId;
-    this.presenceService.connect(userId, socket.id);
+    await this.presenceService.connect(userId, socket.id);
     await socket.join(`user:${userId}`);
 
     socket.emit(SOCKET_EVENTS.CONNECTED, {
@@ -114,12 +116,12 @@ export class ChatGateway
     this.chatEventDispatcher.dispatchUserConnected(userId, socket.id);
   }
 
-  handleDisconnect(socket: Socket): void {
+  async handleDisconnect(socket: Socket): Promise<void> {
     const userId = socket.data.userId;
     if (!userId) return;
 
-    this.presenceService.disconnect(userId, socket.id);
-    const isStillOnline = this.presenceService.isOnline(userId);
+    await this.presenceService.disconnect(userId, socket.id);
+    const isStillOnline = await this.presenceService.isOnline(userId);
 
     // The event dispatcher handles emitting USER_DISCONNECTED to Redis,
     // which will broadcast to the `presence:${userId}` room.
@@ -146,8 +148,8 @@ export class ChatGateway
     await socket.join(`presence:${data.targetUserId}`);
     
     // Instantly return the current presence status of the target user
-    const presence = this.presenceService.getPresence(data.targetUserId);
-    const status = this.presenceService.isOnline(data.targetUserId) 
+    const presence = await this.presenceService.getPresence(data.targetUserId);
+    const status = await this.presenceService.isOnline(data.targetUserId) 
       ? PresenceStatus.ONLINE 
       : PresenceStatus.OFFLINE;
       
@@ -156,6 +158,29 @@ export class ChatGateway
       status,
       lastSeen: presence?.lastSeen,
     });
+    
+    return { success: true };
+  }
+
+  @SubscribeMessage('subscribe-presence-bulk')
+  async handleSubscribePresenceBulk(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { targetUserIds: string[] },
+  ): Promise<Record<string, unknown>> {
+    const userId = socket.data.userId;
+    if (!userId || !Array.isArray(data?.targetUserIds)) return { success: false };
+    
+    for (const targetId of data.targetUserIds) {
+      await socket.join(`presence:${targetId}`);
+      const presence = await this.presenceService.getPresence(targetId);
+      const isOnline = await this.presenceService.isOnline(targetId);
+      
+      socket.emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+        userId: targetId,
+        status: isOnline ? PresenceStatus.ONLINE : PresenceStatus.OFFLINE,
+        lastSeen: presence?.lastSeen,
+      });
+    }
     
     return { success: true };
   }
@@ -169,6 +194,20 @@ export class ChatGateway
     if (!userId || !data?.targetUserId) return { success: false };
     
     await socket.leave(`presence:${data.targetUserId}`);
+    return { success: true };
+  }
+
+  @SubscribeMessage('unsubscribe-presence-bulk')
+  async handleUnsubscribePresenceBulk(
+    @ConnectedSocket() socket: Socket,
+    @MessageBody() data: { targetUserIds: string[] },
+  ): Promise<Record<string, unknown>> {
+    const userId = socket.data.userId;
+    if (!userId || !Array.isArray(data?.targetUserIds)) return { success: false };
+    
+    for (const targetId of data.targetUserIds) {
+      await socket.leave(`presence:${targetId}`);
+    }
     return { success: true };
   }
 
@@ -483,14 +522,29 @@ export class ChatGateway
       }
     );
 
+    this.friendEventDispatcher.subscribe('FRIEND_REQUEST_NEW', (payload) => {
+      this.server.to(`user:${payload.followingId}`).emit('friend_request:new', payload);
+      this.server.to(`user:${payload.followerId}`).emit('friend_request:new', payload);
+    });
+
+    this.friendEventDispatcher.subscribe('FRIEND_REQUEST_ACCEPTED', (payload) => {
+      this.server.to(`user:${payload.followingId}`).emit('friend_request:accepted', payload);
+      this.server.to(`user:${payload.followerId}`).emit('friend_request:accepted', payload);
+    });
+
+    this.friendEventDispatcher.subscribe('FRIEND_REQUEST_REMOVED', (payload) => {
+      this.server.to(`user:${payload.followingId}`).emit('friend_request:removed', payload);
+      this.server.to(`user:${payload.followerId}`).emit('friend_request:removed', payload);
+    });
+
     /**
      * USER_DISCONNECTED -> Broadcast to presence subscribers
      */
     this.chatEventDispatcher.subscribe(
       'USER_DISCONNECTED',
-      (payload: any) => {
+      async (payload: any) => {
         if (!payload.isStillOnline) {
-          const presence = this.presenceService.getPresence(payload.userId);
+          const presence = await this.presenceService.getPresence(payload.userId);
           this.server.to(`presence:${payload.userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
             userId: payload.userId,
             status: PresenceStatus.OFFLINE,
@@ -531,7 +585,7 @@ export class ChatGateway
           // Auto-deliver for RECIPIENTS (not the sender) who are online right now
           if (
             recipientId !== message.senderId &&
-            this.presenceService.isOnline(recipientId)
+            await this.presenceService.isOnline(recipientId)
           ) {
             try {
               await this.chatService.markDelivered(message.id, recipientId);

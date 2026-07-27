@@ -10,6 +10,13 @@ export interface ConversationItem {
   unreadCounts?: Record<string, number>;
   /** Derived by ChatService for the requesting user */
   unreadCount: number;
+  /** Populated for DIRECT chats */
+  targetUser?: {
+    id: string;
+    username: string;
+    displayName: string;
+    avatarUrl?: string;
+  };
   createdAt: string;
   updatedAt: string;
 }

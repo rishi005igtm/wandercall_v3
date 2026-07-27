@@ -12,13 +12,15 @@ export class FriendService {
     private readonly userRepository: UserRepository,
   ) {}
 
-  private mapToPreviewDto(profile: any): FollowerPreviewDto {
+  private mapToPreviewDto(profile: any, lastMessageText?: string, lastMessageAt?: Date): FollowerPreviewDto {
     return {
       userId: profile.userId,
       username: profile.username,
       displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
       compatibility: 90, // Future: Use compatibility engine
+      lastMessageText,
+      lastMessageAt,
     };
   }
 
@@ -54,7 +56,7 @@ export class FriendService {
         search,
       );
     return {
-      items: items.map((item) => this.mapToPreviewDto(item.profile)),
+      items: items.map((item: any) => this.mapToPreviewDto(item.profile, item.lastMessageText, item.lastMessageAt)),
       nextCursor,
     };
   }
@@ -73,7 +75,7 @@ export class FriendService {
         search,
       );
     return {
-      items: items.map((item) => this.mapToPreviewDto(item.profile)),
+      items: items.map((item: any) => this.mapToPreviewDto(item.profile, item.lastMessageText, item.lastMessageAt)),
       nextCursor,
     };
   }

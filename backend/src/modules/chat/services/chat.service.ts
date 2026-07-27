@@ -21,6 +21,8 @@ import { ConversationRepository } from '../repositories/conversation.repository'
 import { ChatEventDispatcher } from './chat-event.dispatcher';
 import { PrivacyService } from '../../privacy/services/privacy.service';
 import { UserRepository } from '../../user/repositories/user.repository';
+import { FollowService } from '../../user/services/follow.service';
+import { RelationshipService } from '../../user/services/relationship.service';
 import { SendMessageDto } from '../dto/send-message.dto';
 import { MessageResponseDto } from '../dto/conversation-response.dto';
 import {
@@ -59,6 +61,8 @@ export class ChatService {
     private readonly chatEventDispatcher: ChatEventDispatcher,
     private readonly privacyService: PrivacyService,
     private readonly userRepository: UserRepository,
+    private readonly followService: FollowService,
+    private readonly relationshipService: RelationshipService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -97,12 +101,44 @@ export class ChatService {
   }
 
   async getConversations(userId: string) {
-    const conversations =
-      await this.conversationRepository.findByUserId(userId);
-    return conversations.map((conv) => ({
-      ...conv,
-      unreadCount: conv.unreadCounts[userId] ?? 0,
-    }));
+    const conversations = await this.conversationRepository.findByUserId(userId);
+    
+    return Promise.all(
+      conversations.map(async (conv) => {
+        let targetUser: { id: string; username: string; displayName: string; avatarUrl?: string } | undefined = undefined;
+        if (conv.type === 'DIRECT') {
+          let targetUserId: string | undefined = undefined;
+          
+          if (conv.participantKey) {
+            const ids = conv.participantKey.split(':');
+            targetUserId = ids.find(id => id !== userId);
+          }
+          
+          if (!targetUserId) {
+            const participantIds = Object.keys(conv.unreadCounts ?? {});
+            targetUserId = participantIds.find((id) => id !== userId);
+          }
+          
+          if (targetUserId) {
+            const profile = await this.userRepository.findByUserId(targetUserId);
+            if (profile) {
+              targetUser = {
+                id: profile.userId,
+                username: profile.username,
+                displayName: profile.displayName,
+                avatarUrl: profile.avatarUrl,
+              };
+            }
+          }
+        }
+
+        return {
+          ...conv,
+          unreadCount: conv.unreadCounts[userId] ?? 0,
+          targetUser,
+        };
+      })
+    );
   }
 
   // ─────────────────────────────────────────────────────────

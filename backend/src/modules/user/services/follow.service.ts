@@ -14,6 +14,7 @@ import { UserProfileEntity } from '../entities/user-profile.entity';
 import { RelationshipResponseDto } from '../dto/relationship-response.dto';
 import { FollowerPreviewDto } from '../dto/follower-preview.dto';
 import { RelationshipService } from './relationship.service';
+import { FriendEventDispatcher } from '../../friend/events/friend-event.dispatcher';
 
 @Injectable()
 export class FollowService {
@@ -23,6 +24,7 @@ export class FollowService {
     private readonly followRepository: FollowRepository,
     private readonly userRepository: UserRepository,
     private readonly relationshipService: RelationshipService,
+    private readonly friendEventDispatcher: FriendEventDispatcher,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -85,10 +87,24 @@ export class FollowService {
         );
       });
 
-      return this.relationshipService.resolveRelationship(
+      const relationship = await this.relationshipService.resolveRelationship(
         currentUserId,
         targetProfile.userId,
       );
+
+      if (relationship.state === 'MUTUAL_FOLLOW') {
+        this.friendEventDispatcher.dispatch('FRIEND_REQUEST_ACCEPTED', {
+          followerId: currentUserId,
+          followingId: targetProfile.userId,
+        });
+      } else {
+        this.friendEventDispatcher.dispatch('FRIEND_REQUEST_NEW', {
+          followerId: currentUserId,
+          followingId: targetProfile.userId,
+        });
+      }
+
+      return relationship;
     } catch (error) {
       this.logger.error(
         `Database exception during follow action from ${currentUserId} to ${targetProfile.userId}`,
@@ -145,10 +161,17 @@ export class FollowService {
         );
       });
 
-      return this.relationshipService.resolveRelationship(
+      const relationship = await this.relationshipService.resolveRelationship(
         currentUserId,
         targetProfile.userId,
       );
+
+      this.friendEventDispatcher.dispatch('FRIEND_REQUEST_REMOVED', {
+        followerId: currentUserId,
+        followingId: targetProfile.userId,
+      });
+
+      return relationship;
     } catch (error) {
       this.logger.error(
         `Database exception during unfollow action from ${currentUserId} to ${targetProfile.userId}`,

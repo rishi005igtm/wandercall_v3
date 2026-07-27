@@ -4,100 +4,121 @@ import {
   PresenceStatus,
   UserPresence,
 } from '../interfaces/presence.interface';
+import { RedisService } from '../../redis/redis-core.service';
 import { TYPING_AUTO_CLEAR_MS } from '../constants/chat.constants';
 
-/**
- * PresenceService — In-memory implementation.
- *
- * Tracks:
- * - Which users are online (userId → Set<socketId>)
- * - What status each user has (online, typing, recording, etc.)
- * - Which conversations a user is currently typing in
- *
- * Design philosophy:
- * - NEVER writes typing state to the database
- * - Typing indicators use in-memory maps with auto-clear timers
- * - The interface is designed so this can be replaced with a Redis adapter
- *   (e.g. ioredis with hset/expire) without changing any consuming code
- *
- * Multi-device support:
- * - One user can have multiple socket IDs (multiple tabs/devices)
- * - User is considered online if ANY socket exists in their set
- * - All sockets for a user receive broadcasts when targeting that user
- */
 @Injectable()
 export class PresenceService implements IPresenceService {
   private readonly logger = new Logger(PresenceService.name);
 
-  /** Map<userId, Set<socketId>> — multi-device socket tracking */
-  private readonly socketMap = new Map<string, Set<string>>();
-
-  /** Map<userId, UserPresence> — current status per user */
-  private readonly presenceMap = new Map<string, UserPresence>();
-
-  /** Map<`${userId}:${conversationId}`, NodeJS.Timeout> — auto-clear timers for typing */
+  // Typing indicators are ephemeral and handled primarily via pub/sub events.
+  // We keep them in memory for local node fallback if needed.
   private readonly typingTimers = new Map<string, NodeJS.Timeout>();
+  private readonly localTypingMap = new Map<string, string[]>();
 
-  connect(userId: string, socketId: string): void {
-    if (!this.socketMap.has(userId)) {
-      this.socketMap.set(userId, new Set());
-    }
-    this.socketMap.get(userId)!.add(socketId);
+  constructor(private readonly redisService: RedisService) {}
 
-    const existing = this.presenceMap.get(userId);
-    this.presenceMap.set(userId, {
-      userId,
-      status: PresenceStatus.ONLINE,
-      lastSeen: undefined,
-      typingIn: existing?.typingIn ?? [],
-      socketIds: this.socketMap.get(userId)!,
-    });
-  }
-
-  disconnect(userId: string, socketId: string): void {
-    const sockets = this.socketMap.get(userId);
-    if (sockets) {
-      sockets.delete(socketId);
-      if (sockets.size === 0) {
-        this.socketMap.delete(userId);
-        this.presenceMap.set(userId, {
-          userId,
-          status: PresenceStatus.OFFLINE,
-          lastSeen: new Date(),
-          typingIn: [],
-          socketIds: new Set(),
-        });
+  async connect(userId: string, socketId: string): Promise<void> {
+    const socketsKey = `presence:sockets:${userId}`;
+    
+    // Add socket to the user's active sockets set
+    const added = await this.redisService.client.sadd(socketsKey, socketId);
+    
+    if (added > 0) {
+      const count = await this.redisService.client.scard(socketsKey);
+      
+      const presence: UserPresence = {
+        userId,
+        status: PresenceStatus.ONLINE,
+        socketIds: new Set(),
+      };
+      
+      await this.redisService.client.hset(
+        'presence:status',
+        userId,
+        JSON.stringify({ ...presence, socketIds: [] })
+      );
+      
+      if (count === 1) {
+        this.logger.debug(`User ${userId} came ONLINE`);
       }
     }
   }
 
-  getSocketIds(userId: string): Set<string> {
-    return this.socketMap.get(userId) ?? new Set();
-  }
-
-  isOnline(userId: string): boolean {
-    const sockets = this.socketMap.get(userId);
-    return !!sockets && sockets.size > 0;
-  }
-
-  setStatus(userId: string, status: PresenceStatus): void {
-    const existing = this.presenceMap.get(userId);
-    if (existing) {
-      existing.status = status;
+  async disconnect(userId: string, socketId: string): Promise<void> {
+    const socketsKey = `presence:sockets:${userId}`;
+    const removed = await this.redisService.client.srem(socketsKey, socketId);
+    
+    if (removed > 0) {
+      const count = await this.redisService.client.scard(socketsKey);
+      
+      if (count === 0) {
+        const presence: UserPresence = {
+          userId,
+          status: PresenceStatus.OFFLINE,
+          lastSeen: new Date(),
+          socketIds: new Set(),
+        };
+        
+        await this.redisService.client.hset(
+          'presence:status',
+          userId,
+          JSON.stringify({ ...presence, socketIds: [] })
+        );
+        this.logger.debug(`User ${userId} went OFFLINE`);
+      }
     }
   }
 
-  getPresence(userId: string): UserPresence | null {
-    return this.presenceMap.get(userId) ?? null;
+  async getSocketIds(userId: string): Promise<Set<string>> {
+    const socketsKey = `presence:sockets:${userId}`;
+    const members = await this.redisService.client.smembers(socketsKey);
+    return new Set(members);
   }
 
-  startTyping(userId: string, conversationId: string): void {
-    const presence = this.presenceMap.get(userId);
-    if (presence && !presence.typingIn?.includes(conversationId)) {
-      presence.typingIn = [...(presence.typingIn ?? []), conversationId];
+  async isOnline(userId: string): Promise<boolean> {
+    const count = await this.redisService.client.scard(`presence:sockets:${userId}`);
+    return count > 0;
+  }
+
+  async setStatus(userId: string, status: PresenceStatus): Promise<void> {
+    const raw = await this.redisService.client.hget('presence:status', userId);
+    if (raw) {
+      try {
+        const presence = JSON.parse(raw);
+        presence.status = status;
+        await this.redisService.client.hset('presence:status', userId, JSON.stringify(presence));
+      } catch (e) {
+        this.logger.error('Failed to parse presence from Redis', e);
+      }
+    }
+  }
+
+  async getPresence(userId: string): Promise<UserPresence | null> {
+    const raw = await this.redisService.client.hget('presence:status', userId);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw);
+        return {
+          ...p,
+          socketIds: new Set(),
+        } as UserPresence;
+      } catch (e) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  async startTyping(userId: string, conversationId: string): Promise<void> {
+    if (!this.localTypingMap.has(conversationId)) {
+      this.localTypingMap.set(conversationId, []);
+    }
+    const typingInConv = this.localTypingMap.get(conversationId)!;
+    if (!typingInConv.includes(userId)) {
+      typingInConv.push(userId);
     }
 
-    // Auto-clear typing after timeout in case client forgets to send typing-stop
     const key = `${userId}:${conversationId}`;
     const existing = this.typingTimers.get(key);
     if (existing) clearTimeout(existing);
@@ -110,11 +131,12 @@ export class PresenceService implements IPresenceService {
     this.typingTimers.set(key, timer);
   }
 
-  stopTyping(userId: string, conversationId: string): void {
-    const presence = this.presenceMap.get(userId);
-    if (presence) {
-      presence.typingIn = (presence.typingIn ?? []).filter(
-        (id) => id !== conversationId,
+  async stopTyping(userId: string, conversationId: string): Promise<void> {
+    const typingInConv = this.localTypingMap.get(conversationId);
+    if (typingInConv) {
+      this.localTypingMap.set(
+        conversationId,
+        typingInConv.filter((id) => id !== userId),
       );
     }
 
@@ -126,18 +148,7 @@ export class PresenceService implements IPresenceService {
     }
   }
 
-  getTypingUsers(conversationId: string): string[] {
-    const typing: string[] = [];
-    for (const [userId, presence] of this.presenceMap.entries()) {
-      if (presence.typingIn?.includes(conversationId)) {
-        typing.push(userId);
-      }
-    }
-    return typing;
-  }
-
-  /** Get a summary of all online users (for debugging/admin) */
-  getOnlineCount(): number {
-    return this.socketMap.size;
+  async getTypingUsers(conversationId: string): Promise<string[]> {
+    return this.localTypingMap.get(conversationId) ?? [];
   }
 }
