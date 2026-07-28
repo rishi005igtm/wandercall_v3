@@ -218,15 +218,14 @@ export default function Navbar({
                 {isAuthenticated && (
                   <>
                     {/* Notification Bell */}
-                    <button suppressHydrationWarning
-                      onClick={() => router.push("/profile/settings")}
+                    <Link href="/profile/settings" suppressHydrationWarning
                       className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all cursor-pointer"
                       aria-label="Notifications"
                     >
                       <Bell className="h-4 w-4" />
                       <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-brand-cyan animate-ping" />
                       <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-brand-cyan" />
-                    </button>
+                    </Link>
 
                     {/* Explorer Level Badge */}
                     <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 bg-brand-purple/10 border border-brand-purple/20 rounded-full text-[10px] font-black uppercase tracking-wider text-brand-purple">
@@ -425,7 +424,7 @@ export default function Navbar({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="lg:hidden fixed bottom-4 left-4 right-4 z-50 bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden"
           >
-            <button suppressHydrationWarning onClick={() => router.push('/')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <Link href="/" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
               {pathname === '/' && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
@@ -435,9 +434,9 @@ export default function Navbar({
               )}
               <Home className="h-4 w-4 z-10" />
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
-            </button>
+            </Link>
 
-            <button suppressHydrationWarning onClick={() => router.push('/profile/friends/search')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <Link href="/profile/friends/search" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
               {pathname.startsWith('/profile/friends/search') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
@@ -447,15 +446,15 @@ export default function Navbar({
               )}
               <Search className="h-4 w-4 z-10" />
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Search</span>
-            </button>
+            </Link>
 
             <div className="flex-1 flex justify-center relative z-50">
-              <button suppressHydrationWarning onClick={() => router.push('/experiences')} className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-black scale-105' : ''}`}>
+              <Link href="/experiences" suppressHydrationWarning className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-black scale-105' : ''}`}>
                 <Compass className="h-5 w-5 text-white" />
-              </button>
+              </Link>
             </div>
 
-            <button suppressHydrationWarning onClick={() => router.push('/feed')} className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <Link href="/feed" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
               {pathname.startsWith('/feed') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
@@ -465,10 +464,10 @@ export default function Navbar({
               )}
               <Radio className="h-4 w-4 z-10" />
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
-            </button>
+            </Link>
 
-            <button suppressHydrationWarning
-              onClick={() => router.push(isAuthenticated ? "/profile/friends" : "/login")}
+            <Link suppressHydrationWarning
+              href={isAuthenticated ? "/profile/friends" : "/login"}
               className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${
                 pathname.startsWith("/profile/friends") ? "text-white" : "text-zinc-800 hover:text-black"
               }`}
@@ -482,7 +481,7 @@ export default function Navbar({
               )}
               <MessageSquare className="h-4 w-4 z-10" />
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Chat</span>
-            </button>
+            </Link>
           </motion.div>
         )}
       </AnimatePresence>

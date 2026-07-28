@@ -316,6 +316,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
         socketRef.current.disconnect();
         socketRef.current = null;
         connectedTokenRef.current = null;
+        hasConnectedPreviously.current = false;
         dispatchRef.current(setSocketConnected(false));
       }
     };

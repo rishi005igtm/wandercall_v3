@@ -213,18 +213,10 @@ export default function ExperiencesPage() {
   const [appliedSort, setAppliedSort] = useState("Popularity");
 
   // Loader state
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Initial loader
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleCategoryClick = (cat: string) => {
     setActiveCategory(cat);
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 600);
   };
 
   const applyModalFilters = () => {
@@ -233,8 +225,6 @@ export default function ExperiencesPage() {
     setAppliedPriceRange(priceRange);
     setAppliedSort(activeSort);
     setShowMobileFilters(false);
-    setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 800);
   };
   
   // Wishlist local state tracking

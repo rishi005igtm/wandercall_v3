@@ -12,7 +12,7 @@ export const HERO_CATEGORIES = [
   { id: "sailing", name: "Sailing", count: "110", icon: Waves, color: "from-cyan-500 to-blue-600", size: "medium", image: "/categories/Sailing.webp" },
   { id: "safari", name: "Safari", count: "80", icon: Camera, color: "from-yellow-600 to-amber-700", size: "medium", image: "/categories/Safari.webp" },
   { id: "wellness", name: "Wellness", count: "250", icon: Heart, color: "from-pink-400 to-rose-400", size: "medium", image: "/categories/Wellness.webp" },
-  { id: "art", name: "Art & DIY", count: "190", icon: Palmtree, color: "from-purple-400 to-fuchsia-500", size: "medium", image: "/categories/Art & DIY.webp" },
+  { id: "art", name: "Art & DIY", count: "190", icon: Palmtree, color: "from-purple-400 to-fuchsia-500", size: "medium", image: "/categories/art-and-diy.webp" },
   { id: "sports", name: "Sports", count: "340", icon: Activity, color: "from-blue-500 to-indigo-500", size: "large", image: "/categories/Sports.webp" },
   { id: "learning", name: "Learning", count: "210", icon: BookOpen, color: "from-emerald-400 to-teal-500", size: "medium", image: "/categories/Learning.webp" },
   { id: "nightlife", name: "Nightlife", count: "550", icon: Moon, color: "from-indigo-600 to-purple-800", size: "medium", image: "/categories/Nightlife.webp" },

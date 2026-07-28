@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAppSelector } from "@/lib/store/store";
 import {
   Compass, MapPin, Flame, Award, MessageSquare, Heart, Share2,
@@ -330,17 +331,17 @@ export default function ImmersiveFeedPage() {
         {/* Fixed Top Controls Area */}
         <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none md:pointer-events-auto">
           <div className="flex justify-between items-center w-full pointer-events-auto">
-            <div className="flex items-center gap-3 cursor-pointer group" onClick={() => router.push('/')}>
+            <Link href="/" className="flex items-center gap-3 cursor-pointer group">
               <div className="h-10 w-10 bg-brand-cyan/10 border border-brand-cyan/30 rounded-xl flex items-center justify-center backdrop-blur-md transition-all group-hover:scale-105">
                 <Compass className="h-5 w-5 text-brand-cyan" />
               </div>
               <span className="text-lg font-black tracking-widest text-white hidden sm:block drop-shadow-md">WANDERCALL</span>
-            </div>
+            </Link>
 
             <div className="flex items-center gap-3">
-              <button onClick={() => router.push('/feed/create-post')} className="h-10 px-4 rounded-full bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-zinc-200 transition-transform hover:scale-105 shadow-xl shadow-white/10">
+              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-zinc-200 transition-transform hover:scale-105 shadow-xl shadow-white/10">
                 <Plus className="h-4 w-4" /> Create
-              </button>
+              </Link>
             </div>
           </div>
 
@@ -376,20 +377,19 @@ export default function ImmersiveFeedPage() {
             { id: "profile", icon: User, tooltip: "Profile", href: "/profile" },
           ].map(nav => {
             return (
-              <motion.button 
-                key={nav.id}
-                onClick={() => router.push(nav.href)}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="relative h-12 w-12 rounded-full flex items-center justify-center transition-all group bg-transparent text-zinc-400 hover:text-white hover:bg-white/10"
-              >
-                <nav.icon className="h-5 w-5" />
-                
-                {/* Tooltip */}
-                <div className="absolute left-full ml-4 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
-                  {nav.tooltip}
-                </div>
-              </motion.button>
+              <motion.div key={nav.id} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                <Link 
+                  href={nav.href}
+                  className="relative h-12 w-12 rounded-full flex items-center justify-center transition-all group bg-transparent text-zinc-400 hover:text-white hover:bg-white/10"
+                >
+                  <nav.icon className="h-5 w-5" />
+                  
+                  {/* Tooltip */}
+                  <div className="absolute left-full ml-4 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
+                    {nav.tooltip}
+                  </div>
+                </Link>
+              </motion.div>
             )
           })}
         </div>
@@ -735,35 +735,35 @@ export default function ImmersiveFeedPage() {
       </AnimatePresence>
       {/* Global Mobile Floating Bottom Action Row */}
       <div className="md:hidden fixed bottom-4 left-4 right-4 z-[90] bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden">
-        <button onClick={() => router.push('/')} className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
+        <Link href="/" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
           <Home className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
-        </button>
+        </Link>
 
-        <button onClick={() => router.push('/profile/friends/search')} className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
+        <Link href="/profile/friends/search" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
           <Search className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Search</span>
-        </button>
+        </Link>
 
         <div className="flex-1 flex justify-center relative z-50">
-          <button onClick={() => router.push('/experiences')} className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300">
+          <Link href="/experiences" className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300">
             <Compass className="h-5 w-5 text-white" />
-          </button>
+          </Link>
         </div>
 
-        <button onClick={() => router.push('/feed')} className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-white">
+        <Link href="/feed" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-white">
           <div className="absolute inset-0 bg-black border border-black rounded-xl z-0" />
           <Radio className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
-        </button>
+        </Link>
 
-        <button
-          onClick={() => router.push(isAuthenticated ? "/profile/friends" : "/login")}
+        <Link
+          href={isAuthenticated ? "/profile/friends" : "/login"}
           className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black"
         >
           <MessageSquare className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Chat</span>
-        </button>
+        </Link>
       </div>
       <AnimatePresence>
         {storyModalContent && (
