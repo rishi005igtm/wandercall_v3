@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import {
   Star,
@@ -9,11 +9,6 @@ import {
   Clock,
   Flame,
   Compass,
-  Zap,
-  Calendar,
-  SlidersHorizontal,
-  X,
-  Check,
   Heart
 } from "lucide-react";
 
@@ -94,6 +89,66 @@ export default function Trending() {
       glow: "shine-card-rose hover:border-rose-500/30",
       description: "Tackle the historic boulders of Hampi. Learn traditional rock climbing techniques and rappel down towering ruins with certified guides.",
       slug: "heritage-fort-rappelling-bouldering"
+    },
+    {
+      id: "exp-5",
+      title: "Gokarna Cliff Trek & Beach Camping",
+      category: "Camping",
+      rating: 4.9,
+      reviewsCount: 84,
+      location: "Gokarna, Karnataka",
+      duration: "2 Days",
+      difficulty: "Medium",
+      price: 3200,
+      image: "https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=600&auto=format&fit=crop",
+      glow: "shine-card-cyan hover:border-cyan-500/30",
+      description: "Hike along rugged coastline cliffs connecting Kudle and Paradise beaches. Enjoy fireside storytelling, beachside camping, and a breathtaking sunrise trek.",
+      slug: "gokarna-cliff-trek-beach-camping"
+    },
+    {
+      id: "exp-6",
+      title: "Kudremukh Peak Monsoon Ascent",
+      category: "Trekking",
+      rating: 4.8,
+      reviewsCount: 120,
+      location: "Chikmagalur, Karnataka",
+      duration: "2 Days",
+      difficulty: "Hard",
+      price: 2500,
+      image: "https://images.unsplash.com/photo-1501555088652-021faa106b9b?q=80&w=600&auto=format&fit=crop",
+      glow: "shine-card-emerald hover:border-emerald-500/30",
+      description: "Ascend the iconic horse-faced peak amidst thick monsoon fog, cascading waterfalls, and rolling lush green grasslands of the Western Ghats.",
+      slug: "kudremukh-peak-monsoon-ascent"
+    },
+    {
+      id: "exp-7",
+      title: "Varkala Cliff Surfing & Yoga",
+      category: "Retreats",
+      rating: 4.75,
+      reviewsCount: 110,
+      location: "Varkala, Kerala",
+      duration: "3 Days",
+      difficulty: "Easy",
+      price: 4200,
+      image: "https://images.unsplash.com/photo-1502680390469-be75c86b636f?q=80&w=600&auto=format&fit=crop",
+      glow: "shine-card-indigo hover:border-indigo-500/30",
+      description: "Unwind at a cliffside surfing and yoga sanctuary. Ride beginner-friendly waves, practice sunset meditation, and enjoy healthy local smoothie bowls.",
+      slug: "varkala-cliff-surfing-yoga"
+    },
+    {
+      id: "exp-8",
+      title: "Zanskar Frozen River Chadar Trek",
+      category: "Trekking",
+      rating: 5.0,
+      reviewsCount: 312,
+      location: "Leh, Ladakh",
+      duration: "8 Days",
+      difficulty: "Extreme",
+      price: 24000,
+      image: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=600&auto=format&fit=crop",
+      glow: "shine-card-rose hover:border-rose-500/30",
+      description: "Embark on the ultimate high-altitude winter trek over the frozen Zanskar river. Sleep in caves, withstand sub-zero temperatures, and walk on ice shelves.",
+      slug: "zanskar-frozen-river-chadar-trek"
     }
   ];
 
@@ -123,8 +178,11 @@ export default function Trending() {
   };
 
   return (
-    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="experiences">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+    <section 
+      className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" 
+      id="experiences"
+    >
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
         <div className="text-left">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 mb-4">
             <Flame className="h-4 w-4 text-brand-cyan" />
@@ -136,28 +194,28 @@ export default function Trending() {
             Trending Adventures
           </h2>
         </div>
-        <div className="flex gap-2">
-          {/* Scroll instruction for mobile/desktop */}
-          <span className="text-xs font-bold text-zinc-500 uppercase tracking-widest self-end">
-            Swipe or Drag to Explore →
-          </span>
-        </div>
+        
+        {/* Explore More Button */}
+        <Link href="/experiences" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98] self-start md:self-end">
+          <Compass className="h-4 w-4 text-brand-cyan animate-pulse" />
+          Explore More
+        </Link>
       </div>
 
-      {/* Horizontal Carousel */}
-      <div className="w-full overflow-x-auto pb-8 no-scrollbar cursor-grab active:cursor-grabbing flex gap-6 snap-x snap-mandatory">
+      {/* Grid Layout (Fixed 8 Items, Responsive Rows) */}
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {isLoading 
-          ? Array.from({ length: 4 }).map((_, i) => <TrendingSkeletonCard key={i} />)
+          ? Array.from({ length: 8 }).map((_, i) => <TrendingSkeletonCard key={i} />)
           : experiences.map((exp) => {
           const isWishlisted = wishlist.includes(exp.id);
           return (
             <motion.div
               key={exp.id}
-              className={`snap-start shrink-0 w-[290px] sm:w-[320px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden group/card transition-all duration-300 shine-card ${exp.glow}`}
+              className={`min-h-[380px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden group/card transition-all duration-300 shine-card ${exp.glow}`}
               whileHover={{ y: -6 }}
             >
               {/* Thumbnail Zone */}
-              <div className="h-44 w-full relative overflow-hidden bg-zinc-950">
+              <div className="h-44 w-full relative overflow-hidden bg-zinc-950 shrink-0">
                 <img src={exp.image} alt={exp.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
@@ -223,7 +281,7 @@ export default function Trending() {
                 {/* View Experience CTA */}
                 <Link
                   href={`/experiences/${exp.slug}`}
-                  className="mt-4 w-full h-9 rounded-xl bg-white/5 hover:bg-white text-zinc-400 hover:text-zinc-950 border border-white/5 hover:border-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-98 shadow-md"
+                  className="mt-4 w-full h-9 rounded-xl bg-white/5 hover:bg-white text-zinc-400 hover:text-zinc-950 border border-white/5 hover:border-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-98 shadow-md shrink-0"
                 >
                   <Compass className="h-3.5 w-3.5 text-brand-cyan" /> View Experience
                 </Link>
@@ -232,23 +290,15 @@ export default function Trending() {
           );
         })}
       </div>
-
-      {/* Explore More Button */}
-      <div className="flex justify-center mt-12">
-        <Link href="/experiences" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
-          <Compass className="h-4 w-4 text-brand-cyan animate-pulse" />
-          Explore More
-        </Link>
-      </div>
     </section>
   );
 }
 
 function TrendingSkeletonCard() {
   return (
-    <div className="snap-start shrink-0 w-[290px] sm:w-[320px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden bg-zinc-900/50 animate-pulse">
+    <div className="min-h-[380px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden bg-zinc-900/50 animate-pulse">
       {/* Thumbnail Zone */}
-      <div className="h-44 w-full relative bg-white/5 border-b border-white/5">
+      <div className="h-44 w-full relative bg-white/5 border-b border-white/5 shrink-0">
         <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
           <div className="h-4 w-20 bg-white/10 rounded-full" />
           <div className="flex items-center gap-2">
@@ -285,7 +335,7 @@ function TrendingSkeletonCard() {
         </div>
 
         {/* View Experience CTA */}
-        <div className="mt-4 w-full h-9 rounded-xl bg-white/10" />
+        <div className="mt-4 w-full h-9 rounded-xl bg-white/10 shrink-0" />
       </div>
     </div>
   );
