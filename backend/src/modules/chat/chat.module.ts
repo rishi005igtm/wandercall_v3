@@ -7,7 +7,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ConversationEntity } from './entities/conversation.entity';
 import { ConversationParticipantEntity } from './entities/conversation-participant.entity';
 import { MessageEntity } from './entities/message.entity';
-import { CommunityRoomEntity } from './entities/community-room.entity';
 import { ConversationMemberStateEntity } from './entities/conversation-member-state.entity';
 
 // Repositories
@@ -30,9 +29,7 @@ import { ChatController } from './controllers/chat.controller';
 import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '../user/user.module';
 import { PrivacyModule } from '../privacy/privacy.module';
-import { CommunityModule } from '../community/community.module';
 import { RedisModule } from '../redis/redis.module';
-import { CommunityChatService } from './services/community-chat.service';
 import { FriendModule } from '../friend/friend.module';
 
 @Module({
@@ -41,14 +38,12 @@ import { FriendModule } from '../friend/friend.module';
       ConversationEntity,
       ConversationParticipantEntity,
       MessageEntity,
-      CommunityRoomEntity,
       ConversationMemberStateEntity,
     ]),
     AuthModule,
     UserModule,
     PrivacyModule,
     RedisModule, // Added RedisModule
-    forwardRef(() => CommunityModule), // Added CommunityModule with forwardRef
     forwardRef(() => FriendModule),
     // JwtModule for socket authentication
     JwtModule.registerAsync({
@@ -73,7 +68,6 @@ import { FriendModule } from '../friend/friend.module';
 
     // Services
     ChatService,
-    CommunityChatService,
     PresenceService,
     ChatEventDispatcher,
     MessageService,
@@ -84,7 +78,6 @@ import { FriendModule } from '../friend/friend.module';
   ],
   exports: [
     ChatService,
-    CommunityChatService,
     PresenceService,
     ChatEventDispatcher,
     ChatGateway,

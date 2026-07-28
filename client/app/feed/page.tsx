@@ -7,7 +7,7 @@ import { useAppSelector } from "@/lib/store/store";
 import {
   Compass, MapPin, Flame, Award, MessageSquare, Heart, Share2,
   Bookmark, Camera, Plus, Sparkles, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Map, Lightbulb,
-  Package, Home, DollarSign, Calendar, X, Zap, Volume2, Loader2, Send, Check, Clock, Search, Radio
+  Package, Home, DollarSign, Calendar, X, Zap, Volume2, Loader2, Send, Check, Clock, Search, Radio, User
 } from "lucide-react";
 
 import {
@@ -365,6 +365,33 @@ export default function ImmersiveFeedPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Desktop Left Navigation Sidebar */}
+        <div className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 flex-col gap-4 z-50 p-2.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+          {[
+            { id: "home", icon: Home, tooltip: "Home", href: "/" },
+            { id: "experiences", icon: Compass, tooltip: "Experiences", href: "/feed" },
+            { id: "chat", icon: MessageSquare, tooltip: "Chat", href: "/profile/friends" },
+            { id: "profile", icon: User, tooltip: "Profile", href: "/profile" },
+          ].map(nav => {
+            return (
+              <motion.button 
+                key={nav.id}
+                onClick={() => router.push(nav.href)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                className="relative h-12 w-12 rounded-full flex items-center justify-center transition-all group bg-transparent text-zinc-400 hover:text-white hover:bg-white/10"
+              >
+                <nav.icon className="h-5 w-5" />
+                
+                {/* Tooltip */}
+                <div className="absolute left-full ml-4 px-3 py-1.5 rounded-lg bg-black/80 backdrop-blur-md border border-white/10 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl">
+                  {nav.tooltip}
+                </div>
+              </motion.button>
+            )
+          })}
         </div>
 
         {/* Desktop Navigation Arrows */}

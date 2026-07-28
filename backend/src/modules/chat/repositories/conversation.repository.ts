@@ -189,19 +189,14 @@ export class ConversationRepository {
     };
 
     // ONLY update JSONB unreadCounts for direct/group conversations to avoid massive row locks.
-    if (
-      conversation.type !== ConversationType.COMMUNITY &&
-      conversation.type !== ConversationType.CAMPFIRE
-    ) {
-      const updatedUnreadCounts = { ...conversation.unreadCounts };
-      for (const recipientId of recipientIds) {
-        if (recipientId !== senderId) {
-          updatedUnreadCounts[recipientId] =
-            (updatedUnreadCounts[recipientId] || 0) + 1;
-        }
+    const updatedUnreadCounts = { ...conversation.unreadCounts };
+    for (const recipientId of recipientIds) {
+      if (recipientId !== senderId) {
+        updatedUnreadCounts[recipientId] =
+          (updatedUnreadCounts[recipientId] || 0) + 1;
       }
-      updatePayload.unreadCounts = updatedUnreadCounts;
     }
+    updatePayload.unreadCounts = updatedUnreadCounts;
 
     await this.convRepo.update(conversationId, updatePayload);
   }
@@ -240,53 +235,4 @@ export class ConversationRepository {
     return participants.map((p) => p.userId);
   }
 
-  async createCommunityConversation(
-    communityId: string,
-  ): Promise<ConversationEntity> {
-    const conversation = this.convRepo.create({
-      id: randomUUID(),
-      type: ConversationType.COMMUNITY,
-      metadata: {
-        communityId,
-        isDefault: true,
-      },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    return this.convRepo.save(conversation);
-  }
-
-  async findDefaultCommunityConversation(
-    communityId: string,
-  ): Promise<ConversationEntity | null> {
-    return this.convRepo
-      .createQueryBuilder('conv')
-      .where('conv.type = :type', { type: ConversationType.COMMUNITY })
-      .andWhere("conv.metadata->>'communityId' = :communityId", { communityId })
-      .andWhere("conv.metadata->>'isDefault' = 'true'")
-      .getOne();
-  }
-
-  async createCampfireConversation(
-    campfireId: string,
-  ): Promise<ConversationEntity> {
-    const conversation = this.convRepo.create({
-      id: randomUUID(),
-      type: ConversationType.CAMPFIRE,
-      metadata: { campfireId },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    return this.convRepo.save(conversation);
-  }
-
-  async findCampfireConversation(
-    campfireId: string,
-  ): Promise<ConversationEntity | null> {
-    return this.convRepo
-      .createQueryBuilder('conv')
-      .where('conv.type = :type', { type: ConversationType.CAMPFIRE })
-      .andWhere("conv.metadata->>'campfireId' = :campfireId", { campfireId })
-      .getOne();
-  }
 }

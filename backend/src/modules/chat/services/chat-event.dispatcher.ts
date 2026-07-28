@@ -26,24 +26,8 @@ export class ChatEventDispatcher
   private initializeRedisSubscriber() {
     const subscriber = this.redisService.subscriber;
     
-    // Subscribe to all community events and chat events
-    subscriber.psubscribe('community:*:events', (err) => {
-      if (err) this.logger.error('Failed to subscribe to community events', err);
-    });
-    
     subscriber.subscribe('chat:events', (err) => {
       if (err) this.logger.error('Failed to subscribe to chat events', err);
-    });
-
-    subscriber.on('pmessage', (pattern, channel, message) => {
-      try {
-        const payload = JSON.parse(message);
-        if (payload.type === 'COMMUNITY_MESSAGE_CREATED') {
-          this.emit('COMMUNITY_MESSAGE_CREATED', payload.data);
-        }
-      } catch (err) {
-        this.logger.error('Failed to parse Redis pub/sub pmessage', err);
-      }
     });
     
     subscriber.on('message', (channel, message) => {
@@ -93,25 +77,5 @@ export class ChatEventDispatcher
       type: 'USER_DISCONNECTED',
       payload: { userId, socketId, isStillOnline },
     });
-  }
-
-  /**
-   * Dispatches a community message.
-   * Instead of just emitting locally, this publishes to Redis so ALL gateway nodes receive it.
-   */
-  dispatchCommunityMessage(communityId: string, message: MessageEntity) {
-    const payload = {
-      type: 'COMMUNITY_MESSAGE_CREATED',
-      data: { communityId, message },
-    };
-
-    // Publish to Redis
-    this.redisService.client
-      .publish(`community:${communityId}:events`, JSON.stringify(payload))
-      .catch((err) => {
-        this.logger.error(
-          `Failed to publish community message to Redis: ${err.message}`,
-        );
-      });
   }
 }

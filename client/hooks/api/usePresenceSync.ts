@@ -18,18 +18,33 @@ export function usePresenceSync(userIds: string[]) {
   
   // Track currently subscribed user IDs to manage cleanup efficiently
   const subscribedIdsRef = useRef<Set<string>>(new Set());
+  const wasConnectedRef = useRef(false);
 
   useEffect(() => {
-    if (!isConnected) return;
+    if (!isConnected) {
+      wasConnectedRef.current = false;
+      return;
+    }
 
     const currentIds = new Set(userIds.filter(Boolean));
     const previousIds = subscribedIdsRef.current;
+    const justReconnected = !wasConnectedRef.current;
 
-    // Find users we need to subscribe to (in current, not in previous)
-    const toSubscribe = Array.from(currentIds).filter(id => !previousIds.has(id));
+    // Find users we need to subscribe to (in current, not in previous, or ALL if just reconnected)
+    const toSubscribe = justReconnected
+      ? Array.from(currentIds)
+      : Array.from(currentIds).filter(id => !previousIds.has(id));
     
     // Find users we need to unsubscribe from (in previous, not in current)
-    const toUnsubscribe = Array.from(previousIds).filter(id => !currentIds.has(id));
+    // If just reconnected, the server already dropped our previous subscriptions, so no need to unsubscribe.
+    const toUnsubscribe = justReconnected
+      ? []
+      : Array.from(previousIds).filter(id => !currentIds.has(id));
+
+    if (justReconnected) {
+      // Clear previous tracking since we are starting fresh on a new socket
+      previousIds.clear();
+    }
 
     if (toSubscribe.length > 0) {
       emit('subscribe-presence-bulk', { targetUserIds: toSubscribe });
@@ -41,6 +56,7 @@ export function usePresenceSync(userIds: string[]) {
       toUnsubscribe.forEach(id => previousIds.delete(id));
     }
 
+    wasConnectedRef.current = true;
   }, [userIds, isConnected, emit]);
 
   // Global cleanup when the component using this hook unmounts

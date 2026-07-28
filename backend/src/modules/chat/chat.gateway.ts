@@ -15,13 +15,7 @@ import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { ChatService } from './services/chat.service';
-import { CommunityChatService } from './services/community-chat.service';
-import { PresenceService } from './services/presence.service';
 import { ChatEventDispatcher } from './services/chat-event.dispatcher';
-import {
-  CommunityEventDispatcher,
-  CommunityEvents,
-} from '../community/events/community-event.dispatcher';
 import { FriendEventDispatcher } from '../friend/events/friend-event.dispatcher';
 import { ConversationRepository } from './repositories/conversation.repository';
 import {
@@ -38,9 +32,9 @@ import {
   MessageReadEvent,
   MessageEditedEvent,
   MessageDeletedEvent,
-  CommunityMessageCreatedEvent,
 } from './interfaces/chat-event.interface';
 import { PresenceStatus } from './interfaces/presence.interface';
+import { PresenceService } from './services/presence.service';
 
 /**
  * ChatGateway — Thin socket handler layer.
@@ -73,11 +67,8 @@ export class ChatGateway
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly chatService: ChatService,
-    private readonly communityChatService: CommunityChatService,
     private readonly presenceService: PresenceService,
     private readonly chatEventDispatcher: ChatEventDispatcher,
-    @Inject(forwardRef(() => CommunityEventDispatcher))
-    private readonly communityEventDispatcher: CommunityEventDispatcher,
     private readonly friendEventDispatcher: FriendEventDispatcher,
     private readonly conversationRepository: ConversationRepository,
   ) {}
@@ -388,122 +379,6 @@ export class ChatGateway
   // COMMUNITY CHAT EVENT HANDLERS
   // ─────────────────────────────────────────────────────────
 
-  @SubscribeMessage('join_community')
-  async handleJoinCommunity(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() data: { communityId: string },
-  ): Promise<Record<string, unknown>> {
-    const userId = socket.data.userId;
-    if (!userId || !data?.communityId)
-      return this.ackError('VALIDATION_ERROR', 'communityId required.');
-
-    try {
-      await socket.join(`room:community:${data.communityId}`);
-      await socket.join(`community:${data.communityId}`);
-      return { success: true };
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      return this.ackError('JOIN_FAILED', err.message || String(error));
-    }
-  }
-
-  @SubscribeMessage('leave_community')
-  async handleLeaveCommunity(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() data: { communityId: string },
-  ): Promise<Record<string, unknown>> {
-    const userId = socket.data.userId;
-    if (!userId || !data?.communityId)
-      return this.ackError('VALIDATION_ERROR', 'communityId required.');
-
-    try {
-      await socket.leave(`room:community:${data.communityId}`);
-      await socket.leave(`community:${data.communityId}`);
-      return { success: true };
-    } catch (error: unknown) {
-      const err = error as { message?: string };
-      return this.ackError('LEAVE_FAILED', err.message || String(error));
-    }
-  }
-
-  @SubscribeMessage('community:send_message')
-  async handleCommunitySendMessage(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() rawData: Record<string, unknown>,
-  ): Promise<unknown> {
-    const userId = socket.data.userId;
-    if (!userId) return this.ackError('AUTH_REQUIRED', 'Not authenticated.');
-    if (!rawData.communityId)
-      return this.ackError('VALIDATION_ERROR', 'communityId required.');
-
-    const dto = plainToInstance(SendMessageDto, rawData);
-    const errors = await validate(dto);
-    if (errors.length > 0) {
-      const detail = errors
-        .map((e) => Object.values(e.constraints ?? {}).join(', '))
-        .join('; ');
-      this.logger.error(
-        `[CommSendMsg:ValidationFail] socketId=${socket.id} error=${detail} rawData=${JSON.stringify(rawData)}`,
-      );
-      return this.ackError('VALIDATION_ERROR', detail);
-    }
-
-    try {
-      const message = await this.communityChatService.sendMessage(
-        userId,
-        rawData.communityId as string,
-        dto,
-      );
-      return message;
-    } catch (error: unknown) {
-      const err = error as { message?: string; status?: number };
-      this.logger.error(
-        `[CommSendMsg:Fail] socketId=${socket.id} error=${err.message || String(error)}`,
-      );
-      return this.ackError(
-        err.status === 429 ? 'RATE_LIMITED' : 'SEND_FAILED',
-        err.message || String(error),
-      );
-    }
-  }
-
-  @SubscribeMessage('community:join-lobby')
-  async handleJoinLobby(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() data: { communityId: string; user: Record<string, unknown> },
-  ): Promise<Record<string, unknown>> {
-    const userId = socket.data.userId;
-    if (!userId || !data?.communityId) return { success: false };
-    await socket.join(`community:${data.communityId}`);
-    await socket.join(`room:community:${data.communityId}`);
-    this.chatEventDispatcher.dispatch({
-      type: 'COMMUNITY_JOIN_LOBBY',
-      payload: {
-        communityId: data.communityId,
-        userId,
-        user: data.user,
-        socketId: socket.id,
-      },
-    });
-    return { success: true };
-  }
-
-  @SubscribeMessage('community:leave-lobby')
-  async handleLeaveLobby(
-    @ConnectedSocket() socket: Socket,
-    @MessageBody() data: { communityId: string },
-  ): Promise<Record<string, unknown>> {
-    const userId = socket.data.userId;
-    if (!userId || !data?.communityId) return { success: false };
-    await socket.leave(`community:${data.communityId}`);
-    await socket.leave(`room:community:${data.communityId}`);
-    this.chatEventDispatcher.dispatch({
-      type: 'COMMUNITY_LEAVE_LOBBY',
-      payload: { communityId: data.communityId, userId, socketId: socket.id },
-    });
-    return { success: true };
-  }
-
   // ─────────────────────────────────────────────────────────
   // EVENT SUBSCRIBERS
   // ─────────────────────────────────────────────────────────
@@ -642,170 +517,6 @@ export class ChatGateway
         this.server
           .to(`conv:${payload.conversationId}`)
           .emit(SOCKET_EVENTS.MESSAGE_DELETED, payload);
-      },
-    );
-
-    /** COMMUNITY_MESSAGE_CREATED → broadcast to all sockets in the community room */
-    this.chatEventDispatcher.subscribe<CommunityMessageCreatedEvent>(
-      'COMMUNITY_MESSAGE_CREATED',
-      (payload) => {
-        const { communityId, message } = payload;
-        this.server
-          .to(`room:community:${communityId}`)
-          .to(`community:${communityId}`)
-          .emit(SOCKET_EVENTS.MESSAGE_NEW, {
-            message,
-            conversationId: message.conversationId,
-            communityId,
-          });
-      },
-    );
-
-    this.communityEventDispatcher.on(
-      CommunityEvents.MEMBER_MUTED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:moderation:action', { ...payload, action: 'MUTE' });
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.MEMBER_UNMUTED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:moderation:action', {
-            ...payload,
-            action: 'UNMUTE',
-          });
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.MEMBER_BANNED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:moderation:action', { ...payload, action: 'BAN' });
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.MEMBER_UNBANNED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:moderation:action', { ...payload, action: 'UNBAN' });
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.MEMBER_WARNED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:moderation:action', { ...payload, action: 'WARN' });
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.MEMBER_KICKED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:moderation:action', { ...payload, action: 'KICK' });
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.ROLE_CHANGED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:role:updated', payload);
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.SETTINGS_UPDATED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:settings:updated', payload);
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.JOINED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:member:joined', payload);
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.LEFT,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:member:left', payload);
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.OWNER_TRANSFERRED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:ownership:transferred', payload);
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
-      },
-    );
-    this.communityEventDispatcher.on(
-      CommunityEvents.UPDATED,
-      (payload: Record<string, unknown>) => {
-        this.server
-          .to(`room:community:${payload.communityId}`)
-          .to(`community:${payload.communityId}`)
-          .emit('community:updated', payload);
-        this.server.emit('COMMUNITY_UPDATED', {
-          communityId: payload.communityId,
-        });
       },
     );
   }

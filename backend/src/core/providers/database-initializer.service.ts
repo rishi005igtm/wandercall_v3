@@ -1,7 +1,6 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { CommunityRoleSeederService } from '../../modules/community/services/community-role-seeder.service';
 
 @Injectable()
 export class DatabaseInitializerService implements OnApplicationBootstrap {
@@ -10,7 +9,6 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly roleSeeder: CommunityRoleSeederService,
   ) {}
 
   async onApplicationBootstrap(): Promise<void> {
@@ -18,7 +16,7 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
     await queryRunner.connect();
 
     try {
-      // Clean up legacy orphan tables
+      // Clean up legacy orphan tables and deleted modules (Community & Campfire)
       try {
         await queryRunner.query(`DROP TABLE IF EXISTS "post_likes" CASCADE`);
         await queryRunner.query(
@@ -30,8 +28,27 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         await queryRunner.query(
           `DROP TABLE IF EXISTS "feed_impressions" CASCADE`,
         );
+
+        // Community Platform Tables
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_invites" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_bans" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_roles" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_members" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_settings" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_coordinates" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_saves" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_stats" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_galaxies" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "community_categories" CASCADE`);
+
+        // Campfire Platform Tables
+        await queryRunner.query(`DROP TABLE IF EXISTS "campfire_messages" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "live_sessions" CASCADE`);
+        await queryRunner.query(`DROP TABLE IF EXISTS "campfires" CASCADE`);
+        
+        this.logger.log('Successfully dropped legacy and deleted module tables');
       } catch (err: unknown) {
-        this.logger.warn('Failed to clean up legacy orphan tables', err);
+        this.logger.warn('Failed to clean up legacy orphan tables or deleted module tables', err);
       }
 
       // Synchronize database schema once on server boot if needed
@@ -102,29 +119,7 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         );
       }
 
-      // ─────────────────────────────────────────────────────────────────────────
-      // COMMUNITY CATEGORY SEEDING
-      // Seed default categories for Community Galaxy
-      // ─────────────────────────────────────────────────────────────────────────
-      try {
-        await this.seedCommunityCategories();
-      } catch (err: unknown) {
-        this.logger.warn(
-          `Community category seed notice: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
-
-      // ─────────────────────────────────────────────────────────────────────────
-      // COMMUNITY ROLE SEEDING
-      // Seed default system roles strictly after synchronize()
-      // ─────────────────────────────────────────────────────────────────────────
-      try {
-        await this.roleSeeder.seedSystemRoles();
-      } catch (err: unknown) {
-        this.logger.warn(
-          `Community role seed notice: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      }
+      // Removed Community Category and Role Seeding
     } catch (error) {
       this.logger.error(
         'Failed to initialize database tables on startup:',
@@ -295,65 +290,4 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
     }
   }
 
-  private async seedCommunityCategories(): Promise<void> {
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    try {
-      const categories = [
-        {
-          id: '11111111-1111-4111-8111-111111111111',
-          name: 'Adventure',
-          slug: 'adventure',
-        },
-        {
-          id: '22222222-2222-4222-8222-222222222222',
-          name: 'Food & Eats',
-          slug: 'food-eats',
-        },
-        {
-          id: '33333333-3333-4333-8333-333333333333',
-          name: 'Photography',
-          slug: 'photography',
-        },
-        {
-          id: '44444444-4444-4444-8444-444444444444',
-          name: 'Storytelling',
-          slug: 'storytelling',
-        },
-        {
-          id: '55555555-5555-4555-8555-555555555555',
-          name: 'Travel & Nomads',
-          slug: 'travel-nomads',
-        },
-        {
-          id: '66666666-6666-4666-8666-666666666666',
-          name: 'Fitness & Runs',
-          slug: 'fitness-runs',
-        },
-        {
-          id: '77777777-7777-4777-8777-777777777777',
-          name: 'Learning & Craft',
-          slug: 'learning-craft',
-        },
-        {
-          id: '88888888-8888-4888-8888-888888888888',
-          name: 'Nightlife',
-          slug: 'nightlife',
-        },
-      ];
-
-      for (const cat of categories) {
-        await queryRunner.query(
-          `
-          INSERT INTO community_categories (id, name, slug)
-          VALUES ($1, $2, $3)
-          ON CONFLICT (slug) DO UPDATE SET id = EXCLUDED.id
-        `,
-          [cat.id, cat.name, cat.slug],
-        );
-      }
-    } finally {
-      await queryRunner.release();
-    }
-  }
 }

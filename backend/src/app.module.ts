@@ -27,25 +27,8 @@ import { ChatModule } from './modules/chat/chat.module';
 import { ConversationEntity } from './modules/chat/entities/conversation.entity';
 import { ConversationParticipantEntity } from './modules/chat/entities/conversation-participant.entity';
 import { MessageEntity } from './modules/chat/entities/message.entity';
-
-// Community Platform
-import { CommunityModule } from './modules/community/community.module';
-import { CommunityEntity } from './modules/community/entities/community.entity';
-import { CommunitySettingsEntity } from './modules/community/entities/community-settings.entity';
-import { CommunityCategoryEntity } from './modules/community/entities/community-category.entity';
-import { CommunityCoordinateEntity } from './modules/community/entities/community-coordinate.entity';
-import { CommunitySavedEntity } from './modules/community/entities/community-saved.entity';
-import { CommunityStatisticsEntity } from './modules/community/entities/community-statistics.entity';
-import { CommunityMemberEntity } from './modules/community/entities/community-member.entity';
-import { CommunityRoleEntity } from './modules/community/entities/community-role.entity';
-import { CommunityInviteEntity } from './modules/community/entities/community-invite.entity';
-import { CommunityBanEntity } from './modules/community/entities/community-ban.entity';
 import { RedisModule } from './modules/redis';
 
-// Campfire Platform
-import { CampfireModule } from './modules/campfire/campfire.module';
-import { CampfireEntity } from './modules/campfire/entities/campfire.entity';
-import { LiveSessionEntity } from './modules/campfire/entities/live-session.entity';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
@@ -86,20 +69,6 @@ import { HealthModule } from './health/health.module';
             ConversationEntity,
             ConversationParticipantEntity,
             MessageEntity,
-            // Community Platform entities
-            CommunityEntity,
-            CommunitySettingsEntity,
-            CommunityCategoryEntity,
-            CommunityCoordinateEntity,
-            CommunitySavedEntity,
-            CommunityStatisticsEntity,
-            CommunityMemberEntity,
-            CommunityRoleEntity,
-            CommunityInviteEntity,
-            CommunityBanEntity,
-            // Campfire Platform entities
-            CampfireEntity,
-            LiveSessionEntity,
           ],
           synchronize: false, // Handled on startup via DatabaseInitializerService
           autoLoadEntities: true,
@@ -120,8 +89,6 @@ import { HealthModule } from './health/health.module';
     PrivacyModule,
     SearchModule,
     ChatModule,
-    CommunityModule,
-    CampfireModule,
     HealthModule,
   ],
   controllers: [],

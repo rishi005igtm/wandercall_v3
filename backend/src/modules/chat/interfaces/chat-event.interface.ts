@@ -17,10 +17,7 @@ export type ChatEvent =
   | MessageDeletedEvent
   | ConversationCreatedEvent
   | UserConnectedEvent
-  | UserDisconnectedEvent
-  | CommunityJoinLobbyEvent
-  | CommunityLeaveLobbyEvent
-  | CommunityMessageCreatedEvent;
+  | UserDisconnectedEvent;
 
 export interface MessageCreatedEvent {
   type: 'MESSAGE_CREATED';
@@ -94,32 +91,5 @@ export interface UserDisconnectedEvent {
     userId: string;
     socketId: string;
     isStillOnline: boolean;
-  };
-}
-
-export interface CommunityJoinLobbyEvent {
-  type: 'COMMUNITY_JOIN_LOBBY';
-  payload: {
-    communityId: string;
-    userId: string;
-    user: Record<string, unknown>;
-    socketId: string;
-  };
-}
-
-export interface CommunityLeaveLobbyEvent {
-  type: 'COMMUNITY_LEAVE_LOBBY';
-  payload: {
-    communityId: string;
-    userId: string;
-    socketId: string;
-  };
-}
-
-export interface CommunityMessageCreatedEvent {
-  type: 'COMMUNITY_MESSAGE_CREATED';
-  payload: {
-    communityId: string;
-    message: Record<string, unknown>;
   };
 }

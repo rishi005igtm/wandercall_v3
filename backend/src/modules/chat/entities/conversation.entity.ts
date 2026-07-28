@@ -10,8 +10,6 @@ import {
 export enum ConversationType {
   DIRECT = 'DIRECT',
   GROUP = 'GROUP',
-  CAMPFIRE = 'CAMPFIRE',
-  COMMUNITY = 'COMMUNITY',
   AI_ASSISTANT = 'AI_ASSISTANT',
 }
 
@@ -36,7 +34,7 @@ export class ConversationEntity {
    * Deterministic unique key for DIRECT conversations.
    * Format: "sorted_userA_id:sorted_userB_id"
    * This enforces at the DB level that only ONE direct conversation can exist per user pair.
-   * NULL for GROUP / CAMPFIRE / COMMUNITY conversations (those use different identity rules).
+   * NULL for GROUP conversations (those use different identity rules).
    */
   @Column({ type: 'varchar', length: 100, nullable: true, unique: false })
   participantKey?: string;
