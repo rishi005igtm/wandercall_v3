@@ -260,6 +260,40 @@ pipeline {
     post {
         success {
             echo 'Deployment Pipeline completed successfully.'
+
+            // Enterprise Storage & AWS Cost Cleanup Workflow
+            script {
+                echo '--- Executing Enterprise Artifact Cleanup ---'
+
+                // 1. Bound BuildKit Cache to prevent infinite ENOSPC growth
+                sh 'docker builder prune -f --keep-storage 5GB || true'
+
+                // 2. Groom dangling intermediate images safely
+                sh 'docker image prune -f || true'
+
+                // 3. Safe Historical Image Retention Policy (Retain 2 previous + active)
+                if (env.DEPLOY_TARGET == 'local') {
+                    echo 'Managing local image retention (keeping newest 3 tags)...'
+                    sh """
+                    # List images matching our app, sorted by creation (newest first), grab image IDs
+                    IMAGES=\$(docker images --format '{{.ID}}' ${DOCKER_IMAGE} | uniq)
+
+                    # If there are more than 3 images, safely remove the older ones
+                    COUNT=\$(echo "\$IMAGES" | grep -c '^' || true)
+                    if [ "\$COUNT" -gt 3 ]; then
+                        # Keep the first 3 (active + 2 rollbacks), delete the rest
+                        OLD_IMAGES=\$(echo "\$IMAGES" | tail -n +4)
+                        for IMG in \$OLD_IMAGES; do
+                            echo "Pruning historical image: \$IMG"
+                            # Use || true to prevent failure if image is locked by a stale container
+                            docker rmi -f \$IMG || true
+                        done
+                    else
+                        echo "Image retention is within bounds (\$COUNT images found)."
+                    fi
+                    """
+                }
+            }
         }
         failure {
             echo 'Deployment Pipeline FAILED.'
