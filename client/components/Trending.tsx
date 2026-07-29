@@ -9,7 +9,8 @@ import {
   Clock,
   Flame,
   Compass,
-  Heart
+  Heart,
+  ArrowRight
 } from "lucide-react";
 
 interface Experience {
@@ -194,16 +195,10 @@ export default function Trending() {
             Trending Adventures
           </h2>
         </div>
-        
-        {/* Explore More Button */}
-        <Link href="/experiences" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98] self-start md:self-end">
-          <Compass className="h-4 w-4 text-brand-cyan animate-pulse" />
-          Explore More
-        </Link>
       </div>
 
       {/* Grid Layout (Fixed 8 Items, Responsive Rows) */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
         {isLoading 
           ? Array.from({ length: 8 }).map((_, i) => <TrendingSkeletonCard key={i} />)
           : experiences.map((exp) => {
@@ -211,22 +206,22 @@ export default function Trending() {
           return (
             <motion.div
               key={exp.id}
-              className={`min-h-[380px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden group/card transition-all duration-300 shine-card ${exp.glow}`}
+              className={`min-h-[220px] sm:min-h-[380px] rounded-2xl sm:rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden group/card transition-all duration-300 shine-card ${exp.glow}`}
               whileHover={{ y: -6 }}
             >
               {/* Thumbnail Zone */}
-              <div className="h-44 w-full relative overflow-hidden bg-zinc-950 shrink-0">
+              <div className="h-32 sm:h-44 w-full relative overflow-hidden bg-zinc-950 shrink-0">
                 <img src={exp.image} alt={exp.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
                 {/* Header overlay */}
-                <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
-                  <span className="text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-white/5">
+                <div className="absolute top-2 sm:top-3.5 left-2 sm:left-3.5 right-2 sm:right-3.5 flex justify-end sm:justify-between items-center z-10">
+                  <span className="hidden sm:inline-block text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-white/5">
                     {exp.category}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-black/65 px-2 py-0.5 rounded-full backdrop-blur-md text-[9px] font-bold text-brand-amber border border-white/5 h-7">
-                      <Star className="h-3 w-3 fill-brand-amber text-brand-amber" />
+                  <div className="flex items-center gap-1.5 sm:gap-2">
+                    <div className="flex items-center gap-1 bg-black/65 px-1.5 sm:px-2 py-0.5 rounded-full backdrop-blur-md text-[8px] sm:text-[9px] font-bold text-brand-amber border border-white/5 h-6 sm:h-7">
+                      <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-brand-amber text-brand-amber" />
                       {exp.rating}
                     </div>
                     <button suppressHydrationWarning
@@ -234,35 +229,35 @@ export default function Trending() {
                         e.stopPropagation();
                         toggleWishlist(exp.id);
                       }}
-                      className={`h-7 w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md ${
+                      className={`h-6 w-6 sm:h-7 sm:w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md ${
                         isWishlisted
                           ? "bg-brand-indigo border-brand-indigo text-white scale-110 shadow-lg shadow-brand-indigo/30"
                           : "bg-black/60 border-white/5 text-white hover:bg-white hover:text-black"
                       }`}
                     >
-                      <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-white" : ""}`} />
+                      <Heart className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${isWishlisted ? "fill-white" : ""}`} />
                     </button>
                   </div>
                 </div>
               </div>
 
               {/* Metadata Card Area */}
-              <div className="p-5 flex flex-col justify-between flex-1 text-left">
+              <div className="p-3 sm:p-5 flex flex-col justify-between flex-1 text-left">
                 <div>
-                  <h3 className="text-sm font-black text-white leading-snug group-hover/card:text-brand-cyan transition-colors line-clamp-1 uppercase tracking-tight">
+                  <h3 className="text-[11px] sm:text-sm font-black text-white leading-snug group-hover/card:text-brand-cyan transition-colors line-clamp-2 sm:line-clamp-1 uppercase tracking-tight">
                     {exp.title}
                   </h3>
-                  <div className="flex items-center gap-1 text-[10px] font-semibold text-zinc-400 mt-1.5 mb-3">
+                  <div className="hidden sm:flex items-center gap-1 text-[10px] font-semibold text-zinc-400 mt-1.5 mb-3">
                     <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
                     <span className="truncate">{exp.location}</span>
                   </div>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed font-medium line-clamp-2">
+                  <p className="hidden sm:block text-[11px] text-zinc-500 leading-relaxed font-medium line-clamp-2">
                     {exp.description}
                   </p>
                 </div>
 
-                {/* Detail Metrics */}
-                <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-5">
+                {/* Detail Metrics - Desktop */}
+                <div className="hidden sm:flex items-center justify-between pt-4 border-t border-white/5 mt-5">
                   <div className="flex items-center gap-2">
                     <span className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 font-mono">
                       <Clock className="h-3.5 w-3.5" />
@@ -278,17 +273,39 @@ export default function Trending() {
                   </div>
                 </div>
 
-                {/* View Experience CTA */}
+                {/* View Experience CTA - Desktop */}
                 <Link
                   href={`/experiences/${exp.slug}`}
-                  className="mt-4 w-full h-9 rounded-xl bg-white/5 hover:bg-white text-zinc-400 hover:text-zinc-950 border border-white/5 hover:border-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-98 shadow-md shrink-0"
+                  className="hidden sm:flex mt-4 w-full h-9 rounded-xl bg-white/5 hover:bg-white text-zinc-400 hover:text-zinc-950 border border-white/5 hover:border-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 items-center justify-center gap-1.5 active:scale-98 shadow-md shrink-0"
                 >
                   <Compass className="h-3.5 w-3.5 text-brand-cyan" /> View Experience
                 </Link>
+
+                {/* Mobile Only: Minimal Metrics & CTA */}
+                <div className="flex sm:hidden items-center justify-between pt-2 mt-auto">
+                  <div className="text-left">
+                    <span className="text-[8px] font-black uppercase tracking-wider text-zinc-500 block leading-none">Starts At</span>
+                    <span className="text-[11px] font-black text-brand-cyan mt-0.5 block">₹{exp.price.toLocaleString("en-IN")}</span>
+                  </div>
+                  <Link
+                    href={`/experiences/${exp.slug}`}
+                    className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center border border-white/5 active:scale-95"
+                  >
+                    <ArrowRight className="h-3 w-3 text-white" />
+                  </Link>
+                </div>
               </div>
             </motion.div>
           );
         })}
+      </div>
+
+      {/* Explore More Button */}
+      <div className="flex justify-center mt-10 sm:mt-12 w-full">
+        <Link href="/experiences" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
+          <Compass className="h-4 w-4 text-brand-cyan animate-pulse" />
+          Explore More
+        </Link>
       </div>
     </section>
   );
