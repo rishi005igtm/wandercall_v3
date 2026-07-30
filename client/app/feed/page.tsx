@@ -8,7 +8,7 @@ import { useAppSelector } from "@/lib/store/store";
 import {
   Compass, MapPin, Flame, Award, MessageSquare, Heart, Share2,
   Bookmark, Camera, Plus, Sparkles, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, Map, Lightbulb,
-  Package, Home, DollarSign, Calendar, X, Zap, Volume2, Loader2, Send, Check, Clock, Search, Radio, User
+  Package, Home, DollarSign, Calendar, X, Zap, Volume2, Loader2, Send, Check, Clock, Search, Radio, User, Filter
 } from "lucide-react";
 
 import {
@@ -140,6 +140,7 @@ export default function ImmersiveFeedPage() {
 
   // States
   const [activeFilter, setActiveFilter] = useState("trending");
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [activePostId, setActivePostId] = useState<string | null>(null);
   const [showMobileComments, setShowMobileComments] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -349,12 +350,14 @@ export default function ImmersiveFeedPage() {
         {/* Fixed Top Controls Area */}
         <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none md:pointer-events-auto">
           <div className="flex justify-between items-center w-full pointer-events-auto">
-            <Link href="/" className="flex items-center gap-3 cursor-pointer group">
-              <div className="h-10 w-10 bg-brand-cyan/10 border border-brand-cyan/30 rounded-xl flex items-center justify-center backdrop-blur-md transition-all group-hover:scale-105">
-                <Compass className="h-5 w-5 text-brand-cyan" />
-              </div>
-              <span className="text-lg font-black tracking-widest text-white hidden sm:block drop-shadow-md">WANDERCALL</span>
-            </Link>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setShowMobileFilters(!showMobileFilters)}
+                className="md:hidden h-10 w-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center backdrop-blur-md transition-all hover:bg-white/10 text-zinc-400 hover:text-white shadow-lg cursor-pointer"
+              >
+                <Filter className="h-5 w-5" />
+              </button>
+            </div>
 
             <div className="flex items-center gap-3">
               <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-zinc-200 transition-transform hover:scale-105 shadow-xl shadow-white/10">
@@ -363,9 +366,11 @@ export default function ImmersiveFeedPage() {
             </div>
           </div>
 
-          {/* Fixed Filter Capsule */}
+          {/* Fixed Filter Capsule - Desktop always visible, Mobile animated toggle */}
           <div className="flex w-full pointer-events-auto md:justify-center">
-            <div className="flex items-center p-1.5 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg w-full md:w-auto max-w-full">
+            
+            {/* Desktop Version */}
+            <div className="hidden md:flex items-center p-1.5 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg w-auto max-w-full">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full px-1">
                 {CATEGORIES.map(cat => (
                   <button
@@ -382,6 +387,40 @@ export default function ImmersiveFeedPage() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            {/* Mobile Version via Framer Motion */}
+            <div className="block md:hidden w-full">
+              <AnimatePresence>
+                {showMobileFilters && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex items-center p-1.5 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg w-full max-w-full">
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full px-1">
+                        {CATEGORIES.map(cat => (
+                          <button
+                            key={cat.id}
+                            onClick={() => { setActiveFilter(cat.id); setShowMobileFilters(false); }}
+                            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                              activeFilter === cat.id 
+                                ? "bg-white text-black" 
+                                : "text-zinc-400 hover:text-white hover:bg-white/10"
+                            }`}
+                          >
+                            <cat.icon className="h-3 w-3" />
+                            {cat.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

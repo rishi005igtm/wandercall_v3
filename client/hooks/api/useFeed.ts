@@ -37,8 +37,29 @@ export function useCreatePostMutation() {
   return useMutation({
     mutationFn: (payload: FormData | Record<string, any>) => feedService.createPost(payload),
     onSuccess: (data) => {
-      // Invalidate all feeds to fetch new posts
-      queryClient.invalidateQueries({ queryKey: ['feed'] });
+      // Optimistically inject the new post at the top of the local feed cache
+      queryClient.setQueriesData({ queryKey: ['feed'] }, (oldData: any) => {
+        if (!oldData || !oldData.pages) return oldData;
+        const newPages = [...oldData.pages];
+        if (newPages[0] && newPages[0].items) {
+          // Prevent duplicates if already injected
+          const exists = newPages[0].items.some((p: any) => p.id === data.post.id);
+          if (!exists) {
+            newPages[0] = {
+              ...newPages[0],
+              items: [data.post, ...newPages[0].items],
+            };
+          }
+        }
+        return {
+          ...oldData,
+          pages: newPages,
+        };
+      });
+
+      // DO NOT invalidate ['feed'] immediately to avoid overwriting our optimistic local pinning.
+      // Next natural background refresh will sync it gracefully.
+      
       // Invalidate current user profile stats
       queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
       queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });

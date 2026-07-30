@@ -127,7 +127,7 @@ export default function Navbar({
     return pathname.startsWith(href);
   };
 
-  const showBottomNav = pathname === "/" || pathname === "/experiences" || pathname.startsWith("/feed");
+  const showBottomNav = (pathname === "/" || pathname === "/experiences" || pathname.startsWith("/feed")) && pathname !== "/feed/create-post";
 
   return (
     <>

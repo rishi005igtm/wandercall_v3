@@ -88,7 +88,7 @@ export default function CreatePostPage() {
   const [isAiEnhancing, setIsAiEnhancing] = useState(false);
 
   // Validation helpers
-  const isMediaValid = mediaItems.length >= 1 && mediaItems.every(m => m.status === 'uploaded');
+  const isMediaValid = mediaItems.length >= 1 && mediaItems.some(m => m.status === 'uploaded');
   const isUploading = mediaItems.some(m => m.status === 'uploading') || audioItem?.status === 'uploading';
   const isDetailsValid = postTitle.trim() !== "" && postLocation !== null;
   const isStoryValid = postText.trim().length >= 50;
@@ -279,7 +279,10 @@ export default function CreatePostPage() {
       {
         file,
         onUploadProgress: (ev) => {
-          const progress = ev.total ? Math.round((ev.loaded * 100) / ev.total) : 0;
+          // Scale Axios network progress up to 90%. The remaining 10% represents backend-to-Cloudinary processing time.
+          const rawProgress = ev.total ? Math.round((ev.loaded * 100) / ev.total) : 0;
+          const progress = Math.min(Math.round(rawProgress * 0.9), 90);
+          
           if (isAudio) {
             setAudioItem(prev => prev?.id === id ? { ...prev, progress } : prev);
           } else {
@@ -290,9 +293,9 @@ export default function CreatePostPage() {
       {
         onSuccess: (data) => {
           if (isAudio) {
-            setAudioItem(prev => prev?.id === id ? { ...prev, status: "uploaded", remoteUrl: data.url, publicId: data.publicId } : prev);
+            setAudioItem(prev => prev?.id === id ? { ...prev, status: "uploaded", progress: 100, remoteUrl: data.url, publicId: data.publicId } : prev);
           } else {
-            setMediaItems(prev => prev.map(m => m.id === id ? { ...m, status: "uploaded", remoteUrl: data.url, publicId: data.publicId } : m));
+            setMediaItems(prev => prev.map(m => m.id === id ? { ...m, status: "uploaded", progress: 100, remoteUrl: data.url, publicId: data.publicId } : m));
           }
         },
         onError: () => {
@@ -565,7 +568,7 @@ export default function CreatePostPage() {
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {mediaItems.map((img) => (
                       <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group bg-zinc-900">
-                        <img src={img.localUrl || img.remoteUrl} alt="Attached Preview" className={`w-full h-full object-cover ${img.status !== 'uploaded' ? 'opacity-50' : ''}`} />
+                        <img src={img.remoteUrl || img.localUrl} alt="Attached Preview" className={`w-full h-full object-cover ${img.status !== 'uploaded' ? 'opacity-50' : ''}`} />
                         {img.status === 'uploading' && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
                             <span className="text-[10px] font-bold text-white">{img.progress}%</span>
