@@ -7,9 +7,7 @@ export interface FriendRequestEvent {
 }
 
 export type FriendEvents =
-  | 'FRIEND_REQUEST_NEW'
-  | 'FRIEND_REQUEST_ACCEPTED'
-  | 'FRIEND_REQUEST_REMOVED';
+  'FRIEND_REQUEST_NEW' | 'FRIEND_REQUEST_ACCEPTED' | 'FRIEND_REQUEST_REMOVED';
 
 @Injectable()
 export class FriendEventDispatcher {
@@ -22,7 +20,10 @@ export class FriendEventDispatcher {
     this.eventEmitter.emit(event, payload);
   }
 
-  subscribe<T = any>(event: FriendEvents, listener: (payload: T) => void): void {
+  subscribe<T = any>(
+    event: FriendEvents,
+    listener: (payload: T) => void,
+  ): void {
     this.eventEmitter.on(event, listener);
   }
 }

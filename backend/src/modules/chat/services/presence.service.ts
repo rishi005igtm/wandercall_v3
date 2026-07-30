@@ -34,25 +34,25 @@ export class PresenceService implements IPresenceService, OnModuleInit {
 
   async connect(userId: string, socketId: string): Promise<void> {
     const socketsKey = `presence:sockets:${userId}`;
-    
+
     // Add socket to the user's active sockets set
     const added = await this.redisService.client.sadd(socketsKey, socketId);
-    
+
     if (added > 0) {
       const count = await this.redisService.client.scard(socketsKey);
-      
+
       const presence: UserPresence = {
         userId,
         status: PresenceStatus.ONLINE,
         socketIds: new Set(),
       };
-      
+
       await this.redisService.client.hset(
         'presence:status',
         userId,
-        JSON.stringify({ ...presence, socketIds: [] })
+        JSON.stringify({ ...presence, socketIds: [] }),
       );
-      
+
       if (count === 1) {
         this.logger.debug(`User ${userId} came ONLINE`);
       }
@@ -62,10 +62,10 @@ export class PresenceService implements IPresenceService, OnModuleInit {
   async disconnect(userId: string, socketId: string): Promise<void> {
     const socketsKey = `presence:sockets:${userId}`;
     const removed = await this.redisService.client.srem(socketsKey, socketId);
-    
+
     if (removed > 0) {
       const count = await this.redisService.client.scard(socketsKey);
-      
+
       if (count === 0) {
         const presence: UserPresence = {
           userId,
@@ -73,11 +73,11 @@ export class PresenceService implements IPresenceService, OnModuleInit {
           lastSeen: new Date(),
           socketIds: new Set(),
         };
-        
+
         await this.redisService.client.hset(
           'presence:status',
           userId,
-          JSON.stringify({ ...presence, socketIds: [] })
+          JSON.stringify({ ...presence, socketIds: [] }),
         );
         this.logger.debug(`User ${userId} went OFFLINE`);
       }
@@ -91,7 +91,9 @@ export class PresenceService implements IPresenceService, OnModuleInit {
   }
 
   async isOnline(userId: string): Promise<boolean> {
-    const count = await this.redisService.client.scard(`presence:sockets:${userId}`);
+    const count = await this.redisService.client.scard(
+      `presence:sockets:${userId}`,
+    );
     return count > 0;
   }
 
@@ -101,7 +103,11 @@ export class PresenceService implements IPresenceService, OnModuleInit {
       try {
         const presence = JSON.parse(raw);
         presence.status = status;
-        await this.redisService.client.hset('presence:status', userId, JSON.stringify(presence));
+        await this.redisService.client.hset(
+          'presence:status',
+          userId,
+          JSON.stringify(presence),
+        );
       } catch (e) {
         this.logger.error('Failed to parse presence from Redis', e);
       }

@@ -30,25 +30,52 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
         );
 
         // Community Platform Tables
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_invites" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_bans" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_roles" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_members" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_settings" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_coordinates" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_saves" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_stats" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_galaxies" CASCADE`);
-        await queryRunner.query(`DROP TABLE IF EXISTS "community_categories" CASCADE`);
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_invites" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_bans" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_roles" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_members" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_settings" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_coordinates" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_saves" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_stats" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_galaxies" CASCADE`,
+        );
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "community_categories" CASCADE`,
+        );
 
         // Campfire Platform Tables
-        await queryRunner.query(`DROP TABLE IF EXISTS "campfire_messages" CASCADE`);
+        await queryRunner.query(
+          `DROP TABLE IF EXISTS "campfire_messages" CASCADE`,
+        );
         await queryRunner.query(`DROP TABLE IF EXISTS "live_sessions" CASCADE`);
         await queryRunner.query(`DROP TABLE IF EXISTS "campfires" CASCADE`);
-        
-        this.logger.log('Successfully dropped legacy and deleted module tables');
+
+        this.logger.log(
+          'Successfully dropped legacy and deleted module tables',
+        );
       } catch (err: unknown) {
-        this.logger.warn('Failed to clean up legacy orphan tables or deleted module tables', err);
+        this.logger.warn(
+          'Failed to clean up legacy orphan tables or deleted module tables',
+          err,
+        );
       }
 
       // Synchronize database schema once on server boot if needed
@@ -289,5 +316,4 @@ export class DatabaseInitializerService implements OnApplicationBootstrap {
       await queryRunner.release();
     }
   }
-
 }

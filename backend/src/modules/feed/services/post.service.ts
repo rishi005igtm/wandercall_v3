@@ -34,6 +34,10 @@ export interface CreatePostParams {
   locationName?: string;
   locationLat?: number;
   locationLon?: number;
+  images?: string[];
+  imagePublicIds?: string[];
+  audioUrl?: string;
+  audioPublicId?: string;
 }
 
 export interface UpdatePostParams {
@@ -66,7 +70,6 @@ export class PostService {
     userId: string,
     userRole: UserRole,
     params: CreatePostParams,
-    files?: { images?: Express.Multer.File[]; audio?: Express.Multer.File },
   ): Promise<PostEntity> {
     const postId = randomUUID();
 
@@ -88,9 +91,11 @@ export class PostService {
       locationLat: params.locationLat,
       locationLon: params.locationLon,
       status: PostStatus.DRAFT,
-      images: [],
-      imagePublicIds: [],
-      audioDuration: 0,
+      images: params.images || [],
+      imagePublicIds: params.imagePublicIds || [],
+      audioUrl: params.audioUrl,
+      audioPublicId: params.audioPublicId,
+      audioDuration: params.audioUrl ? 35 : 0, // Mock duration for pre-uploaded audio
       aiQualityScore: 1.0,
     });
 
@@ -117,49 +122,27 @@ export class PostService {
     };
 
     // --- PHASE 4: INITIAL SAVE & ASYNC DELEGATION ---
-    post.status = PostStatus.VALIDATING; // Setting to validating to show skeleton in feed initially
+    post.status = PostStatus.PUBLISHED; 
     post.publishedAt = new Date();
     const savedPost = await this.postRepository.save(post);
 
-    try {
-      const imageUrls: string[] = [];
-      const imagePublicIds: string[] = [];
-
-      if (files?.images && files.images.length > 0) {
-        const uploadPromises = files.images.map((file) =>
-          this.storageService.uploadFile(file, UploadIntent.FEED_IMAGE, postId),
+    // Background uploads are already complete; mark them as attached asynchronously without blocking response
+    setImmediate(async () => {
+      try {
+        if (params.imagePublicIds && params.imagePublicIds.length > 0) {
+          await this.storageService.markMediaAsAttached(params.imagePublicIds);
+        }
+        if (params.audioPublicId) {
+          await this.storageService.markMediaAsAttached([params.audioPublicId]);
+        }
+        this.eventDispatcher.dispatchPostCreated(savedPost);
+        this.eventDispatcher.dispatchPostPublished(savedPost);
+      } catch (err) {
+        this.logger.error(
+          `[Lifecycle - Step 5: Processing] Failed background processing for post ${postId}: ${err}`,
         );
-        const metadatas = await Promise.all(uploadPromises);
-        metadatas.forEach((metadata) => {
-          imageUrls.push(metadata.secureUrl);
-          imagePublicIds.push(metadata.publicId);
-        });
-        savedPost.images = imageUrls;
-        savedPost.imagePublicIds = imagePublicIds;
       }
-
-      if (files?.audio) {
-        const audioMetadata = await this.storageService.uploadFile(
-          files.audio,
-          UploadIntent.FEED_AUDIO,
-          postId,
-        );
-        savedPost.audioUrl = audioMetadata.secureUrl;
-        savedPost.audioPublicId = audioMetadata.publicId;
-        savedPost.audioDuration = 35;
-      }
-
-      savedPost.status = PostStatus.PUBLISHED;
-      await this.postRepository.save(savedPost);
-      this.eventDispatcher.dispatchPostCreated(savedPost);
-      this.eventDispatcher.dispatchPostPublished(savedPost);
-    } catch (err) {
-      this.logger.error(
-        `[Lifecycle - Step 5: Processing] Failed processing for post ${postId}: ${err}`,
-      );
-      savedPost.status = PostStatus.FAILED;
-      await this.postRepository.save(savedPost);
-    }
+    });
 
     return savedPost;
   }

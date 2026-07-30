@@ -71,32 +71,14 @@ export class FeedController {
    */
   @Post('posts')
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'images', maxCount: 4 },
-      { name: 'audio', maxCount: 1 },
-    ]),
-  )
   async createPost(
-    @UploadedFiles()
-    files: {
-      images?: Express.Multer.File[];
-      audio?: Express.Multer.File[];
-    },
     @Body() dto: CreatePostRequestDto,
     @Req() req: RequestWithUser,
   ) {
     const userId = req.user.userId;
     const userRole = req.user.role as UserRole;
 
-    // Stitch audio file correctly (extract first element from the files list array)
-    const audioFile = files?.audio?.[0] || undefined;
-    const imagesFiles = files?.images || [];
-
-    const post = await this.postService.createPost(userId, userRole, dto, {
-      images: imagesFiles,
-      audio: audioFile,
-    });
+    const post = await this.postService.createPost(userId, userRole, dto);
 
     return {
       success: true,

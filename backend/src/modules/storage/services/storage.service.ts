@@ -1,4 +1,12 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, LessThan } from 'typeorm';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { randomUUID } from 'crypto';
+import {
+  MediaUploadEntity,
+  MediaUploadStatus,
+} from '../entities/media-upload.entity';
 import { UploadIntent } from '../enums/upload-intent.enum';
 import { IStorageAssetMetadata } from '../interfaces/storage-asset-metadata.interface';
 import { IStorageService } from '../interfaces/storage-service.interface';
@@ -125,7 +133,11 @@ export class StorageService implements IStorageService {
     },
   };
 
-  constructor(private readonly cloudinaryProvider: CloudinaryProvider) {}
+  constructor(
+    private readonly cloudinaryProvider: CloudinaryProvider,
+    @InjectRepository(MediaUploadEntity)
+    private readonly mediaUploadRepo: Repository<MediaUploadEntity>,
+  ) {}
 
   /**
    * Validate file against upload intent rules
@@ -247,5 +259,78 @@ export class StorageService implements IStorageService {
     publicId: string,
   ): Promise<IStorageAssetMetadata | null> {
     return this.cloudinaryProvider.getAssetMetadata(publicId);
+  }
+
+  /**
+   * Track background media upload
+   */
+  async trackMediaUpload(
+    userId: string,
+    publicId: string,
+    url: string,
+  ): Promise<MediaUploadEntity> {
+    const tracker = new MediaUploadEntity({
+      id: randomUUID(),
+      userId,
+      publicId,
+      url,
+      status: MediaUploadStatus.PENDING,
+    });
+    return this.mediaUploadRepo.save(tracker);
+  }
+
+  /**
+   * Mark media as attached so it's not swept by cron
+   */
+  async markMediaAsAttached(publicIds: string[]): Promise<void> {
+    if (!publicIds || publicIds.length === 0) return;
+    await this.mediaUploadRepo
+      .createQueryBuilder()
+      .update(MediaUploadEntity)
+      .set({ status: MediaUploadStatus.ATTACHED })
+      .where('publicId IN (:...publicIds)', { publicIds })
+      .execute();
+  }
+
+  /**
+   * Remove media tracker on explicit client cancel/delete
+   */
+  async untrackMedia(publicId: string): Promise<void> {
+    await this.mediaUploadRepo.delete({ publicId });
+  }
+
+  /**
+   * Background sweep for orphaned media
+   */
+  @Cron(CronExpression.EVERY_HOUR)
+  async sweepOrphanedMedia() {
+    this.logger.log('Running orphaned media sweep...');
+    const yesterday = new Date();
+    yesterday.setHours(yesterday.getHours() - 24);
+
+    const orphaned = await this.mediaUploadRepo.find({
+      where: {
+        status: MediaUploadStatus.PENDING,
+        createdAt: LessThan(yesterday),
+      },
+    });
+
+    if (orphaned.length === 0) return;
+
+    this.logger.log(
+      `Found ${orphaned.length} orphaned media assets to clean up.`,
+    );
+
+    for (const asset of orphaned) {
+      try {
+        await this.cloudinaryProvider.deleteAsset(asset.publicId);
+        await this.mediaUploadRepo.delete(asset.id);
+        this.logger.log(`Cleaned up orphaned asset: ${asset.publicId}`);
+      } catch (err: any) {
+        this.logger.warn(
+          `Failed to clean up asset ${asset.publicId}: ${err.message}`,
+        );
+      }
+    }
   }
 }

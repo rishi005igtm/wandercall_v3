@@ -209,7 +209,12 @@ export class FollowRepository {
     cursor?: string,
     search?: string,
   ): Promise<{
-    items: { follow: FollowEntity; profile: UserProfileEntity; lastMessageText?: string; lastMessageAt?: Date }[];
+    items: {
+      follow: FollowEntity;
+      profile: UserProfileEntity;
+      lastMessageText?: string;
+      lastMessageAt?: Date;
+    }[];
     nextCursor?: string;
   }> {
     const query = this.followRepo
@@ -235,7 +240,7 @@ export class FollowRepository {
         'chat_conversations',
         'conv',
         'conv.type = :directType AND conv."participantKey" = CASE WHEN f1."followerId" < f1."followingId" THEN f1."followerId" || \':\' || f1."followingId" ELSE f1."followingId" || \':\' || f1."followerId" END',
-        { directType: 'DIRECT' }
+        { directType: 'DIRECT' },
       )
       .addSelect(['conv.lastMessageText', 'conv.lastMessageAt'])
       .where('f1.followingId = :userId', { userId })
@@ -257,7 +262,7 @@ export class FollowRepository {
     query.orderBy('f1.createdAt', 'DESC').limit(limit + 1);
 
     const { entities, raw } = await query.getRawAndEntities();
-    
+
     let nextCursor: string | undefined;
 
     if (entities.length > limit) {
@@ -270,7 +275,9 @@ export class FollowRepository {
       follow: f,
       profile: (f as unknown as { profile: UserProfileEntity }).profile,
       lastMessageText: raw[index]?.conv_lastMessageText,
-      lastMessageAt: raw[index]?.conv_lastMessageAt ? new Date(raw[index].conv_lastMessageAt) : undefined,
+      lastMessageAt: raw[index]?.conv_lastMessageAt
+        ? new Date(raw[index].conv_lastMessageAt)
+        : undefined,
     }));
 
     return { items, nextCursor };
@@ -282,7 +289,12 @@ export class FollowRepository {
     cursor?: string,
     search?: string,
   ): Promise<{
-    items: { follow: FollowEntity; profile: UserProfileEntity; lastMessageText?: string; lastMessageAt?: Date }[];
+    items: {
+      follow: FollowEntity;
+      profile: UserProfileEntity;
+      lastMessageText?: string;
+      lastMessageAt?: Date;
+    }[];
     nextCursor?: string;
   }> {
     const query = this.followRepo
@@ -308,7 +320,7 @@ export class FollowRepository {
         'chat_conversations',
         'conv',
         'conv.type = :directType AND conv."participantKey" = CASE WHEN f1."followerId" < f1."followingId" THEN f1."followerId" || \':\' || f1."followingId" ELSE f1."followingId" || \':\' || f1."followerId" END',
-        { directType: 'DIRECT' }
+        { directType: 'DIRECT' },
       )
       .addSelect(['conv.lastMessageText', 'conv.lastMessageAt'])
       .where('f1.followerId = :userId', { userId })
@@ -343,7 +355,9 @@ export class FollowRepository {
       follow: f,
       profile: (f as unknown as { profile: UserProfileEntity }).profile,
       lastMessageText: raw[index]?.conv_lastMessageText,
-      lastMessageAt: raw[index]?.conv_lastMessageAt ? new Date(raw[index].conv_lastMessageAt) : undefined,
+      lastMessageAt: raw[index]?.conv_lastMessageAt
+        ? new Date(raw[index].conv_lastMessageAt)
+        : undefined,
     }));
 
     return { items, nextCursor };

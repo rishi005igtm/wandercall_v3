@@ -134,22 +134,22 @@ export class ChatGateway
   ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.targetUserId) return { success: false };
-    
+
     // Join the dynamic presence room for this target user
     await socket.join(`presence:${data.targetUserId}`);
-    
+
     // Instantly return the current presence status of the target user
     const presence = await this.presenceService.getPresence(data.targetUserId);
-    const status = await this.presenceService.isOnline(data.targetUserId) 
-      ? PresenceStatus.ONLINE 
+    const status = (await this.presenceService.isOnline(data.targetUserId))
+      ? PresenceStatus.ONLINE
       : PresenceStatus.OFFLINE;
-      
+
     socket.emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
       userId: data.targetUserId,
       status,
       lastSeen: presence?.lastSeen,
     });
-    
+
     return { success: true };
   }
 
@@ -159,20 +159,21 @@ export class ChatGateway
     @MessageBody() data: { targetUserIds: string[] },
   ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
-    if (!userId || !Array.isArray(data?.targetUserIds)) return { success: false };
-    
+    if (!userId || !Array.isArray(data?.targetUserIds))
+      return { success: false };
+
     for (const targetId of data.targetUserIds) {
       await socket.join(`presence:${targetId}`);
       const presence = await this.presenceService.getPresence(targetId);
       const isOnline = await this.presenceService.isOnline(targetId);
-      
+
       socket.emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
         userId: targetId,
         status: isOnline ? PresenceStatus.ONLINE : PresenceStatus.OFFLINE,
         lastSeen: presence?.lastSeen,
       });
     }
-    
+
     return { success: true };
   }
 
@@ -183,7 +184,7 @@ export class ChatGateway
   ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
     if (!userId || !data?.targetUserId) return { success: false };
-    
+
     await socket.leave(`presence:${data.targetUserId}`);
     return { success: true };
   }
@@ -194,8 +195,9 @@ export class ChatGateway
     @MessageBody() data: { targetUserIds: string[] },
   ): Promise<Record<string, unknown>> {
     const userId = socket.data.userId;
-    if (!userId || !Array.isArray(data?.targetUserIds)) return { success: false };
-    
+    if (!userId || !Array.isArray(data?.targetUserIds))
+      return { success: false };
+
     for (const targetId of data.targetUserIds) {
       await socket.leave(`presence:${targetId}`);
     }
@@ -387,30 +389,47 @@ export class ChatGateway
     /**
      * USER_CONNECTED -> Broadcast to presence subscribers
      */
-    this.chatEventDispatcher.subscribe(
-      'USER_CONNECTED',
-      (payload: any) => {
-        this.server.to(`presence:${payload.userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+    this.chatEventDispatcher.subscribe('USER_CONNECTED', (payload: any) => {
+      this.server
+        .to(`presence:${payload.userId}`)
+        .emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
           userId: payload.userId,
           status: PresenceStatus.ONLINE,
         });
-      }
-    );
+    });
 
     this.friendEventDispatcher.subscribe('FRIEND_REQUEST_NEW', (payload) => {
-      this.server.to(`user:${payload.followingId}`).emit('friend_request:new', payload);
-      this.server.to(`user:${payload.followerId}`).emit('friend_request:new', payload);
+      this.server
+        .to(`user:${payload.followingId}`)
+        .emit('friend_request:new', payload);
+      this.server
+        .to(`user:${payload.followerId}`)
+        .emit('friend_request:new', payload);
     });
 
-    this.friendEventDispatcher.subscribe('FRIEND_REQUEST_ACCEPTED', (payload) => {
-      this.server.to(`user:${payload.followingId}`).emit('friend_request:accepted', payload);
-      this.server.to(`user:${payload.followerId}`).emit('friend_request:accepted', payload);
-    });
+    this.friendEventDispatcher.subscribe(
+      'FRIEND_REQUEST_ACCEPTED',
+      (payload) => {
+        this.server
+          .to(`user:${payload.followingId}`)
+          .emit('friend_request:accepted', payload);
+        this.server
+          .to(`user:${payload.followerId}`)
+          .emit('friend_request:accepted', payload);
+      },
+    );
 
-    this.friendEventDispatcher.subscribe('FRIEND_REQUEST_REMOVED', (payload) => {
-      this.server.to(`user:${payload.followingId}`).emit('friend_request:removed', payload);
-      this.server.to(`user:${payload.followerId}`).emit('friend_request:removed', payload);
-    });
+    this.friendEventDispatcher.subscribe(
+      'FRIEND_REQUEST_REMOVED',
+      (payload) => {
+        this.server
+          .to(`user:${payload.followingId}`)
+          .emit('friend_request:removed', payload);
+        this.server
+          .to(`user:${payload.followerId}`)
+          .emit('friend_request:removed', payload);
+      },
+    );
 
     /**
      * USER_DISCONNECTED -> Broadcast to presence subscribers
@@ -419,14 +438,18 @@ export class ChatGateway
       'USER_DISCONNECTED',
       async (payload: any) => {
         if (!payload.isStillOnline) {
-          const presence = await this.presenceService.getPresence(payload.userId);
-          this.server.to(`presence:${payload.userId}`).emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
-            userId: payload.userId,
-            status: PresenceStatus.OFFLINE,
-            lastSeen: presence?.lastSeen,
-          });
+          const presence = await this.presenceService.getPresence(
+            payload.userId,
+          );
+          this.server
+            .to(`presence:${payload.userId}`)
+            .emit(SOCKET_EVENTS.PRESENCE_CHANGE, {
+              userId: payload.userId,
+              status: PresenceStatus.OFFLINE,
+              lastSeen: presence?.lastSeen,
+            });
         }
-      }
+      },
     );
 
     /**
@@ -460,7 +483,7 @@ export class ChatGateway
           // Auto-deliver for RECIPIENTS (not the sender) who are online right now
           if (
             recipientId !== message.senderId &&
-            await this.presenceService.isOnline(recipientId)
+            (await this.presenceService.isOnline(recipientId))
           ) {
             try {
               await this.chatService.markDelivered(message.id, recipientId);

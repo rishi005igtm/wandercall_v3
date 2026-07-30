@@ -101,26 +101,35 @@ export class ChatService {
   }
 
   async getConversations(userId: string) {
-    const conversations = await this.conversationRepository.findByUserId(userId);
-    
+    const conversations =
+      await this.conversationRepository.findByUserId(userId);
+
     return Promise.all(
       conversations.map(async (conv) => {
-        let targetUser: { id: string; username: string; displayName: string; avatarUrl?: string } | undefined = undefined;
+        let targetUser:
+          | {
+              id: string;
+              username: string;
+              displayName: string;
+              avatarUrl?: string;
+            }
+          | undefined = undefined;
         if (conv.type === 'DIRECT') {
           let targetUserId: string | undefined = undefined;
-          
+
           if (conv.participantKey) {
             const ids = conv.participantKey.split(':');
-            targetUserId = ids.find(id => id !== userId);
+            targetUserId = ids.find((id) => id !== userId);
           }
-          
+
           if (!targetUserId) {
             const participantIds = Object.keys(conv.unreadCounts ?? {});
             targetUserId = participantIds.find((id) => id !== userId);
           }
-          
+
           if (targetUserId) {
-            const profile = await this.userRepository.findByUserId(targetUserId);
+            const profile =
+              await this.userRepository.findByUserId(targetUserId);
             if (profile) {
               targetUser = {
                 id: profile.userId,
@@ -137,7 +146,7 @@ export class ChatService {
           unreadCount: conv.unreadCounts[userId] ?? 0,
           targetUser,
         };
-      })
+      }),
     );
   }
 

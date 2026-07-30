@@ -29,6 +29,20 @@ import { useAppSelector } from "@/lib/store/store";
 import Navbar from "@/components/Navbar";
 import LocationSearch from "@/components/location/LocationSearch";
 import { useCreatePostMutation } from "@/hooks/api/useFeed";
+import { useUploadMediaMutation, useDeleteMediaMutation } from "@/hooks/api/useMediaMutations";
+
+type UploadStatus = "idle" | "uploading" | "uploaded" | "failed";
+interface MediaItem {
+  id: string;
+  localUrl: string;
+  file: File | null;
+  status: UploadStatus;
+  remoteUrl?: string;
+  publicId?: string;
+  progress: number;
+  name?: string;
+  duration?: number;
+}
 
 // Popular adventure categories matching feed presets
 const categories = [
@@ -43,8 +57,16 @@ const categories = [
 export default function CreatePostPage() {
   const router = useRouter();
   const isAuthenticated = useAppSelector((state) => state.auth.isAuthenticated);
+  
+  const uploadMediaMutation = useUploadMediaMutation();
+  const deleteMediaMutation = useDeleteMediaMutation();
 
   // AuthGuard handles redirecting to login if not authenticated
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Form states
   const [postType, setPostType] = useState<string>("story");
@@ -54,10 +76,8 @@ export default function CreatePostPage() {
   const [visibility, setVisibility] = useState<"Public" | "Friends" | "Community">("Public");
 
   // Media attachments
-  const [attachedImages, setAttachedImages] = useState<string[]>([]);
-  const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [attachedVoice, setAttachedVoice] = useState<{ name: string; duration: number } | null>(null);
-  const [voiceFile, setVoiceFile] = useState<File | null>(null);
+  const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
+  const [audioItem, setAudioItem] = useState<MediaItem | null>(null);
 
   // UI state variables
   const [activeTab, setActiveTab] = useState<"media" | "details" | "story">("media");
@@ -68,7 +88,8 @@ export default function CreatePostPage() {
   const [isAiEnhancing, setIsAiEnhancing] = useState(false);
 
   // Validation helpers
-  const isMediaValid = imageFiles.length >= 1;
+  const isMediaValid = mediaItems.length >= 1 && mediaItems.every(m => m.status === 'uploaded');
+  const isUploading = mediaItems.some(m => m.status === 'uploading') || audioItem?.status === 'uploading';
   const isDetailsValid = postTitle.trim() !== "" && postLocation !== null;
   const isStoryValid = postText.trim().length >= 50;
 
@@ -86,6 +107,12 @@ export default function CreatePostPage() {
           if (parsed.postLocation) {
             setPostLocation(parsed.postLocation);
           }
+          if (parsed.mediaItems) {
+            setMediaItems(parsed.mediaItems);
+          }
+          if (parsed.audioItem) {
+            setAudioItem(parsed.audioItem);
+          }
           triggerToast("Restored draft details!");
         } catch {
           // Ignore parsing issues
@@ -101,11 +128,13 @@ export default function CreatePostPage() {
         postTitle,
         postText,
         visibility,
-        postLocation
+        postLocation,
+        mediaItems: mediaItems.map(m => ({ ...m, file: null })),
+        audioItem: audioItem ? { ...audioItem, file: null } : null
       };
       localStorage.setItem("wc_post_draft", JSON.stringify(draftObj));
     }
-  }, [postType, postTitle, postText, visibility, postLocation]);
+  }, [postType, postTitle, postText, visibility, postLocation, mediaItems, audioItem]);
 
   const clearDraft = () => {
     if (typeof window !== "undefined") {
@@ -145,8 +174,7 @@ export default function CreatePostPage() {
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Preset shortcut data for fast selection on mobile
-  const aiTones = ["Inspiring", "Humorous", "Detailed", "Short & Sweet"];
+
 
   // Voice recording simulation
   useEffect(() => {
@@ -172,7 +200,7 @@ export default function CreatePostPage() {
   }, [isRecording]);
 
   const startRecording = () => {
-    if (attachedVoice || voiceFile) {
+    if (audioItem) {
       triggerToast("You can only attach 1 voice note per post.");
       return;
     }
@@ -184,16 +212,9 @@ export default function CreatePostPage() {
     setIsRecording(false);
     if (save) {
       const duration = recordingSeconds || 12;
-      
-      // Generate a mock mp3 blob and file for recorded note to comply with backend
       const dummyAudioBlob = new Blob([new Uint8Array(100)], { type: 'audio/mp3' });
       const mockFile = new File([dummyAudioBlob], `recorded_voice_${Date.now()}.mp3`, { type: 'audio/mp3' });
-
-      setVoiceFile(mockFile);
-      setAttachedVoice({
-        name: mockFile.name,
-        duration
-      });
+      handleMediaUpload(mockFile, true, duration);
       triggerToast("Voice note recorded!");
     }
   };
@@ -234,6 +255,58 @@ export default function CreatePostPage() {
   };
 
   // File selectors
+  // Media helpers
+  const handleMediaUpload = (file: File, isAudio = false, mockDuration?: number) => {
+    const id = Math.random().toString(36).substring(7);
+    const localUrl = URL.createObjectURL(file);
+    const newItem: MediaItem = {
+      id,
+      localUrl,
+      file,
+      status: "uploading",
+      progress: 0,
+      name: file.name,
+      duration: mockDuration
+    };
+
+    if (isAudio) {
+      setAudioItem(newItem);
+    } else {
+      setMediaItems(prev => [...prev, newItem]);
+    }
+
+    uploadMediaMutation.mutate(
+      {
+        file,
+        onUploadProgress: (ev) => {
+          const progress = ev.total ? Math.round((ev.loaded * 100) / ev.total) : 0;
+          if (isAudio) {
+            setAudioItem(prev => prev?.id === id ? { ...prev, progress } : prev);
+          } else {
+            setMediaItems(prev => prev.map(m => m.id === id ? { ...m, progress } : m));
+          }
+        }
+      },
+      {
+        onSuccess: (data) => {
+          if (isAudio) {
+            setAudioItem(prev => prev?.id === id ? { ...prev, status: "uploaded", remoteUrl: data.url, publicId: data.publicId } : prev);
+          } else {
+            setMediaItems(prev => prev.map(m => m.id === id ? { ...m, status: "uploaded", remoteUrl: data.url, publicId: data.publicId } : m));
+          }
+        },
+        onError: () => {
+          if (isAudio) {
+            setAudioItem(prev => prev?.id === id ? { ...prev, status: "failed" } : prev);
+          } else {
+            setMediaItems(prev => prev.map(m => m.id === id ? { ...m, status: "failed" } : m));
+          }
+          triggerToast("Failed to upload " + file.name);
+        }
+      }
+    );
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     setValidationError(null);
@@ -244,28 +317,14 @@ export default function CreatePostPage() {
       return;
     }
 
-    const totalImages = imageFiles.length + files.length;
+    const totalImages = mediaItems.length + files.length;
     if (totalImages > 4) {
       setValidationError("You can only upload up to 4 images for a single post.");
       return;
     }
 
-    setImageFiles(prev => [...prev, ...files]);
-
-    const readPromises = files.map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          resolve(event.target?.result as string);
-        };
-        reader.readAsDataURL(file);
-      });
-    });
-
-    Promise.all(readPromises).then(base64Data => {
-      setAttachedImages(prev => [...prev, ...base64Data]);
-      triggerToast("Images attached!");
-    });
+    files.forEach(file => handleMediaUpload(file, false));
+    triggerToast("Images uploading...");
   };
 
   const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -273,27 +332,28 @@ export default function CreatePostPage() {
     if (!file) return;
     setValidationError(null);
 
-    if (attachedVoice || voiceFile) {
+    if (audioItem) {
       triggerToast("You can only upload 1 voice file.");
       return;
     }
 
-    setVoiceFile(file);
-    setAttachedVoice({
-      name: file.name,
-      duration: 35
-    });
-    triggerToast("Audio file attached!");
+    handleMediaUpload(file, true);
+    triggerToast("Audio uploading...");
   };
 
-  const removeImage = (idx: number) => {
-    setAttachedImages(prev => prev.filter((_, i) => i !== idx));
-    setImageFiles(prev => prev.filter((_, i) => i !== idx));
+  const removeImage = (id: string) => {
+    const item = mediaItems.find(m => m.id === id);
+    if (item?.publicId) {
+      deleteMediaMutation.mutate(item.publicId);
+    }
+    setMediaItems(prev => prev.filter(m => m.id !== id));
   };
 
   const removeAudio = () => {
-    setAttachedVoice(null);
-    setVoiceFile(null);
+    if (audioItem?.publicId) {
+      deleteMediaMutation.mutate(audioItem.publicId);
+    }
+    setAudioItem(null);
   };
 
   // Mutation
@@ -314,34 +374,32 @@ export default function CreatePostPage() {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("title", postTitle);
-    formData.append("content", postText);
-    formData.append("category", postType);
-    formData.append("visibility", visibility === "Public" ? "PUBLIC" : visibility === "Friends" ? "FOLLOWERS" : "PRIVATE");
-    
-    if (postLocation) {
-      formData.append("locationName", postLocation.formatted_address);
-      formData.append("locationLat", String(postLocation.latitude));
-      formData.append("locationLon", String(postLocation.longitude));
+    if (isUploading) {
+      setValidationError("Please wait for media to finish uploading.");
+      return;
     }
 
-    // Append attachments
-    imageFiles.forEach((file) => {
-      formData.append("images", file);
-    });
+    const payload = {
+      title: postTitle,
+      content: postText,
+      category: postType,
+      visibility: visibility === "Public" ? "PUBLIC" : visibility === "Friends" ? "FOLLOWERS" : "PRIVATE",
+      locationName: postLocation?.formatted_address,
+      locationLat: postLocation?.latitude,
+      locationLon: postLocation?.longitude,
+      images: mediaItems.map(m => m.remoteUrl).filter(Boolean),
+      imagePublicIds: mediaItems.map(m => m.publicId).filter(Boolean),
+      audioUrl: audioItem?.remoteUrl,
+      audioPublicId: audioItem?.publicId
+    };
 
-    if (voiceFile) {
-      formData.append("audio", voiceFile);
-    }
-
-    triggerToast("Synchronizing your coordinates...");
+    triggerToast("Publishing adventure...");
     
-    createPostMutation.mutate(formData, {
+    createPostMutation.mutate(payload, {
       onSuccess: () => {
         clearDraft();
         triggerToast("Coordinates synchronized successfully!");
-        router.push("/feed");
+        router.push("/feed?published=true");
       },
       onError: (error: any) => {
         const errorMsg = error?.response?.data?.message || "Failed to publish post.";
@@ -351,8 +409,12 @@ export default function CreatePostPage() {
     });
   };
 
+  if (!mounted) {
+    return null; // Avoid hydration mismatch
+  }
+
   return (
-    <div className="flex flex-col h-screen bg-brand-bg text-white overflow-hidden font-sans relative">
+    <div className="flex flex-col min-h-screen bg-black text-white selection:bg-brand-cyan/30 font-sans relative">
       <Navbar />
 
       {/* Loading Overlay Spinner during Upload */}
@@ -499,15 +561,28 @@ export default function CreatePostPage() {
                   <span className="text-[8px] font-mono text-zinc-600">Supports PNG, JPG, WEBP (No video allowed)</span>
                 </div>
 
-                {attachedImages.length > 0 && (
+                {mediaItems.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 mt-2">
-                    {attachedImages.map((img, idx) => (
-                      <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group bg-zinc-900">
-                        <img src={img} alt="Attached Preview" className="w-full h-full object-cover" />
+                    {mediaItems.map((img) => (
+                      <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group bg-zinc-900">
+                        <img src={img.localUrl || img.remoteUrl} alt="Attached Preview" className={`w-full h-full object-cover ${img.status !== 'uploaded' ? 'opacity-50' : ''}`} />
+                        {img.status === 'uploading' && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
+                            <span className="text-[10px] font-bold text-white">{img.progress}%</span>
+                            <div className="w-3/4 h-1 bg-white/20 rounded-full mt-1 overflow-hidden">
+                              <div className="h-full bg-brand-cyan transition-all duration-300" style={{ width: `${img.progress}%` }} />
+                            </div>
+                          </div>
+                        )}
+                        {img.status === 'failed' && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-500/40">
+                            <span className="text-[10px] font-bold text-white uppercase">Failed</span>
+                          </div>
+                        )}
                         <button
                           type="button"
-                          onClick={() => removeImage(idx)}
-                          className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-zinc-950/80 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors"
+                          onClick={() => removeImage(img.id)}
+                          className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-zinc-950/80 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors z-10"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -521,7 +596,7 @@ export default function CreatePostPage() {
               <div className="flex flex-col gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl shrink-0">
                 <div className="flex justify-between items-center">
                   <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Audio coordinates (Max 1 file)</span>
-                  {attachedVoice && (
+                  {audioItem && (
                     <button
                       onClick={removeAudio}
                       className="text-[9px] font-mono text-rose-500 hover:text-rose-400 flex items-center gap-1 cursor-pointer font-bold"
@@ -539,7 +614,7 @@ export default function CreatePostPage() {
                   className="hidden" 
                 />
 
-                {!attachedVoice && !isRecording && (
+                {!audioItem && !isRecording && (
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -586,14 +661,17 @@ export default function CreatePostPage() {
                   </div>
                 )}
 
-                {attachedVoice && (
-                  <div className="flex items-center gap-3 bg-zinc-950/40 border border-white/5 p-3 rounded-xl">
+                {audioItem && (
+                  <div className="flex items-center gap-3 bg-zinc-950/40 border border-white/5 p-3 rounded-xl relative overflow-hidden">
+                    {audioItem.status === 'uploading' && (
+                       <div className="absolute bottom-0 left-0 h-0.5 bg-brand-cyan transition-all duration-300" style={{ width: `${audioItem.progress}%` }} />
+                    )}
                     <div className="h-8 w-8 rounded-full bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 flex items-center justify-center shrink-0">
                       <Volume2 className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-zinc-300 truncate block">{attachedVoice.name}</span>
-                      <span className="text-[9px] font-mono text-zinc-500 block">Duration: 0:{attachedVoice.duration < 10 ? `0${attachedVoice.duration}` : attachedVoice.duration}</span>
+                      <span className="text-[10px] font-bold text-zinc-300 truncate block">{audioItem.name} {audioItem.status === 'uploading' ? `(${audioItem.progress}%)` : ''}</span>
+                      <span className="text-[9px] font-mono text-zinc-500 block">Duration: 0:{audioItem.duration && audioItem.duration < 10 ? `0${audioItem.duration}` : audioItem.duration}</span>
                     </div>
                   </div>
                 )}
@@ -726,36 +804,7 @@ export default function CreatePostPage() {
                 />
               </div>
 
-              {/* AI Caption Presets and Enhancements */}
-              <div className="flex flex-col gap-3 p-4 bg-gradient-to-tr from-brand-purple/5 to-transparent border border-brand-purple/10 rounded-2xl shrink-0">
-                <div className="flex items-center gap-2 text-brand-purple">
-                  <Sparkles className="h-4 w-4 animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">AI Copywriter Assistant</span>
-                </div>
-                <p className="text-[9px] text-zinc-400 leading-relaxed font-mono">Select a tone layout to instantly enhance your draft content with matching travel hashtags.</p>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  {aiTones.map(tone => (
-                    <button
-                      key={tone}
-                      type="button"
-                      disabled={isAiEnhancing}
-                      onClick={() => handleAiEnhance(tone)}
-                      className="h-8 rounded-lg bg-zinc-900 border border-white/5 text-[9px] font-bold text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-50 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                    >
-                      <Sparkles className="h-3 w-3 text-brand-purple" />
-                      <span>{tone}</span>
-                    </button>
-                  ))}
-                </div>
 
-                {isAiEnhancing && (
-                  <div className="flex items-center gap-1.5 text-[9px] font-mono text-brand-cyan animate-pulse">
-                    <span className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />
-                    Generating coordinates narrative...
-                  </div>
-                )}
-              </div>
             </div>
 
           </div>

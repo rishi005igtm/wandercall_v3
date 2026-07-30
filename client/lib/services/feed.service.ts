@@ -85,12 +85,13 @@ export const feedService = {
     return data;
   },
 
-  async createPost(formData: FormData): Promise<{ success: boolean; message: string; postId: string; post: FeedPost }> {
+  async createPost(payload: FormData | Record<string, any>): Promise<{ success: boolean; message: string; postId: string; post: FeedPost }> {
+    const isFormData = payload instanceof FormData;
     const { data } = await httpClient.post<{ success: boolean; message: string; postId: string; post: FeedPost }> (
       '/feed/posts',
-      formData,
+      payload,
       {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
         timeout: 90000,
       }
     );
@@ -142,5 +143,25 @@ export const feedService = {
 
   async trackView(postId: string, data?: { feedSessionId?: string, durationMs?: number, lastVisiblePercent?: number, sourceFeed?: string }): Promise<void> {
     await httpClient.post(`/feed/posts/${postId}/view`, data || {});
+  },
+
+  async uploadMedia(file: File, onUploadProgress?: (progressEvent: any) => void): Promise<{ success: boolean; url: string; publicId: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await httpClient.post<{ success: boolean; url: string; publicId: string }> (
+      '/feed/media/upload',
+      formData,
+      {
+        headers: { 'Content-Type': 'multipart/form-data' },
+        onUploadProgress,
+        timeout: 120000,
+      }
+    );
+    return data;
+  },
+
+  async deleteMedia(publicId: string): Promise<{ success: boolean; message: string }> {
+    const { data } = await httpClient.delete<{ success: boolean; message: string }>(`/feed/media/${publicId}`);
+    return data;
   },
 };

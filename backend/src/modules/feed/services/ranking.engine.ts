@@ -40,6 +40,12 @@ export class RankingEngine {
     const hoursElapsed = diffMs / (1000 * 60 * 60);
     const daysElapsed = hoursElapsed / 24;
 
+    // Author Self-Boost: Pin the user's own recently published posts (e.g. last 30 minutes) 
+    // to the absolute top of their feed for clarification.
+    if (viewerId && post.authorId === viewerId && hoursElapsed < 0.5) {
+      return 1000000 - diffMs;
+    }
+
     let freshnessScore = Math.exp(
       -RANKING_CONFIG.freshness.decayRate * daysElapsed,
     );

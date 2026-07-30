@@ -234,5 +234,4 @@ export class ConversationRepository {
     });
     return participants.map((p) => p.userId);
   }
-
 }

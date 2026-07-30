@@ -104,11 +104,14 @@ export class UserSearchService {
         if (uname === searchQuery) score += 10000;
         else if (dname === searchQuery) score += 9000;
         // Prefix Matches
-        else if (uname.startsWith(searchQuery) || dname.startsWith(searchQuery)) score += 5000;
+        else if (uname.startsWith(searchQuery) || dname.startsWith(searchQuery))
+          score += 5000;
         // Token Prefix matches
-        else if (tokens.some((t) => uname.includes(t) || dname.includes(t))) score += 3000;
+        else if (tokens.some((t) => uname.includes(t) || dname.includes(t)))
+          score += 3000;
         // Infix / Substring Matches
-        else if (uname.includes(searchQuery) || dname.includes(searchQuery)) score += 1000;
+        else if (uname.includes(searchQuery) || dname.includes(searchQuery))
+          score += 1000;
 
         return { profile: u, score };
       });
@@ -165,6 +168,4 @@ export class UserSearchService {
       compatibility: Math.min(98, 70 + p.level * 3),
     }));
   }
-
-
 }

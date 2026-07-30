@@ -35,13 +35,13 @@ export function useCreatePostMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (formData: FormData) => feedService.createPost(formData),
-    onSuccess: async (data) => {
+    mutationFn: (payload: FormData | Record<string, any>) => feedService.createPost(payload),
+    onSuccess: (data) => {
       // Invalidate all feeds to fetch new posts
-      await queryClient.invalidateQueries({ queryKey: ['feed'] });
+      queryClient.invalidateQueries({ queryKey: ['feed'] });
       // Invalidate current user profile stats
-      await queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
-      await queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'current'] });
+      queryClient.invalidateQueries({ queryKey: ['user', 'profile'] });
     },
   });
 }

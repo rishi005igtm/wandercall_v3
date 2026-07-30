@@ -58,8 +58,6 @@ export class ChatController {
     private readonly presenceService: PresenceService,
   ) {}
 
-
-
   @Post('conversations/:conversationId/messages')
   async sendMessage(
     @GetUser() user: AuthUser,

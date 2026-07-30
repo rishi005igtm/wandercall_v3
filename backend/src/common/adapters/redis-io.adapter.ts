@@ -38,7 +38,12 @@ export class RedisIoAdapter extends IoAdapter {
         pubClient = new Redis(redisUrl, { maxRetriesPerRequest: null });
         subClient = pubClient.duplicate();
       } else {
-        pubClient = new Redis({ host, port, password, maxRetriesPerRequest: null });
+        pubClient = new Redis({
+          host,
+          port,
+          password,
+          maxRetriesPerRequest: null,
+        });
         subClient = pubClient.duplicate();
       }
 

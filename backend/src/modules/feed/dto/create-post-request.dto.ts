@@ -41,4 +41,18 @@ export class CreatePostRequestDto {
   @Type(() => Number)
   @IsNumber()
   locationLon?: number;
+
+  @IsOptional()
+  images?: string[];
+
+  @IsOptional()
+  imagePublicIds?: string[];
+
+  @IsOptional()
+  @IsString()
+  audioUrl?: string;
+
+  @IsOptional()
+  @IsString()
+  audioPublicId?: string;
 }

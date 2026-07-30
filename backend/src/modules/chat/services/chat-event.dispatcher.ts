@@ -25,11 +25,11 @@ export class ChatEventDispatcher
 
   private initializeRedisSubscriber() {
     const subscriber = this.redisService.subscriber;
-    
+
     subscriber.subscribe('chat:events', (err) => {
       if (err) this.logger.error('Failed to subscribe to chat events', err);
     });
-    
+
     subscriber.on('message', (channel, message) => {
       if (channel === 'chat:events') {
         try {
@@ -50,7 +50,9 @@ export class ChatEventDispatcher
     this.redisService.client
       .publish('chat:events', JSON.stringify(event))
       .catch((err) => {
-        this.logger.error(`Failed to publish chat event to Redis: ${err.message}`);
+        this.logger.error(
+          `Failed to publish chat event to Redis: ${err.message}`,
+        );
       });
   }
 

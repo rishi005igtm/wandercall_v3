@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '../user/user.module';
 import { StorageModule } from '../storage/storage.module';
 import { FeedController } from './controllers/feed.controller';
+import { MediaController } from './controllers/media.controller';
 import { PostService } from './services/post.service';
 import { RankingEngine } from './services/ranking.engine';
 import { InterestEngine } from './services/interest.engine';
@@ -38,7 +39,7 @@ import { UserPostStateEntity } from './entities/user-post-state.entity';
       UserPostStateEntity,
     ]),
   ],
-  controllers: [FeedController],
+  controllers: [FeedController, MediaController],
   providers: [
     PostService,
     RankingEngine,

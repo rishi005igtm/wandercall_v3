@@ -52,9 +52,6 @@ export default function CategoryBento() {
             return (
               <motion.button
                 key={cat.id}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.05 }}
                 className={`relative overflow-hidden flex items-center gap-2.5 px-5 py-3 rounded-full border border-white/10 glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap`}
               >
                 {/* Background Image */}
@@ -88,11 +85,6 @@ export default function CategoryBento() {
               <motion.div
                 key={cat.id}
                 layoutId={`cat-${cat.id}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ 
-                  type: "spring", stiffness: 300, damping: 25, delay: i * 0.05 
-                }}
                 className={`
                   relative cursor-pointer group glass-panel rounded-2xl overflow-hidden border border-white/10 shine-card flex flex-col justify-between
                   ${isLarge ? "col-span-2 h-[105px] p-3.5" : "col-span-1 h-[105px] p-3"}

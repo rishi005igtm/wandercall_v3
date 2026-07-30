@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAppSelector } from "@/lib/store/store";
 import {
@@ -149,6 +149,18 @@ export default function ImmersiveFeedPage() {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const elementsRef = useRef<Set<HTMLDivElement>>(new Set());
   const leftPanelRef = useRef<HTMLDivElement>(null);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('published') === 'true') {
+      // Small delay to ensure the DOM and feed list are fully hydrated/rendered
+      setTimeout(() => {
+        if (leftPanelRef.current) {
+          leftPanelRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 300);
+    }
+  }, [searchParams]);
 
   const triggerToast = (msg: string) => {
     setToast(msg);
@@ -251,12 +263,10 @@ export default function ImmersiveFeedPage() {
 
   const activePost = useMemo(() => feedPosts.find(p => p.id === activePostId), [feedPosts, activePostId]);
 
-  const [showCommentsForPostId, setShowCommentsForPostId] = useState<string | null>(null);
-
-  // Comments Query for Right Panel
-  const { data: commentsData, isLoading: isCommentsLoading } = useCommentsQuery(
-    showCommentsForPostId || "", 
-    Boolean(showCommentsForPostId)
+  // Unified Query for Right Panel Data
+  const { data: commentsData, isLoading: isContextLoading } = useCommentsQuery(
+    activePostId || "", 
+    Boolean(activePostId)
   );
   const postComments = commentsData?.comments || [];
   const [commentInput, setCommentInput] = useState("");
@@ -280,16 +290,24 @@ export default function ImmersiveFeedPage() {
     });
   };
 
-  // Infinite Scroll Trigger
-  const loaderRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!hasNextPage || isLoading || !leftPanelRef.current) return;
-    const observer = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting && !isFetchingNextPage) fetchNextPage();
-    }, { rootMargin: "1000px", threshold: 0, root: leftPanelRef.current });
-    if (loaderRef.current) observer.observe(loaderRef.current);
-    return () => observer.disconnect();
-  }, [hasNextPage, isLoading, isFetchingNextPage, fetchNextPage]);
+  // Predictive Infinite Scroll Trigger
+  const predictiveObserver = useRef<IntersectionObserver | null>(null);
+  const predictivePrefetchRef = useCallback((node: HTMLDivElement | null) => {
+    if (isLoading || isFetchingNextPage || !hasNextPage) return;
+    
+    if (predictiveObserver.current) {
+      predictiveObserver.current.disconnect();
+    }
+
+    if (node) {
+      predictiveObserver.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      });
+      predictiveObserver.current.observe(node);
+    }
+  }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
   // Handle locking body scroll
   useEffect(() => {
@@ -443,13 +461,18 @@ export default function ImmersiveFeedPage() {
             </div>
           ) : (
             <>
-              {feedPosts.map((post) => (
-                <div 
-                  key={post.id}
-                  data-post-id={post.id}
-                  ref={observePost}
-                  className="w-full h-[100dvh] md:h-full snap-start snap-always flex flex-col justify-end md:justify-center p-0 md:p-8 lg:p-12 relative"
-                >
+              {feedPosts.map((post, index) => {
+                const isPredictiveTrigger = feedPosts.length >= 5 && index === feedPosts.length - 3;
+                return (
+                  <div 
+                    key={post.id}
+                    data-post-id={post.id}
+                    ref={(node) => {
+                      observePost(node);
+                      if (isPredictiveTrigger) predictivePrefetchRef(node);
+                    }}
+                    className="w-full h-[100dvh] md:h-full snap-start snap-always flex flex-col justify-end md:justify-center p-0 md:p-8 lg:p-12 relative"
+                  >
                   {/* Desktop: Centered Premium Card */}
                   {/* Mobile: Full Screen Edge-to-Edge Immersion */}
                   <div className="w-full h-full md:h-auto max-w-2xl mx-auto flex flex-col justify-end md:justify-start relative group">
@@ -536,17 +559,10 @@ export default function ImmersiveFeedPage() {
                     </div>
                   </div>
                 </div>
-              ))}
+                );
+              })}
               
-              {hasNextPage && (
-                <div ref={loaderRef} className="w-full h-0 flex items-center justify-center relative">
-                  {isFetchingNextPage && (
-                    <div className="absolute bottom-8 z-50 bg-black/50 p-2 rounded-full backdrop-blur-md">
-                      <Loader2 className="h-5 w-5 text-brand-cyan animate-spin" />
-                    </div>
-                  )}
-                </div>
-              )}
+
             </>
           )}
         </div>
@@ -556,7 +572,9 @@ export default function ImmersiveFeedPage() {
       {/* RIGHT PANEL: CONTEXT HUB (DESKTOP)      */}
       {/* ======================================= */}
       <div className="hidden md:flex md:w-[40%] lg:w-[35%] h-full bg-[#0a0a0c] border-l border-white/5 flex-col relative z-50 shadow-2xl">
-          {activePost ? (
+          {!activePost || isContextLoading ? (
+            <ExperienceContextSkeleton />
+          ) : (
             <div 
               key={activePost.id}
               className="flex flex-col h-full w-full animate-in fade-in slide-in-from-right-4 duration-300"
@@ -610,16 +628,7 @@ export default function ImmersiveFeedPage() {
                     Discussion ({activePost.commentsCount})
                   </h4>
                   
-                  {showCommentsForPostId !== activePost.id ? (
-                    <button 
-                      onClick={() => setShowCommentsForPostId(activePost.id)}
-                      className="w-full py-4 mt-2 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] border border-white/5 transition-all text-[10px] font-black text-white uppercase tracking-widest flex items-center justify-center gap-2 group"
-                    >
-                      <MessageSquare className="h-4 w-4 group-hover:scale-110 transition-transform" /> See Comments
-                    </button>
-                  ) : isCommentsLoading ? (
-                    <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-brand-cyan" /></div>
-                  ) : postComments.length > 0 ? (
+                  {postComments.length > 0 ? (
                     <div className="space-y-3">
                       {postComments.map((comm: any) => (
                         <div key={comm.id} className="flex gap-3">
@@ -665,9 +674,8 @@ export default function ImmersiveFeedPage() {
                 </div>
               </div>
             </div>
-          ) : (
-            <ExperienceContextSkeleton />
           )}
+
       </div>
 
       {/* ======================================= */}

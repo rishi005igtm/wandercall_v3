@@ -14,7 +14,12 @@ import { UserModule } from '../user/user.module';
     forwardRef(() => UserModule),
   ],
   controllers: [FriendController],
-  providers: [FriendService, FavoriteFriendRepository, FavoriteFriendService, FriendEventDispatcher],
+  providers: [
+    FriendService,
+    FavoriteFriendRepository,
+    FavoriteFriendService,
+    FriendEventDispatcher,
+  ],
   exports: [FriendService, FavoriteFriendService, FriendEventDispatcher],
 })
 export class FriendModule {}
