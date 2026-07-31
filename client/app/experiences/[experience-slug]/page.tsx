@@ -732,8 +732,26 @@ export default function ExperienceDetailsPage() {
       <main className="flex-1 w-full flex flex-col items-center pt-24 pb-20">
         
         {/* PREMIUM IMMERSIVE HERO: 80vh gallery */}
-        <section className="relative w-full max-w-[1440px] px-4 md:px-8 mb-12">
-          <div className="h-[50vh] md:h-[65vh] lg:h-[80vh] w-full rounded-3xl overflow-hidden relative group/hero shadow-2xl bg-zinc-950 border border-white/5">
+        <section className="relative w-full max-w-[1440px] px-4 md:px-8 mb-12 flex flex-col md:flex-row gap-4 md:gap-6">
+          
+          {/* Miniature Thumbnail Strips (Left side on desktop, bottom on mobile) */}
+          <div className="flex md:flex-col gap-3.5 overflow-x-auto md:overflow-y-auto no-scrollbar justify-start order-2 md:order-1 px-1 py-1 md:py-2 md:h-[65vh] lg:h-[80vh] md:w-[100px] lg:w-[120px] shrink-0">
+            {experience.galleryImages.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveSlide(idx)}
+                className={`h-16 w-24 md:w-full md:h-16 lg:h-20 rounded-xl overflow-hidden shrink-0 border transition-all cursor-pointer relative ${
+                  activeSlide === idx
+                    ? "border-brand-cyan scale-105 shadow-md shadow-brand-cyan/20"
+                    : "border-white/5 opacity-60 hover:opacity-100"
+                }`}
+              >
+                <img src={img} alt="thumbnail" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+
+          <div className="w-full aspect-video md:aspect-auto md:h-[65vh] lg:h-[80vh] md:flex-1 rounded-3xl overflow-hidden relative group/hero shadow-2xl bg-zinc-950 border border-white/5 order-1 md:order-2">
             
             {/* Gallery Slide */}
             <AnimatePresence mode="wait">
@@ -800,31 +818,47 @@ export default function ExperienceDetailsPage() {
               <ChevronDown className="h-5 w-5 -rotate-90" />
             </button>
 
-            {/* Bottom Overlay Summary details */}
+            {/* Bottom Overlay Summary details & Hero CTA */}
             <div className="absolute bottom-6 left-6 right-6 flex flex-col md:flex-row md:items-end justify-between gap-4 z-10">
-              <div className="text-left max-w-2xl">
+              <div className="text-left max-w-2xl hidden md:block pointer-events-auto">
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="flex items-center gap-1 bg-brand-amber/10 border border-brand-amber/20 px-2 py-0.5 rounded-full text-[10px] font-bold text-brand-amber">
-                    <Star className="h-3.5 w-3.5 fill-brand-amber text-brand-amber" />
+                  <div className="flex items-center gap-1 bg-brand-amber/10 border border-brand-amber/20 px-2 py-0.5 rounded-full text-[10px] font-bold text-brand-amber backdrop-blur-md">
+                    <Star className="h-3.5 w-3.5 fill-brand-amber text-brand-amber shrink-0" />
                     {experience.rating}
                   </div>
-                  <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+                  <span className="text-[10px] text-zinc-300 font-bold uppercase tracking-widest drop-shadow-md">
                     ({experience.reviewsCount} reviews)
                   </span>
                 </div>
-                <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-none mb-3">
+                <h1 className="text-2xl md:text-4xl lg:text-5xl font-black text-white uppercase tracking-tight leading-none mb-3 drop-shadow-lg">
                   {experience.title}
                 </h1>
-                <p className="text-xs md:text-sm text-zinc-300 font-medium leading-relaxed drop-shadow-md">
+                <p className="text-xs md:text-sm text-zinc-200 font-medium leading-relaxed drop-shadow-md max-w-xl hidden md:block">
                   {experience.description}
                 </p>
               </div>
 
-              {/* Slide Counter strip */}
-              <div className="flex items-center gap-2 self-start md:self-end bg-black/55 px-3 py-1.5 rounded-full border border-white/5 backdrop-blur-md text-[10px] font-mono font-bold">
-                <span className="text-brand-cyan">{activeSlide + 1}</span>
-                <span className="text-zinc-600">/</span>
-                <span className="text-zinc-400">{experience.galleryImages.length}</span>
+              <div className="flex flex-col items-end gap-4">
+                {/* Slide Counter strip */}
+                <div className="flex items-center gap-2 self-start md:self-end bg-black/40 px-3 py-1.5 rounded-full border border-white/10 backdrop-blur-md text-[10px] font-mono font-bold shadow-lg">
+                  <span className="text-brand-cyan">{activeSlide + 1}</span>
+                  <span className="text-zinc-500">/</span>
+                  <span className="text-zinc-300">{experience.galleryImages.length}</span>
+                </div>
+
+                {/* Hero Booking CTA */}
+                <div className="hidden md:flex items-center gap-4 bg-black/40 border border-white/10 backdrop-blur-xl p-2 pl-5 rounded-2xl shadow-2xl pointer-events-auto">
+                  <div className="flex flex-col text-right">
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest leading-none">Starting Rate</span>
+                    <span className="text-lg font-black text-white leading-none mt-1">₹{experience.price.toLocaleString("en-IN")}</span>
+                  </div>
+                  <button
+                    onClick={handleBookClick}
+                    className="h-10 px-6 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 shadow-lg shadow-brand-indigo/20 cursor-pointer"
+                  >
+                    <Zap className="h-4 w-4 fill-current text-brand-cyan shrink-0" /> Secure Booking
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -841,23 +875,27 @@ export default function ExperienceDetailsPage() {
             </div>
           </div>
 
-          {/* Miniature Thumbnail Strips */}
-          <div className="flex gap-3.5 overflow-x-auto no-scrollbar justify-start mt-4 px-1 py-1">
-            {experience.galleryImages.map((img, idx) => (
-              <button
-                key={idx}
-                onClick={() => setActiveSlide(idx)}
-                className={`h-16 w-24 rounded-xl overflow-hidden shrink-0 border transition-all cursor-pointer relative ${
-                  activeSlide === idx
-                    ? "border-brand-cyan scale-105 shadow-md shadow-brand-cyan/20"
-                    : "border-white/5 opacity-60 hover:opacity-100"
-                }`}
-              >
-                <img src={img} alt="thumbnail" className="h-full w-full object-cover" />
-              </button>
-            ))}
-          </div>
+
         </section>
+
+        {/* MOBILE ONLY: Title & Description (Below Thumbnails) */}
+        <div className="md:hidden w-full max-w-[1440px] px-4 mb-8 text-left flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-brand-amber/10 border border-brand-amber/20 px-2 py-0.5 rounded-full text-[10px] font-bold text-brand-amber backdrop-blur-sm">
+              <Star className="h-3.5 w-3.5 fill-brand-amber text-brand-amber shrink-0" />
+              {experience.rating}
+            </div>
+            <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">
+              ({experience.reviewsCount} reviews)
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight leading-none">
+            {experience.title}
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-300 font-medium leading-relaxed">
+            {experience.description}
+          </p>
+        </div>
 
         {/* TWO-COLUMN LAYOUT: Content Panel + Sticky Booking Sidebar */}
         <section className="w-full max-w-[1440px] px-4 md:px-8 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start relative">
@@ -898,91 +936,133 @@ export default function ExperienceDetailsPage() {
             </div>
 
             {/* CHRONOLOGICAL VERTICAL TIMELINE */}
-            <div className="flex flex-col gap-6 border-t border-white/5 pt-8">
+            <div className="flex flex-col gap-8 border-t border-white/5 pt-12">
               <h3 className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest">Chronological Journey</h3>
-              <div className="flex flex-col gap-0 relative pl-4 border-l border-white/10 ml-2">
+              <div className="flex flex-col gap-0 relative pl-6 border-l border-dashed border-white/10 ml-3">
                 {experience.timeline.map((stop, idx) => (
-                  <div key={idx} className="relative pb-8 text-left">
+                  <div key={idx} className="relative pb-10 text-left group">
                     {/* Circle Bullet icon */}
-                    <div className="absolute -left-[23px] top-1.5 h-3 w-3 rounded-full bg-brand-cyan border border-brand-bg shadow-md shadow-brand-cyan/20 z-10" />
+                    <div className="absolute -left-[31px] top-1 h-3.5 w-3.5 rounded-full bg-zinc-900 border-2 border-zinc-700 shadow-md group-hover:bg-brand-cyan group-hover:border-brand-bg group-hover:shadow-brand-cyan/20 transition-all duration-300 z-10" />
                     
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                      <span className="text-[10px] font-mono font-black text-brand-cyan bg-brand-cyan/10 px-2 py-0.5 rounded-full w-fit">
-                        {stop.time}
-                      </span>
-                      <h4 className="text-sm font-black text-white uppercase tracking-tight">{stop.title}</h4>
+                    <div className="flex flex-col gap-1.5 -mt-0.5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-mono font-black text-brand-cyan tracking-wider">
+                          {stop.time}
+                        </span>
+                        <div className="h-px w-4 bg-white/10 hidden sm:block" />
+                        <h4 className="text-sm font-black text-white uppercase tracking-tight group-hover:text-brand-cyan transition-colors">{stop.title}</h4>
+                      </div>
+                      <p className="text-xs text-zinc-400 font-medium leading-relaxed sm:pl-[68px]">
+                        {stop.note}
+                      </p>
                     </div>
-                    <p className="text-xs text-zinc-500 font-medium mt-1">
-                      {stop.note}
-                    </p>
                   </div>
                 ))}
               </div>
             </div>
+
+            {/* INCLUDED & WHAT TO BRING (Editorial 2-column) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 border-t border-white/5 pt-12">
+              <div className="flex flex-col gap-5">
+                <h4 className="text-[10px] font-mono font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                  <Check className="h-3.5 w-3.5" /> What is Included
+                </h4>
+                <ul className="flex flex-col gap-3.5">
+                  {experience.included.map((item, idx) => (
+                    <li key={idx} className="flex gap-3 text-xs text-zinc-300 font-medium leading-relaxed items-start">
+                      <div className="h-4 w-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <Check className="h-2.5 w-2.5 text-emerald-500" />
+                      </div>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-col gap-5">
+                <h4 className="text-[10px] font-mono font-bold text-brand-cyan uppercase tracking-widest flex items-center gap-2">
+                  <AlertCircle className="h-3.5 w-3.5" /> What to Bring
+                </h4>
+                <ul className="flex flex-col gap-3.5">
+                  {experience.bring.map((item, idx) => (
+                    <li key={idx} className="flex gap-3 text-xs text-zinc-400 font-medium leading-relaxed items-start">
+                      <div className="h-4 w-4 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <Zap className="h-2.5 w-2.5 text-brand-cyan" />
+                      </div>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+
+            {/* DESTINATION, HOST, and POLICIES moved below sidebar */}
 
           </div>
 
           <aside className="w-full flex flex-col gap-6 sticky top-28 shrink-0">
 
             {/* Main Booking Card Box */}
-            <div className="glass-panel p-6 rounded-3xl border border-white/5 flex flex-col gap-5 text-left">
+            <div className="glass-panel p-6 lg:p-8 rounded-3xl border border-white/5 flex flex-col gap-5 text-left hover:border-white/10 transition-colors shadow-2xl">
               
               {/* Pricing section */}
-              <div className="flex justify-between items-end border-b border-white/5 pb-4">
-                <div>
-                  <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest block leading-none">Starting Rate</span>
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <span className="text-2xl font-black text-white leading-none">
+              <div className="flex justify-between items-end border-b border-white/5 pb-6">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest leading-none">Starting Rate</span>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className="text-3xl font-black text-white leading-none tracking-tight">
                       ₹{experience.price.toLocaleString("en-IN")}
                     </span>
-                    <span className="text-xs text-zinc-600 font-mono line-through font-bold">
+                    <span className="text-sm text-zinc-600 font-mono line-through font-bold decoration-red-500/30">
                       ₹{experience.originalPrice.toLocaleString("en-IN")}
                     </span>
                   </div>
                 </div>
-                <span className="text-[9px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
-                  Save ₹{(experience.originalPrice - experience.price).toLocaleString("en-IN")}
-                </span>
+                <div className="flex flex-col items-end gap-1.5">
+                  <span className="text-[9px] font-mono font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 shadow-md">
+                    Save ₹{(experience.originalPrice - experience.price).toLocaleString("en-IN")}
+                  </span>
+                </div>
               </div>
 
               {/* Slot availability tags */}
-              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-zinc-400">
+              <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-zinc-400 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
                 <div className="flex flex-col gap-1">
-                  <span className="text-[9px] text-zinc-600 font-mono uppercase tracking-wider">Next Date Available</span>
+                  <span className="text-[9px] text-zinc-600 font-mono uppercase tracking-wider">Next Available</span>
                   <span className="text-white text-[11px] font-bold">Tomorrow, 07:30 AM</span>
                 </div>
                 <div className="flex flex-col gap-1 text-right">
                   <span className="text-[9px] text-zinc-600 font-mono uppercase tracking-wider">Remaining Slots</span>
-                  <span className="text-brand-purple text-[11px] font-bold">Only 4 left!</span>
+                  <span className="text-brand-cyan text-[11px] font-bold">Only 4 left!</span>
                 </div>
               </div>
 
               {/* Form Input fields */}
-              <div className="flex flex-col gap-4 border-t border-white/5 pt-4">
+              <div className="flex flex-col gap-6 pt-2">
                 
                 {/* Coupon Code Input */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 select-none">
-                    <Ticket className="h-4 w-4 text-brand-cyan shrink-0" /> Coupon Code
+                <div className="flex flex-col gap-2.5">
+                  <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest flex items-center justify-between select-none">
+                    <span className="flex items-center gap-1.5"><Ticket className="h-3.5 w-3.5 text-brand-cyan" /> Promo Code</span>
                   </label>
-                  <div className="relative flex items-center">
+                  <div className="relative flex items-center group">
                     <input
                       type="text"
                       placeholder="Enter code (e.g. WANDER20)"
                       value={couponCode}
                       onChange={(e) => setCouponCode(e.target.value)}
-                      className={`w-full h-10 bg-zinc-950/50 border rounded-xl pl-4 pr-16 text-xs text-white outline-none transition-all uppercase tracking-wider ${
+                      className={`w-full h-11 bg-zinc-950/60 border rounded-xl pl-4 pr-20 text-xs text-white outline-none transition-all uppercase tracking-wider ${
                         appliedCoupon
-                          ? "border-emerald-500/50 focus:border-emerald-500 shadow-md shadow-emerald-500/5"
+                          ? "border-emerald-500/50 focus:border-emerald-500 shadow-lg shadow-emerald-500/10"
                           : couponError
-                          ? "border-red-500/50 focus:border-red-500 shadow-md shadow-red-500/5"
-                          : "border-white/10 focus:border-brand-cyan"
+                          ? "border-red-500/50 focus:border-red-500 shadow-lg shadow-red-500/10"
+                          : "border-white/10 focus:border-brand-cyan hover:border-white/20"
                       }`}
                     />
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
-                      className="absolute right-1.5 h-7 px-3 rounded-lg bg-brand-cyan hover:bg-brand-cyan/85 text-zinc-950 text-[10px] font-black uppercase transition-all tracking-wider cursor-pointer"
+                      className="absolute right-1.5 h-8 px-4 rounded-lg bg-white/10 hover:bg-white text-zinc-300 hover:text-black text-[10px] font-black uppercase transition-all tracking-wider cursor-pointer"
                     >
                       Apply
                     </button>
@@ -991,9 +1071,7 @@ export default function ExperienceDetailsPage() {
                   {appliedCoupon && (
                     <span className="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
                       <Check className="h-3.5 w-3.5 shrink-0" />
-                      <span>
-                        Code <span className="font-bold">{appliedCoupon}</span> applied! ({coupons[appliedCoupon as keyof typeof coupons].desc})
-                      </span>
+                      <span>Code <span className="font-bold">{appliedCoupon}</span> applied!</span>
                     </span>
                   )}
                   {couponError && (
@@ -1004,16 +1082,16 @@ export default function ExperienceDetailsPage() {
                   )}
 
                   {/* Suggest / Available coupons */}
-                  <div className="flex flex-wrap gap-1.5 mt-1 items-center">
-                    <span className="text-[9px] text-zinc-500 font-bold uppercase select-none">Available:</span>
+                  <div className="flex flex-wrap gap-1.5 mt-2 items-center">
+                    <span className="text-[9px] text-zinc-600 font-bold uppercase select-none mr-1">Offers:</span>
                     {Object.keys(coupons).map((code) => (
                       <button
                         key={code}
                         type="button"
                         onClick={() => handleSelectCoupon(code)}
-                        className={`text-[9px] font-bold px-2 py-0.5 rounded-full border transition-all cursor-pointer ${
+                        className={`text-[9px] font-bold px-2.5 py-1 rounded-full border transition-all cursor-pointer ${
                           appliedCoupon === code
-                            ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan"
+                            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                             : "bg-white/5 border-white/5 hover:border-white/20 text-zinc-400 hover:text-white"
                         }`}
                       >
@@ -1024,23 +1102,23 @@ export default function ExperienceDetailsPage() {
                 </div>
 
                 {/* Explorers Count */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 select-none">
-                    <SlidersHorizontal className="h-4 w-4 text-brand-purple shrink-0" /> Explorers Count
+                <div className="flex flex-col gap-2.5">
+                  <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 select-none">
+                    <SlidersHorizontal className="h-3.5 w-3.5 text-brand-purple shrink-0" /> Travelers Count
                   </label>
-                  <div className="flex gap-2 items-center bg-zinc-950/50 border border-white/10 p-1.5 rounded-xl">
+                  <div className="flex gap-2 items-center bg-zinc-950/60 border border-white/10 p-1.5 rounded-xl hover:border-white/20 transition-colors">
                     <button
                       type="button"
                       onClick={() => setParticipantsCount((prev) => Math.max(1, prev - 1))}
-                      className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center justify-center font-bold cursor-pointer"
+                      className="h-10 w-12 rounded-lg bg-white/5 hover:bg-white text-zinc-400 hover:text-black flex items-center justify-center font-bold cursor-pointer transition-colors"
                     >
                       -
                     </button>
-                    <span className="flex-1 text-center font-mono font-bold text-xs text-white">{participantsCount}</span>
+                    <span className="flex-1 text-center font-mono font-black text-sm text-white">{participantsCount}</span>
                     <button
                       type="button"
                       onClick={() => setParticipantsCount((prev) => Math.min(10, prev + 1))}
-                      className="h-8 w-8 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center justify-center font-bold cursor-pointer"
+                      className="h-10 w-12 rounded-lg bg-white/5 hover:bg-white text-zinc-400 hover:text-black flex items-center justify-center font-bold cursor-pointer transition-colors"
                     >
                       +
                     </button>
@@ -1050,40 +1128,41 @@ export default function ExperienceDetailsPage() {
               </div>
 
               {/* Cost breakdown overview panel */}
-              <div className="bg-white/[0.01] border border-white/5 p-4 rounded-2xl flex flex-col gap-2.5 text-xs font-mono font-bold text-zinc-400">
-                <div className="flex justify-between">
-                  <span>Adventures rate:</span>
-                  <span>₹{experience.price.toLocaleString("en-IN")} × {participantsCount}</span>
+              <div className="bg-gradient-to-br from-white/[0.03] to-transparent border border-white/10 p-5 rounded-2xl flex flex-col gap-3.5 text-xs font-mono font-bold text-zinc-400 mt-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-zinc-500">Adventures rate</span>
+                  <span className="text-white">₹{experience.price.toLocaleString("en-IN")} × {participantsCount}</span>
                 </div>
                 {discountAmount > 0 && (
-                  <div className="flex justify-between text-emerald-400/80">
-                    <span>Discount applied:</span>
+                  <div className="flex justify-between items-center text-emerald-400/80">
+                    <span>Discount applied</span>
                     <span>- ₹{discountAmount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
                 {couponDiscount > 0 && (
-                  <div className="flex justify-between text-emerald-400">
-                    <span>Coupon ({appliedCoupon}):</span>
+                  <div className="flex justify-between items-center text-emerald-400">
+                    <span>Coupon ({appliedCoupon})</span>
                     <span>- ₹{couponDiscount.toLocaleString("en-IN")}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-white/5 pt-2 text-white font-mono">
-                  <span>Grand Total:</span>
-                  <span className="text-brand-cyan text-sm font-black">₹{finalGrandTotal.toLocaleString("en-IN")}</span>
+                <div className="flex justify-between items-center border-t border-white/10 pt-4 mt-1 text-white">
+                  <span className="uppercase tracking-widest text-[10px] text-zinc-400">Grand Total</span>
+                  <span className="text-brand-cyan text-lg font-black tracking-tight">₹{finalGrandTotal.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
               {/* BOOK NOW CTA */}
               <button
                 onClick={handleBookClick}
-                className="w-full h-12 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-brand-indigo/15"
+                className="w-full h-14 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer shadow-xl shadow-brand-indigo/20 mt-2"
               >
-                <Zap className="h-4.5 w-4.5 fill-current text-brand-cyan animate-pulse" /> Secure Booking Now
+                <Zap className="h-4.5 w-4.5 fill-current text-brand-cyan" /> Secure Booking Now
               </button>
 
-              <span className="text-[9px] text-zinc-600 font-medium text-center block">
-                No payment charges yet. You will be redirected to the secure booking application.
-              </span>
+              <div className="flex items-center justify-center gap-2 text-[9px] text-zinc-500 font-medium">
+                <Check className="h-3.5 w-3.5 text-brand-cyan" />
+                <span>No payment charges yet. Secure booking process.</span>
+              </div>
 
             </div>
 
@@ -1091,142 +1170,125 @@ export default function ExperienceDetailsPage() {
 
         </section>
 
-        {/* CENTERED ASSURANCE & DETAILS CONTAINER */}
-        <div className="w-full max-w-4xl mx-auto px-4 md:px-8 flex flex-col items-center gap-16 mt-16 pt-16 border-t border-white/5">
+        {/* FULL WIDTH DESTINATION & HOST SECTION */}
+        <section className="w-full max-w-[1440px] px-4 md:px-8 mt-12 flex flex-col gap-12 items-stretch mx-auto text-left relative z-10">
           
-          {/* Centered Included / Bring Grid */}
-          <div className="flex flex-col gap-6 text-center items-center w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl text-left">
-              {/* Included box */}
-              <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-white/[0.01]">
-                <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 mb-4">
-                  <Check className="h-4.5 w-4.5 text-emerald-400" /> What is Included
-                </h4>
-                <ul className="flex flex-col gap-3">
-                  {experience.included.map((item, idx) => (
-                    <li key={idx} className="flex gap-2.5 text-xs text-zinc-400 font-semibold leading-relaxed">
-                      <Check className="h-3.5 w-3.5 text-emerald-500/60 shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* What to bring box */}
-              <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-white/[0.01]">
-                <h4 className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2 mb-4">
-                  <AlertCircle className="h-4.5 w-4.5 text-brand-cyan" /> What to Bring
-                </h4>
-                <ul className="flex flex-col gap-3">
-                  {experience.bring.map((item, idx) => (
-                    <li key={idx} className="flex gap-2.5 text-xs text-zinc-400 font-semibold leading-relaxed">
-                      <Zap className="h-3.5 w-3.5 text-brand-cyan/60 shrink-0 mt-0.5" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-
-          {/* Centered Location / Map / Weather */}
-          <div className="flex flex-col gap-6 w-full max-w-3xl text-center items-center">
-            <div>
-              <h3 className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest">Adventure Base Camp</h3>
-            </div>
+          {/* DESTINATION & HOST SECTION (2-Column Grid) */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-stretch pt-4">
             
-            {/* Map Placeholder graphic */}
-            <div className="h-56 w-full rounded-2xl bg-zinc-950/80 border border-white/5 relative overflow-hidden flex items-center justify-center p-6 text-center">
-              {/* Simulated Grid mesh lines */}
-              <div className="absolute inset-0 bg-[radial-gradient(#1c1c1f_1px,transparent_1px)] [background-size:16px_16px] opacity-40" />
-              <div className="relative z-10 flex flex-col items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-brand-cyan/20 border border-brand-cyan/30 flex items-center justify-center text-brand-cyan">
-                  <Map className="h-5 w-5" />
+            {/* Adventure Base Camp */}
+            <div className="flex flex-col gap-6 h-full">
+              <div className="flex flex-col gap-1.5 shrink-0">
+                <h3 className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest">Adventure Base Camp</h3>
+                <p className="text-sm text-zinc-300 font-medium max-w-lg line-clamp-1">{experience.locationDetails.address}</p>
+              </div>
+
+              <div className="relative flex-1 min-h-[256px] w-full rounded-3xl overflow-hidden border border-white/10 group">
+                {/* Simulated Map Background */}
+                <div className="absolute inset-0 bg-zinc-950/90" />
+                <div className="absolute inset-0 bg-[radial-gradient(#27272a_1px,transparent_1px)] [background-size:20px_20px] opacity-40 group-hover:opacity-60 transition-opacity duration-700" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-0" />
+                
+                {/* Centered Map Pin */}
+                <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none pb-12">
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute h-16 w-16 rounded-full bg-brand-cyan/20 animate-ping duration-1000" />
+                    <div className="h-10 w-10 rounded-full bg-brand-cyan/20 border border-brand-cyan/40 flex items-center justify-center text-brand-cyan backdrop-blur-md shadow-lg shadow-brand-cyan/20 transition-transform group-hover:scale-110">
+                      <Map className="h-5 w-5" />
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white uppercase">Interactive Location Map</h4>
-                  <p className="text-[10px] text-zinc-500 mt-1 max-w-sm">{experience.locationDetails.address}</p>
+
+                {/* Overlay Metadata Panels (Transit, Parking, Weather) */}
+                <div className="absolute bottom-3 left-3 right-3 flex flex-col gap-2 z-20">
+                  <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-3 rounded-2xl flex items-center justify-between shadow-xl hover:bg-black/80 transition-colors">
+                    <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider block">Transit</span>
+                    <span className="text-white text-[10px] font-semibold truncate max-w-[150px] text-right">{experience.locationDetails.travelTime}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-black/60 backdrop-blur-xl border border-white/10 p-3 rounded-2xl flex flex-col justify-center shadow-xl hover:bg-black/80 transition-colors overflow-hidden">
+                      <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider block mb-1">Parking</span>
+                      <span className="text-white text-[10px] font-semibold truncate w-full">{experience.locationDetails.parking}</span>
+                    </div>
+                    <div className="flex-1 bg-black/60 backdrop-blur-xl border border-white/10 p-3 rounded-2xl flex flex-col justify-center shadow-xl hover:bg-black/80 transition-colors">
+                      <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-wider block mb-1">Weather</span>
+                      <span className="text-white text-[10px] font-semibold flex items-center gap-1.5 truncate">
+                        <CloudSun className="h-3 w-3 text-yellow-500 shrink-0" /> 29°C
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Location metadata metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-zinc-400 w-full text-left">
-              <div className="bg-white/[0.01] border border-white/5 p-3.5 rounded-2xl flex flex-col gap-1">
-                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider block">Transit Mode</span>
-                <span className="text-white text-xs">{experience.locationDetails.travelTime}</span>
-              </div>
-              <div className="bg-white/[0.01] border border-white/5 p-3.5 rounded-2xl flex flex-col gap-1">
-                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider block">Parking Access</span>
-                <span className="text-white text-xs">{experience.locationDetails.parking}</span>
-              </div>
-              <div className="bg-white/[0.01] border border-white/5 p-3.5 rounded-2xl flex flex-col gap-1">
-                <span className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider block">Local Weather</span>
-                <span className="text-white text-xs flex items-center gap-1">
-                  <CloudSun className="h-4 w-4 text-yellow-500" /> Sunny, 29°C
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Centered Host Profile Section */}
-          <div className="w-full max-w-3xl">
-            <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-white/[0.01] flex flex-col items-center gap-6 relative overflow-hidden text-center">
-              <div className="relative shrink-0">
-                <img src={experience.host.avatar} alt={experience.host.name} className="h-20 w-20 rounded-2xl object-cover border border-white/10" />
-                {experience.host.isVerified && (
-                  <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-brand-cyan flex items-center justify-center text-zinc-950 border border-brand-bg">
-                    <Check className="h-3 w-3 stroke-[3]" />
-                  </span>
-                )}
-              </div>
-              <div className="flex flex-col gap-3 items-center">
-                <div className="flex items-center justify-center gap-2">
-                  <h4 className="text-base font-black text-white uppercase tracking-tight">{experience.host.name}</h4>
-                  <span className="text-[9px] font-mono font-bold text-brand-cyan bg-brand-cyan/10 px-2 py-0.5 rounded-full border border-brand-cyan/10 uppercase tracking-wider">
-                    Verified Host
-                  </span>
+            {/* HOST PROFILE & SOCIAL PROOF */}
+            <div className="flex flex-col gap-6 h-full">
+              <h3 className="text-xs font-mono font-bold text-zinc-500 uppercase tracking-widest shrink-0">Your Guide</h3>
+              
+              <div className="flex flex-col gap-6 items-start bg-gradient-to-br from-white/[0.03] to-transparent p-6 rounded-3xl border border-white/5 hover:border-white/10 transition-colors flex-1 w-full relative">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="relative shrink-0">
+                    <img src={experience.host.avatar} alt={experience.host.name} className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl object-cover border border-white/10 shadow-xl" />
+                    {experience.host.isVerified && (
+                      <span className="absolute -bottom-2 -right-2 h-6 w-6 rounded-full bg-brand-cyan flex items-center justify-center text-zinc-950 border-2 border-brand-bg shadow-md">
+                        <Check className="h-3.5 w-3.5 stroke-[3]" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h4 className="text-base sm:text-lg font-black text-white uppercase tracking-tight leading-none">{experience.host.name}</h4>
+                    <span className="text-[9px] font-mono font-bold text-brand-cyan bg-brand-cyan/10 px-2 py-0.5 rounded-full border border-brand-cyan/10 uppercase tracking-wider w-fit mt-1">
+                      Verified Host
+                    </span>
+                  </div>
                 </div>
-                <p className="text-xs text-zinc-400 leading-relaxed font-medium max-w-xl">
+                
+                <p className="text-xs text-zinc-400 leading-relaxed font-medium flex-1">
                   {experience.host.bio}
                 </p>
-                <div className="grid grid-cols-3 gap-6 border-t border-white/5 pt-4 mt-1.5 text-[10px] text-zinc-500 font-mono font-semibold w-full max-w-md justify-items-center">
-                  <div>
-                    <span className="block text-zinc-600">Response Speed</span>
+                  
+                <div className="grid grid-cols-3 gap-3 pt-4 border-t border-white/5 text-[9px] sm:text-[10px] font-mono font-semibold w-full mt-auto">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-zinc-500 uppercase">Response</span>
                     <span className="text-white font-bold">{experience.host.responseTime}</span>
                   </div>
-                  <div>
-                    <span className="block text-zinc-600">Reviews Score</span>
-                    <span className="text-brand-amber font-bold flex items-center gap-0.5 justify-center">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-zinc-500 uppercase">Rating</span>
+                    <span className="text-brand-amber font-bold flex items-center gap-1">
                       <Star className="h-3 w-3 fill-brand-amber text-brand-amber" /> {experience.host.rating}
                     </span>
                   </div>
-                  <div>
-                    <span className="block text-zinc-600">Total Adventures</span>
-                    <span className="text-white font-bold">{experience.host.tripsHosted} Hosted</span>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-zinc-500 uppercase">Experience</span>
+                    <span className="text-white font-bold">{experience.host.tripsHosted}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Centered Policies */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-center justify-items-center w-full max-w-3xl border-t border-white/5 pt-8">
-            <div className="flex flex-col gap-2 max-w-xs items-center">
-              <span className="text-[10px] font-mono font-black text-zinc-600 uppercase tracking-widest">Cancellation Policies</span>
-              <p className="text-zinc-500 leading-relaxed text-xs">
+          {/* POLICIES */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 border-t border-white/5 pt-12 pb-8">
+            <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5 hover:bg-white/[0.04] transition-colors">
+              <span className="text-[10px] font-mono font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <Clock className="h-3.5 w-3.5" /> Cancellation
+              </span>
+              <p className="text-zinc-500 leading-relaxed text-[11px] font-medium">
                 Cancel up to 72 hours before the start of the adventure for a 100% refund. Cancellations made within 48 hours of the event start time will be credited as future adventure travel vouchers.
               </p>
             </div>
-            <div className="flex flex-col gap-2 max-w-xs items-center">
-              <span className="text-[10px] font-mono font-black text-zinc-600 uppercase tracking-widest">Weather & Safety Terms</span>
-              <p className="text-zinc-500 leading-relaxed text-xs">
+            <div className="bg-white/[0.02] p-5 rounded-2xl border border-white/5 hover:bg-white/[0.04] transition-colors">
+              <span className="text-[10px] font-mono font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                <AlertCircle className="h-3.5 w-3.5" /> Safety & Weather
+              </span>
+              <p className="text-zinc-500 leading-relaxed text-[11px] font-medium">
                 All experiences are subject to safety checks. If the host cancels due to rain, high currents, or regulatory warnings, you will be offered an alternative date or an instant refund.
               </p>
             </div>
           </div>
+        </section>
 
-        </div>
+        {/* Assurance details moved to left column (above) */}
 
         {/* REVIEWS SECTION - Covers complete width of device with slider/pagination controls */}
         <section className="w-full max-w-[1440px] px-4 md:px-8 border-t border-white/5 pt-16 mt-16 text-left" id="reviews-section">

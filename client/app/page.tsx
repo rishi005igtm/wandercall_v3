@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
 import Trending from "../components/Trending";
 
-import FeaturedHosts from "../components/FeaturedHosts";
+
 import UpcomingEvents from "../components/UpcomingEvents";
 import HowItWorks from "../components/HowItWorks";
 import SocialProof from "../components/SocialProof";
@@ -37,8 +37,6 @@ export default function Home() {
 
         {/* Section 8: Campfire Communities (Removed) */}
 
-        {/* Section 10: Featured Hosts */}
-        <FeaturedHosts />
 
         {/* Section 11: Upcoming Events */}
         {/* <UpcomingEvents /> */}

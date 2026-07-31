@@ -53,7 +53,10 @@ export default function Navbar({
   const { isAuthenticated, userId, isAuthReady } = useAppSelector((state) => state.auth);
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUserQuery(isAuthenticated);
 
-  const isProfileLoading = !isAuthReady || (isAuthenticated && isUserLoading);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const isProfileLoading = !mounted || !isAuthReady || (isAuthenticated && isUserLoading);
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
