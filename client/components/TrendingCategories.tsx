@@ -12,7 +12,7 @@ export default function TrendingCategories() {
   const trendingCats = HERO_CATEGORIES.slice(0, 8);
 
   return (
-    <section className="w-full max-w-[1440px] mx-auto px-6 py-12" id="trending-categories">
+    <section className="w-full max-w-[1440px] mx-auto px-6 pt-12 pb-4 lg:pb-8" id="trending-categories">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Flame className="h-5 w-5 text-orange-500" />

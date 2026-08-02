@@ -48,10 +48,7 @@ export default function Hero() {
       {/* This creates the seamless transition across the seam */}
       <div className="absolute inset-0 z-[5] bg-gradient-to-t lg:bg-gradient-to-r from-[#111] via-[#111]/95 lg:via-[#111] to-transparent lg:to-transparent pointer-events-none" />
 
-      {/* Decorative Blur Elements */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 pointer-events-none z-[6]" />
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-black/20 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3 pointer-events-none z-[6]" />
-
+      
       {/* Content Container (z-10 to be above the overlay) */}
       <div className="relative z-10 w-full h-full flex flex-col lg:flex-row pointer-events-none">
         

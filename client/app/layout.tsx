@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import SmoothScroll from "@/components/SmoothScroll";
 import { AppProviders } from "@/providers/AppProviders";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 
@@ -32,9 +31,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <AppProviders>
           <AuthGuard>
-            <SmoothScroll>
+            <>
               {children}
-            </SmoothScroll>
+            </>
           </AuthGuard>
         </AppProviders>
       </body>

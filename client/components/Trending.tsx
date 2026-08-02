@@ -180,7 +180,7 @@ export default function Trending() {
 
   return (
     <section
-      className="relative py-10 lg:py-24 px-6 md:px-12 bg-transparent max-w-[1440px] mx-auto w-full"
+      className="relative pt-4 pb-10 lg:pt-8 lg:pb-24 px-6 md:px-12 bg-transparent max-w-[1440px] mx-auto w-full"
       id="experiences"
     >
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
