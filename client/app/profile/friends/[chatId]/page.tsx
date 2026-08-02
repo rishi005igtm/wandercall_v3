@@ -1055,7 +1055,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               Select an active campfire to invite <strong className="text-gray-900">{activeFriend.name}</strong>. They will receive an interactive card in the chat to join directly.
             </p>
 
-            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar" data-lenis-prevent>
+            <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
               {campfireList.length > 0 ? (
                 campfireList.map((campfire) => (
                   <div

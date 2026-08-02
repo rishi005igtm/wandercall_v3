@@ -991,7 +991,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
       </div>
 
       {/* 2. CATEGORY HORIZONTAL SELECTOR MENU BAR */}
-      <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 w-full p-2 bg-white border border-gray-200 rounded-2xl shrink-0 select-none items-center shadow-sm" data-lenis-prevent>
+      <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 w-full p-2 bg-white border border-gray-200 rounded-2xl shrink-0 select-none items-center shadow-sm">
         {(
           [
             { id: "all", label: "All Friends", icon: Users, count: companions.length },
@@ -2014,7 +2014,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                 Select an active campfire to invite <strong className="text-gray-900">{activeFriend?.name || ""}</strong>. They will receive an interactive card in the chat to join directly.
               </p>
 
-              <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar" data-lenis-prevent>
+              <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
                 {campfireList.length > 0 ? (
                   campfireList.map((campfire) => (
                     <div

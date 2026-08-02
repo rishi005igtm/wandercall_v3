@@ -159,7 +159,6 @@ export default function LocationSearch({ onSelect, selectedLocation }: LocationS
           {/* Autocomplete Suggestions Box */}
           {isOpen && inputValue.trim() !== "" && (
             <div 
-              data-lenis-prevent
               className="absolute left-0 right-0 top-13 z-50 bg-white border border-gray-200 rounded-2xl shadow-2xl p-2 flex flex-col gap-0.5 max-h-[260px] overflow-y-auto no-scrollbar backdrop-blur-xl"
             >
               {loading && (

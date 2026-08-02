@@ -1,20 +1,24 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence, useInView } from "framer-motion";
 import { HERO_SLIDES } from "@/data/heroData";
 import { MapPin, Star, ChevronRight, ChevronLeft } from "lucide-react";
 import Image from "next/image";
 
 export default function Hero() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(containerRef, { amount: 0.1 });
 
   useEffect(() => {
+    if (!isInView) return; // Pause timer when out of view
+
     const timer = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % HERO_SLIDES.length);
     }, 6000);
     return () => clearInterval(timer);
-  }, []);
+  }, [isInView]);
 
   const handleNext = () => setCurrentIndex((prev) => (prev + 1) % HERO_SLIDES.length);
   const handlePrev = () => setCurrentIndex((prev) => (prev - 1 + HERO_SLIDES.length) % HERO_SLIDES.length);
@@ -22,7 +26,7 @@ export default function Hero() {
   const slide = HERO_SLIDES[currentIndex];
 
   return (
-    <div className="relative w-full lg:h-[70vh] min-h-[500px] max-h-[700px] overflow-hidden bg-[#111] select-none rounded-b-[24px] lg:rounded-b-[50px]">
+    <div ref={containerRef} className="relative w-full lg:h-[70vh] min-h-[500px] max-h-[700px] overflow-hidden bg-[#111] select-none rounded-b-[24px] lg:rounded-b-[50px] transform-gpu">
       
       {/* Background Image Panel (Right side or Full depending on mobile) */}
       <div className="absolute top-0 right-0 w-full lg:w-1/2 h-full z-0">
@@ -38,7 +42,7 @@ export default function Hero() {
             {slide.image.startsWith('http') ? (
               <img src={slide.image} alt={slide.title} className="absolute inset-0 w-full h-full object-cover" />
             ) : (
-              <Image src={slide.image} alt={slide.title} fill className="object-cover" priority sizes="(max-width: 1024px) 100vw, 50vw" />
+              <Image src={slide.image} alt={slide.title} fill className="object-cover" priority={currentIndex === 0} sizes="(max-width: 1024px) 100vw, 50vw" />
             )}
           </motion.div>
         </AnimatePresence>
