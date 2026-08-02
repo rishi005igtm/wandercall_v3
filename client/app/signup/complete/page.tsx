@@ -225,7 +225,7 @@ function SignupCompleteContent() {
   const firstLetter = nameParam ? nameParam.trim().charAt(0).toUpperCase() : "U";
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col lg:flex-row bg-brand-bg text-white overflow-x-hidden font-sans relative select-none">
+    <div className="h-[100dvh] w-full flex flex-col lg:flex-row bg-zinc-950 text-white overflow-x-hidden font-sans relative select-none">
       
       {/* Back Button */}
       <Link 
@@ -246,7 +246,7 @@ function SignupCompleteContent() {
           sizes="100vw"
           className="object-cover opacity-35 mix-blend-luminosity scale-102"
         />
-        <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-brand-bg/70 via-brand-bg/90 to-brand-bg" />
+        <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-zinc-950/70 via-zinc-950/90 to-zinc-950" />
         <div className="absolute inset-0 bg-noise-pattern opacity-[0.02] pointer-events-none" />
       </div>
 
@@ -573,7 +573,7 @@ function SignupCompleteContent() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-brand-bg/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6"
+            className="fixed inset-0 bg-zinc-950/95 backdrop-blur-xl z-50 flex flex-col items-center justify-center p-6"
           >
             <div className="relative h-16 w-16 mb-8 flex items-center justify-center rounded-2xl bg-gradient-to-tr from-brand-indigo to-brand-purple shadow-xl shadow-brand-indigo/20">
               <Globe className="h-8 w-8 text-white animate-spin-slow" />
@@ -615,7 +615,7 @@ function SignupCompleteContent() {
 export default function SignupCompletePage() {
   return (
     <Suspense fallback={
-      <div className="h-screen w-full bg-brand-bg flex items-center justify-center text-white">
+      <div className="h-screen w-full bg-zinc-950 flex items-center justify-center text-white">
         <Loader2 className="h-8 w-8 animate-spin text-brand-purple" />
       </div>
     }>

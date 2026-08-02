@@ -5,27 +5,15 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import {
-  Globe,
-  Eye,
-  EyeOff,
-  ShieldCheck,
-  Lock,
-  Mail,
-  Sparkles,
-  Award,
-  Radio,
-  CheckCircle2,
-  Fingerprint,
-  UserPlus,
-  User,
-  ShieldAlert,
-  ArrowLeft
+import { 
+  ArrowLeft, Globe, Award, Radio, 
+  Sparkles, Mail, Lock, Eye, EyeOff, 
+  ShieldAlert, KeyRound, Fingerprint, 
+  ShieldCheck, CheckCircle2, User, UserPlus, Compass, Map, Mountain, Star, Loader2
 } from "lucide-react";
 import { useSignupMutation, useGoogleAuthMutation, useVerifyEmailMutation, useResendVerificationMutation } from "@/hooks/api/useAuthMutations";
 import { useAppSelector } from "@/lib/store/store";
 import { mapApiError } from "@/lib/utils/errorMapper";
-import { Loader2, KeyRound } from "lucide-react";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -192,12 +180,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="h-[100dvh] w-full flex flex-col lg:flex-row bg-brand-bg text-white overflow-hidden font-sans relative select-none">
+    <div className="h-[100dvh] w-full flex flex-col lg:flex-row bg-zinc-950 text-white overflow-hidden font-sans relative select-none">
 
       {/* Back Button (fixed, sits at top-left on mobile, top-left of form column on desktop) */}
       <Link
         href="/"
-        className="fixed top-6 left-6 lg:left-[55%] lg:ml-6 z-40 p-2.5 rounded-full glass-panel border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-lg"
+        className="fixed top-6 left-6 lg:left-[55%] lg:ml-6 z-40 p-2.5 rounded-full bg-[#111] border border-white/10 text-zinc-400 hover:text-white hover:bg-[#222] hover:scale-105 active:scale-95 transition-all flex items-center justify-center cursor-pointer shadow-lg"
         aria-label="Back to home"
       >
         <ArrowLeft className="h-4 w-4" />
@@ -206,21 +194,35 @@ export default function SignupPage() {
       {/* Background Cinematic Adventure Photo stretching across the page */}
       <div className="hidden sm:block absolute inset-0 z-0 pointer-events-none">
         <Image
-          src="https://images.unsplash.com/photo-1510312305653-8ed496efae75?q=80&w=1200&auto=format&fit=crop"
-          alt="Cinematic Camping Tent Under Starry Night Sky"
+          src="https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?q=80&w=1200&auto=format&fit=crop"
+          alt="Cinematic Campfire Under Starry Sky"
           fill
           priority
           sizes="100vw"
           className="object-cover opacity-35 mix-blend-luminosity scale-102"
         />
         {/* Horizontal linear gradient overlay from left (transparent/low dark) to right (solid dark) */}
-        <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-brand-bg/70 via-brand-bg/90 to-brand-bg" />
+        <div className="absolute inset-0 bg-gradient-to-b lg:bg-gradient-to-r from-zinc-950/70 via-zinc-950/90 to-zinc-950" />
         {/* Subtle noise overlay */}
         <div className="absolute inset-0 bg-noise-pattern opacity-[0.02] pointer-events-none" />
       </div>
 
-      {/* LEFT PANEL: Immersive Brand Experience (hidden on mobile, sticky on desktop) */}
-      <section className="hidden lg:flex lg:w-[55%] h-full z-20 flex-col justify-between p-12 overflow-hidden bg-transparent">
+      {/* LEFT PANEL: Immersive Brand Experience */}
+      <section className="hidden lg:flex lg:w-[55%] h-full z-20 flex-col justify-between p-12 overflow-hidden bg-transparent relative">
+        
+        {/* Curvy Edge Pattern Divider */}
+        <div className="absolute top-0 right-0 w-32 h-full pointer-events-none z-30 translate-x-[1px]">
+          <svg viewBox="0 0 100 1000" preserveAspectRatio="none" className="w-full h-full">
+            <defs>
+              <linearGradient id="edge-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="rgba(200,240,245,0.4)" />
+                <stop offset="40%" stopColor="rgba(255,255,255,0.9)" />
+                <stop offset="100%" stopColor="#ffffff" />
+              </linearGradient>
+            </defs>
+            <path d="M 100 0 V 1000 H 0 C 80 800, 90 650, 40 500 C -10 350, 80 200, 0 0 Z" fill="url(#edge-gradient)" />
+          </svg>
+        </div>
         {/* Top Section: Logo & Mark */}
         <Link href="/" className="relative z-10 flex items-center gap-2 self-start cursor-pointer hover:opacity-90 transition-opacity">
           <div className="relative h-8 w-8 flex items-center justify-center rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple">
@@ -232,109 +234,65 @@ export default function SignupPage() {
           </span>
         </Link>
 
-        {/* Middle Section: Title, Badges, & Floating Widgets */}
-        <div className="relative z-10 my-auto hidden lg:flex flex-col items-start text-left max-w-lg">
-          <h1 className="text-4xl font-extrabold tracking-tight leading-tight mb-4 text-white">
-            Discover Experiences <br />
-            <span className="text-gradient-brand">Worth Remembering</span>
+        {/* Middle Section: Title & Illustrations */}
+        <div className="relative z-10 my-auto hidden lg:flex flex-col items-start text-left max-w-xl">
+          <h1 className="text-4xl lg:text-6xl font-black tracking-tighter leading-[1.05] mb-6 text-white drop-shadow-2xl">
+            Unleash Your <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-cyan via-brand-indigo to-brand-purple">Wanderlust.</span>
           </h1>
+          
+          <p className="text-lg text-zinc-300 font-medium max-w-md leading-relaxed mb-12">
+            Step into a world of curated adventures. Connect with explorers, share unforgettable memories, and redefine the way you travel.
+          </p>
 
-          <div className="space-y-2 text-sm text-zinc-400 font-medium mb-8">
-            <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-brand-cyan" /> Book adventures.</p>
-            <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-brand-purple" /> Join communities.</p>
-            <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-brand-indigo" /> Meet explorers.</p>
-            <p className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-brand-amber" /> Create real-life memories.</p>
-          </div>
+          {/* Cool Abstract Illustration Grid */}
+          <div className="flex gap-4 sm:gap-6 relative">
+            <div className="absolute -inset-10 bg-brand-indigo/10 blur-[60px] rounded-full pointer-events-none" />
+            
+            <div className="relative z-10 p-5 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl rotate-[-6deg] hover:rotate-0 hover:scale-105 transition-all duration-500 cursor-default group">
+               <div className="absolute inset-0 bg-gradient-to-br from-brand-cyan/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
+               <Map className="w-10 h-10 text-white group-hover:text-brand-cyan transition-colors" strokeWidth={1.5} />
+            </div>
+            
+            <div className="relative z-10 p-5 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl rotate-[4deg] translate-y-3 hover:rotate-0 hover:scale-105 transition-all duration-500 cursor-default group">
+               <div className="absolute inset-0 bg-gradient-to-br from-brand-purple/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
+               <Compass className="w-10 h-10 text-white group-hover:text-brand-purple transition-colors" strokeWidth={1.5} />
+            </div>
+            
+            <div className="relative z-10 p-5 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl rotate-[-8deg] translate-y-8 hover:rotate-0 hover:scale-105 transition-all duration-500 cursor-default group">
+               <div className="absolute inset-0 bg-gradient-to-br from-brand-indigo/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
+               <Mountain className="w-10 h-10 text-white group-hover:text-brand-indigo transition-colors" strokeWidth={1.5} />
+            </div>
 
-          {/* Floating Widgets */}
-          <div className="relative w-full h-32 mt-6">
-            {/* Quest Widget */}
-            <motion.div
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute left-0 top-0 glass-panel border-white/10 px-4 py-2.5 rounded-2xl flex items-center gap-3 shadow-lg"
-            >
-              <div className="h-8 w-8 rounded-xl bg-brand-amber/15 border border-brand-amber/20 flex items-center justify-center text-brand-amber">
-                <Award className="h-4 w-4" />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Active Quest</p>
-                <p className="text-xs font-extrabold text-white">Scuba Diving netrani +120 XP</p>
-              </div>
-            </motion.div>
-
-            {/* Campfire Badge */}
-            <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-              className="absolute right-4 bottom-0 glass-panel border-white/10 px-4 py-2.5 rounded-2xl flex items-center gap-3 shadow-lg"
-            >
-              <div className="h-8 w-8 rounded-xl bg-brand-purple/15 border border-brand-purple/20 flex items-center justify-center text-brand-purple">
-                <Radio className="h-4 w-4 animate-pulse" />
-              </div>
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-wider text-zinc-500">Live campfire</p>
-                <p className="text-xs font-extrabold text-white">Solo Backpacking (89 listeners)</p>
-              </div>
-            </motion.div>
+            <div className="relative z-10 p-5 rounded-[2rem] bg-white/5 border border-white/10 backdrop-blur-md shadow-2xl rotate-[12deg] translate-y-2 hover:rotate-0 hover:scale-105 transition-all duration-500 cursor-default group">
+               <div className="absolute inset-0 bg-gradient-to-br from-brand-amber/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity rounded-[2rem]" />
+               <Star className="w-10 h-10 text-white group-hover:text-brand-amber transition-colors" strokeWidth={1.5} />
+            </div>
           </div>
         </div>
 
-        {/* Bottom Section: Smooth counting stats */}
-        <div className="relative z-10 w-full pt-4 lg:pt-8 border-t border-white/5 flex justify-between items-center max-w-xl gap-4">
-          <div className="text-left">
-            <p className="text-[8px] sm:text-[9px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Explorers</p>
-            <p className="text-sm sm:text-base font-black text-white font-mono">{(explorers / 1000).toFixed(0)}K+</p>
-          </div>
-          <div className="w-px h-6 bg-white/10" />
-          <div className="text-left">
-            <p className="text-[8px] sm:text-[9px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Experiences</p>
-            <p className="text-sm sm:text-base font-black text-white font-mono">{experiences}+</p>
-          </div>
-          <div className="w-px h-6 bg-white/10" />
-          <div className="text-left">
-            <p className="text-[8px] sm:text-[9px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Communities</p>
-            <p className="text-sm sm:text-base font-black text-white font-mono">{communities}+</p>
-          </div>
-          <div className="w-px h-6 bg-white/10" />
-          <div className="text-left">
-            <p className="text-[8px] sm:text-[9px] uppercase font-bold text-zinc-500 tracking-wider mb-0.5">Memories</p>
-            <p className="text-sm sm:text-base font-black text-gradient-brand font-mono">{(memories / 1000).toFixed(0)}K+</p>
-          </div>
-        </div>
+
       </section>
 
       {/* RIGHT PANEL: Authentication Form Container */}
-      <section className="w-full lg:w-[45%] h-full overflow-y-auto flex flex-col items-center justify-center px-2 py-4 sm:p-8 md:p-12 z-10 relative">
+      <section className="w-full lg:w-[45%] h-full flex flex-col items-center justify-center px-2 py-4 sm:p-8 md:p-12 z-10 relative bg-white overflow-hidden">
 
         {/* Background glow field */}
-        <div className="absolute top-[20%] right-[10%] w-72 h-72 rounded-full bg-brand-indigo/5 blur-[120px] pointer-events-none" />
+        <div className="absolute top-[20%] right-[10%] w-72 h-72 rounded-full bg-brand-indigo/10 blur-[120px] pointer-events-none" />
 
-        {/* Signup Container (Glass card, perfect alignment) */}
+        {/* Signup Container */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="my-auto w-full max-w-[420px] glass-panel glass-glow-indigo phone-borderless px-4 py-6 sm:p-10 rounded-3xl flex flex-col gap-6 shadow-xl relative"
+          className="my-auto w-full max-w-[420px] phone-borderless px-4 py-6 sm:p-10 flex flex-col gap-6 relative"
         >
-          {/* Header */}
-          <div className="text-left">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-2 py-0.5 rounded-full uppercase tracking-wider mb-3">
-              <Sparkles className="h-3 w-3 animate-spin-slow" />
-              Begin Your Journey
-            </span>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight leading-none mb-2">
-              Create your account
-            </h2>
-            <p className="text-xs text-zinc-400 font-medium leading-relaxed">
-              Join exclusive communities, track quests, and share memories.
-            </p>
-          </div>
+
 
           {/* OAuth Signup */}
           <div className="flex flex-col gap-3 w-full">
             {errors.api && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 font-medium flex items-center gap-2">
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-600 font-medium flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 flex-shrink-0" />
                 <span>{errors.api}</span>
               </div>
@@ -344,7 +302,7 @@ export default function SignupPage() {
               type="button"
               onClick={() => googleAuthMutation.mutate({ idToken: "mock_google_id_token" })}
               disabled={googleAuthMutation.isPending}
-              className="w-full h-11 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-white/10 hover:border-white/20 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
+              className="w-full h-11 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-700 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-zinc-100 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer disabled:opacity-50"
             >
               {/* Google Flat SVG */}
               <svg className="h-4 w-4" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
@@ -361,11 +319,11 @@ export default function SignupPage() {
 
           {/* Divider */}
           <div className="relative flex py-1 items-center">
-            <div className="flex-grow border-t border-white/5"></div>
-            <span className="flex-shrink mx-4 text-[9px] font-bold text-zinc-500 uppercase tracking-widest">
+            <div className="flex-grow border-t border-zinc-200"></div>
+            <span className="flex-shrink mx-4 text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
               OR REGISTER WITH EMAIL
             </span>
-            <div className="flex-grow border-t border-white/5"></div>
+            <div className="flex-grow border-t border-zinc-200"></div>
           </div>
 
           {/* Signup Form */}
@@ -384,10 +342,10 @@ export default function SignupPage() {
                   autoComplete="name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.name ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
+                  className={`w-full h-11 bg-zinc-50 border rounded-xl pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.name ? "border-rose-300 focus:ring-rose-500 focus:border-rose-500" : "border-zinc-200"
                     }`}
                 />
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               </div>
               {errors.name && (
                 <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1 mt-0.5">
@@ -410,10 +368,10 @@ export default function SignupPage() {
                   autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-4 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.email ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
+                  className={`w-full h-11 bg-zinc-50 border rounded-xl pl-10 pr-4 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.email ? "border-rose-300 focus:ring-rose-500 focus:border-rose-500" : "border-zinc-200"
                     }`}
                 />
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
               </div>
               {errors.email && (
                 <p className="text-[10px] text-rose-500 font-semibold flex items-center gap-1 mt-0.5">
@@ -436,14 +394,14 @@ export default function SignupPage() {
                   autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full h-11 bg-white/5 border rounded-xl pl-10 pr-10 text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.password ? "border-rose-500/50 focus:ring-rose-500 focus:border-rose-500" : "border-white/10"
+                  className={`w-full h-11 bg-zinc-50 border rounded-xl pl-10 pr-10 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-1 focus:ring-brand-purple focus:border-brand-purple transition-all ${errors.password ? "border-rose-300 focus:ring-rose-500 focus:border-rose-500" : "border-zinc-200"
                     }`}
                 />
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700 transition-colors cursor-pointer"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -459,18 +417,18 @@ export default function SignupPage() {
 
             {/* Terms & Conditions Agreement */}
             <div className="flex flex-col gap-1 mt-1 text-xs select-none">
-              <label className="flex items-start gap-2.5 text-zinc-400 font-semibold cursor-pointer">
+              <label className="flex items-start gap-2.5 text-zinc-500 font-semibold cursor-pointer">
                 <input
                   type="checkbox"
                   checked={termsAccepted}
                   onChange={() => setTermsAccepted(!termsAccepted)}
-                  className="h-4 w-4 rounded border-white/10 bg-white/5 text-brand-purple focus:ring-brand-purple accent-brand-purple mt-0.5"
+                  className="h-4 w-4 rounded border-zinc-300 bg-white text-brand-purple focus:ring-brand-purple accent-brand-purple mt-0.5"
                 />
                 <span className="leading-tight">
                   I agree to the{" "}
-                  <a href="#terms" className="text-brand-cyan hover:underline transition-all">Terms of Service</a>
+                  <a href="#terms" className="text-brand-cyan hover:underline hover:text-brand-indigo transition-all">Terms of Service</a>
                   {" "}and{" "}
-                  <a href="#privacy" className="text-brand-cyan hover:underline transition-all">Privacy Policy</a>
+                  <a href="#privacy" className="text-brand-cyan hover:underline hover:text-brand-indigo transition-all">Privacy Policy</a>
                 </span>
               </label>
               {errors.terms && (
@@ -486,13 +444,13 @@ export default function SignupPage() {
               type="submit"
               disabled={signupMutation.isPending}
               className={`w-full h-[52px] rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 mt-3 cursor-pointer ${signupMutation.isPending
-                  ? "bg-zinc-800 text-zinc-500 cursor-not-allowed border border-white/5"
+                  ? "bg-zinc-200 text-zinc-500 cursor-not-allowed border border-zinc-300"
                   : "bg-gradient-to-r from-brand-indigo to-brand-purple hover:brightness-110 text-white shadow-lg shadow-brand-indigo/25 active:scale-[0.98]"
                 }`}
             >
               {signupMutation.isPending ? (
                 <>
-                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="h-4 w-4 border-2 border-zinc-400 border-t-zinc-600 rounded-full animate-spin" />
                   <span>Creating Account...</span>
                 </>
               ) : (
@@ -505,7 +463,7 @@ export default function SignupPage() {
           </form>
 
           {/* Secure indicator footer */}
-          <div className="flex justify-between items-center pt-4 border-t border-white/5 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
+          <div className="flex justify-between items-center pt-4 border-t border-zinc-200 text-[9px] font-bold text-zinc-500 uppercase tracking-wider">
             <span className="flex items-center gap-1">
               <Fingerprint className="h-3.5 w-3.5 text-brand-cyan" /> Secure Auth
             </span>
@@ -518,9 +476,9 @@ export default function SignupPage() {
           </div>
 
           {/* Sign in page link */}
-          <p className="text-xs font-medium text-zinc-400">
+          <p className="text-xs font-medium text-zinc-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-bold text-brand-cyan hover:underline transition-all">
+            <Link href="/login" className="font-bold text-brand-cyan hover:underline hover:text-brand-indigo transition-all">
               Sign In
             </Link>
           </p>
