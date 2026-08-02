@@ -215,11 +215,11 @@ export default function Trending() {
 
                     {/* Header overlay */}
                     <div className="absolute top-2 sm:top-3.5 left-2 sm:left-3.5 right-2 sm:right-3.5 flex justify-end sm:justify-between items-center z-10">
-                      <span className="hidden sm:inline-block text-[9px] font-bold text-gray-900 bg-white/90 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-gray-200 shadow-sm">
+                      <span className="hidden sm:inline-block text-[9px] font-bold text-gray-900 bg-white px-2 py-0.5 rounded-full uppercase tracking-wider border border-gray-200 shadow-sm">
                         {exp.category}
                       </span>
                       <div className="flex items-center gap-1.5 sm:gap-2">
-                        <div className="flex items-center gap-1 bg-white/90 px-1.5 sm:px-2 py-0.5 rounded-full backdrop-blur-md text-[8px] sm:text-[9px] font-bold text-brand-amber border border-gray-200 shadow-sm h-6 sm:h-7">
+                        <div className="flex items-center gap-1 bg-white px-1.5 sm:px-2 py-0.5 rounded-full text-[8px] sm:text-[9px] font-bold text-brand-amber border border-gray-200 shadow-sm h-6 sm:h-7">
                           <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-brand-amber text-brand-amber" />
                           {exp.rating}
                         </div>
@@ -229,7 +229,7 @@ export default function Trending() {
                             e.stopPropagation();
                             toggleWishlist(exp.id);
                           }}
-                          className={`h-6 w-6 sm:h-7 sm:w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md shadow-sm ${isWishlisted
+                          className={`h-6 w-6 sm:h-7 sm:w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer bg-white/80 shadow-sm ${isWishlisted
                               ? "bg-rose-500 border-rose-500 text-white scale-110 shadow-lg shadow-rose-500/30"
                               : "bg-white/90 border-gray-200 text-gray-500 hover:bg-white hover:text-rose-500"
                             }`}

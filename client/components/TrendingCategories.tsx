@@ -51,12 +51,12 @@ export default function TrendingCategories() {
               </div>
               
               {/* Vibrant Gradient Overlay */}
-              <div className={`absolute inset-0 z-0 opacity-60 bg-gradient-to-br ${cat.color} mix-blend-multiply`} />
+              <div className={`absolute inset-0 z-0 opacity-60 bg-gradient-to-br ${cat.color}`} />
               <div className={`absolute inset-0 z-0 opacity-40 bg-gradient-to-t from-black/80 to-transparent`} />
 
               {/* Top Section with Icon */}
               <div className="relative z-10 w-full flex items-start justify-between">
-                <div className={`p-1.5 rounded-full bg-white/20 backdrop-blur-md shadow-sm w-max`}>
+                <div className={`p-1.5 rounded-full bg-white/30 shadow-sm w-max`}>
                   <Icon className="h-4 w-4 text-white" />
                 </div>
               </div>

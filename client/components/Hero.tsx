@@ -64,7 +64,7 @@ export default function Hero() {
               transition={{ duration: 0.8 }}
               className="mb-4 inline-flex items-center gap-2"
             >
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-white/10 text-white border border-white/20 uppercase tracking-widest backdrop-blur-md">
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-black/40 text-white border border-white/20 uppercase tracking-widest">
                 Discover. Book. Explore.
               </span>
             </motion.div>
@@ -120,10 +120,10 @@ export default function Hero() {
                 <div key={i} className={`h-1.5 rounded-full transition-all duration-500 ${i === currentIndex ? "w-8 bg-white" : "w-3 bg-white/30"}`} />
               ))}
             </div>
-            <button suppressHydrationWarning onClick={handlePrev} className="h-10 w-10 rounded-full border border-white/20 bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors">
+            <button suppressHydrationWarning onClick={handlePrev} className="h-10 w-10 rounded-full border border-white/20 bg-black/60 flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors">
               <ChevronLeft className="h-5 w-5" />
             </button>
-            <button suppressHydrationWarning onClick={handleNext} className="h-10 w-10 rounded-full border border-white/20 bg-black/20 backdrop-blur-md flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors">
+            <button suppressHydrationWarning onClick={handleNext} className="h-10 w-10 rounded-full border border-white/20 bg-black/60 flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors">
               <ChevronRight className="h-5 w-5" />
             </button>
           </div>
