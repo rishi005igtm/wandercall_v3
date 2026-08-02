@@ -205,7 +205,7 @@ export default function ExperiencesPage() {
   const [activeDifficulty, setActiveDifficulty] = useState("All");
   const [priceRange, setPriceRange] = useState(25000);
   const [activeSort, setActiveSort] = useState("Popularity");
-  
+
   // Applied Filters states (used for actual filtering)
   const [appliedSearchQuery, setAppliedSearchQuery] = useState("");
   const [appliedDifficulty, setAppliedDifficulty] = useState("All");
@@ -226,15 +226,15 @@ export default function ExperiencesPage() {
     setAppliedSort(activeSort);
     setShowMobileFilters(false);
   };
-  
+
   // Wishlist local state tracking
   const [wishlist, setWishlist] = useState<string[]>([]);
   const toggleWishlist = (id: string) => {
-    setWishlist((prev) => 
+    setWishlist((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
-  
+
   // Categories list derived from catalog
   const categories = ["All", "Water Sports", "Adventure", "Camping", "Trekking", "Retreats", "Cultural"];
   const difficulties = ["All", "Easy", "Medium", "Hard", "Extreme"];
@@ -285,26 +285,26 @@ export default function ExperiencesPage() {
       case "Medium": return "text-cyan-400 bg-cyan-500/10 border-cyan-500/20";
       case "Hard": return "text-purple-400 bg-purple-500/10 border-purple-500/20";
       case "Extreme": return "text-rose-400 bg-rose-500/10 border-rose-500/20";
-      default: return "text-zinc-400 bg-white/5 border-white/5";
+      default: return "text-gray-600 bg-gray-50 border-gray-200";
     }
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-brand-bg text-white overflow-x-hidden font-sans">
+    <div className="flex flex-col min-h-screen bg-gray-50 text-gray-900 overflow-x-hidden font-sans">
       <Navbar showFilterButton onFilterToggle={() => setShowMobileFilters((prev) => !prev)} />
 
       <main className="flex-1 w-full flex flex-col items-center pt-28 pb-20 px-4 md:px-12">
-        
+
         {/* Categories & Filter Bar */}
         <div className="w-full max-w-[1440px] mb-8">
           <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-sm md:text-base font-black tracking-widest text-white uppercase flex items-center gap-2 whitespace-nowrap">
-              <Compass className="h-5 w-5 text-brand-cyan shrink-0" />
+            <h2 className="text-sm md:text-base font-black tracking-widest text-gray-900 uppercase flex items-center gap-2 whitespace-nowrap">
+              <Compass className="h-5 w-5 text-brand-indigo shrink-0" />
               Adventure Categories
             </h2>
-            <button 
+            <button
               onClick={() => setShowMobileFilters(true)}
-              className="hidden md:flex items-center gap-2 px-5 py-2 bg-brand-cyan/10 text-brand-cyan border border-brand-cyan/20 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-brand-cyan/20 transition-colors cursor-pointer shrink-0"
+              className="hidden md:flex items-center gap-2 px-5 py-2 bg-brand-indigo/10 text-brand-indigo border border-brand-indigo/20 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-brand-indigo/20 transition-colors cursor-pointer shrink-0"
             >
               <SlidersHorizontal className="h-4 w-4" />
               Filters
@@ -314,9 +314,9 @@ export default function ExperiencesPage() {
             <div className="flex gap-3 w-max px-2">
               <motion.button
                 onClick={() => handleCategoryClick("All")}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-full border glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap cursor-pointer ${activeCategory === "All" ? 'bg-brand-cyan/20 border-brand-cyan/50' : 'border-white/10'}`}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-full border bg-white hover:bg-gray-50 active:scale-95 transition-all whitespace-nowrap cursor-pointer shadow-sm ${activeCategory === "All" ? 'bg-brand-indigo/10 border-brand-indigo/30' : 'border-gray-200'}`}
               >
-                <span className="text-xs font-bold text-white uppercase tracking-wider">All Experiences</span>
+                <span className="text-xs font-bold text-gray-900 uppercase tracking-wider">All Experiences</span>
               </motion.button>
               {HERO_CATEGORIES.map((cat, i) => {
                 const Icon = cat.icon;
@@ -328,12 +328,12 @@ export default function ExperiencesPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.02 }}
                     onClick={() => handleCategoryClick(cat.name)}
-                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full border glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap cursor-pointer ${isActive ? 'bg-brand-cyan/20 border-brand-cyan/50' : 'border-white/10'}`}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full border bg-white hover:bg-gray-50 active:scale-95 transition-all whitespace-nowrap cursor-pointer shadow-sm ${isActive ? 'bg-brand-indigo/10 border-brand-indigo/30' : 'border-gray-200'}`}
                   >
                     <div className={`p-1 rounded-full bg-gradient-to-br ${cat.color}`}>
                       <Icon className="h-3 w-3 text-white" />
                     </div>
-                    <span className="text-xs font-bold text-white">{cat.name}</span>
+                    <span className="text-xs font-bold text-gray-900">{cat.name}</span>
                   </motion.button>
                 );
               })}
@@ -343,10 +343,10 @@ export default function ExperiencesPage() {
 
         {/* Directory Dashboard */}
         <div className="w-full max-w-[1440px] flex flex-col lg:flex-row gap-8 items-start">
-          
+
           {/* RIGHT PANELS: EXPERIENCES GRID */}
           <div className="flex-1 w-full flex flex-col gap-6">
-            
+
             {/* Main responsive grid columns */}
             <div className="w-full">
               <AnimatePresence mode="wait">
@@ -362,44 +362,44 @@ export default function ExperiencesPage() {
                     {Array.from({ length: 8 }).map((_, i) => (
                       <div
                         key={`skeleton-${i}`}
-                        className="glass-panel rounded-3xl overflow-hidden flex flex-col justify-between border border-white/5 animate-pulse h-full min-h-[380px]"
+                        className="bg-white rounded-3xl overflow-hidden flex flex-col justify-between border border-gray-100 shadow-sm animate-pulse h-full min-h-[380px]"
                       >
                         {/* Thumbnail Zone */}
-                        <div className="h-44 w-full bg-white/5 relative">
+                        <div className="h-44 w-full bg-gray-100 relative">
                           <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
-                            <div className="h-5 w-16 bg-white/10 rounded-full" />
+                            <div className="h-5 w-16 bg-gray-200 rounded-full" />
                             <div className="flex items-center gap-2">
-                              <div className="h-7 w-12 bg-white/10 rounded-full" />
-                              <div className="h-7 w-7 bg-white/10 rounded-full" />
+                              <div className="h-7 w-12 bg-gray-200 rounded-full" />
+                              <div className="h-7 w-7 bg-gray-200 rounded-full" />
                             </div>
                           </div>
                         </div>
-                        
+
                         {/* Metadata Card Area */}
                         <div className="p-5 flex flex-col justify-between flex-1">
                           <div>
-                            <div className="h-5 w-3/4 bg-white/10 rounded-md mb-3" />
-                            <div className="h-3 w-1/2 bg-white/5 rounded-md mb-4" />
+                            <div className="h-5 w-3/4 bg-gray-200 rounded-md mb-3" />
+                            <div className="h-3 w-1/2 bg-gray-100 rounded-md mb-4" />
                             <div className="space-y-2">
-                              <div className="h-2 w-full bg-white/5 rounded-md" />
-                              <div className="h-2 w-4/5 bg-white/5 rounded-md" />
+                              <div className="h-2 w-full bg-gray-100 rounded-md" />
+                              <div className="h-2 w-4/5 bg-gray-100 rounded-md" />
                             </div>
                           </div>
 
                           {/* Detail Metrics */}
-                          <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-5">
+                          <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-5">
                             <div className="flex items-center gap-2">
-                              <div className="h-4 w-16 bg-white/10 rounded-md" />
-                              <div className="h-4 w-12 bg-white/10 rounded-full" />
+                              <div className="h-4 w-16 bg-gray-200 rounded-md" />
+                              <div className="h-4 w-12 bg-gray-200 rounded-full" />
                             </div>
                             <div className="text-right flex flex-col items-end gap-1">
-                              <div className="h-2 w-10 bg-white/10 rounded-md" />
-                              <div className="h-4 w-16 bg-white/10 rounded-md" />
+                              <div className="h-2 w-10 bg-gray-200 rounded-md" />
+                              <div className="h-4 w-16 bg-gray-200 rounded-md" />
                             </div>
                           </div>
 
                           {/* View Experience CTA */}
-                          <div className="mt-4 w-full h-9 rounded-xl bg-white/5" />
+                          <div className="mt-4 w-full h-9 rounded-xl bg-gray-100" />
                         </div>
                       </div>
                     ))}
@@ -416,88 +416,88 @@ export default function ExperiencesPage() {
                     {processedCatalog.map((exp) => {
                       const isWishlisted = wishlist.includes(exp.id);
                       return (
-                        <motion.div
-                          key={exp.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.95 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.95 }}
-                          transition={{ duration: 0.3 }}
-                          className={`glass-panel rounded-3xl overflow-hidden flex flex-col justify-between group/card transition-all duration-300 shine-card ${exp.glow} min-h-[380px]`}
-                        >
-                      {/* Thumbnail Zone */}
-                      <div className="h-44 w-full relative overflow-hidden bg-zinc-950">
-                        <img src={exp.image} alt={exp.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
+                        <Link key={exp.id} href={`/experiences/${exp.slug}`} className="block">
+                          <motion.div
+                            layout
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ duration: 0.3 }}
+                            className="bg-white rounded-3xl overflow-hidden flex flex-col justify-between group/card transition-all duration-300 sm:hover:shadow-md border border-gray-100 sm:hover:-translate-y-1 min-h-[380px]"
+                          >
+                            {/* Thumbnail Zone */}
+                            <div className="h-44 w-full relative overflow-hidden bg-zinc-950">
+                              <img src={exp.image} alt={exp.title} className="w-full h-full object-cover sm:group-hover/card:scale-105 transition-transform duration-700" />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
-                        {/* Header overlay */}
-                        <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
-                          <span className="text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-white/5">
-                            {exp.category}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 bg-black/65 px-2 py-0.5 rounded-full backdrop-blur-md text-[9px] font-bold text-brand-amber border border-white/5 h-7">
-                              <Star className="h-3 w-3 fill-brand-amber text-brand-amber" />
-                              {exp.rating}
+                              {/* Header overlay */}
+                              <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
+                                <span className="text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-white/5">
+                                  {exp.category}
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-1 bg-black/65 px-2 py-0.5 rounded-full backdrop-blur-md text-[9px] font-bold text-brand-amber border border-white/5 h-7">
+                                    <Star className="h-3 w-3 fill-brand-amber text-brand-amber" />
+                                    {exp.rating}
+                                  </div>
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      toggleWishlist(exp.id);
+                                    }}
+                                    className={`h-7 w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md ${isWishlisted
+                                        ? "bg-brand-indigo border-brand-indigo text-white scale-110 shadow-lg shadow-brand-indigo/30"
+                                        : "bg-black/60 border-white/5 text-white hover:bg-white hover:text-black"
+                                      }`}
+                                  >
+                                    <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-white" : ""}`} />
+                                  </button>
+                                </div>
+                              </div>
                             </div>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggleWishlist(exp.id);
-                              }}
-                              className={`h-7 w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md ${
-                                isWishlisted
-                                  ? "bg-brand-indigo border-brand-indigo text-white scale-110 shadow-lg shadow-brand-indigo/30"
-                                  : "bg-black/60 border-white/5 text-white hover:bg-white hover:text-black"
-                              }`}
-                            >
-                              <Heart className={`h-3.5 w-3.5 ${isWishlisted ? "fill-white" : ""}`} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
 
-                      {/* Metadata Card Area */}
-                      <div className="p-5 flex flex-col justify-between flex-1 text-left">
-                        <div>
-                          <h3 className="text-sm font-black text-white leading-snug group-hover/card:text-brand-cyan transition-colors line-clamp-1 uppercase tracking-tight">
-                            {exp.title}
-                          </h3>
-                          <div className="flex items-center gap-1 text-[10px] font-semibold text-zinc-400 mt-1.5 mb-3">
-                            <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
-                            <span className="truncate">{exp.location}</span>
-                          </div>
-                          <p className="text-[11px] text-zinc-500 leading-relaxed font-medium line-clamp-2">
-                            {exp.description}
-                          </p>
-                        </div>
+                            {/* Metadata Card Area */}
+                            <div className="p-5 flex flex-col justify-between flex-1 text-left">
+                              <div>
+                                <h3 className="text-sm font-black text-gray-900 leading-snug group-hover/card:text-brand-indigo transition-colors line-clamp-1 uppercase tracking-tight">
+                                  {exp.title}
+                                </h3>
+                                <div className="flex items-center gap-1 text-[10px] font-semibold text-gray-500 mt-1.5 mb-3">
+                                  <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                                  <span className="truncate">{exp.location}</span>
+                                </div>
+                                <p className="text-[11px] text-gray-500 leading-relaxed font-medium line-clamp-2">
+                                  {exp.description}
+                                </p>
+                              </div>
 
-                        {/* Detail Metrics */}
-                        <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-5">
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 font-mono">
-                              <Clock className="h-3.5 w-3.5" />
-                              {exp.duration}
-                            </span>
-                            <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border ${getDifficultyStyles(exp.difficulty)}`}>
-                              {exp.difficulty}
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 block leading-none">Starts At</span>
-                            <span className="text-xs font-black text-brand-cyan mt-1 block">₹{exp.price.toLocaleString("en-IN")}</span>
-                          </div>
-                        </div>
+                              {/* Detail Metrics */}
+                              <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-5">
+                                <div className="flex items-center gap-2">
+                                  <span className="flex items-center gap-1 text-[10px] font-bold text-gray-600 font-mono">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    {exp.duration}
+                                  </span>
+                                  <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border ${getDifficultyStyles(exp.difficulty)}`}>
+                                    {exp.difficulty}
+                                  </span>
+                                </div>
+                                <div className="text-right">
+                                  <span className="text-[9px] font-black uppercase tracking-wider text-gray-500 block leading-none">Starts At</span>
+                                  <span className="text-xs font-black text-brand-indigo mt-1 block">₹{exp.price.toLocaleString("en-IN")}</span>
+                                </div>
+                              </div>
 
-                        {/* View Experience CTA */}
-                        <Link
-                          href={`/experiences/${exp.slug}`}
-                          className="mt-4 w-full h-9 rounded-xl bg-white/5 hover:bg-white text-zinc-400 hover:text-zinc-950 border border-white/5 hover:border-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-98 shadow-md"
-                        >
-                          <Compass className="h-3.5 w-3.5 text-brand-cyan" /> View Experience
+                              {/* View Experience CTA */}
+                              <div
+                                className="mt-4 w-full h-9 rounded-xl bg-[#222] group-hover/card:bg-brand-indigo text-white border border-[#222] group-hover/card:border-brand-indigo text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-1.5 active:scale-98 shadow-sm"
+                              >
+                                <Compass className="h-3.5 w-3.5 text-white" /> View Experience
+                              </div>
+                            </div>
+                          </motion.div>
                         </Link>
-                      </div>
-                    </motion.div>
                       );
                     })}
                   </motion.div>
@@ -507,12 +507,12 @@ export default function ExperiencesPage() {
 
             {/* Empty state panel */}
             {!isLoading && processedCatalog.length === 0 && (
-              <div className="flex flex-col items-center justify-center p-12 border border-white/5 bg-white/[0.01] rounded-3xl max-w-md mx-auto my-12 text-center shadow-lg w-full">
-                <div className="h-12 w-12 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 mb-4 animate-bounce">
+              <div className="flex flex-col items-center justify-center p-12 border border-gray-200 bg-white shadow-sm rounded-3xl max-w-md mx-auto my-12 text-center w-full">
+                <div className="h-12 w-12 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-500 mb-4 animate-bounce">
                   <Compass className="h-6 w-6" />
                 </div>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">No experiences matches</h3>
-                <p className="text-xs text-zinc-400 font-semibold leading-relaxed mt-2 px-6">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">No experiences matches</h3>
+                <p className="text-xs text-gray-600 font-semibold leading-relaxed mt-2 px-6">
                   We couldn't find any verified adventures matching your exact filters. Try relaxing your budget or query constraint!
                 </p>
                 <button
@@ -547,48 +547,47 @@ export default function ExperiencesPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md bg-zinc-950 border border-white/10 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar flex flex-col gap-6 relative"
+              className="w-full max-w-md bg-white border border-gray-200 rounded-3xl p-6 shadow-2xl overflow-y-auto max-h-[90vh] no-scrollbar flex flex-col gap-6 relative"
             >
-              <button 
+              <button
                 onClick={() => setShowMobileFilters(false)}
-                className="absolute top-6 right-6 h-8 w-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-6 right-6 h-8 w-8 bg-gray-100 hover:bg-gray-200 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
-              
-              <div className="flex items-center gap-2 border-b border-white/5 pb-4">
-                <SlidersHorizontal className="h-5 w-5 text-brand-cyan" />
-                <h2 className="text-base font-black text-white uppercase tracking-wider">Filter Experiences</h2>
+
+              <div className="flex items-center gap-2 border-b border-gray-100 pb-4">
+                <SlidersHorizontal className="h-5 w-5 text-brand-indigo" />
+                <h2 className="text-base font-black text-gray-900 uppercase tracking-wider">Filter Experiences</h2>
               </div>
-              
+
               {/* Keyword Search */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Keyword Search</label>
+                <label className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">Keyword Search</label>
                 <div className="relative">
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Gokarna, Hampi, Diving..."
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-11 pr-4 text-sm text-white outline-none focus:border-brand-cyan transition-all"
+                    className="w-full h-12 bg-gray-50 border border-gray-200 rounded-xl pl-11 pr-4 text-sm text-gray-900 outline-none focus:border-brand-indigo transition-all"
                   />
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 </div>
               </div>
 
               {/* Difficulty Level */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Difficulty Level</label>
+                <label className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">Difficulty Level</label>
                 <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 w-full">
                   {difficulties.map((diff) => (
                     <button
                       key={diff}
                       onClick={() => setActiveDifficulty(diff)}
-                      className={`px-2.5 py-1.5 rounded-lg text-[9px] whitespace-nowrap flex-1 font-bold uppercase tracking-wider border transition-all cursor-pointer ${
-                        activeDifficulty === diff
-                          ? "bg-brand-purple/20 border-brand-purple/40 text-brand-purple"
-                          : "bg-white/5 border-white/10 text-zinc-400 hover:text-white"
-                      }`}
+                      className={`px-2.5 py-1.5 rounded-lg text-[9px] whitespace-nowrap flex-1 font-bold uppercase tracking-wider border transition-all cursor-pointer ${activeDifficulty === diff
+                          ? "bg-brand-purple/10 border-brand-purple/30 text-brand-purple"
+                          : "bg-gray-50 border-gray-200 text-gray-500 hover:text-gray-900"
+                        }`}
                     >
                       {diff}
                     </button>
@@ -598,9 +597,9 @@ export default function ExperiencesPage() {
 
               {/* Max Budget Limit */}
               <div className="flex flex-col gap-2">
-                <div className="flex justify-between items-center text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">
+                <div className="flex justify-between items-center text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">
                   <span>Max Budget Limit</span>
-                  <span className="text-brand-cyan text-xs font-bold">₹{priceRange.toLocaleString("en-IN")}</span>
+                  <span className="text-brand-indigo text-xs font-bold">₹{priceRange.toLocaleString("en-IN")}</span>
                 </div>
                 <input
                   type="range"
@@ -609,9 +608,9 @@ export default function ExperiencesPage() {
                   step="500"
                   value={priceRange}
                   onChange={(e) => setPriceRange(parseInt(e.target.value))}
-                  className="w-full accent-brand-cyan h-1.5 bg-white/10 rounded-lg appearance-none cursor-pointer mt-2"
+                  className="w-full accent-brand-indigo h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2"
                 />
-                <div className="flex justify-between text-[10px] text-zinc-500 font-bold font-mono mt-1">
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold font-mono mt-1">
                   <span>₹1,000</span>
                   <span>₹25,000</span>
                 </div>
@@ -619,34 +618,34 @@ export default function ExperiencesPage() {
 
               {/* Sort Order */}
               <div className="flex flex-col gap-2">
-                <label className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Sort By</label>
+                <label className="text-[10px] font-mono font-bold text-gray-500 uppercase tracking-widest">Sort By</label>
                 <select
                   value={activeSort}
                   onChange={(e) => setActiveSort(e.target.value)}
-                  className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-sm text-white font-bold outline-none cursor-pointer hover:border-white/20 transition-colors"
+                  className="w-full h-12 bg-gray-50 border border-gray-200 rounded-xl px-4 text-sm text-gray-900 font-bold outline-none cursor-pointer hover:border-gray-300 transition-colors"
                 >
-                  <option value="Popularity" className="bg-zinc-900">Popularity</option>
-                  <option value="Rating" className="bg-zinc-900">Rating Score</option>
-                  <option value="Price: Low to High" className="bg-zinc-900">Price: Low to High</option>
-                  <option value="Price: High to Low" className="bg-zinc-900">Price: High to Low</option>
+                  <option value="Popularity" className="bg-white">Popularity</option>
+                  <option value="Rating" className="bg-white">Rating Score</option>
+                  <option value="Price: Low to High" className="bg-white">Price: Low to High</option>
+                  <option value="Price: High to Low" className="bg-white">Price: High to Low</option>
                 </select>
               </div>
-              
+
               <div className="flex gap-3 mt-4">
-                <button 
+                <button
                   onClick={() => {
                     setSearchQuery("");
                     setActiveDifficulty("All");
                     setPriceRange(25000);
                     setActiveSort("Popularity");
                   }}
-                  className="flex-1 h-12 rounded-xl bg-white/5 text-xs font-bold text-white uppercase tracking-wider hover:bg-white/10 transition-colors cursor-pointer"
+                  className="flex-1 h-12 rounded-xl bg-gray-100 text-xs font-bold text-gray-700 uppercase tracking-wider hover:bg-gray-200 transition-colors cursor-pointer"
                 >
                   Reset
                 </button>
-                <button 
+                <button
                   onClick={applyModalFilters}
-                  className="flex flex-[2] h-12 rounded-xl bg-brand-cyan text-zinc-950 text-xs font-black uppercase tracking-wider hover:brightness-110 transition-colors px-8 items-center justify-center cursor-pointer"
+                  className="flex flex-[2] h-12 rounded-xl bg-brand-indigo text-white shadow-md text-xs font-black uppercase tracking-wider hover:brightness-110 transition-colors px-8 items-center justify-center cursor-pointer"
                 >
                   Apply Filters
                 </button>

@@ -237,7 +237,7 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
   };
 
   return (
-    <div className="bg-white/5 border border-white/5 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 w-60">
+    <div className="bg-gray-100 border border-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 w-60">
       <button
         onClick={handlePlayToggle}
         className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-all ${
@@ -259,7 +259,7 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
             {/* Background Wave - Unplayed (Zinc-800) */}
             <svg
               viewBox="0 0 300 24"
-              className="absolute left-0 w-[300px] h-full text-zinc-800 pointer-events-none"
+              className="absolute left-0 w-[300px] h-full text-gray-200 pointer-events-none"
             >
               <path
                 d="M 0 12 Q 10 2, 20 12 T 40 12 T 60 12 T 80 12 T 100 12 T 120 12 T 140 12 T 160 12 T 180 12 T 200 12 T 220 12 T 240 12 T 260 12 T 280 12 T 300 12 T 320 12 T 340 12"
@@ -294,7 +294,7 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
         ) : (
           <>
             {/* Background Flat Line - Unplayed */}
-            <div className="absolute left-0 right-0 h-0.5 bg-zinc-800 rounded-full" />
+            <div className="absolute left-0 right-0 h-0.5 bg-gray-100 rounded-full" />
             
             {/* Foreground Flat Line - Played */}
             <div
@@ -305,7 +305,7 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
         )}
       </div>
 
-      <span className="text-[9px] font-mono text-zinc-500 shrink-0 select-none">
+      <span className="text-[9px] font-mono text-gray-400 shrink-0 select-none">
         {isPlaying ? formatTime(currentTime) : duration}
       </span>
     </div>
@@ -497,25 +497,25 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           <FriendsPage activeChatId={chatId} />
         </div>
         {/* Mobile view skeleton loader while fetching companion details */}
-        <div className="block lg:hidden fixed inset-0 h-[100dvh] w-full z-50 bg-[#0b0f12] text-white">
-          <header className="h-14 w-full border-b border-white/10 px-3 flex items-center bg-zinc-950/95 shadow-md">
-            <button onClick={() => router.replace('/profile/friends')} className="p-1.5 rounded-full hover:bg-white/10 text-zinc-300">
+        <div className="block lg:hidden fixed inset-0 h-[100dvh] w-full z-50 bg-gray-50 text-gray-900">
+          <header className="h-14 w-full border-b border-gray-300 px-3 flex items-center bg-white/95 shadow-md">
+            <button onClick={() => router.replace('/profile/friends')} className="p-1.5 rounded-full hover:bg-gray-200 text-gray-700">
               <ArrowLeft className="h-5 w-5" />
             </button>
           </header>
           <div className="h-[calc(100%-3.5rem)] w-full flex flex-col items-center justify-center text-center px-4 py-8 animate-pulse">
             <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
               <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
-              <div className="w-28 h-28 rounded-full border border-white/5 bg-white/[0.01]" />
+              <div className="w-28 h-28 rounded-full border border-gray-200 bg-gray-50" />
             </div>
-            <div className="h-3 w-48 bg-white/10 rounded-sm mt-4 mb-2" />
+            <div className="h-3 w-48 bg-gray-200 rounded-sm mt-4 mb-2" />
             <div className="space-y-1 mt-1 flex flex-col items-center">
-              <div className="h-2 w-64 bg-white/5 rounded-sm" />
-              <div className="h-2 w-56 bg-white/5 rounded-sm" />
+              <div className="h-2 w-64 bg-gray-100 rounded-sm" />
+              <div className="h-2 w-56 bg-gray-100 rounded-sm" />
             </div>
             <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
-              <div className="h-2 w-48 bg-white/5 rounded-sm mb-2" />
-              <div className="w-full h-8 bg-white/[0.02] border border-white/5 rounded-xl" />
+              <div className="h-2 w-48 bg-gray-100 rounded-sm mb-2" />
+              <div className="w-full h-8 bg-white/[0.02] border border-gray-200 rounded-xl" />
             </div>
           </div>
         </div>
@@ -563,7 +563,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
   return (
     <>
       {toastMessage && (
-        <div className="fixed bottom-6 right-6 z-50 bg-zinc-900 border border-brand-cyan/30 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-6 right-6 z-50 bg-gray-50 border border-brand-cyan/30 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
           <div className="h-2 w-2 rounded-full bg-brand-cyan animate-pulse" />
           <span className="text-xs font-bold">{toastMessage}</span>
         </div>
@@ -575,15 +575,15 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
       </div>
 
       {/* Mobile view rendering the immersive phone-only full screen chat */}
-      <div className="block lg:hidden fixed inset-0 h-[100dvh] w-full z-50 bg-[#0b0f12] text-white overflow-hidden overscroll-none touch-none">
+      <div className="block lg:hidden fixed inset-0 h-[100dvh] w-full z-50 bg-gray-50 text-gray-900 overflow-hidden overscroll-none touch-none">
         <div className="flex flex-col h-full w-full relative overflow-hidden">
 
       {/* 1. WHATSAPP-STYLE FIXED HEADER */}
-      <header className="h-14 w-full border-b border-white/10 px-3 flex items-center justify-between bg-zinc-950/95 backdrop-blur-xl shrink-0 z-30 shadow-md">
+      <header className="h-14 w-full border-b border-gray-300 px-3 flex items-center justify-between bg-white/95 backdrop-blur-xl shrink-0 z-30 shadow-md">
         <div className="flex items-center gap-2.5 min-w-0">
           <button
             onClick={() => router.replace('/profile/friends')}
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-300 hover:text-white shrink-0 transition-colors cursor-pointer"
+            className="p-1.5 rounded-full hover:bg-gray-200 text-gray-700 hover:text-gray-900 shrink-0 transition-colors cursor-pointer"
             title="Go Back"
             aria-label="Go Back"
           >
@@ -592,14 +592,14 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           <div className="relative cursor-pointer transition-transform active:scale-95 shrink-0" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
             <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-9 w-9 text-xs" />
             {presenceMap[userId]?.status === 'ONLINE' && (
-              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
+              <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-white" />
             )}
           </div>
           <div 
             onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
             className="min-w-0 cursor-pointer flex flex-col justify-center"
           >
-            <h3 className="text-sm font-bold text-white truncate leading-tight flex items-center gap-1.5">
+            <h3 className="text-sm font-bold text-gray-900 truncate leading-tight flex items-center gap-1.5">
               {activeFriend.name}
             </h3>
             <p className="text-[10px] text-brand-cyan font-medium truncate leading-tight">
@@ -611,7 +611,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         <div className="flex items-center gap-1 shrink-0">
           <button
             onClick={() => setShowInspector(true)}
-            className="p-2 rounded-full hover:bg-white/10 text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            className="p-2 rounded-full hover:bg-gray-200 text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
             title="Explorer Info"
           >
             <Info className="h-4 w-4" />
@@ -629,16 +629,16 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
           <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
             <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
               <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
-              <div className="w-28 h-28 rounded-full border border-white/5 bg-white/[0.01]" />
+              <div className="w-28 h-28 rounded-full border border-gray-200 bg-gray-50" />
             </div>
-            <div className="h-3 w-48 bg-white/10 rounded-sm mt-4 mb-2" />
+            <div className="h-3 w-48 bg-gray-200 rounded-sm mt-4 mb-2" />
             <div className="space-y-1 mt-1 flex flex-col items-center">
-              <div className="h-2 w-64 bg-white/5 rounded-sm" />
-              <div className="h-2 w-56 bg-white/5 rounded-sm" />
+              <div className="h-2 w-64 bg-gray-100 rounded-sm" />
+              <div className="h-2 w-56 bg-gray-100 rounded-sm" />
             </div>
             <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
-              <div className="h-2 w-48 bg-white/5 rounded-sm mb-2" />
-              <div className="w-full h-8 bg-white/[0.02] border border-white/5 rounded-xl" />
+              <div className="h-2 w-48 bg-gray-100 rounded-sm mb-2" />
+              <div className="w-full h-8 bg-white/[0.02] border border-gray-200 rounded-xl" />
             </div>
           </div>
         ) : realMessages.length > 0 ? (
@@ -657,11 +657,11 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   ) : (
                     <>
                       {(msg.type === "text" || msg.type === "TEXT") && (
-                        <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed shadow-sm ${isMe
+                        <div className={`p-3 rounded-2xl text-sm font-medium leading-relaxed shadow-sm ${isMe
                             ? "bg-brand-cyan text-zinc-950 rounded-tr-xs font-semibold"
-                            : "bg-zinc-900 text-zinc-100 rounded-tl-xs border border-white/5"
+                            : "bg-gray-50 text-gray-900 rounded-tl-xs border border-gray-200 shadow-sm"
                           }`}>
-                          {msg.isDeleted ? <span className="italic text-zinc-400">Message deleted</span> : msg.text}
+                          {msg.isDeleted ? <span className="italic text-gray-500">Message deleted</span> : msg.text}
                         </div>
                       )}
 
@@ -670,7 +670,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   )}
 
                   {(msg.type === "experience" || msg.type === "EXPERIENCE_CARD") && (
-                    <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden shadow-lg w-60 text-left">
+                    <div className="bg-gray-50/80 backdrop-blur-md border border-gray-300 rounded-2xl overflow-hidden shadow-lg w-60 text-left">
                       <div className="h-24 w-full relative">
                         <img src={msg.metadata?.image} className="h-full w-full object-cover opacity-80" alt="" />
                         <span className="absolute top-2 left-2 text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full">
@@ -678,8 +678,8 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                         </span>
                       </div>
                       <div className="p-3 space-y-2">
-                        <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
-                        <p className="text-[9px] text-zinc-400">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
+                        <h4 className="text-xs font-bold text-gray-900 truncate">{msg.metadata?.title}</h4>
+                        <p className="text-[9px] text-gray-500">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
                         <button
                           onClick={() => triggerToast(`Booking slot for ${msg.metadata?.title}...`)}
                           className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
@@ -691,23 +691,23 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   )}
 
                   {(msg.type === "plan" || msg.type === "PLAN_CARD") && (
-                    <div className="glass-panel border border-white/10 p-3.5 rounded-2xl shadow-lg w-60 text-left space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <div className="bg-gray-50/80 backdrop-blur-md border border-gray-300 p-3.5 rounded-2xl shadow-lg w-60 text-left space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                         <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-purple text-white px-2 py-0.5 rounded-full">
                           Adventure Plan
                         </span>
                         <span className="text-[8px] font-mono text-brand-cyan font-bold">{msg.metadata?.status}</span>
                       </div>
                       <div className="space-y-1">
-                        <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
-                        <p className="text-[9px] text-zinc-400 flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-zinc-400" /> {msg.metadata?.location}
+                        <h4 className="text-xs font-bold text-gray-900 truncate">{msg.metadata?.title}</h4>
+                        <p className="text-[9px] text-gray-500 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 text-gray-500" /> {msg.metadata?.location}
                         </p>
-                        <p className="text-[9px] text-zinc-400 font-mono">Date: {msg.metadata?.date}</p>
+                        <p className="text-[9px] text-gray-500 font-mono">Date: {msg.metadata?.date}</p>
                       </div>
                       <div className="flex items-center gap-1">
                         {(msg.metadata?.companions || []).map((name: string, i: number) => (
-                          <span key={i} className="h-5 px-2 bg-white/5 border border-white/5 text-[8px] font-bold rounded-md text-zinc-300">
+                          <span key={i} className="h-5 px-2 bg-gray-100 border border-gray-200 text-[8px] font-bold rounded-md text-gray-700">
                             {name.split(" ")[0]}
                           </span>
                         ))}
@@ -716,14 +716,14 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   )}
 
                   {(msg.type === "campfire_invite" || msg.type === "CAMPFIRE_INVITE") && (
-                    <div className="glass-panel border border-brand-cyan/35 bg-zinc-950/90 p-4 rounded-3xl shadow-2xl w-60 text-left space-y-3">
-                      <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <div className="backdrop-blur-md border border-brand-cyan/35 bg-white/90 p-4 rounded-3xl shadow-2xl w-60 text-left space-y-3">
+                      <div className="flex items-center justify-between pb-2 border-b border-gray-200">
                         <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full flex items-center gap-1">
                           <Flame className="h-2.5 w-2.5 fill-current" /> Campfire Invite
                         </span>
                         <span className="text-[8px] font-mono text-brand-cyan font-black">{msg.metadata?.category}</span>
                       </div>
-                      <h4 className="text-xs font-bold text-white line-clamp-2">{msg.metadata?.title}</h4>
+                      <h4 className="text-xs font-bold text-gray-900 line-clamp-2">{msg.metadata?.title}</h4>
                       <button
                         onClick={() => triggerToast(`Joining ${msg.metadata?.title}...`)}
                         className="w-full py-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 text-[10px] font-black rounded-xl transition-all cursor-pointer"
@@ -736,14 +736,14 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               )}
 
                   {/* Status + timestamp */}
-                  <span className="text-[8px] text-zinc-400 mt-1 font-mono flex items-center justify-end gap-1 select-none">
+                  <span className="text-[8px] text-gray-500 mt-1 font-mono flex items-center justify-end gap-1 select-none">
                     {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     {isMe && (
                       <span className={`ml-1 font-bold ${
                         msg.status === 'READ' ? 'text-brand-cyan' :
-                        msg.status === 'DELIVERED' ? 'text-zinc-400' :
+                        msg.status === 'DELIVERED' ? 'text-gray-500' :
                         msg.status === 'FAILED' ? 'text-rose-500' :
-                        'text-zinc-500'
+                        'text-gray-400'
                       }`}>
                         {msg.status === 'SENDING' && '◷'}
                         {msg.status === 'SENT' && '✓'}
@@ -824,23 +824,23 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
             </div>
 
             {/* Heading & description */}
-            <h3 className="text-xs font-black tracking-wider uppercase text-zinc-200 mt-2">
+            <h3 className="text-xs font-black tracking-wider uppercase text-gray-900 mt-2">
               Connect with {activeFriend.name}
             </h3>
-            <p className="text-[10px] text-zinc-400 max-w-[280px] leading-relaxed mt-1">
+            <p className="text-[10px] text-gray-500 max-w-[280px] leading-relaxed mt-1">
               Establish coordinate link alignment & collaborate on treks. Send an icebreaker below to start chatting!
             </p>
 
             {/* Icebreaker Suggestions */}
             <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-4 shrink-0">
-              <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">
+              <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
                 Suggested Icebreakers (Click to fill)
               </span>
               {getIcebreakers(activeFriend).slice(0, 1).map((prompt, idx) => (
                 <button
                   key={idx}
                   onClick={() => setChatInput(prompt)}
-                  className="text-left text-[9px] font-bold px-3 py-2 bg-white/[0.01] hover:bg-brand-cyan/10 border border-white/5 hover:border-brand-cyan/20 text-zinc-400 hover:text-brand-cyan rounded-xl transition-all cursor-pointer truncate w-full flex items-center gap-2 group"
+                  className="text-left text-[9px] font-bold px-3 py-2 bg-gray-50 hover:bg-brand-cyan/10 border border-gray-200 hover:border-brand-cyan/20 text-gray-500 hover:text-brand-cyan rounded-xl transition-all cursor-pointer truncate w-full flex items-center gap-2 group"
                 >
                   <span className="text-brand-cyan group-hover:scale-110 transition-transform">🧭</span>
                   <span className="truncate">{prompt}</span>
@@ -852,22 +852,22 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
       </div>
 
       {/* 3. WHATSAPP-STYLE FIXED INPUT CONTROLS */}
-      <footer className="shrink-0 bg-zinc-950/95 border-t border-white/10 p-2 sm:p-3 space-y-2 z-30 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <footer className="shrink-0 bg-white/95 border-t border-gray-300 p-2 sm:p-3 space-y-2 z-30 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {/* Quick Action Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
           <button
             onClick={handleSendPlan}
-            className="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-[10px] font-bold uppercase tracking-wider rounded-full text-zinc-300 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0 active:scale-95"
+            className="px-2.5 py-1 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-[10px] font-bold uppercase tracking-wider rounded-full text-gray-700 hover:text-gray-900 cursor-pointer transition-all flex items-center gap-1 shrink-0 active:scale-95"
           >
             <Calendar className="h-3 w-3 text-brand-purple" /> Plan Trek
           </button>
         </div>
 
         {/* Input Row */}
-        <div className="flex items-center gap-2 bg-zinc-900/90 border border-white/10 focus-within:border-brand-cyan/60 rounded-full px-3 py-1.5 transition-all shadow-inner">
+        <div className="flex items-center gap-2 bg-gray-50/90 border border-gray-300 focus-within:border-brand-cyan/60 rounded-full px-3 py-1.5 transition-all shadow-inner">
           <button
             onClick={() => triggerToast("Simulating mic trigger...")}
-            className="p-1.5 rounded-full hover:bg-white/10 text-zinc-400 hover:text-zinc-200 cursor-pointer transition-colors"
+            className="p-1.5 rounded-full hover:bg-gray-200 text-gray-500 hover:text-gray-900 cursor-pointer transition-colors"
             title="Voice note"
           >
             <Mic className="h-4 w-4" />
@@ -890,7 +890,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
             enterKeyHint="send"
             placeholder="Write message..."
-            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-medium px-1"
+            className="bg-transparent border-none outline-none text-xs text-gray-900 placeholder-gray-400 w-full font-medium px-1"
           />
 
           <button
@@ -906,12 +906,12 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
       {/* 4. DETAILS OVERLAY PANEL (INSPECTOR) */}
       {showInspector && (
-        <div className="absolute inset-0 bg-zinc-950 z-50 flex flex-col p-6 overflow-y-auto no-scrollbar">
-          <div className="flex justify-between items-center pb-4 border-b border-white/5 mb-4 shrink-0">
-            <span className="text-xs font-black uppercase tracking-wider text-zinc-400">Explorer Profile</span>
+        <div className="absolute inset-0 bg-white z-50 flex flex-col p-6 overflow-y-auto no-scrollbar">
+          <div className="flex justify-between items-center pb-4 border-b border-gray-200 mb-4 shrink-0">
+            <span className="text-xs font-black uppercase tracking-wider text-gray-500">Explorer Profile</span>
             <button
               onClick={() => setShowInspector(false)}
-              className="p-1 rounded-lg border border-white/10 text-zinc-400 hover:text-white cursor-pointer"
+              className="p-1 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900 cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -919,7 +919,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
           <div className="space-y-6 text-left flex-1">
             {/* Passport Card */}
-            <div className="bg-white/[0.01] border border-white/5 p-4 rounded-3xl space-y-3 relative overflow-hidden">
+            <div className="bg-gray-50 border border-gray-200 p-4 rounded-3xl space-y-3 relative overflow-hidden">
               <div className="absolute top-2 right-2 flex items-center gap-1 bg-brand-cyan/20 border border-brand-cyan/20 px-2 py-0.5 rounded-full font-mono text-[8px] font-bold text-brand-cyan">
                 {activeFriend.compatibility}% match
               </div>
@@ -931,15 +931,15 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
                   className="cursor-pointer group/name"
                 >
-                  <h4 className="text-xs font-bold text-white group-hover/name:text-brand-cyan transition-colors">{activeFriend.name}</h4>
-                  <span className="text-[9px] text-zinc-500 group-hover/name:text-brand-cyan/85 transition-colors">{activeFriend.username}</span>
+                  <h4 className="text-xs font-bold text-gray-900 group-hover/name:text-brand-cyan transition-colors">{activeFriend.name}</h4>
+                  <span className="text-[9px] text-gray-400 group-hover/name:text-brand-cyan/85 transition-colors">{activeFriend.username}</span>
                 </div>
               </div>
-              <p className="text-[10px] text-zinc-400 leading-normal">{activeFriend.bio}</p>
+              <p className="text-[10px] text-gray-500 leading-normal">{activeFriend.bio}</p>
 
               <div className="flex flex-wrap gap-1">
                 {activeFriend.tags.map(tag => (
-                  <span key={tag} className="text-[8px] font-semibold bg-white/5 border border-white/5 text-zinc-400 px-2 py-0.5 rounded">
+                  <span key={tag} className="text-[8px] font-semibold bg-gray-100 border border-gray-200 text-gray-500 px-2 py-0.5 rounded">
                     {tag}
                   </span>
                 ))}
@@ -948,14 +948,14 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
 
             {/* Compatibility Breakdown */}
             <div className="space-y-2">
-              <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Compatibility breakdown</h4>
-              <div className="space-y-2 bg-black/20 border border-white/5 p-3 rounded-2xl">
+              <h4 className="text-[10px] font-black uppercase tracking-wider text-gray-400">Compatibility breakdown</h4>
+              <div className="space-y-2 bg-gray-100 border border-gray-200 p-3 rounded-2xl">
                 <div className="space-y-1">
                   <div className="flex justify-between text-[9px] font-bold">
                     <span className="text-brand-cyan">Adventure Overlap</span>
                     <span>{activeFriend.compatibility}%</span>
                   </div>
-                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-brand-cyan" style={{ width: `${activeFriend.compatibility}%` }} />
                   </div>
                 </div>
@@ -964,7 +964,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                     <span className="text-brand-purple">Community Overlap</span>
                     <span>{activeFriend.mutualCommunities * 15}%</span>
                   </div>
-                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-brand-purple" style={{ width: `${activeFriend.mutualCommunities * 15}%` }} />
                   </div>
                 </div>
@@ -973,7 +973,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                     <span className="text-brand-emerald">Experiences Shared</span>
                     <span>{activeFriend.mutualExperiences * 12}%</span>
                   </div>
-                  <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-brand-emerald" style={{ width: `${activeFriend.mutualExperiences * 12}%` }} />
                   </div>
                 </div>
@@ -1004,7 +1004,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   }
                   setShowInspector(false);
                 }}
-                className="w-full py-2 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-zinc-400 hover:text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                className="w-full py-2 bg-gray-50 hover:bg-white/[0.03] border border-gray-200 text-gray-500 hover:text-gray-900 text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <Heart className="h-3.5 w-3.5" /> {activeFriend.isFavorite ? "Unfavorite" : "Favorite"}
               </button>
@@ -1035,24 +1035,24 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none">
           <div className="absolute inset-0 cursor-default" onClick={() => setShowInviteModal(false)} />
           
-          <div className="glass-panel border border-white/10 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-950/95 overflow-hidden flex flex-col max-h-[85vh]">
-            <div className="absolute inset-0 bg-white/[0.01] pointer-events-none" />
+          <div className="backdrop-blur-xl border border-gray-300 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-white/95 overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="absolute inset-0 bg-gray-50 pointer-events-none" />
             
-            <div className="flex items-center justify-between pb-4 border-b border-white/5 mb-4 shrink-0">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4 shrink-0">
               <div className="flex items-center gap-2">
                 <Flame className="h-5 w-5 text-brand-cyan animate-pulse" />
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">Invite to Campfire</h3>
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Invite to Campfire</h3>
               </div>
               <button
                 onClick={() => setShowInviteModal(false)}
-                className="p-1.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                className="p-1.5 rounded-xl border border-gray-300 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="text-[10px] text-zinc-400 mb-4 leading-normal shrink-0 text-left">
-              Select an active campfire to invite <strong className="text-zinc-200">{activeFriend.name}</strong>. They will receive an interactive card in the chat to join directly.
+            <p className="text-[10px] text-gray-500 mb-4 leading-normal shrink-0 text-left">
+              Select an active campfire to invite <strong className="text-gray-900">{activeFriend.name}</strong>. They will receive an interactive card in the chat to join directly.
             </p>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar" data-lenis-prevent>
@@ -1060,7 +1060,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                 campfireList.map((campfire) => (
                   <div
                     key={campfire.id}
-                    className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-white/10 hover:bg-white/[0.02] transition-all"
+                    className="bg-gray-50 border border-gray-200 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-gray-300 hover:bg-white/[0.02] transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <CompanionAvatar avatar={campfire.hostAvatar} name={campfire.hostName} className="h-9 w-9 text-xs" />
@@ -1068,8 +1068,8 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                         <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan/20 border border-brand-cyan/20 text-brand-cyan px-1.5 py-0.2 rounded font-black shrink-0">
                           {campfire.category}
                         </span>
-                        <h4 className="text-xs font-bold text-white truncate mt-1">{campfire.title}</h4>
-                        <p className="text-[8px] text-zinc-500 truncate mt-0.5">Host: {campfire.hostName}</p>
+                        <h4 className="text-xs font-bold text-gray-900 truncate mt-1">{campfire.title}</h4>
+                        <p className="text-[8px] text-gray-400 truncate mt-0.5">Host: {campfire.hostName}</p>
                       </div>
                     </div>
                     <button
@@ -1081,7 +1081,7 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
                   </div>
                 ))
               ) : (
-                <div className="text-center py-8 text-zinc-500 text-xs border border-dashed border-white/10 rounded-2xl">
+                <div className="text-center py-8 text-gray-400 text-xs border border-dashed border-gray-300 rounded-2xl">
                   No campfires active. Start one in the campfire directory!
                 </div>
               )}
@@ -1100,11 +1100,11 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative z-10 flex flex-col items-center gap-4 bg-zinc-900/90 border border-white/10 p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl backdrop-blur-lg"
+              className="relative z-10 flex flex-col items-center gap-4 bg-gray-50/90 border border-gray-300 p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl backdrop-blur-lg"
             >
               <button
                 onClick={() => setZoomedAvatar(null)}
-                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer animate-none"
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-100 border border-gray-300 text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-all cursor-pointer animate-none"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1116,8 +1116,8 @@ export default function MobileChatPage({ params }: { params: React.Usable<{ chat
               />
 
               <div className="text-center">
-                <h4 className="text-sm font-black text-white">{zoomedAvatar.name}</h4>
-                <p className="text-[10px] text-zinc-400 mt-1">Explorer Passport Photo</p>
+                <h4 className="text-sm font-black text-gray-900">{zoomedAvatar.name}</h4>
+                <p className="text-[10px] text-gray-500 mt-1">Explorer Passport Photo</p>
               </div>
             </motion.div>
           </div>

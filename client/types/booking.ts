@@ -11,13 +11,6 @@ export interface Slot {
   isBestWeather?: boolean;
 }
 
-export interface TravelerData {
-  name: string;
-  age: string;
-  phone: string;
-  emergencyContact: string;
-}
-
 export interface ExperienceData {
   id: string;
   title: string;

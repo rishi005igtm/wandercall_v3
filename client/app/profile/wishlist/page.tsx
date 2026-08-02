@@ -403,7 +403,7 @@ export default function WishlistPage() {
   }, [isLoadingMore, visibleCount, processedExperiences.length]);
 
   return (
-    <div className="w-full px-3 md:px-12 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-5 overflow-y-visible relative text-white">
+    <div className="w-full px-3 md:px-6 lg:px-8 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-5 overflow-y-visible relative text-gray-900">
 
       {/* COLLECTION SWITCHER CONTAINER */}
       <section className="relative w-full border-b border-white/5 pb-4 pt-2">
@@ -414,9 +414,9 @@ export default function WishlistPage() {
               setActiveCollection("ALL");
               setVisibleCount(9);
             }}
-            className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-2 shrink-0 ${activeCollection === "ALL"
-                ? "bg-brand-cyan/20 border-brand-cyan/30 text-brand-cyan"
-                : "bg-white/[0.02] border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.05]"
+            className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border shadow-sm flex items-center gap-2 shrink-0 ${activeCollection === "ALL"
+                ? "bg-gradient-to-r from-brand-indigo to-brand-cyan border-transparent text-white"
+                : "bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50"
               }`}
           >
             <Sparkles className="h-3.5 w-3.5" />
@@ -434,9 +434,9 @@ export default function WishlistPage() {
                   setActiveCollection(cat.name);
                   setVisibleCount(9);
                 }}
-                className={`px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border flex items-center gap-2 shrink-0 ${isActive
-                    ? "bg-brand-cyan/20 border-brand-cyan/30 text-brand-cyan"
-                    : "bg-white/[0.02] border-white/5 text-zinc-400 hover:text-white hover:bg-white/[0.05]"
+                className={`px-5 py-2.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer border shadow-sm flex items-center gap-2 shrink-0 ${isActive
+                    ? "bg-gradient-to-r from-brand-indigo to-brand-cyan border-transparent text-white"
+                    : "bg-white border-gray-200 text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                   }`}
               >
                 <Icon className="h-3.5 w-3.5" />
@@ -449,7 +449,7 @@ export default function WishlistPage() {
 
       <section className="w-full relative min-h-[260px]">
         {processedExperiences.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 w-full items-stretch justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 w-full items-stretch justify-items-center">
             {processedExperiences.slice(0, visibleCount).map((exp) => {
               const isClosing = exp.seasonClosure;
               const isCardMenuOpen = activeCardMenuId === exp.id;
@@ -460,11 +460,11 @@ export default function WishlistPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.3 }}
-                  className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden group hover:border-white/10 hover:-translate-y-1 transition-all duration-300 w-full flex flex-col justify-between relative shadow-sm hover:shadow"
-                  style={{ height: '340px', position: 'relative', maxWidth: '480px', margin: '0 auto' }}
+                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden group hover:border-gray-300 hover:-translate-y-1 transition-all duration-300 w-full flex flex-col justify-between relative shadow-sm hover:shadow-md min-w-0"
+                  style={{ height: '340px', position: 'relative', maxWidth: '100%', margin: '0 auto' }}
                 >
-                  {/* Card Image Wrapper (Exactly 128px height, i.e. 37.6% of 340px) */}
-                  <div style={{ height: '128px', position: 'relative', overflow: 'hidden' }} className="w-full shrink-0">
+                  {/* Card Image Wrapper (Exactly 160px height) */}
+                  <div style={{ height: '160px', position: 'relative', overflow: 'hidden' }} className="w-full shrink-0">
                     <img
                       src={exp.image}
                       alt={exp.name}
@@ -550,25 +550,6 @@ export default function WishlistPage() {
                         ⏱ {exp.duration}
                       </span>
 
-                      <span
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '2px',
-                          backgroundColor: 'rgba(6, 182, 212, 0.25)',
-                          border: '1px solid rgba(6, 182, 212, 0.4)',
-                          backdropFilter: 'blur(8px)',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          fontSize: '9px',
-                          fontWeight: '800',
-                          color: '#06b6d4',
-                          fontFamily: 'monospace',
-                          boxShadow: '0 1px 2px rgba(0,0,0,0.5)'
-                        }}
-                      >
-                        💰 ₹{exp.price.toLocaleString("en-IN")}
-                      </span>
                     </div>
 
                   </div>
@@ -590,57 +571,43 @@ export default function WishlistPage() {
                         justifyContent: 'center',
                         padding: '6px',
                         borderRadius: '8px',
-                        backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        border: '1px solid rgba(0, 0, 0, 0.05)',
                         color: '#ef4444',
                         backdropFilter: 'blur(8px)',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                       }}
-                      className="hover:text-rose-400 hover:bg-zinc-900 transition-colors relative"
+                      className="hover:text-rose-500 hover:bg-rose-50 transition-colors relative"
                       aria-label="Remove from Wishlist"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
 
-                  {/* Card Content Wrapper (Exactly 212px height, i.e. 62.4% of 340px) */}
+                  {/* Card Content Wrapper (Exactly 180px height) */}
                   <div
-                    style={{ height: '212px' }}
+                    style={{ height: '180px' }}
                     className="p-4 flex flex-col justify-between overflow-hidden shrink-0"
                   >
 
                     {/* Top Content Row */}
                     <div className="flex flex-col text-left">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-xs sm:text-sm font-black text-white leading-tight line-clamp-2 h-[34px] group-hover:text-brand-cyan transition-colors">
+                        <h3 className="text-xs sm:text-sm font-black text-gray-900 leading-tight line-clamp-2 h-[34px] group-hover:text-brand-cyan transition-colors">
                           {exp.name}
                         </h3>
                       </div>
 
                       {/* Location text */}
-                      <div className="text-[10px] text-zinc-400 font-semibold truncate flex items-center gap-1 mt-0.5">
+                      <div className="text-[10px] text-gray-500 font-semibold truncate flex items-center gap-1 mt-0.5">
                         <MapPin className="h-3 w-3 text-brand-cyan shrink-0" />
                         <span>{exp.location}</span>
-                      </div>
-                      
-                      {/* Difficulty & Slots badges */}
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className={`text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-md border ${exp.difficulty === "Easy"
-                            ? "bg-brand-emerald/10 border-brand-emerald/20 text-brand-emerald"
-                            : exp.difficulty === "Medium"
-                              ? "bg-brand-amber/10 border-brand-amber/20 text-brand-amber"
-                              : "bg-rose-500/10 border-rose-500/20 text-rose-500"
-                          }`}>
-                          {exp.difficulty}
-                        </span>
-                        <span className="text-[7.5px] font-black uppercase tracking-widest px-2 py-1 rounded-md bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan">
-                          ⚡ {exp.slots} slots left
-                        </span>
                       </div>
                     </div>
 
                     {/* Experience Short Description & More Button */}
-                    <p className="text-[10px] text-zinc-400 font-medium leading-normal mt-1.5 text-left flex-1">
+                    <p className="text-[10px] text-gray-500 font-medium leading-normal mt-1.5 text-left flex-1">
                       {(() => {
                         const words = exp.description.split(' ');
                         const isExpanded = expandedCards.has(exp.id);
@@ -664,17 +631,17 @@ export default function WishlistPage() {
                     </p>
 
                     {/* CTA Area (Direct buttons only) */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-auto shrink-0">
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100 mt-auto shrink-0">
                       <button
                         onClick={() => triggerToast(`Booking: ${exp.name}`)}
-                        className="h-8 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white font-black text-[9px] uppercase tracking-wider hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-1.5 flex-1 cursor-pointer"
+                        className="h-8 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-white font-black text-[9px] uppercase tracking-wider hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-1.5 flex-[1.4] cursor-pointer px-1"
                       >
-                        <Zap className="h-3 w-3 fill-white text-white" />
-                        <span>Book Now</span>
+                        <Zap className="h-3 w-3 fill-white text-white shrink-0" />
+                        <span className="truncate">Book Now • ₹{exp.price.toLocaleString("en-IN")}</span>
                       </button>
                       <button
                         onClick={() => triggerToast(`Details: ${exp.name}`)}
-                        className="h-8 rounded-xl bg-transparent border border-white/10 hover:bg-white/5 hover:border-white/20 text-zinc-300 hover:text-white font-black text-[9px] uppercase tracking-wider transition-all flex-1 cursor-pointer flex items-center justify-center"
+                        className="h-8 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 hover:text-gray-900 shadow-sm font-black text-[9px] uppercase tracking-wider transition-all flex-1 cursor-pointer flex items-center justify-center"
                       >
                         <span>View Details</span>
                       </button>
@@ -686,12 +653,12 @@ export default function WishlistPage() {
           </div>
         ) : (
           /* Empty State Dashboard Card */
-          <div className="flex flex-col items-center justify-center text-center p-6 border border-white/5 bg-white/[0.01] rounded-3xl max-w-sm mx-auto my-12 shadow-md shrink-0">
-            <div className="h-10 w-10 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 mb-3">
+          <div className="flex flex-col items-center justify-center text-center p-6 border border-gray-200 bg-white rounded-3xl max-w-sm mx-auto my-12 shadow-sm shrink-0">
+            <div className="h-10 w-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 mb-3">
               <Heart className="h-5 w-5" />
             </div>
-            <h3 className="text-xs font-black text-white uppercase tracking-wider">No experiences found</h3>
-            <p className="text-[11px] text-zinc-400 font-medium leading-relaxed mt-1 px-4">
+            <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">No experiences found</h3>
+            <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-1 px-4">
               Try resetting your search filters or selected collection to discover experiences.
             </p>
             <button
@@ -702,7 +669,7 @@ export default function WishlistPage() {
                 setSortOption("Rating");
                 setVisibleCount(8);
               }}
-              className="mt-4 h-8 px-4 rounded-xl bg-zinc-900 border border-white/5 hover:bg-zinc-800 text-[9px] font-bold uppercase tracking-wider text-white transition-all cursor-pointer"
+              className="mt-4 h-8 px-4 rounded-xl bg-gray-900 hover:bg-black text-[9px] font-bold uppercase tracking-wider text-white transition-all cursor-pointer shadow-sm"
             >
               Reset Filters
             </button>
@@ -718,19 +685,19 @@ export default function WishlistPage() {
               {[1, 2, 3].map((key) => (
                 <div 
                   key={key} 
-                  className="bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-between animate-pulse w-full"
-                  style={{ height: '340px', position: 'relative', maxWidth: '480px', margin: '0 auto' }}
+                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-between animate-pulse w-full shadow-sm"
+                  style={{ height: '340px', position: 'relative', maxWidth: '100%', margin: '0 auto' }}
                 >
-                  <div className="h-[128px] bg-zinc-900/60 rounded-xl w-full shrink-0" />
-                  <div className="h-[212px] flex flex-col justify-between pt-3 shrink-0">
+                  <div className="h-[160px] bg-gray-100 rounded-xl w-full shrink-0" />
+                  <div className="h-[180px] flex flex-col justify-between pt-3 shrink-0">
                     <div className="flex flex-col gap-2">
-                      <div className="h-4 bg-zinc-900 rounded-md w-3/4" />
-                      <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
+                      <div className="h-4 bg-gray-100 rounded-md w-3/4" />
+                      <div className="h-3 bg-gray-100 rounded-md w-1/2" />
                     </div>
-                    <div className="h-10 bg-zinc-900 rounded-md w-full my-2" />
-                    <div className="flex gap-2 border-t border-white/5 pt-2 mt-auto shrink-0">
-                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+                    <div className="h-10 bg-gray-100 rounded-md w-full my-2" />
+                    <div className="flex gap-2 border-t border-gray-100 pt-2 mt-auto shrink-0">
+                      <div className="h-8 bg-gray-100 rounded-xl flex-1" />
+                      <div className="h-8 bg-gray-100 rounded-xl flex-1" />
                     </div>
                   </div>
                 </div>

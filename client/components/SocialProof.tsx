@@ -52,20 +52,20 @@ export default function SocialProof() {
   ];
 
   return (
-    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="social-proof">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-transparent max-w-[1440px] mx-auto w-full" id="social-proof">
       <div className="absolute top-[20%] right-[-5%] w-80 h-80 rounded-full bg-brand-cyan/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center mb-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 mb-4">
-          <ShieldCheck className="h-4 w-4 text-brand-cyan" />
-          <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-indigo/10 border border-brand-indigo/20 mb-4">
+          <ShieldCheck className="h-4 w-4 text-brand-indigo" />
+          <span className="text-xs font-semibold text-brand-indigo uppercase tracking-wider">
             Verified Explorer Trust
           </span>
         </div>
-        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
+        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 mb-4">
           Loved by True Explorers
         </h2>
-        <p className="text-zinc-400 text-sm md:text-base max-w-xl leading-relaxed">
+        <p className="text-gray-600 text-sm md:text-base max-w-xl leading-relaxed">
           Wandercall is built around authentic reviews and memories. Only explorers with verified completed checkouts can log reviews.
         </p>
       </div>
@@ -82,10 +82,10 @@ export default function SocialProof() {
             viewport={{ once: true, margin: "-50px" }}
             transition={{ duration: 0.5, delay: index * 0.1 }}
             whileHover={{ y: -4 }}
-            className="p-6 rounded-3xl glass-panel border-white/5 flex flex-col justify-between h-[280px] text-left hover:border-brand-cyan/10 transition-all shadow-md relative"
+            className="p-6 rounded-3xl bg-white border border-gray-100 flex flex-col justify-between h-[280px] text-left hover:border-brand-indigo/20 transition-all shadow-sm hover:shadow-md relative hover:-translate-y-1"
           >
             {/* Quote decoration */}
-            <Quote className="absolute right-6 top-6 h-8 w-8 text-white/[0.02] pointer-events-none" />
+            <Quote className="absolute right-6 top-6 h-8 w-8 text-gray-100 pointer-events-none" />
 
             <div>
               {/* Star rating */}
@@ -95,25 +95,25 @@ export default function SocialProof() {
                 ))}
               </div>
 
-              <p className="text-xs text-zinc-300 leading-relaxed mb-6 italic">
+              <p className="text-xs text-gray-600 leading-relaxed mb-6 italic">
                 "{test.text}"
               </p>
             </div>
 
             {/* Profile footer info */}
-            <div className="flex items-center justify-between pt-4 border-t border-white/5">
+            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
               <div className="flex items-center gap-2.5">
-                <div className="h-8 w-8 rounded-full bg-brand-purple text-white font-black text-xs flex items-center justify-center border border-white/10">
+                <div className="h-8 w-8 rounded-full bg-brand-purple text-white font-black text-xs flex items-center justify-center shadow-sm">
                   {test.avatarLetter}
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-white leading-none mb-1">{test.name}</h4>
-                  <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest">{test.location}</span>
+                  <h4 className="text-xs font-bold text-gray-900 leading-none mb-1">{test.name}</h4>
+                  <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">{test.location}</span>
                 </div>
               </div>
 
-              <span className="text-[10px] font-bold text-brand-cyan bg-brand-cyan/10 border border-brand-cyan/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                <Heart className="h-3 w-3 fill-brand-cyan" />
+              <span className="text-[10px] font-bold text-brand-indigo bg-brand-indigo/10 border border-brand-indigo/20 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1 shadow-sm">
+                <Heart className="h-3 w-3 fill-brand-indigo text-brand-indigo" />
                 Lvl {test.adventurerLevel}
               </span>
             </div>
@@ -123,7 +123,7 @@ export default function SocialProof() {
 
       {/* Show More Button */}
       <div className="flex justify-center mt-12">
-        <button suppressHydrationWarning className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
+        <button suppressHydrationWarning className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 hover:border-gray-300 shadow-sm transition-all active:scale-[0.98]">
           <Heart className="h-4 w-4 text-rose-500 fill-rose-500" />
           View More Reviews
         </button>
@@ -134,29 +134,29 @@ export default function SocialProof() {
 
 function SocialProofSkeletonCard() {
   return (
-    <div className="p-6 rounded-3xl glass-panel border-white/5 flex flex-col justify-between h-[280px] bg-zinc-900/50 animate-pulse relative">
+    <div className="p-6 rounded-3xl bg-white border border-gray-100 flex flex-col justify-between h-[280px] bg-gray-50 shadow-sm animate-pulse relative">
       <div>
         <div className="flex gap-1 mb-4">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="h-4 w-4 bg-white/10 rounded-sm" />
+            <div key={i} className="h-4 w-4 bg-gray-200 rounded-sm" />
           ))}
         </div>
         <div className="space-y-2 mb-6 mt-2">
-          <div className="h-2 w-full bg-white/10 rounded-sm" />
-          <div className="h-2 w-full bg-white/10 rounded-sm" />
-          <div className="h-2 w-5/6 bg-white/10 rounded-sm" />
-          <div className="h-2 w-3/4 bg-white/10 rounded-sm" />
+          <div className="h-2 w-full bg-gray-200 rounded-sm" />
+          <div className="h-2 w-full bg-gray-200 rounded-sm" />
+          <div className="h-2 w-5/6 bg-gray-200 rounded-sm" />
+          <div className="h-2 w-3/4 bg-gray-200 rounded-sm" />
         </div>
       </div>
-      <div className="flex items-center justify-between pt-4 border-t border-white/5">
+      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-full bg-white/10 shrink-0" />
+          <div className="h-8 w-8 rounded-full bg-gray-200 shrink-0" />
           <div className="flex flex-col gap-1.5">
-            <div className="h-3 w-16 bg-white/10 rounded-sm" />
-            <div className="h-2 w-12 bg-white/10 rounded-sm" />
+            <div className="h-3 w-16 bg-gray-200 rounded-sm" />
+            <div className="h-2 w-12 bg-gray-200 rounded-sm" />
           </div>
         </div>
-        <div className="h-5 w-14 rounded-full bg-white/10" />
+        <div className="h-5 w-14 rounded-full bg-gray-200" />
       </div>
     </div>
   );

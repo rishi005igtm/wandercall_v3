@@ -39,8 +39,8 @@ export default function ExperienceSlideshow() {
     <>
       {/* Mobile Version */}
       <div className="lg:hidden w-full mt-6 px-4">
-        <h3 className="text-sm font-bold text-white mb-3">Featured Experiences</h3>
-        <div className="relative w-full h-[340px] rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-xl">
+        <h3 className="text-sm font-bold text-gray-900 mb-3">Featured Experiences</h3>
+        <div className="relative w-full h-[340px] rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-xl">
           <AnimatePresence mode="wait">
             <motion.div
               key={slide.id}
@@ -55,7 +55,7 @@ export default function ExperienceSlideshow() {
               ) : (
                 <Image src={slide.image} alt={slide.title} fill className="object-cover" priority sizes="(max-width: 1024px) 100vw, 50vw" />
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-black/50 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               
               <div className="absolute bottom-0 left-0 right-0 p-5">
                 <div className="flex items-center gap-2 mb-2">
@@ -83,7 +83,7 @@ export default function ExperienceSlideshow() {
       </div>
 
       {/* Desktop Version */}
-      <div className="hidden lg:flex w-full h-full min-h-[550px] relative rounded-[32px] glass-panel border border-white/10 overflow-hidden shadow-2xl group flex-col justify-end">
+      <div className="hidden lg:flex w-full h-full min-h-[550px] relative rounded-[32px] bg-white border border-gray-100 overflow-hidden shadow-2xl group flex-col justify-end">
         {/* Background Image changes with slide */}
         <AnimatePresence mode="wait">
           <motion.div
@@ -100,8 +100,8 @@ export default function ExperienceSlideshow() {
               <Image src={slide.image} alt={slide.title} fill className="object-cover" priority sizes="(max-width: 1024px) 100vw, 50vw" />
             )}
             {/* Gradients to ensure text readability */}
-            <div className="absolute inset-0 bg-gradient-to-t from-brand-bg via-brand-bg/40 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-brand-bg/90 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-transparent to-transparent" />
           </motion.div>
         </AnimatePresence>
 
@@ -130,7 +130,7 @@ export default function ExperienceSlideshow() {
               className="flex flex-col gap-4 mt-auto"
             >
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-cyan bg-brand-cyan/20 backdrop-blur-md px-3 py-1 rounded-full border border-brand-cyan/30 shadow-lg shadow-brand-cyan/20">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-brand-indigo bg-brand-indigo/20 backdrop-blur-md px-3 py-1 rounded-full border border-brand-indigo/30 shadow-lg shadow-brand-indigo/20">
                   {slide.category}
                 </span>
                 <span className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-widest text-brand-amber bg-brand-amber/20 backdrop-blur-md px-3 py-1 rounded-full border border-brand-amber/30">
@@ -196,8 +196,8 @@ function ChevronRightIcon() {
 function MobileSkeleton() {
   return (
     <div className="lg:hidden w-full mt-6 px-4">
-      <h3 className="text-sm font-bold text-white mb-3">Featured Experiences</h3>
-      <div className="relative w-full h-[340px] rounded-3xl overflow-hidden glass-panel border border-white/10 shadow-xl bg-zinc-900/50 animate-pulse">
+      <h3 className="text-sm font-bold text-gray-900 mb-3">Featured Experiences</h3>
+      <div className="relative w-full h-[340px] rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-xl bg-gray-100 animate-pulse">
         <div className="absolute bottom-0 left-0 right-0 p-5">
           <div className="flex items-center gap-2 mb-2">
             <div className="h-4 w-16 bg-white/10 rounded-full" />
@@ -219,7 +219,7 @@ function MobileSkeleton() {
 
 function DesktopSkeleton() {
   return (
-    <div className="hidden lg:flex w-full h-full min-h-[550px] relative rounded-[32px] glass-panel border border-white/10 overflow-hidden shadow-2xl group flex-col justify-end bg-zinc-900/50 animate-pulse">
+    <div className="hidden lg:flex w-full h-full min-h-[550px] relative rounded-[32px] bg-white border border-gray-100 overflow-hidden shadow-2xl group flex-col justify-end bg-gray-50 animate-pulse">
       <div className="relative z-10 w-full p-8 flex flex-col justify-end h-full">
         <div className="absolute top-8 left-8 right-8 flex items-center justify-between z-20">
           <div className="flex gap-1.5">

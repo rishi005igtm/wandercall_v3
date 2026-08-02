@@ -12,9 +12,9 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-4 z-50">
+      <div className="min-h-[calc(100vh-4rem)] w-full bg-mesh-premium flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-10 w-10 text-brand-cyan animate-spin" />
-        <p className="text-sm font-mono text-zinc-500 uppercase tracking-widest animate-pulse">
+        <p className="text-sm font-mono text-gray-500 uppercase tracking-widest animate-pulse">
           Decrypting Explorer Passport...
         </p>
       </div>
@@ -23,9 +23,9 @@ export default function ProfilePage() {
 
   if (error || !userProfile) {
     return (
-      <div className="fixed inset-0 bg-zinc-950 flex flex-col items-center justify-center gap-4 p-6 text-center z-50">
-        <h1 className="text-xl font-black text-white">Error Loading Passport</h1>
-        <p className="text-xs text-zinc-400 max-w-sm">
+      <div className="min-h-[calc(100vh-4rem)] w-full bg-mesh-premium flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <h1 className="text-xl font-black text-gray-900">Error Loading Passport</h1>
+        <p className="text-xs text-gray-500 max-w-sm">
           Failed to fetch your explorer profile. Please try logging in again or refresh.
         </p>
       </div>

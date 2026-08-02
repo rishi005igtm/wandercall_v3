@@ -19,12 +19,12 @@ export default function DateDetailsPanel({
 }: DateDetailsPanelProps) {
   if (!selectedDate) {
     return (
-      <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col items-center justify-center text-center gap-3 h-full min-h-[320px] select-none">
-        <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/5 flex items-center justify-center text-brand-cyan">
+      <div className="glass-panel p-6 rounded-3xl border border-gray-200 bg-white flex flex-col items-center justify-center text-center gap-3 h-full min-h-[320px] select-none">
+        <div className="h-12 w-12 rounded-2xl bg-gray-100 border border-gray-200 flex items-center justify-center text-brand-cyan">
           <Compass className="h-6 w-6 animate-spin-slow" />
         </div>
-        <h4 className="text-sm font-mono font-bold text-zinc-400 uppercase tracking-wider">No Date Selected</h4>
-        <p className="text-xs text-zinc-500 max-w-xs font-sans">
+        <h4 className="text-sm font-mono font-bold text-gray-500 uppercase tracking-wider">No Date Selected</h4>
+        <p className="text-xs text-gray-500 max-w-xs font-sans">
           Click on an available date in the calendar to view weather forecasts, guide info, and departure slots.
         </p>
       </div>
@@ -39,47 +39,47 @@ export default function DateDetailsPanel({
   });
 
   return (
-    <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col justify-between gap-6 text-left h-full shadow-xl">
+    <div className="glass-panel p-6 rounded-3xl border border-gray-200 bg-white flex flex-col justify-between gap-6 text-left h-full shadow-xl">
       <div className="flex flex-col gap-4">
         {/* Date header badge */}
-        <div className="flex justify-between items-start border-b border-white/5 pb-4">
+        <div className="flex justify-between items-start border-b border-gray-200 pb-4">
           <div>
             <span className="text-[9px] font-mono font-bold text-brand-cyan uppercase tracking-widest block">Selected Departure</span>
-            <h3 className="text-base font-black text-white uppercase tracking-tight mt-1">{formattedDate}</h3>
+            <h3 className="text-base font-black text-gray-900 uppercase tracking-tight mt-1">{formattedDate}</h3>
           </div>
-          <span className="text-[9px] font-mono font-black text-emerald-400 bg-emerald-950/40 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase">
+          <span className="text-[9px] font-mono font-black text-emerald-400 bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-full uppercase">
             High Demand
           </span>
         </div>
 
         {/* Dynamic highlights grid */}
         <div className="grid grid-cols-2 gap-3 text-xs font-mono">
-          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
-            <span className="text-[8px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+          <div className="bg-white shadow-sm border border-gray-200 p-3 rounded-2xl flex flex-col gap-1">
+            <span className="text-[8px] font-bold text-gray-500 uppercase flex items-center gap-1">
               <CloudSun className="h-3.5 w-3.5 text-yellow-400" /> Weather
             </span>
-            <span className="text-zinc-200 font-semibold text-[11px]">Clear & Sunny, 24°C</span>
+            <span className="text-gray-800 font-semibold text-[11px]">Clear & Sunny, 24°C</span>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
-            <span className="text-[8px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+          <div className="bg-white shadow-sm border border-gray-200 p-3 rounded-2xl flex flex-col gap-1">
+            <span className="text-[8px] font-bold text-gray-500 uppercase flex items-center gap-1">
               <Users className="h-3.5 w-3.5 text-brand-purple" /> Crowd Level
             </span>
-            <span className="text-zinc-200 font-semibold text-[11px]">Moderate Demand</span>
+            <span className="text-gray-800 font-semibold text-[11px]">Moderate Demand</span>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
-            <span className="text-[8px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+          <div className="bg-white shadow-sm border border-gray-200 p-3 rounded-2xl flex flex-col gap-1">
+            <span className="text-[8px] font-bold text-gray-500 uppercase flex items-center gap-1">
               <Clock className="h-3.5 w-3.5 text-brand-cyan" /> Duration
             </span>
-            <span className="text-zinc-200 font-semibold text-[11px]">{experienceDuration}</span>
+            <span className="text-gray-800 font-semibold text-[11px]">{experienceDuration}</span>
           </div>
 
-          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
-            <span className="text-[8px] font-bold text-zinc-500 uppercase flex items-center gap-1">
+          <div className="bg-white shadow-sm border border-gray-200 p-3 rounded-2xl flex flex-col gap-1">
+            <span className="text-[8px] font-bold text-gray-500 uppercase flex items-center gap-1">
               <Languages className="h-3.5 w-3.5 text-emerald-400" /> Languages
             </span>
-            <span className="text-zinc-200 font-semibold text-[11px]">English & Hindi</span>
+            <span className="text-gray-800 font-semibold text-[11px]">English & Hindi</span>
           </div>
         </div>
 
@@ -92,7 +92,7 @@ export default function DateDetailsPanel({
             <button suppressHydrationWarning
               type="button"
               onClick={onOpenSlotModal}
-              className="text-[9px] font-mono font-black text-white hover:text-brand-cyan underline uppercase tracking-wider cursor-pointer"
+              className="text-[9px] font-mono font-black text-gray-900 hover:text-brand-cyan underline uppercase tracking-wider cursor-pointer"
             >
               {selectedSlot ? "Change Slot" : "Select Slot"}
             </button>
@@ -101,10 +101,10 @@ export default function DateDetailsPanel({
           {selectedSlot ? (
             <div className="flex items-center justify-between">
               <div>
-                <span className="text-lg font-black text-white font-sans">{selectedSlot.time}</span>
-                <span className="text-[10px] font-mono text-zinc-400 block">Guide: {selectedSlot.guideName}</span>
+                <span className="text-lg font-black text-gray-900 font-sans">{selectedSlot.time}</span>
+                <span className="text-[10px] font-mono text-gray-500 block">Guide: {selectedSlot.guideName}</span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200">
                 {selectedSlot.remainingSeats} Seats Left
               </span>
             </div>
@@ -120,7 +120,7 @@ export default function DateDetailsPanel({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 text-[9px] font-mono text-zinc-500 border-t border-white/5 pt-3">
+      <div className="flex items-center gap-2 text-[9px] font-mono text-gray-500 border-t border-gray-200 pt-3">
         <ShieldCheck className="h-4 w-4 text-emerald-400 shrink-0" />
         <span>Instant booking verification & certified expedition guide assigned.</span>
       </div>

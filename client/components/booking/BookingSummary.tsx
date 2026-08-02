@@ -13,7 +13,6 @@ interface BookingSummaryProps {
   adultsCount: number;
   childrenCount: number;
   isPrivateGroup: boolean;
-  selectedAddons: string[];
   couponCode: string;
   setCouponCode: (code: string) => void;
   appliedCoupon: string;
@@ -21,7 +20,6 @@ interface BookingSummaryProps {
   couponError: string;
   setCouponError: (error: string) => void;
   baseSubtotal: number;
-  addonsTotal: number;
   privateGroupFee: number;
   groupDiscount: number;
   couponDiscount: number;
@@ -36,7 +34,6 @@ export default function BookingSummary({
   adultsCount,
   childrenCount,
   isPrivateGroup,
-  selectedAddons,
   couponCode,
   setCouponCode,
   appliedCoupon,
@@ -44,7 +41,6 @@ export default function BookingSummary({
   couponError,
   setCouponError,
   baseSubtotal,
-  addonsTotal,
   privateGroupFee,
   groupDiscount,
   couponDiscount,
@@ -109,26 +105,26 @@ export default function BookingSummary({
   const showRecommendation = totalTravelers === 3;
 
   return (
-    <div className="glass-panel p-6 rounded-3xl border border-white/5 bg-zinc-900/10 flex flex-col gap-5 text-left sticky top-28 w-full shadow-2xl">
+    <div className="glass-panel p-6 rounded-3xl border border-gray-200 bg-white flex flex-col gap-5 text-left sticky top-28 w-full shadow-2xl">
       {/* Experience title and details */}
-      <div className="border-b border-white/5 pb-4">
-        <span className="text-[9px] font-mono font-bold text-zinc-500 uppercase tracking-widest block leading-none">Booking Summary</span>
-        <h4 className="text-base font-black text-white uppercase tracking-tight mt-2 line-clamp-1">{experienceTitle}</h4>
+      <div className="border-b border-gray-200 pb-4">
+        <span className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest block leading-none">Booking Summary</span>
+        <h4 className="text-base font-black text-gray-900 uppercase tracking-tight mt-2 line-clamp-1">{experienceTitle}</h4>
         
         {selectedDate && selectedSlot ? (
           <span className="text-[10px] font-mono text-brand-cyan font-bold block mt-1.5 uppercase">
             📅 {new Date(selectedDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })} • 🕒 {selectedSlot.time}
           </span>
         ) : (
-          <span className="text-[10px] font-mono text-zinc-500 font-bold block mt-1.5 uppercase">
+          <span className="text-[10px] font-mono text-gray-500 font-bold block mt-1.5 uppercase">
             Please select date & slot time
           </span>
         )}
       </div>
 
       {/* Coupon Code Input */}
-      <div className="flex flex-col gap-2.5 border-b border-white/5 pb-4">
-        <label className="text-[9px] font-mono font-bold text-zinc-400 uppercase tracking-widest flex items-center gap-1.5 select-none">
+      <div className="flex flex-col gap-2.5 border-b border-gray-200 pb-4">
+        <label className="text-[9px] font-mono font-bold text-gray-500 uppercase tracking-widest flex items-center gap-1.5 select-none">
           <Ticket className="h-4 w-4 text-brand-cyan shrink-0" /> Coupon Code
         </label>
         <div className="relative flex items-center">
@@ -137,19 +133,19 @@ export default function BookingSummary({
             placeholder="Enter code (e.g. WANDER20)"
             value={couponCode}
             onChange={(e) => setCouponCode(e.target.value)}
-            className={`w-full h-9 bg-zinc-950/50 border rounded-xl pl-3 pr-16 text-xs text-white outline-none transition-all uppercase tracking-wider ${
+            className={`w-full h-9 bg-gray-100 border rounded-xl pl-3 pr-16 text-xs text-gray-900 outline-none transition-all uppercase tracking-wider ${
               appliedCoupon
                 ? "border-emerald-500/50 focus:border-emerald-500 shadow-md shadow-emerald-500/5"
                 : couponError
                 ? "border-red-500/50 focus:border-red-500 shadow-md shadow-red-500/5"
-                : "border-white/10 focus:border-brand-cyan"
+                : "border-gray-300 focus:border-brand-cyan"
             }`}
           />
           {appliedCoupon ? (
             <button suppressHydrationWarning
               type="button"
               onClick={handleRemoveCoupon}
-              className="absolute right-1.5 h-6 px-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-[9px] font-black uppercase transition-all tracking-wider cursor-pointer flex items-center gap-1"
+              className="absolute right-1.5 h-6 px-2 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-900 text-[9px] font-black uppercase transition-all tracking-wider cursor-pointer flex items-center gap-1"
             >
               <X className="h-2.5 w-2.5" /> Clear
             </button>
@@ -182,7 +178,7 @@ export default function BookingSummary({
 
         {/* Available coupons pills */}
         <div className="flex flex-wrap gap-1 items-center">
-          <span className="text-[8px] text-zinc-500 font-bold uppercase select-none">Available:</span>
+          <span className="text-[8px] text-gray-500 font-bold uppercase select-none">Available:</span>
           {Object.keys(coupons).map((code) => (
             <button suppressHydrationWarning
               key={code}
@@ -191,7 +187,7 @@ export default function BookingSummary({
               className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border transition-all cursor-pointer ${
                 appliedCoupon === code
                   ? "bg-brand-cyan/20 border-brand-cyan text-brand-cyan"
-                  : "bg-white/5 border-white/5 hover:border-white/20 text-zinc-400 hover:text-white"
+                  : "bg-gray-100 border-gray-200 hover:border-white/20 text-gray-500 hover:text-gray-900"
               }`}
             >
               {code}
@@ -201,23 +197,16 @@ export default function BookingSummary({
       </div>
 
       {/* Pricing Breakdown */}
-      <div className="flex flex-col gap-3 text-xs font-mono font-bold text-zinc-400">
+      <div className="flex flex-col gap-3 text-xs font-mono font-bold text-gray-500">
         <div className="flex justify-between">
           <span>Adventures rate ({totalTravelers} Pax):</span>
-          <span className="text-white">₹{baseSubtotal.toLocaleString("en-IN")}</span>
+          <span className="text-gray-900">₹{baseSubtotal.toLocaleString("en-IN")}</span>
         </div>
 
         {isPrivateGroup && (
           <div className="flex justify-between text-brand-purple">
             <span>Private Group fee:</span>
             <span>+ ₹{privateGroupFee.toLocaleString("en-IN")}</span>
-          </div>
-        )}
-
-        {selectedAddons.length > 0 && (
-          <div className="flex justify-between text-brand-cyan/80">
-            <span>Add-ons fee ({selectedAddons.length} selected):</span>
-            <span>+ ₹{addonsTotal.toLocaleString("en-IN")}</span>
           </div>
         )}
 
@@ -235,12 +224,12 @@ export default function BookingSummary({
           </div>
         )}
 
-        <div className="flex justify-between text-[11px] text-zinc-500">
+        <div className="flex justify-between text-[11px] text-gray-500">
           <span>Taxes & GST (18%):</span>
           <span>+ ₹{taxes.toLocaleString("en-IN")}</span>
         </div>
 
-        <div className="flex justify-between border-t border-white/5 pt-3 mt-1 text-white items-baseline">
+        <div className="flex justify-between border-t border-gray-200 pt-3 mt-1 text-gray-900 items-baseline">
           <span className="font-sans font-black text-sm uppercase tracking-wide">Grand Total:</span>
           <motion.span 
             key={grandTotal}
@@ -260,24 +249,28 @@ export default function BookingSummary({
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="p-3.5 rounded-2xl bg-brand-cyan/5 border border-brand-cyan/20 flex flex-col gap-2 text-[10px] leading-relaxed text-zinc-300 font-semibold"
+            className="overflow-hidden"
           >
-            <div className="flex items-center gap-1 text-brand-cyan font-bold uppercase tracking-wider text-[9px] font-mono">
-              <Info className="h-3.5 w-3.5 shrink-0" /> Group Discount Hack
+            <div className="mt-1 p-3 rounded-2xl bg-gradient-to-br from-emerald-500/10 to-brand-cyan/10 border border-emerald-500/20 flex gap-3 items-start">
+              <Info className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <h5 className="text-[10px] font-black text-emerald-400 uppercase tracking-widest mb-1">Add 1 more for 10% OFF!</h5>
+                <p className="text-[10px] text-emerald-700 leading-relaxed font-sans font-medium">
+                  Groups of 4+ automatically receive a 10% discount on the entire booking base rate.
+                </p>
+              </div>
             </div>
-            <p>
-              Add just <span className="text-white font-bold">1 more participant</span> to your group and unlock an automatic <span className="text-emerald-400 font-bold">10% discount</span> on all base tickets!
-            </p>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Cancellation trust reassurance badges */}
-      <div className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-start gap-2.5 text-[9px] text-zinc-500 font-medium leading-normal select-none">
-        <ShieldCheck className="h-4.5 w-4.5 text-emerald-400 shrink-0 mt-0.5" />
+      <div className="mt-2 bg-emerald-50 rounded-xl p-3 border border-emerald-100 flex items-start gap-2.5">
+        <ShieldCheck className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
         <div>
-          <span className="text-zinc-400 font-bold block">Free Cancellation up to 72 hrs</span>
-          Get a full 100% refund in case you cancel before 3 days of booking departure.
+          <span className="block text-[10px] text-gray-900 font-bold uppercase tracking-wider mb-0.5">Free Cancellation up to 72 hrs</span>
+          <span className="block text-[9px] text-gray-500 font-medium font-sans leading-relaxed">
+            Get a full 100% refund in case you cancel before 3 days of booking departure.
+          </span>
         </div>
       </div>
     </div>

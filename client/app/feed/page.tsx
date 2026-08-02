@@ -340,7 +340,7 @@ export default function ImmersiveFeedPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
   return (
-    <div className="fixed inset-0 w-full h-[100dvh] bg-black text-white font-sans overflow-hidden flex flex-col md:flex-row z-50">
+    <div className="fixed inset-0 w-full h-[100dvh] bg-mesh-premium text-gray-900 font-sans overflow-hidden flex flex-col md:flex-row z-50">
       
       {/* ======================================= */}
       {/* LEFT PANEL: FIXED HEADER + FEED VIEWPORT*/}
@@ -348,19 +348,19 @@ export default function ImmersiveFeedPage() {
       <div className="w-full md:w-[60%] lg:w-[65%] h-full flex flex-col relative">
         
         {/* Fixed Top Controls Area */}
-        <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none md:pointer-events-auto">
+        <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-white/80 via-white/40 to-transparent pointer-events-none md:pointer-events-auto">
           <div className="flex justify-between items-center w-full pointer-events-auto">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
-                className="md:hidden h-10 w-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center backdrop-blur-md transition-all hover:bg-white/10 text-zinc-400 hover:text-white shadow-lg cursor-pointer"
+                className="md:hidden h-10 w-10 bg-white/60 border border-gray-200 rounded-xl flex items-center justify-center backdrop-blur-md transition-all hover:bg-white text-gray-500 hover:text-brand-indigo shadow-lg cursor-pointer"
               >
                 <Filter className="h-5 w-5" />
               </button>
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-white text-black text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-zinc-200 transition-transform hover:scale-105 shadow-xl shadow-white/10">
+              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-gray-900 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-black transition-transform hover:scale-105 shadow-xl shadow-black/5">
                 <Plus className="h-4 w-4" /> Create
               </Link>
             </div>
@@ -370,7 +370,7 @@ export default function ImmersiveFeedPage() {
           <div className="flex w-full pointer-events-auto md:justify-center">
             
             {/* Desktop Version */}
-            <div className="hidden md:flex items-center p-1.5 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg w-auto max-w-full">
+            <div className="hidden md:flex items-center p-1.5 bg-white/60 backdrop-blur-xl rounded-full border border-gray-200 w-auto max-w-full">
               <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full px-1">
                 {CATEGORIES.map(cat => (
                   <button
@@ -378,8 +378,8 @@ export default function ImmersiveFeedPage() {
                     onClick={() => setActiveFilter(cat.id)}
                     className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                       activeFilter === cat.id 
-                        ? "bg-white text-black" 
-                        : "text-zinc-400 hover:text-white hover:bg-white/10"
+                        ? "bg-gray-900 text-white" 
+                        : "text-gray-500 hover:text-brand-indigo hover:bg-white/60"
                     }`}
                   >
                     <cat.icon className="h-3 w-3" />
@@ -400,7 +400,7 @@ export default function ImmersiveFeedPage() {
                     transition={{ duration: 0.3, ease: "easeInOut" }}
                     className="overflow-hidden"
                   >
-                    <div className="flex items-center p-1.5 bg-black/40 backdrop-blur-xl rounded-full border border-white/10 shadow-lg w-full max-w-full">
+                    <div className="flex items-center p-1.5 bg-white/60 backdrop-blur-xl rounded-full border border-gray-200 w-full max-w-full">
                       <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar w-full px-1">
                         {CATEGORIES.map(cat => (
                           <button
@@ -408,8 +408,8 @@ export default function ImmersiveFeedPage() {
                             onClick={() => { setActiveFilter(cat.id); setShowMobileFilters(false); }}
                             className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                               activeFilter === cat.id 
-                                ? "bg-white text-black" 
-                                : "text-zinc-400 hover:text-white hover:bg-white/10"
+                                ? "bg-gray-900 text-white" 
+                                : "text-gray-500 hover:text-brand-indigo hover:bg-white/60"
                             }`}
                           >
                             <cat.icon className="h-3 w-3" />
@@ -426,7 +426,7 @@ export default function ImmersiveFeedPage() {
         </div>
 
         {/* Desktop Left Navigation Sidebar */}
-        <div className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 flex-col gap-4 z-50 p-2.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+        <div className="hidden md:flex absolute left-6 top-1/2 -translate-y-1/2 flex-col gap-4 z-50 p-2.5 bg-[#111] backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
           {[
             { id: "home", icon: Home, tooltip: "Home", href: "/" },
             { id: "experiences", icon: Compass, tooltip: "Experiences", href: "/feed" },
@@ -610,7 +610,7 @@ export default function ImmersiveFeedPage() {
       {/* ======================================= */}
       {/* RIGHT PANEL: CONTEXT HUB (DESKTOP)      */}
       {/* ======================================= */}
-      <div className="hidden md:flex md:w-[40%] lg:w-[35%] h-full bg-[#0a0a0c] border-l border-white/5 flex-col relative z-50 shadow-2xl">
+      <div className="hidden md:flex md:w-[40%] lg:w-[35%] h-full bg-white/60 backdrop-blur-xl border-l border-gray-200 flex-col relative z-50">
           {!activePost || isContextLoading ? (
             <ExperienceContextSkeleton />
           ) : (
@@ -619,19 +619,19 @@ export default function ImmersiveFeedPage() {
               className="flex flex-col h-full w-full animate-in fade-in slide-in-from-right-4 duration-300"
             >
               {/* Context Header */}
-              <div className="p-6 border-b border-white/5 bg-[#0a0a0c] z-10 shrink-0">
-                <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-brand-cyan" /> Experience Context
+              <div className="p-6 border-b border-gray-200 bg-transparent z-10 shrink-0">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-brand-indigo" /> Experience Context
                 </h3>
                 <div className="flex gap-4 mt-4">
-                  <button onClick={() => handleLike(activePost.id)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasLiked ? "text-brand-cyan" : "text-zinc-500 hover:text-white"}`}>
-                    <Heart className={`h-4 w-4 ${activePost.hasLiked ? "fill-brand-cyan" : ""}`} /> {activePost.likes} Likes
+                  <button onClick={() => handleLike(activePost.id)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasLiked ? "text-brand-indigo" : "text-gray-500 hover:text-brand-indigo"}`}>
+                    <Heart className={`h-4 w-4 ${activePost.hasLiked ? "fill-brand-indigo" : ""}`} /> {activePost.likes} Likes
                   </button>
-                  <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-zinc-500 hover:text-white transition-colors">
+                  <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-indigo transition-colors">
                     <Share2 className="h-4 w-4" /> Share
                   </button>
-                  <button onClick={() => handleSave(activePost.id)} className={`ml-auto flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasSaved ? "text-white" : "text-zinc-500 hover:text-white"}`}>
-                    <Bookmark className={`h-4 w-4 ${activePost.hasSaved ? "fill-white" : ""}`} /> Save
+                  <button onClick={() => handleSave(activePost.id)} className={`ml-auto flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasSaved ? "text-gray-900" : "text-gray-500 hover:text-brand-indigo"}`}>
+                    <Bookmark className={`h-4 w-4 ${activePost.hasSaved ? "fill-gray-900" : ""}`} /> Save
                   </button>
                 </div>
               </div>
@@ -641,29 +641,29 @@ export default function ImmersiveFeedPage() {
                 
                 {/* Story Section */}
                 <div className="space-y-3">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">The Journey</h4>
-                  <p className="text-sm text-zinc-300 leading-relaxed font-medium">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">The Journey</h4>
+                  <p className="text-sm text-gray-700 leading-relaxed font-medium">
                     {activePost.content}
                   </p>
                 </div>
 
                 {/* Details Section */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1 overflow-hidden">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-1 shrink-0"><MapPin className="h-3 w-3" /> Location</span>
+                  <div className="bg-white border border-gray-100 shadow-sm p-3 rounded-2xl flex flex-col gap-1 overflow-hidden">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1 shrink-0"><MapPin className="h-3 w-3" /> Location</span>
                     <div className="overflow-x-auto no-scrollbar w-full">
-                      <span className="text-xs font-black text-white whitespace-nowrap">{activePost.location}</span>
+                      <span className="text-xs font-black text-gray-900 whitespace-nowrap">{activePost.location}</span>
                     </div>
                   </div>
-                  <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-1"><Clock className="h-3 w-3" /> Duration</span>
-                    <span className="text-xs font-black text-white">4 Days, 3 Nights</span>
+                  <div className="bg-white border border-gray-100 shadow-sm p-3 rounded-2xl flex flex-col gap-1">
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-1"><Clock className="h-3 w-3" /> Duration</span>
+                    <span className="text-xs font-black text-gray-900">4 Days, 3 Nights</span>
                   </div>
                 </div>
 
                 {/* Comments Section */}
-                <div className="space-y-4 pt-4 border-t border-white/5">
-                  <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">
                     Discussion ({activePost.commentsCount})
                   </h4>
                   
@@ -671,42 +671,42 @@ export default function ImmersiveFeedPage() {
                     <div className="space-y-3">
                       {postComments.map((comm: any) => (
                         <div key={comm.id} className="flex gap-3">
-                          <div className="h-8 w-8 rounded-full bg-zinc-800 shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold">
+                          <div className="h-8 w-8 rounded-full bg-gray-200 text-gray-900 shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold">
                             {comm.user.avatarUrl ? <img src={comm.user.avatarUrl} className="w-full h-full object-cover" /> : comm.user.displayName.charAt(0)}
                           </div>
-                          <div className="flex flex-col bg-white/[0.02] border border-white/5 rounded-2xl rounded-tl-none p-3 w-full">
+                          <div className="flex flex-col bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-none p-3 w-full">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-black text-white">{comm.user.displayName}</span>
-                              <span className="text-[9px] font-mono text-zinc-500">{formatRelativeTime(comm.createdAt)}</span>
+                              <span className="text-xs font-black text-gray-900">{comm.user.displayName}</span>
+                              <span className="text-[9px] font-mono text-gray-500">{formatRelativeTime(comm.createdAt)}</span>
                             </div>
-                            <p className="text-xs text-zinc-300 font-medium leading-relaxed">{comm.content}</p>
+                            <p className="text-xs text-gray-700 font-medium leading-relaxed">{comm.content}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
-                      <MessageSquare className="h-8 w-8 text-zinc-700" />
-                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest">No conversation yet</p>
+                      <MessageSquare className="h-8 w-8 text-gray-300" />
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No conversation yet</p>
                     </div>
                   )}
                 </div>
               </div>
 
               {/* Comment Input */}
-              <div className="p-4 border-t border-white/5 bg-[#0a0a0c] z-10 shrink-0">
-                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-2xl p-1.5">
+              <div className="p-4 border-t border-gray-200 bg-transparent z-10 shrink-0">
+                <div className="flex items-center gap-2 bg-white border border-gray-200 shadow-sm rounded-2xl p-1.5">
                   <input
                     type="text"
                     placeholder="Add to the conversation..."
                     value={commentInput}
                     onChange={e => setCommentInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleAddComment()}
-                    className="flex-1 bg-transparent border-none outline-none text-xs text-white px-3 font-medium placeholder-zinc-500"
+                    className="flex-1 bg-transparent border-none outline-none text-xs text-gray-900 px-3 font-medium placeholder-gray-400"
                   />
                   <button 
                     onClick={handleAddComment}
-                    className="h-8 w-8 rounded-xl bg-white hover:bg-zinc-200 transition-colors flex items-center justify-center shrink-0 cursor-pointer text-black"
+                    className="h-8 w-8 rounded-xl bg-gray-900 hover:bg-gray-800 transition-colors flex items-center justify-center shrink-0 cursor-pointer text-white"
                   >
                     <Send className="h-3.5 w-3.5" />
                   </button>
@@ -735,43 +735,43 @@ export default function ImmersiveFeedPage() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              className="fixed bottom-0 left-0 right-0 h-[75vh] bg-[#0a0a0c] rounded-t-3xl border-t border-white/10 z-[100] md:hidden flex flex-col shadow-[0_-20px_40px_rgba(0,0,0,0.5)]"
+              className="fixed bottom-0 left-0 right-0 h-[75vh] bg-white rounded-t-3xl border-t border-gray-200 z-[100] md:hidden flex flex-col shadow-[0_-20px_40px_rgba(0,0,0,0.1)]"
             >
               <div className="w-full flex justify-center pt-3 pb-2 cursor-pointer" onClick={() => setShowMobileComments(false)}>
-                <div className="w-12 h-1.5 bg-white/20 rounded-full" />
+                <div className="w-12 h-1.5 bg-gray-300 rounded-full" />
               </div>
               
-              <div className="p-4 border-b border-white/5">
-                <h3 className="text-sm font-black text-white uppercase tracking-widest">Discussion ({activePost.commentsCount})</h3>
+              <div className="p-4 border-b border-gray-200">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest">Discussion ({activePost.commentsCount})</h3>
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
                 {postComments.map((comm: any) => (
                   <div key={comm.id} className="flex gap-3">
-                    <div className="h-8 w-8 rounded-full bg-zinc-800 shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold">
+                    <div className="h-8 w-8 rounded-full bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold text-gray-900">
                       {comm.user.avatarUrl ? <img src={comm.user.avatarUrl} className="w-full h-full object-cover" /> : comm.user.displayName.charAt(0)}
                     </div>
-                    <div className="flex flex-col bg-white/[0.02] border border-white/5 rounded-2xl rounded-tl-none p-3 w-full">
+                    <div className="flex flex-col bg-gray-50 border border-gray-200 rounded-2xl rounded-tl-none p-3 w-full">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-black text-white">{comm.user.displayName}</span>
-                        <span className="text-[9px] font-mono text-zinc-500">{formatRelativeTime(comm.createdAt)}</span>
+                        <span className="text-xs font-black text-gray-900">{comm.user.displayName}</span>
+                        <span className="text-[9px] font-mono text-gray-500">{formatRelativeTime(comm.createdAt)}</span>
                       </div>
-                      <p className="text-xs text-zinc-300 font-medium leading-relaxed">{comm.content}</p>
+                      <p className="text-xs text-gray-700 font-medium leading-relaxed">{comm.content}</p>
                     </div>
                   </div>
                 ))}
               </div>
 
-              <div className="p-4 border-t border-white/5 bg-[#0a0a0c]">
-                <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-2xl p-1.5">
+              <div className="p-4 border-t border-gray-200 bg-white">
+                <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-2xl p-1.5">
                   <input
                     type="text"
                     placeholder="Add to the conversation..."
                     value={commentInput}
                     onChange={e => setCommentInput(e.target.value)}
-                    className="flex-1 bg-transparent border-none outline-none text-xs text-white px-3 font-medium placeholder-zinc-500"
+                    className="flex-1 bg-transparent border-none outline-none text-xs text-gray-900 px-3 font-medium placeholder-gray-400"
                   />
-                  <button onClick={handleAddComment} className="h-8 w-8 rounded-xl bg-white flex items-center justify-center shrink-0 text-black">
+                  <button onClick={handleAddComment} className="h-8 w-8 rounded-xl bg-gray-900 flex items-center justify-center shrink-0 text-white hover:bg-gray-800 transition-colors">
                     <Send className="h-3.5 w-3.5" />
                   </button>
                 </div>
@@ -781,32 +781,32 @@ export default function ImmersiveFeedPage() {
         )}
       </AnimatePresence>
       {/* Global Mobile Floating Bottom Action Row */}
-      <div className="md:hidden fixed bottom-4 left-4 right-4 z-[90] bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden">
-        <Link href="/" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
+      <div className="md:hidden fixed bottom-4 left-4 right-4 z-[90] bg-white/90 backdrop-blur-xl border border-gray-200 shadow-xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden">
+        <Link href="/" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-gray-400 hover:text-brand-indigo">
           <Home className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
         </Link>
 
-        <Link href="/profile/friends/search" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black">
+        <Link href="/profile/friends/search" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-gray-400 hover:text-brand-indigo">
           <Search className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Search</span>
         </Link>
 
         <div className="flex-1 flex justify-center relative z-50">
-          <Link href="/experiences" className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300">
+          <Link href="/experiences" className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-[0_4px_15px_rgba(79,70,229,0.3)] border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300">
             <Compass className="h-5 w-5 text-white" />
           </Link>
         </div>
 
-        <Link href="/feed" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-white">
-          <div className="absolute inset-0 bg-black border border-black rounded-xl z-0" />
+        <Link href="/feed" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-brand-indigo">
+          <div className="absolute inset-0 bg-brand-indigo/10 rounded-xl z-0" />
           <Radio className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
         </Link>
 
         <Link
           href={isAuthenticated ? "/profile/friends" : "/login"}
-          className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-zinc-800 hover:text-black"
+          className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-gray-400 hover:text-brand-indigo"
         >
           <MessageSquare className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Chat</span>
@@ -822,16 +822,16 @@ export default function ImmersiveFeedPage() {
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="bg-[#0a0a0c] border border-white/10 rounded-3xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl overflow-hidden"
+              className="bg-white border border-gray-200 rounded-3xl w-full max-w-lg max-h-[80vh] flex flex-col shadow-2xl overflow-hidden"
             >
-              <div className="flex items-center justify-between p-4 border-b border-white/10">
-                <h3 className="text-sm font-black text-white uppercase tracking-widest truncate mr-4">{storyModalContent.title}</h3>
-                <button onClick={() => setStoryModalContent(null)} className="p-2 rounded-full hover:bg-white/10 text-white transition-colors shrink-0">
+              <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-sm font-black text-gray-900 uppercase tracking-widest truncate mr-4">{storyModalContent.title}</h3>
+                <button onClick={() => setStoryModalContent(null)} className="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors shrink-0">
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <div className="p-6 overflow-y-auto no-scrollbar">
-                <p className="text-sm text-zinc-300 leading-relaxed font-medium whitespace-pre-wrap">
+                <p className="text-sm text-gray-700 leading-relaxed font-medium whitespace-pre-wrap">
                   {storyModalContent.content}
                 </p>
               </div>
@@ -847,12 +847,12 @@ export default function ImmersiveFeedPage() {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed top-20 md:bottom-6 right-6 md:top-auto z-[100] bg-zinc-900 border border-white/10 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3"
+            className="fixed top-20 md:bottom-6 right-6 md:top-auto z-[100] bg-white border border-gray-200 px-5 py-3 rounded-2xl shadow-xl flex items-center gap-3"
           >
-            <div className="h-6 w-6 rounded-lg bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan">
+            <div className="h-6 w-6 rounded-lg bg-brand-indigo/10 border border-brand-indigo/20 flex items-center justify-center text-brand-indigo">
               <Sparkles className="h-3.5 w-3.5" />
             </div>
-            <p className="text-xs font-semibold text-zinc-300">{toast}</p>
+            <p className="text-xs font-semibold text-gray-900">{toast}</p>
           </motion.div>
         )}
       </AnimatePresence>
@@ -863,17 +863,17 @@ export default function ImmersiveFeedPage() {
 
 function ExperienceContextSkeleton() {
   return (
-    <div className="flex flex-col h-full w-full animate-in fade-in duration-300 animate-pulse">
+    <div className="flex flex-col h-full w-full animate-in fade-in duration-300 animate-pulse bg-white/60">
       {/* Context Header */}
-      <div className="p-6 border-b border-white/5 bg-[#0a0a0c] z-10 shrink-0">
+      <div className="p-6 border-b border-gray-200 bg-transparent z-10 shrink-0">
         <div className="flex items-center gap-2">
-          <div className="h-4 w-4 rounded-sm bg-white/10" />
-          <div className="h-3 w-32 bg-white/10 rounded-sm" />
+          <div className="h-4 w-4 rounded-sm bg-gray-200" />
+          <div className="h-3 w-32 bg-gray-200 rounded-sm" />
         </div>
         <div className="flex gap-4 mt-4 pt-1">
-          <div className="h-4 w-20 bg-white/10 rounded-sm" />
-          <div className="h-4 w-16 bg-white/10 rounded-sm" />
-          <div className="ml-auto h-4 w-16 bg-white/10 rounded-sm" />
+          <div className="h-4 w-20 bg-gray-200 rounded-sm" />
+          <div className="h-4 w-16 bg-gray-200 rounded-sm" />
+          <div className="ml-auto h-4 w-16 bg-gray-200 rounded-sm" />
         </div>
       </div>
 
@@ -882,48 +882,48 @@ function ExperienceContextSkeleton() {
         
         {/* Story Section */}
         <div className="space-y-3">
-          <div className="h-2.5 w-24 bg-white/10 rounded-sm" />
+          <div className="h-2.5 w-24 bg-gray-200 rounded-sm" />
           <div className="space-y-2 pt-1">
-            <div className="h-3 w-full bg-white/10 rounded-sm" />
-            <div className="h-3 w-full bg-white/10 rounded-sm" />
-            <div className="h-3 w-5/6 bg-white/10 rounded-sm" />
-            <div className="h-3 w-2/3 bg-white/10 rounded-sm" />
+            <div className="h-3 w-full bg-gray-200 rounded-sm" />
+            <div className="h-3 w-full bg-gray-200 rounded-sm" />
+            <div className="h-3 w-5/6 bg-gray-200 rounded-sm" />
+            <div className="h-3 w-2/3 bg-gray-200 rounded-sm" />
           </div>
         </div>
 
         {/* Details Section */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1 overflow-hidden">
+          <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl flex flex-col gap-1 overflow-hidden">
             <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-white/10 rounded-sm" />
-              <div className="h-2 w-16 bg-white/10 rounded-sm" />
+              <div className="h-3 w-3 bg-gray-200 rounded-sm" />
+              <div className="h-2 w-16 bg-gray-200 rounded-sm" />
             </div>
-            <div className="h-3 w-24 bg-white/10 rounded-sm mt-1" />
+            <div className="h-3 w-24 bg-gray-200 rounded-sm mt-1" />
           </div>
-          <div className="bg-white/[0.02] border border-white/5 p-3 rounded-2xl flex flex-col gap-1">
+          <div className="bg-gray-50 border border-gray-100 p-3 rounded-2xl flex flex-col gap-1">
             <div className="flex items-center gap-1">
-              <div className="h-3 w-3 bg-white/10 rounded-sm" />
-              <div className="h-2 w-16 bg-white/10 rounded-sm" />
+              <div className="h-3 w-3 bg-gray-200 rounded-sm" />
+              <div className="h-2 w-16 bg-gray-200 rounded-sm" />
             </div>
-            <div className="h-3 w-20 bg-white/10 rounded-sm mt-1" />
+            <div className="h-3 w-20 bg-gray-200 rounded-sm mt-1" />
           </div>
         </div>
 
         {/* Comments Section */}
-        <div className="space-y-4 pt-4 border-t border-white/5">
-          <div className="h-2.5 w-32 bg-white/10 rounded-sm" />
-          <div className="w-full py-4 mt-2 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-center gap-2">
-            <div className="h-4 w-4 bg-white/10 rounded-sm" />
-            <div className="h-3 w-24 bg-white/10 rounded-sm" />
+        <div className="space-y-4 pt-4 border-t border-gray-200">
+          <div className="h-2.5 w-32 bg-gray-200 rounded-sm" />
+          <div className="w-full py-4 mt-2 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center gap-2">
+            <div className="h-4 w-4 bg-gray-200 rounded-sm" />
+            <div className="h-3 w-24 bg-gray-200 rounded-sm" />
           </div>
         </div>
       </div>
 
       {/* Comment Input */}
-      <div className="p-4 border-t border-white/5 bg-[#0a0a0c] z-10 shrink-0">
-        <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 rounded-2xl p-1.5 h-11">
-          <div className="flex-1 ml-2 h-3 w-1/3 bg-white/10 rounded-sm" />
-          <div className="h-8 w-8 rounded-xl bg-white/10 shrink-0" />
+      <div className="p-4 border-t border-gray-200 bg-transparent z-10 shrink-0">
+        <div className="flex items-center gap-2 bg-white border border-gray-100 rounded-2xl p-1.5 h-11">
+          <div className="flex-1 ml-2 h-3 w-1/3 bg-gray-200 rounded-sm" />
+          <div className="h-8 w-8 rounded-xl bg-gray-200 shrink-0" />
         </div>
       </div>
     </div>

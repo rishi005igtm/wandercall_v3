@@ -28,12 +28,12 @@ function SearchCompanionAvatar({ avatar, name, className = "h-11 w-11 text-xs" }
       <img
         src={avatar}
         alt={name}
-        className={`${className} rounded-full object-cover border border-white/10`}
+        className={`${className} rounded-full object-cover border border-gray-300`}
       />
     );
   }
   return (
-    <div className={`${className} rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple border border-white/10 flex items-center justify-center font-bold text-white shadow-inner`}>
+    <div className={`${className} rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple border border-gray-300 flex items-center justify-center font-bold text-white shadow-inner`}>
       {initial}
     </div>
   );
@@ -165,20 +165,20 @@ export default function FriendsSearchPage() {
     <div className="flex-1 min-h-0 h-full md:h-[calc(100vh-64px-2rem)] max-h-full md:max-h-[calc(100vh-64px-1rem)] w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-3 md:py-4 text-white flex flex-col gap-3 md:gap-4 select-none font-sans overflow-hidden">
       
       {/* 1. TOP NAVIGATION & INTERACTIVE SEARCH HEADER BAR (FIXED) */}
-      <div className="glass-panel rounded-2xl p-2.5 sm:p-3 border border-white/10 shadow-xl flex flex-col sm:flex-row items-center gap-3 w-full shrink-0">
+      <div className="glass-panel rounded-2xl p-2.5 sm:p-3 border border-gray-300 shadow-xl flex flex-col sm:flex-row items-center gap-3 w-full shrink-0">
         
         {/* Back Button + Search Bar */}
         <div className="flex items-center gap-2.5 w-full">
           <button
             onClick={() => router.replace("/profile/friends")}
-            className="p-2.5 rounded-xl bg-zinc-900/80 border border-white/10 hover:border-brand-cyan/40 text-zinc-400 hover:text-white transition-all cursor-pointer shrink-0 flex items-center justify-center"
+            className="p-2.5 rounded-xl bg-gray-50/80 border border-gray-300 hover:border-brand-cyan/40 text-gray-500 hover:text-gray-900 transition-all cursor-pointer shrink-0 flex items-center justify-center"
             title="Back to Friends"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
 
           {/* Search Input Field + Cyan SEARCH Button */}
-          <div className="flex flex-1 items-center gap-2.5 px-3.5 py-1.5 bg-zinc-900 border border-white/15 rounded-xl focus-within:border-brand-cyan focus-within:ring-1 focus-within:ring-brand-cyan/50 transition-all shadow-inner min-w-0">
+          <div className="flex flex-1 items-center gap-2.5 px-3.5 py-1.5 bg-gray-50 border border-white/15 rounded-xl focus-within:border-brand-cyan focus-within:ring-1 focus-within:ring-brand-cyan/50 transition-all shadow-inner min-w-0">
             <Search className="h-4 w-4 text-brand-cyan shrink-0" />
             <input
               type="text"
@@ -187,12 +187,12 @@ export default function FriendsSearchPage() {
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              className="bg-transparent border-none outline-none text-xs sm:text-sm text-white placeholder-zinc-500 w-full font-medium"
+              className="bg-transparent border-none outline-none text-xs sm:text-sm text-gray-900 placeholder-gray-400 w-full font-medium"
             />
             {inputValue && (
               <button
                 onClick={handleClear}
-                className="p-1 rounded-full text-zinc-500 hover:text-white transition-colors shrink-0"
+                className="p-1 rounded-full text-gray-400 hover:text-gray-900 transition-colors shrink-0"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
@@ -225,23 +225,23 @@ export default function FriendsSearchPage() {
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
                 isActive
                   ? "bg-brand-cyan text-zinc-950 border border-brand-cyan/30 shadow-md shadow-brand-cyan/10"
-                  : "bg-zinc-950/40 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5"
+                  : "bg-white/40 border border-gray-300 text-gray-500 hover:text-gray-900 hover:bg-gray-100"
               }`}
             >
-              <Icon className={`h-3.5 w-3.5 ${isActive ? "text-zinc-950" : "text-zinc-400"}`} />
+              <Icon className={`h-3.5 w-3.5 ${isActive ? "text-zinc-950" : "text-gray-500"}`} />
               <span>{filter.label}</span>
             </button>
           );
         })}
 
-        <span className="text-[10px] font-mono text-zinc-500 ml-auto hidden sm:inline-block shrink-0">
+        <span className="text-[10px] font-mono text-gray-400 ml-auto hidden sm:inline-block shrink-0">
           {explorersList.length} results
         </span>
       </div>
 
       {/* 3. SEARCH RESULTS CONTAINER (FIXED BOX, ONLY INNER RESULTS STREAM SCROLLS) */}
-      <div className="glass-panel rounded-2xl md:rounded-3xl p-3 sm:p-5 border border-white/5 flex flex-col flex-1 min-h-0 h-full overflow-hidden">
-        <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500 pb-3 border-b border-white/5 shrink-0 flex items-center justify-between">
+      <div className="glass-panel rounded-2xl md:rounded-3xl p-3 sm:p-5 border border-gray-200 flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+        <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 pb-3 border-b border-gray-200 shrink-0 flex items-center justify-between">
           <span>{activeFilter === "all" ? "Explorer Search Results" : "My Friends List"}</span>
           <span className="text-brand-cyan font-mono">{explorersList.length} Active Nodes</span>
         </div>
@@ -253,19 +253,19 @@ export default function FriendsSearchPage() {
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
-                  className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-3 relative overflow-hidden animate-pulse"
+                  className="p-3.5 rounded-2xl bg-white/[0.02] border border-gray-200 flex items-center justify-between gap-3 relative overflow-hidden animate-pulse"
                 >
                   {/* Left: Avatar & Details Skeleton */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="relative shrink-0">
-                      <div className="h-10 w-10 rounded-full bg-white/10" />
-                      <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 bg-white/20" />
+                      <div className="h-10 w-10 rounded-full bg-gray-200" />
+                      <div className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-white bg-white/20" />
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1.5 flex-wrap">
-                        <div className="h-3 w-24 bg-white/10 rounded-md" />
-                        <div className="h-2 w-16 bg-white/5 rounded-md" />
+                        <div className="h-3 w-24 bg-gray-200 rounded-md" />
+                        <div className="h-2 w-16 bg-gray-100 rounded-md" />
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <div className="h-3 w-14 bg-brand-cyan/10 rounded-full" />
@@ -276,22 +276,22 @@ export default function FriendsSearchPage() {
                   {/* Right: Actions Skeleton */}
                   <div className="flex items-center gap-2 shrink-0">
                     {activeFilter === "friends" && (
-                      <div className="h-8 w-16 bg-white/5 rounded-xl hidden sm:block" />
+                      <div className="h-8 w-16 bg-gray-100 rounded-xl hidden sm:block" />
                     )}
-                    <div className="h-8 w-20 sm:w-24 bg-white/10 rounded-xl" />
+                    <div className="h-8 w-20 sm:w-24 bg-gray-200 rounded-xl" />
                   </div>
                 </div>
               ))}
             </div>
           ) : explorersList.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center space-y-3">
-              <div className="h-12 w-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-zinc-500">
+              <div className="h-12 w-12 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center text-gray-400">
                 <Search className="h-6 w-6" />
               </div>
-              <h4 className="text-sm font-bold text-zinc-300">
+              <h4 className="text-sm font-bold text-gray-700">
                 {executedQuery ? `No results for "${executedQuery}"` : "Search Explorers & Friends"}
               </h4>
-              <p className="text-xs text-zinc-500 max-w-sm">
+              <p className="text-xs text-gray-400 max-w-sm">
                 {executedQuery
                   ? "Try checking spelling or search using another username."
                   : "Type a name or username in the search bar above and click Search."}
@@ -309,7 +309,7 @@ export default function FriendsSearchPage() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       onClick={() => router.push(`/profile/${explorer.username.replace("@", "")}`)}
-                      className="p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-brand-cyan/20 transition-all flex items-center justify-between gap-3 group cursor-pointer"
+                      className="p-3.5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.04] border border-gray-200 hover:border-brand-cyan/20 transition-all flex items-center justify-between gap-3 group cursor-pointer"
                     >
                       {/* Left: Avatar & Details */}
                       <div className="flex items-center gap-3 min-w-0">
@@ -320,16 +320,16 @@ export default function FriendsSearchPage() {
                             className="h-10 w-10 text-xs"
                           />
                           {presenceMap[explorer.id]?.status === 'ONLINE' && (
-                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-zinc-950" />
+                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-brand-emerald border-2 border-white" />
                           )}
                         </div>
 
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <h4 className="text-xs font-bold text-white truncate">
+                            <h4 className="text-xs font-bold text-gray-900 truncate">
                               {explorer.name}
                             </h4>
-                            <span className="text-[10px] font-mono text-zinc-400 truncate max-w-[90px]">
+                            <span className="text-[10px] font-mono text-gray-500 truncate max-w-[90px]">
                               {explorer.username}
                             </span>
                           </div>
@@ -374,16 +374,16 @@ export default function FriendsSearchPage() {
                   <button
                     onClick={handlePrevPage}
                     disabled={!hasPrevPage}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-800 transition-colors text-xs font-bold uppercase tracking-wider"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-50 border border-gray-300 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors text-xs font-bold uppercase tracking-wider"
                   >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     Previous
                   </button>
-                  <span className="text-[10px] font-mono text-zinc-500">Page {currentCursorIndex + 1}</span>
+                  <span className="text-[10px] font-mono text-gray-400">Page {currentCursorIndex + 1}</span>
                   <button
                     onClick={handleNextPage}
                     disabled={!hasNextPage}
-                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-900 border border-white/10 text-zinc-300 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-zinc-800 transition-colors text-xs font-bold uppercase tracking-wider"
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gray-50 border border-gray-300 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 transition-colors text-xs font-bold uppercase tracking-wider"
                   >
                     Next
                     <ChevronRight className="h-3.5 w-3.5" />

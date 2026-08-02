@@ -257,14 +257,13 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
   };
 
   return (
-    <div className="bg-white/5 border border-white/5 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 w-64">
+    <div className="bg-gray-100 border border-gray-200 p-3 rounded-2xl rounded-tl-none flex items-center gap-3 w-64">
       <button
         onClick={handlePlayToggle}
-        className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-all ${
-          isPlaying
-            ? "bg-rose-500/10 text-rose-450 border border-rose-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
-            : "bg-brand-cyan text-zinc-950 shadow-md shadow-brand-cyan/10"
-        }`}
+        className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-all ${isPlaying
+          ? "bg-rose-500/10 text-rose-450 border border-rose-500/20 shadow-[0_0_10px_rgba(239,68,68,0.15)]"
+          : "bg-brand-cyan text-zinc-950 shadow-md shadow-brand-cyan/10"
+          }`}
       >
         {isPlaying ? (
           <Pause className="h-3.5 w-3.5 fill-current" />
@@ -279,7 +278,7 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
             {/* Background Wave - Unplayed (Zinc-800) */}
             <svg
               viewBox="0 0 300 24"
-              className="absolute left-0 w-[300px] h-full text-zinc-800 pointer-events-none"
+              className="absolute left-0 w-[300px] h-full text-gray-200 pointer-events-none"
             >
               <path
                 d="M 0 12 Q 10 2, 20 12 T 40 12 T 60 12 T 80 12 T 100 12 T 120 12 T 140 12 T 160 12 T 180 12 T 200 12 T 220 12 T 240 12 T 260 12 T 280 12 T 300 12 T 320 12 T 340 12"
@@ -314,8 +313,8 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
         ) : (
           <>
             {/* Background Flat Line - Unplayed */}
-            <div className="absolute left-0 right-0 h-0.5 bg-zinc-800 rounded-full" />
-            
+            <div className="absolute left-0 right-0 h-0.5 bg-gray-100 rounded-full" />
+
             {/* Foreground Flat Line - Played */}
             <div
               className="absolute left-0 h-0.5 bg-brand-cyan rounded-full"
@@ -325,7 +324,7 @@ function AudioMessagePlayer({ duration }: { duration: string }) {
         )}
       </div>
 
-      <span className="text-[9px] font-mono text-zinc-500 shrink-0 select-none">
+      <span className="text-[9px] font-mono text-gray-400 shrink-0 select-none">
         {isPlaying ? formatTime(currentTime) : duration}
       </span>
     </div>
@@ -407,12 +406,12 @@ function useNestedScroll() {
 function getIcebreakers(friend: Companion) {
   const name = friend.name.split(" ")[0];
   const tags = friend.tags || [];
-  
+
   const baseIcebreakers = [
     `Hey ${name}, let's align our coordinate maps and plan an adventure! 🧭`,
     `Saw you share my adventure DNA! Up for a quick chat? 🎒`,
   ];
-  
+
   if (tags.some(t => ["Surfing", "Scuba", "Conservation"].includes(t))) {
     return [
       `Hey ${name}, up for hitting the waves or a beach dive sometime? 🌊`,
@@ -420,7 +419,7 @@ function getIcebreakers(friend: Companion) {
       ...baseIcebreakers
     ].slice(0, 3);
   }
-  
+
   if (tags.some(t => ["High Altitude", "Trekking", "Forestry"].includes(t))) {
     return [
       `Hey ${name}, are you planning any steep treks or peak climbs soon? 🏔️`,
@@ -863,7 +862,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
       case "Hosting": return "bg-brand-purple animate-pulse";
       case "Exploring": return "bg-brand-amber";
       case "Busy": return "bg-rose-500";
-      default: return "bg-zinc-650 border border-white/10";
+      default: return "bg-gray-300 border border-gray-300";
     }
   };
 
@@ -971,28 +970,28 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
   };
 
   return (
-    <div className="flex-1 min-h-0 h-full w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-3 md:py-6 text-white flex flex-col gap-3 md:gap-6 select-none font-sans overflow-hidden">
+    <div className="flex-1 min-h-0 h-full w-full max-w-7xl mx-auto px-3 sm:px-4 md:px-8 py-3 md:py-6 text-gray-900 flex flex-col gap-3 md:gap-6 select-none font-sans overflow-hidden">
 
       {/* 1. FRIENDS COMMAND CENTER (STATUS RIBBON) - Hidden on desktop sizes */}
-      <div className="md:hidden glass-panel rounded-2xl p-2.5 border border-white/5 shadow-md flex items-center justify-between gap-3 w-full shrink-0">
+      <div className="md:hidden bg-white/60 backdrop-blur-xl rounded-2xl p-2.5 border border-gray-200 shadow-md flex items-center justify-between gap-3 w-full shrink-0">
         <button
           onClick={() => router.push('/profile/friends/search')}
-          className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/10 hover:border-brand-cyan/40 rounded-xl transition-all cursor-pointer group shadow-sm text-left"
+          className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-gray-50/80 hover:bg-gray-100/90 border border-gray-300 hover:border-brand-cyan/40 rounded-xl transition-all cursor-pointer group shadow-sm text-left"
         >
           <div className="flex items-center gap-2.5 min-w-0">
-            <Search className="h-3.5 w-3.5 text-zinc-400 group-hover:text-brand-cyan transition-colors shrink-0" />
-            <span className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors truncate">
+            <Search className="h-3.5 w-3.5 text-gray-500 group-hover:text-brand-cyan transition-colors shrink-0" />
+            <span className="text-xs text-gray-500 font-medium group-hover:text-gray-900 transition-colors truncate">
               Search friends & travel DNA...
             </span>
           </div>
-          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 group-hover:text-white transition-all shrink-0">
+          <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 text-gray-500 group-hover:text-gray-900 transition-all shrink-0">
             ⌘K
           </span>
         </button>
       </div>
 
       {/* 2. CATEGORY HORIZONTAL SELECTOR MENU BAR */}
-      <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 w-full p-2 bg-zinc-950/20 border border-white/5 rounded-2xl shrink-0 select-none items-center" data-lenis-prevent>
+      <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-2 w-full p-2 bg-white border border-gray-200 rounded-2xl shrink-0 select-none items-center shadow-sm" data-lenis-prevent>
         {(
           [
             { id: "all", label: "All Friends", icon: Users, count: companions.length },
@@ -1013,13 +1012,13 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                 setActiveMobileView("rail");
               }}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${isActive
-                  ? "bg-brand-cyan text-zinc-950 border border-brand-cyan/20 shadow-md shadow-brand-cyan/10 scale-102"
-                  : "text-zinc-400 hover:text-white hover:bg-white/[0.02]"
+                ? "bg-brand-cyan text-zinc-950 border border-brand-cyan/20 shadow-md shadow-brand-cyan/10 scale-102"
+                : "text-gray-500 hover:text-gray-900 hover:bg-white/[0.02]"
                 }`}
             >
-              <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-zinc-950" : "text-zinc-500"}`} />
+              <Icon className={`h-3.5 w-3.5 shrink-0 ${isActive ? "text-zinc-950" : "text-gray-400"}`} />
               <span>{cat.label}</span>
-              <span className={`text-[8px] font-mono px-1.5 py-0.2 rounded font-black shrink-0 ${isActive ? "bg-zinc-950/20 text-zinc-950" : "bg-white/5 text-zinc-500 border border-white/5"
+              <span className={`text-[8px] font-mono px-1.5 py-0.2 rounded font-black shrink-0 ${isActive ? "bg-white/20 text-zinc-950" : "bg-gray-100 text-gray-400 border border-gray-200"
                 }`}>
                 {cat.count}
               </span>
@@ -1031,15 +1030,15 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         <div className="hidden md:flex items-center gap-2 w-full max-w-[280px] ml-auto shrink-0">
           <button
             onClick={() => router.push('/profile/friends/search')}
-            className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-zinc-900/80 hover:bg-zinc-800/90 border border-white/10 hover:border-brand-cyan/40 rounded-xl transition-all cursor-pointer group shadow-sm text-left"
+            className="w-full flex items-center justify-between gap-3 px-3 py-2 bg-gray-50/80 hover:bg-gray-100/90 border border-gray-300 hover:border-brand-cyan/40 rounded-xl transition-all cursor-pointer group shadow-sm text-left"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <Search className="h-3.5 w-3.5 text-zinc-400 group-hover:text-brand-cyan transition-colors shrink-0" />
-              <span className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors truncate">
+              <Search className="h-3.5 w-3.5 text-gray-500 group-hover:text-brand-cyan transition-colors shrink-0" />
+              <span className="text-xs text-gray-500 font-medium group-hover:text-gray-900 transition-colors truncate">
                 Search friends & DNA...
               </span>
             </div>
-            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-zinc-400 group-hover:text-white transition-all shrink-0">
+            <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-gray-100 border border-gray-300 text-gray-500 group-hover:text-gray-900 transition-all shrink-0">
               ⌘K
             </span>
           </button>
@@ -1051,28 +1050,28 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
         {/* Right Side: Active Workspace */}
         <main className="flex-1 min-w-0 flex flex-col min-h-0">
-          <div className="glass-panel rounded-2xl md:rounded-3xl p-3 sm:p-5 border border-white/5 flex flex-col justify-between overflow-hidden flex-1 min-h-0 h-full">
+          <div className="bg-transparent rounded-2xl md:rounded-3xl p-3 sm:p-5 flex flex-col justify-between overflow-hidden flex-1 min-h-0 h-full">
 
             {/* VIEW A: CHAT WORKSPACE & CONVERSATION */}
             {(["all", "favorites", "partners", "online", "recent"].includes(selectedCategory)) && (
               <div className="flex flex-col lg:flex-row gap-5 items-stretch flex-1 w-full min-w-0 h-full min-h-0">
 
                 {/* 1. Sub-left Friend Selection List (Hidden on mobile when chat is active) */}
-                <div className={`w-full lg:w-[240px] shrink-0 flex flex-col gap-2 lg:border-r lg:border-white/5 lg:pr-4 flex-1 lg:flex-none min-h-0 ${activeMobileView === "chat" || activeMobileView === "inspector" ? "hidden lg:flex" : "flex"
+                <div className={`w-full lg:w-[240px] shrink-0 flex flex-col gap-2 lg:border-r lg:border-gray-200 lg:pr-4 flex-1 lg:flex-none min-h-0 ${activeMobileView === "chat" || activeMobileView === "inspector" ? "hidden lg:flex" : "flex"
                   }`}>
-                  <div className="text-[10px] font-black uppercase tracking-wider text-zinc-500 pb-2 border-b border-white/5 shrink-0">
+                  <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 pb-2 border-b border-gray-200 shrink-0">
                     Select Companion
                   </div>
                   <div ref={companionListRef} className="flex flex-col gap-1.5 overflow-y-auto flex-1 min-h-0 no-scrollbar pr-1 pb-4 md:pb-2 overscroll-contain touch-pan-y">
                     {isLoading ? Array.from({ length: 8 }).map((_, i) => (
-                      <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-white/5 bg-white/[0.01] animate-pulse">
-                        <div className="h-8 w-8 rounded-full bg-white/10 shrink-0" />
+                      <div key={i} className="flex items-center gap-2.5 p-2.5 rounded-2xl border border-gray-200 bg-white/[0.01] animate-pulse">
+                        <div className="h-8 w-8 rounded-full bg-gray-200 shrink-0" />
                         <div className="min-w-0 flex-1 py-0.5">
                           <div className="flex items-center justify-between gap-1 mb-1.5">
-                            <div className="h-3 w-24 bg-white/10 rounded-sm" />
-                            <div className="h-2 w-10 bg-white/10 rounded-sm shrink-0" />
+                            <div className="h-3 w-24 bg-gray-200 rounded-sm" />
+                            <div className="h-2 w-10 bg-gray-200 rounded-sm shrink-0" />
                           </div>
-                          <div className="h-2 w-40 bg-white/10 rounded-sm mt-0.5" />
+                          <div className="h-2 w-40 bg-gray-200 rounded-sm mt-0.5" />
                         </div>
                       </div>
                     )) : filteredListCompanions.map(friend => {
@@ -1091,30 +1090,30 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                           onClick={() => {
                             router.push(`/profile/friends/chat:${friend.id}`);
                           }}
-                          className={`flex items-center gap-2.5 p-2.5 rounded-2xl cursor-pointer border transition-all duration-200 ${isSelected
-                            ? "bg-white/[0.04] border-brand-cyan/30 shadow-md shadow-brand-cyan/5"
+                          className={`flex items-center gap-2.5 p-3 rounded-2xl cursor-pointer transition-all duration-300 ${isSelected
+                            ? "bg-brand-cyan/5 border border-brand-cyan/30 shadow-sm ring-1 ring-brand-cyan/20 scale-[1.02]"
                             : hasUnread
-                              ? "bg-brand-cyan/[0.03] border-brand-cyan/15 hover:border-brand-cyan/25"
-                              : "bg-white/[0.01] border-white/5 hover:border-white/10"
-                          }`}
+                              ? "bg-white border border-brand-cyan/40 shadow-sm"
+                              : "bg-white border border-gray-100 hover:border-gray-200 shadow-sm hover:scale-[1.01]"
+                            }`}
                         >
                           {/* Avatar with online indicator */}
                           <div className="relative shrink-0">
-                            <CompanionAvatar avatar={friend.avatar} name={friend.name} className="h-8 w-8 text-[11px]" />
+                            <CompanionAvatar avatar={friend.avatar} name={friend.name} className="h-8 w-8 text-[11px] shadow-sm" />
                             {inbox.isOnline && (
-                              <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-brand-emerald border-[1.5px] border-zinc-950 shadow-sm" />
+                              <span className="absolute bottom-0 right-0 h-2 w-2 rounded-full bg-brand-emerald border-[1.5px] border-white shadow-sm" />
                             )}
                           </div>
 
                           {/* Content */}
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center justify-between gap-1">
-                              <h4 className={`text-xs truncate ${hasUnread ? "font-black text-white" : "font-bold text-zinc-200"}`}>
+                              <h4 className={`text-xs truncate ${hasUnread ? "font-black text-gray-900" : "font-bold text-gray-900"}`}>
                                 {friend.name}
                               </h4>
                               <div className="flex items-center gap-1 shrink-0">
                                 {inbox.lastMessageAt && (
-                                  <span className={`text-[8px] font-mono ${hasUnread ? "text-brand-cyan" : "text-zinc-600"}`}>
+                                  <span className={`text-[8px] font-mono ${hasUnread ? "text-brand-cyan" : "text-gray-600"}`}>
                                     {formatInboxTime(inbox.lastMessageAt)}
                                   </span>
                                 )}
@@ -1137,11 +1136,11 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                                 Typing...
                               </p>
                             ) : preview ? (
-                              <p className={`text-[9px] truncate mt-0.5 ${hasUnread ? "text-zinc-300 font-semibold" : "text-zinc-500"}`}>
+                              <p className={`text-[9px] truncate mt-0.5 ${hasUnread ? "text-gray-900 font-semibold" : "text-gray-600"}`}>
                                 {preview}
                               </p>
                             ) : (
-                              <p className="text-[9px] text-zinc-600 truncate mt-0.5">{friend.status} • {friend.sharedDNA}</p>
+                              <p className="text-[9px] text-gray-600 truncate mt-0.5">{friend.status} • {friend.sharedDNA}</p>
                             )}
                           </div>
                         </div>
@@ -1151,7 +1150,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                 </div>
 
                 {/* 2. Sub-center Conversational Chat (Visible on mobile in chat view) */}
-                <div className={`flex-1 flex flex-col justify-between min-h-[380px] lg:border-r lg:border-white/5 lg:pr-4 min-w-0 relative ${activeMobileView === "chat" ? "flex" : activeMobileView === "inspector" ? "hidden lg:flex" : "hidden lg:flex"
+                <div className={`flex-1 flex flex-col justify-between min-h-[380px] lg:border-r lg:border-gray-200 lg:pr-4 min-w-0 relative ${activeMobileView === "chat" ? "flex" : activeMobileView === "inspector" ? "hidden lg:flex" : "hidden lg:flex"
                   }`}>
 
                   {!activeFriend ? (
@@ -1159,38 +1158,38 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       <div className="relative w-48 h-48 flex items-center justify-center shrink-0">
                         {/* Glow effect */}
                         <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-2xl animate-pulse" />
-                        
+
                         {/* Interactive-looking Compass & Chat SVG */}
                         <svg className="w-36 h-36 relative z-10 text-brand-cyan" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
                           <circle cx="100" cy="100" r="80" stroke="currentColor" strokeWidth="1" strokeOpacity="0.1" strokeDasharray="6 4" className="animate-[spin_60s_linear_infinite]" />
                           <circle cx="100" cy="100" r="55" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.25" strokeDasharray="12 8" className="animate-[spin_30s_linear_infinite_reverse]" />
                           <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1" strokeOpacity="0.15" />
                           <path d="M100 65V135M65 100H135" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
-                          
+
                           {/* Chat Bubbles */}
                           <g className="animate-[bounce_4s_ease-in-out_infinite]">
-                            <rect x="65" y="70" width="50" height="32" rx="10" fill="#09090b" stroke="currentColor" strokeWidth="2" />
-                            <path d="M75 102L70 108L78 108L75 102Z" fill="currentColor" />
+                            <rect x="65" y="70" width="50" height="32" rx="10" fill="white" stroke="currentColor" strokeWidth="2" />
+                            <path d="M75 102L70 108L78 108L75 102Z" fill="white" />
                             <circle cx="82" cy="86" r="2" fill="currentColor" />
                             <circle cx="90" cy="86" r="2" fill="currentColor" />
                             <circle cx="98" cy="86" r="2" fill="currentColor" />
                           </g>
-                          
+
                           <g className="animate-[bounce_4s_ease-in-out_infinite_2s]">
-                            <rect x="95" y="98" width="45" height="28" rx="8" fill="#09090b" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.7" />
-                            <path d="M130 126L134 131L128 131L130 126Z" fill="currentColor" fillOpacity="0.7" />
+                            <rect x="95" y="98" width="45" height="28" rx="8" fill="white" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.7" />
+                            <path d="M130 126L134 131L128 131L130 126Z" fill="white" fillOpacity="0.7" />
                           </g>
                         </svg>
                       </div>
 
-                      <h3 className="text-sm font-black tracking-wider uppercase text-zinc-200 mt-4 flex items-center gap-2">
+                      <h3 className="text-sm font-black tracking-wider uppercase text-gray-900 mt-4 flex items-center gap-2">
                         <MessageSquare className="h-4 w-4 text-brand-cyan animate-pulse" />
                         Select a Companion
                       </h3>
-                      <p className="text-[10px] text-zinc-400 max-w-[320px] leading-relaxed mt-2">
+                      <p className="text-[10px] text-gray-500 max-w-[320px] leading-relaxed mt-2">
                         Click on any companion from the list on the left to start chatting and plan your adventures.
                       </p>
-                      
+
                       {/* Interactive guidance arrow pointing left */}
                       <div className="mt-6 flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-brand-cyan/60 animate-pulse">
                         <ChevronLeft className="h-3.5 w-3.5 animate-[translateX_1.5s_infinite]" />
@@ -1200,366 +1199,326 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                   ) : (
                     <>
                       {/* Chat Header */}
-                      <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Back button */}
-                      <button
-                        onClick={() => {
-                          if (isMobile) {
-                            setActiveMobileView("rail");
-                          } else {
-                            router.push("/profile/friends");
-                          }
-                        }}
-                        className="p-1 rounded-lg border border-white/10 text-zinc-400 hover:text-white transition-all flex items-center justify-center shrink-0 cursor-pointer hover:bg-white/5"
-                        title="Go Back"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <div className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
-                        <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-10 w-10 text-[13px]" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 
-                          onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
-                          className="text-xs font-black text-white hover:text-brand-cyan transition-colors cursor-pointer truncate flex items-center gap-1.5"
-                        >
-                          {activeFriend.name}
-                          <span className={`text-[8px] px-1.5 py-0.2 rounded font-bold uppercase ${getDnaBadgeStyle(activeFriend.sharedDNA)}`}>
-                            {activeFriend.sharedDNA}
-                          </span>
-                        </h3>
-                        <p className="text-[9px] text-zinc-500 mt-0.5">
-                          {activeFriend.compatibility}% Adventure Match • {activeFriend.mutualExperiences} shared experiences
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Mobile view inspector toggle */}
-                      <button
-                        onClick={() => setActiveMobileView("inspector")}
-                        className="lg:hidden p-2 rounded-xl border border-white/5 text-zinc-400 hover:text-white"
-                      >
-                        <Info className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Messages Stream */}
-                  <div
-                    ref={chatStreamRef}
-                    className="flex-1 py-4 overflow-y-auto custom-scrollbar pr-2 pb-20"
-                  >
-                    {isChatLoading || isChatInitializing ? (
-                      <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
-                        <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
-                          <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
-                          <div className="w-28 h-28 rounded-full border border-white/5 bg-white/[0.01]" />
-                        </div>
-                        <div className="h-3 w-48 bg-white/10 rounded-sm mt-4 mb-2" />
-                        <div className="space-y-1 mt-1 flex flex-col items-center">
-                          <div className="h-2 w-64 bg-white/5 rounded-sm" />
-                          <div className="h-2 w-56 bg-white/5 rounded-sm" />
-                        </div>
-                        <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
-                          <div className="h-2 w-48 bg-white/5 rounded-sm mb-2" />
-                          <div className="w-full h-8 bg-white/[0.02] border border-white/5 rounded-xl" />
-                        </div>
-                      </div>
-                    ) : realMessages.length > 0 ? (
-                      <div className="space-y-3">
-                        {realMessages.map((msg: any) => {
-                          const isMe = msg.senderId === currentUserId;
-                          const CustomRenderer = getMessageRenderer(msg.type);
-
-                          return (
-                            <div
-                              key={msg.id}
-                              className={`flex flex-col max-w-[80%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
+                      <div className="flex items-center justify-between pb-3 border-b border-gray-200">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Back button */}
+                          <button
+                            onClick={() => {
+                              if (isMobile) {
+                                setActiveMobileView("rail");
+                              } else {
+                                router.push("/profile/friends");
+                              }
+                            }}
+                            className="p-1 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900 transition-all flex items-center justify-center shrink-0 cursor-pointer hover:bg-gray-100"
+                            title="Go Back"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <div className="relative cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
+                            <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-10 w-10 text-[13px]" />
+                          </div>
+                          <div className="min-w-0">
+                            <h3
+                              onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
+                              className="text-xs font-black text-gray-900 hover:text-brand-cyan transition-colors cursor-pointer truncate flex items-center gap-1.5"
                             >
-                              {CustomRenderer ? (
-                                <CustomRenderer message={msg} currentUserId={currentUserId} />
-                              ) : (
-                                <>
-                                  {(msg.type === "text" || msg.type === "TEXT") && (
-                                    <div className={`p-3 rounded-2xl text-xs font-medium leading-relaxed ${isMe
-                                        ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
-                                        : "bg-white/5 text-zinc-200 rounded-tl-none border border-white/5"
-                                      }`}>
-                                      {msg.isDeleted ? <span className="italic text-zinc-500">Message deleted</span> : msg.text}
-                                    </div>
+                              {activeFriend.name}
+                              <span className={`text-[8px] px-1.5 py-0.2 rounded font-bold uppercase ${getDnaBadgeStyle(activeFriend.sharedDNA)}`}>
+                                {activeFriend.sharedDNA}
+                              </span>
+                            </h3>
+                            <p className="text-[9px] text-gray-400 mt-0.5">
+                              {activeFriend.compatibility}% Adventure Match • {activeFriend.mutualExperiences} shared experiences
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {/* Mobile view inspector toggle */}
+                          <button
+                            onClick={() => setActiveMobileView("inspector")}
+                            className="lg:hidden p-2 rounded-xl border border-gray-200 text-gray-500 hover:text-gray-900"
+                          >
+                            <Info className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Messages Stream */}
+                      <div
+                        ref={chatStreamRef}
+                        className="flex-1 py-4 overflow-y-auto custom-scrollbar pr-2 pb-20"
+                      >
+                        {isChatLoading || isChatInitializing ? (
+                          <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none animate-pulse">
+                            <div className="relative w-36 h-36 flex items-center justify-center shrink-0">
+                              <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl" />
+                              <div className="w-28 h-28 rounded-full border border-gray-200 bg-white/[0.01]" />
+                            </div>
+                            <div className="h-3 w-48 bg-gray-200 rounded-sm mt-4 mb-2" />
+                            <div className="space-y-1 mt-1 flex flex-col items-center">
+                              <div className="h-2 w-64 bg-gray-100 rounded-sm" />
+                              <div className="h-2 w-56 bg-gray-100 rounded-sm" />
+                            </div>
+                            <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-6 items-center">
+                              <div className="h-2 w-48 bg-gray-100 rounded-sm mb-2" />
+                              <div className="w-full h-8 bg-white/[0.02] border border-gray-200 rounded-xl" />
+                            </div>
+                          </div>
+                        ) : realMessages.length > 0 ? (
+                          <div className="space-y-3">
+                            {realMessages.map((msg: any) => {
+                              const isMe = msg.senderId === currentUserId;
+                              const CustomRenderer = getMessageRenderer(msg.type);
+
+                              return (
+                                <div
+                                  key={msg.id}
+                                  className={`flex flex-col max-w-[80%] ${isMe ? "ml-auto items-end" : "mr-auto items-start"}`}
+                                >
+                                  {CustomRenderer ? (
+                                    <CustomRenderer message={msg} currentUserId={currentUserId} />
+                                  ) : (
+                                    <>
+                                      {(msg.type === "text" || msg.type === "TEXT") && (
+                                        <div className={`p-3 rounded-2xl text-sm font-medium leading-relaxed ${isMe
+                                          ? "bg-brand-cyan text-zinc-950 rounded-tr-none font-semibold shadow-md shadow-brand-cyan/5"
+                                          : "bg-gray-100 text-gray-900 rounded-tl-none border border-gray-200"
+                                          }`}>
+                                          {msg.isDeleted ? <span className="italic text-gray-400">Message deleted</span> : msg.text}
+                                        </div>
+                                      )}
+
+                                      {(msg.type === "audio" || msg.type === "AUDIO") && (
+                                        <AudioMessagePlayer duration={msg.metadata?.duration ?? "0:30"} />
+                                      )}
+
+                                      {(msg.type === "experience" || msg.type === "EXPERIENCE_CARD") && (
+                                        <div className="bg-gray-50/80 backdrop-blur-md border border-gray-300 rounded-2xl overflow-hidden shadow-lg w-64 text-left">
+                                          <div className="h-28 w-full relative">
+                                            <img src={msg.metadata?.image} className="h-full w-full object-cover opacity-80" alt="" />
+                                            <span className="absolute top-2 left-2 text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full">
+                                              {msg.metadata?.category}
+                                            </span>
+                                          </div>
+                                          <div className="p-3 space-y-2">
+                                            <h4 className="text-xs font-bold text-gray-900 truncate">{msg.metadata?.title}</h4>
+                                            <p className="text-[9px] text-gray-400">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
+                                            <button
+                                              onClick={() => triggerToast(`Booking slot for ${msg.metadata?.title}...`)}
+                                              className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
+                                            >
+                                              Request Slot
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {(msg.type === "plan" || msg.type === "PLAN_CARD") && (
+                                        <div className="bg-gray-50/80 backdrop-blur-md border border-gray-300 p-3.5 rounded-2xl shadow-lg w-64 text-left space-y-3">
+                                          <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                                            <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-purple text-white px-2 py-0.5 rounded-full">
+                                              Adventure Plan
+                                            </span>
+                                            <span className="text-[8px] font-mono text-brand-cyan font-bold">{msg.metadata?.status}</span>
+                                          </div>
+                                          <div className="space-y-1">
+                                            <h4 className="text-xs font-bold text-gray-900 truncate">{msg.metadata?.title}</h4>
+                                            <p className="text-[9px] text-gray-400 flex items-center gap-1">
+                                              <MapPin className="h-3 w-3 text-gray-500" /> {msg.metadata?.location}
+                                            </p>
+                                            <p className="text-[9px] text-gray-400 font-mono">Date: {msg.metadata?.date}</p>
+                                          </div>
+
+                                          <div className="flex items-center gap-1">
+                                            {(msg.metadata?.companions || []).map((name: string, i: number) => (
+                                              <span key={i} className="h-5 px-2 bg-gray-100 border border-gray-200 text-[8px] font-bold rounded-md text-gray-700">
+                                                {name.split(" ")[0]}
+                                              </span>
+                                            ))}
+                                            <button
+                                              onClick={() => triggerToast("Added to adventure plan cohort!")}
+                                              className="h-5 w-5 bg-gray-50 border border-gray-300 hover:border-gray-300 text-gray-500 hover:text-gray-900 rounded-md flex items-center justify-center text-[10px] transition-all cursor-pointer"
+                                              title="Join plan"
+                                            >
+                                              +
+                                            </button>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {(msg.type === "campfire_invite" || msg.type === "CAMPFIRE_INVITE") && (
+                                        <div className="backdrop-blur-md border border-brand-cyan/35 bg-white/90 p-4 rounded-3xl shadow-2xl w-64 text-left space-y-3 relative overflow-hidden animate-[fadeIn_0.3s_ease]">
+                                          <div className="absolute top-0 right-0 h-16 w-16 bg-brand-cyan/10 rounded-full filter blur-xl pointer-events-none" />
+                                          <div className="flex items-center justify-between pb-2 border-b border-gray-200">
+                                            <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                              <Flame className="h-2.5 w-2.5 fill-current animate-pulse text-zinc-950" /> Campfire Invite
+                                            </span>
+                                            <span className="text-[8px] font-mono text-brand-cyan font-black">{msg.metadata?.category}</span>
+                                          </div>
+                                          <div className="space-y-2">
+                                            <h4 className="text-xs font-bold text-gray-900 leading-snug line-clamp-2">{msg.metadata?.title}</h4>
+                                            <div className="flex items-center gap-2 pt-1">
+                                              <CompanionAvatar avatar={msg.metadata?.hostAvatar ?? ''} name={msg.metadata?.hostName ?? ''} className="h-6 w-6 text-[9px]" />
+                                              <div>
+                                                <p className="text-[9px] text-gray-500 font-bold leading-none">{msg.metadata?.hostName}</p>
+                                                <p className="text-[7px] text-gray-400 font-mono mt-0.5">Host</p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <button
+                                            onClick={() => {
+                                              const slug = (msg.metadata?.title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+                                              router.push(`/profile/campfires/${msg.metadata?.id}--${slug}`);
+                                            }}
+                                            className="w-full py-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 border border-brand-cyan/20 text-[10px] font-black rounded-xl transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center justify-center gap-1.5"
+                                          >
+                                            Join Campfire
+                                          </button>
+                                        </div>
+                                      )}
+                                    </>
                                   )}
 
-                              {(msg.type === "audio" || msg.type === "AUDIO") && (
-                                <AudioMessagePlayer duration={msg.metadata?.duration ?? "0:30"} />
-                              )}
-
-                              {(msg.type === "experience" || msg.type === "EXPERIENCE_CARD") && (
-                                <div className="glass-panel border border-white/10 rounded-2xl overflow-hidden shadow-lg w-64 text-left">
-                                  <div className="h-28 w-full relative">
-                                    <img src={msg.metadata?.image} className="h-full w-full object-cover opacity-80" alt="" />
-                                    <span className="absolute top-2 left-2 text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full">
-                                      {msg.metadata?.category}
-                                    </span>
-                                  </div>
-                                  <div className="p-3 space-y-2">
-                                    <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
-                                    <p className="text-[9px] text-zinc-500">{msg.metadata?.date} • Host: {msg.metadata?.host}</p>
-                                    <button
-                                      onClick={() => triggerToast(`Booking slot for ${msg.metadata?.title}...`)}
-                                      className="w-full py-1.5 bg-brand-cyan/20 hover:bg-brand-cyan text-brand-cyan hover:text-zinc-950 border border-brand-cyan/20 text-[10px] font-extrabold rounded-lg transition-all cursor-pointer"
-                                    >
-                                      Request Slot
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {(msg.type === "plan" || msg.type === "PLAN_CARD") && (
-                                <div className="glass-panel border border-white/10 p-3.5 rounded-2xl shadow-lg w-64 text-left space-y-3">
-                                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                                    <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-purple text-white px-2 py-0.5 rounded-full">
-                                      Adventure Plan
-                                    </span>
-                                    <span className="text-[8px] font-mono text-brand-cyan font-bold">{msg.metadata?.status}</span>
-                                  </div>
-                                  <div className="space-y-1">
-                                    <h4 className="text-xs font-bold text-white truncate">{msg.metadata?.title}</h4>
-                                    <p className="text-[9px] text-zinc-500 flex items-center gap-1">
-                                      <MapPin className="h-3 w-3 text-zinc-400" /> {msg.metadata?.location}
-                                    </p>
-                                    <p className="text-[9px] text-zinc-500 font-mono">Date: {msg.metadata?.date}</p>
-                                  </div>
-
-                                  <div className="flex items-center gap-1">
-                                    {(msg.metadata?.companions || []).map((name: string, i: number) => (
-                                      <span key={i} className="h-5 px-2 bg-white/5 border border-white/5 text-[8px] font-bold rounded-md text-zinc-300">
-                                        {name.split(" ")[0]}
+                                  {/* Message status indicator */}
+                                  <span className="text-[8px] text-gray-400 mt-1 font-mono flex items-center gap-1">
+                                    {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (msg.timestamp ?? '')}
+                                    {isMe && (
+                                      <span className={`ml-1 ${msg.status === 'READ' ? 'text-brand-cyan' :
+                                        msg.status === 'DELIVERED' ? 'text-gray-500' :
+                                          msg.status === 'FAILED' ? 'text-rose-500' :
+                                            msg.status === 'SENDING' ? 'text-gray-400' : 'text-gray-400'
+                                        }`}>
+                                        {msg.status === 'SENDING' && '◷'}
+                                        {msg.status === 'SENT' && '✓'}
+                                        {msg.status === 'DELIVERED' && '✓✓'}
+                                        {msg.status === 'READ' && '✓✓'}
+                                        {msg.status === 'FAILED' && '✗'}
                                       </span>
-                                    ))}
-                                    <button
-                                      onClick={() => triggerToast("Added to adventure plan cohort!")}
-                                      className="h-5 w-5 bg-zinc-900 border border-white/10 hover:border-white/20 text-zinc-400 hover:text-white rounded-md flex items-center justify-center text-[10px] transition-all cursor-pointer"
-                                      title="Join plan"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-
-                              {(msg.type === "campfire_invite" || msg.type === "CAMPFIRE_INVITE") && (
-                                <div className="glass-panel border border-brand-cyan/35 bg-zinc-950/90 p-4 rounded-3xl shadow-2xl w-64 text-left space-y-3 relative overflow-hidden animate-[fadeIn_0.3s_ease]">
-                                  <div className="absolute top-0 right-0 h-16 w-16 bg-brand-cyan/10 rounded-full filter blur-xl pointer-events-none" />
-                                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
-                                    <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan text-zinc-950 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                      <Flame className="h-2.5 w-2.5 fill-current animate-pulse text-zinc-950" /> Campfire Invite
-                                    </span>
-                                    <span className="text-[8px] font-mono text-brand-cyan font-black">{msg.metadata?.category}</span>
-                                  </div>
-                                  <div className="space-y-2">
-                                    <h4 className="text-xs font-bold text-white leading-snug line-clamp-2">{msg.metadata?.title}</h4>
-                                    <div className="flex items-center gap-2 pt-1">
-                                      <CompanionAvatar avatar={msg.metadata?.hostAvatar ?? ''} name={msg.metadata?.hostName ?? ''} className="h-6 w-6 text-[9px]" />
-                                      <div>
-                                        <p className="text-[9px] text-zinc-400 font-bold leading-none">{msg.metadata?.hostName}</p>
-                                        <p className="text-[7px] text-zinc-500 font-mono mt-0.5">Host</p>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      const slug = (msg.metadata?.title ?? '').toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-                                      router.push(`/profile/campfires/${msg.metadata?.id}--${slug}`);
-                                    }}
-                                    className="w-full py-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 border border-brand-cyan/20 text-[10px] font-black rounded-xl transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center justify-center gap-1.5"
-                                  >
-                                    Join Campfire
-                                  </button>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                              {/* Message status indicator */}
-                              <span className="text-[8px] text-zinc-500 mt-1 font-mono flex items-center gap-1">
-                                {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : (msg.timestamp ?? '')}
-                                {isMe && (
-                                  <span className={`ml-1 ${
-                                    msg.status === 'READ' ? 'text-brand-cyan' :
-                                    msg.status === 'DELIVERED' ? 'text-zinc-400' :
-                                    msg.status === 'FAILED' ? 'text-rose-500' :
-                                    msg.status === 'SENDING' ? 'text-zinc-600' : 'text-zinc-500'
-                                  }`}>
-                                    {msg.status === 'SENDING' && '◷'}
-                                    {msg.status === 'SENT' && '✓'}
-                                    {msg.status === 'DELIVERED' && '✓✓'}
-                                    {msg.status === 'READ' && '✓✓'}
-                                    {msg.status === 'FAILED' && '✗'}
+                                    )}
                                   </span>
-                                )}
-                              </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none">
+                            {/* Premium enterprise-level glowing SVG illustration representing digital alignment */}
+                            <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+                              {/* Inner glowing pulse */}
+                              <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl animate-pulse" />
+
+                              {/* Custom Animated SVG Illustration */}
+                              <svg className="w-32 h-32 relative z-10 text-brand-cyan" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                {/* Orbital Ring 1 */}
+                                <circle cx="100" cy="100" r="70" stroke="currentColor" strokeWidth="1" strokeOpacity="0.1" strokeDasharray="4 4" className="animate-[spin_40s_linear_infinite]" />
+                                {/* Orbital Ring 2 */}
+                                <circle cx="100" cy="100" r="50" stroke="url(#cyan-glow-grad)" strokeWidth="1.5" strokeOpacity="0.4" strokeDasharray="8 6" className="animate-[spin_20s_linear_infinite_reverse]" />
+                                {/* Orbital Ring 3 */}
+                                <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
+
+                                {/* Connections */}
+                                <line x1="100" y1="100" x2="60" y2="60" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3 3" />
+                                <line x1="100" y1="100" x2="140" y2="60" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3 3" />
+                                <line x1="100" y1="100" x2="100" y2="150" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3 3" />
+
+                                {/* Node 1: User coordinates */}
+                                <g className="animate-[bounce_3s_ease-in-out_infinite]">
+                                  <circle cx="60" cy="60" r="8" fill="url(#cyan-glow-grad)" className="shadow-lg shadow-brand-cyan/20" />
+                                  <circle cx="60" cy="60" r="4" fill="#09090b" />
+                                </g>
+                                {/* Node 2: Companion coordinates */}
+                                <g className="animate-[bounce_4s_ease-in-out_infinite_1s]">
+                                  <circle cx="140" cy="60" r="10" fill="url(#purple-glow-grad)" />
+                                  <text x="140" y="63" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">👤</text>
+                                </g>
+                                {/* Node 3: Quest target coordinates */}
+                                <g className="animate-[pulse_2s_infinite]">
+                                  <circle cx="100" cy="150" r="7" fill="url(#amber-glow-grad)" />
+                                  <path d="M100 146L103 152L97 152Z" fill="#09090b" />
+                                </g>
+
+                                {/* Center Star / Explorer Compass Emblem */}
+                                <g className="animate-[pulse_3s_infinite]">
+                                  <circle cx="100" cy="100" r="16" fill="#09090b" stroke="url(#cyan-glow-grad)" strokeWidth="2" />
+                                  {/* 4-point Compass Star */}
+                                  <path d="M100 88L103 97L112 100L103 103L100 112L97 103L88 100L97 97Z" fill="url(#cyan-glow-grad)" />
+                                </g>
+
+                                {/* Gradient definitions */}
+                                <defs>
+                                  <linearGradient id="cyan-glow-grad" x1="40" y1="40" x2="160" y2="160" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stopColor="#06b6d4" />
+                                    <stop offset="100%" stopColor="#3b82f6" />
+                                  </linearGradient>
+                                  <linearGradient id="purple-glow-grad" x1="120" y1="40" x2="160" y2="80" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stopColor="#a855f7" />
+                                    <stop offset="100%" stopColor="#ec4899" />
+                                  </linearGradient>
+                                  <linearGradient id="amber-glow-grad" x1="80" y1="130" x2="120" y2="170" gradientUnits="userSpaceOnUse">
+                                    <stop offset="0%" stopColor="#f59e0b" />
+                                    <stop offset="100%" stopColor="#ef4444" />
+                                  </linearGradient>
+                                </defs>
+                              </svg>
+
+                              {/* Orbiting particles */}
+                              <div className="absolute top-[20%] left-[20%] w-2 h-2 rounded-full bg-brand-cyan/40 animate-ping duration-1000" />
+                              <div className="absolute bottom-[25%] right-[22%] w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-ping duration-1500" />
                             </div>
-                          );
-                        })}
+
+                            {/* Heading & description */}
+                            <h3 className="text-xs font-black tracking-wider uppercase text-gray-900 mt-2">
+                              Connect with {activeFriend.name}
+                            </h3>
+                            <p className="text-[10px] text-gray-500 max-w-[280px] leading-relaxed mt-1">
+                              Establish coordinate link alignment & collaborate on treks. Send an icebreaker below to invite them as an Adventure Partner!
+                            </p>
+
+                            {/* Icebreaker Suggestions */}
+                            <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-4 shrink-0">
+                              <span className="text-[8px] font-black uppercase tracking-widest text-gray-400 mb-0.5">
+                                Suggested Icebreakers (Click to fill)
+                              </span>
+                              {getIcebreakers(activeFriend).slice(0, 1).map((prompt, idx) => (
+                                <button
+                                  key={idx}
+                                  onClick={() => setChatInput(prompt)}
+                                  className="text-left text-[9px] font-bold px-3 py-2 bg-white/[0.01] hover:bg-brand-cyan/10 border border-gray-200 hover:border-brand-cyan/20 text-gray-500 hover:text-brand-cyan rounded-xl transition-all cursor-pointer truncate w-full flex items-center gap-2 group"
+                                >
+                                  <span className="text-brand-cyan group-hover:scale-110 transition-transform">🧭</span>
+                                  <span className="truncate">{prompt}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div ref={chatEndRef} />
                       </div>
-                    ) : (
-                      <div className="h-full w-full flex flex-col items-center justify-center text-center px-4 py-8 select-none">
-                        {/* Premium enterprise-level glowing SVG illustration representing digital alignment */}
-                        <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
-                          {/* Inner glowing pulse */}
-                          <div className="absolute inset-0 bg-brand-cyan/5 rounded-full filter blur-xl animate-pulse" />
-                          
-                          {/* Custom Animated SVG Illustration */}
-                          <svg className="w-32 h-32 relative z-10 text-brand-cyan" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            {/* Orbital Ring 1 */}
-                            <circle cx="100" cy="100" r="70" stroke="currentColor" strokeWidth="1" strokeOpacity="0.1" strokeDasharray="4 4" className="animate-[spin_40s_linear_infinite]" />
-                            {/* Orbital Ring 2 */}
-                            <circle cx="100" cy="100" r="50" stroke="url(#cyan-glow-grad)" strokeWidth="1.5" strokeOpacity="0.4" strokeDasharray="8 6" className="animate-[spin_20s_linear_infinite_reverse]" />
-                            {/* Orbital Ring 3 */}
-                            <circle cx="100" cy="100" r="30" stroke="currentColor" strokeWidth="1" strokeOpacity="0.2" />
-                            
-                            {/* Connections */}
-                            <line x1="100" y1="100" x2="60" y2="60" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3 3" />
-                            <line x1="100" y1="100" x2="140" y2="60" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3 3" />
-                            <line x1="100" y1="100" x2="100" y2="150" stroke="currentColor" strokeWidth="1" strokeOpacity="0.3" strokeDasharray="3 3" />
 
-                            {/* Node 1: User coordinates */}
-                            <g className="animate-[bounce_3s_ease-in-out_infinite]">
-                              <circle cx="60" cy="60" r="8" fill="url(#cyan-glow-grad)" className="shadow-lg shadow-brand-cyan/20" />
-                              <circle cx="60" cy="60" r="4" fill="#09090b" />
-                            </g>
-                            {/* Node 2: Companion coordinates */}
-                            <g className="animate-[bounce_4s_ease-in-out_infinite_1s]">
-                              <circle cx="140" cy="60" r="10" fill="url(#purple-glow-grad)" />
-                              <text x="140" y="63" textAnchor="middle" fill="#ffffff" fontSize="9" fontWeight="bold">👤</text>
-                            </g>
-                            {/* Node 3: Quest target coordinates */}
-                            <g className="animate-[pulse_2s_infinite]">
-                              <circle cx="100" cy="150" r="7" fill="url(#amber-glow-grad)" />
-                              <path d="M100 146L103 152L97 152Z" fill="#09090b" />
-                            </g>
-
-                            {/* Center Star / Explorer Compass Emblem */}
-                            <g className="animate-[pulse_3s_infinite]">
-                              <circle cx="100" cy="100" r="16" fill="#09090b" stroke="url(#cyan-glow-grad)" strokeWidth="2" />
-                              {/* 4-point Compass Star */}
-                              <path d="M100 88L103 97L112 100L103 103L100 112L97 103L88 100L97 97Z" fill="url(#cyan-glow-grad)" />
-                            </g>
-
-                            {/* Gradient definitions */}
-                            <defs>
-                              <linearGradient id="cyan-glow-grad" x1="40" y1="40" x2="160" y2="160" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stopColor="#06b6d4" />
-                                <stop offset="100%" stopColor="#3b82f6" />
-                              </linearGradient>
-                              <linearGradient id="purple-glow-grad" x1="120" y1="40" x2="160" y2="80" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stopColor="#a855f7" />
-                                <stop offset="100%" stopColor="#ec4899" />
-                              </linearGradient>
-                              <linearGradient id="amber-glow-grad" x1="80" y1="130" x2="120" y2="170" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stopColor="#f59e0b" />
-                                <stop offset="100%" stopColor="#ef4444" />
-                              </linearGradient>
-                            </defs>
-                          </svg>
-
-                          {/* Orbiting particles */}
-                          <div className="absolute top-[20%] left-[20%] w-2 h-2 rounded-full bg-brand-cyan/40 animate-ping duration-1000" />
-                          <div className="absolute bottom-[25%] right-[22%] w-1.5 h-1.5 rounded-full bg-brand-purple/40 animate-ping duration-1500" />
-                        </div>
-
-                        {/* Heading & description */}
-                        <h3 className="text-xs font-black tracking-wider uppercase text-zinc-200 mt-2">
-                          Connect with {activeFriend.name}
-                        </h3>
-                        <p className="text-[10px] text-zinc-400 max-w-[280px] leading-relaxed mt-1">
-                          Establish coordinate link alignment & collaborate on treks. Send an icebreaker below to invite them as an Adventure Partner!
-                        </p>
-
-                        {/* Icebreaker Suggestions */}
-                        <div className="flex flex-col gap-1.5 w-full max-w-[320px] mt-4 shrink-0">
-                          <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 mb-0.5">
-                            Suggested Icebreakers (Click to fill)
-                          </span>
-                          {getIcebreakers(activeFriend).slice(0, 1).map((prompt, idx) => (
-                            <button
-                              key={idx}
-                              onClick={() => setChatInput(prompt)}
-                              className="text-left text-[9px] font-bold px-3 py-2 bg-white/[0.01] hover:bg-brand-cyan/10 border border-white/5 hover:border-brand-cyan/20 text-zinc-400 hover:text-brand-cyan rounded-xl transition-all cursor-pointer truncate w-full flex items-center gap-2 group"
-                            >
-                              <span className="text-brand-cyan group-hover:scale-110 transition-transform">🧭</span>
-                              <span className="truncate">{prompt}</span>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    <div ref={chatEndRef} />
-                  </div>
-
-                  {/* Chat Input controls - Hidden on desktop */}
-                  <div className="lg:hidden pt-3 border-t border-white/5 flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
-                      {/* Short shortcuts */}
-                      <button
-                        onClick={handleSendExperience}
-                        className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"
-                      >
-                        <Share2 className="h-3 w-3 text-brand-cyan" /> Experience
-                      </button>
-                      <button
-                        onClick={handleSendPlan}
-                        className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"
-                      >
-                        <Calendar className="h-3 w-3 text-brand-purple" /> Plan Trek
-                      </button>
-                    </div>
-
-                    <div className="flex items-center gap-2 bg-zinc-950/80 border border-white/10 p-1.5 rounded-2xl w-full">
-                      <button
-                        onClick={() => triggerToast("Simulating mic trigger...")}
-                        className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
-                      >
-                        <Mic className="h-4 w-4" />
-                      </button>
-
-                      <input
-                        type="text"
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                        placeholder="Write message to explorer..."
-                        className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold px-2"
-                      />
-
-                      <button
-                        onClick={handleSendMessage}
-                        className="p-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 rounded-xl cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-md shadow-brand-cyan/15"
-                      >
-                        <Send className="h-3.5 w-3.5 fill-current" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Desktop Floating/Fixed Chat Input Bar - Centered at bottom of Chat Column */}
-                  {activeFriend && (["all", "favorites", "partners", "online", "recent"].includes(selectedCategory)) && (
-                    <div className="hidden lg:flex absolute bottom-[-14px] left-0 lg:right-8 right-0 mx-auto z-40 w-[95%] max-w-[480px] transition-opacity duration-300 opacity-65 hover:opacity-100 focus-within:opacity-100 select-none">
-                      <div className="glass-panel border border-white/10 p-2.5 rounded-2xl flex flex-col gap-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl bg-zinc-950/90 w-full">
+                      {/* Chat Input controls - Hidden on desktop */}
+                      <div className="lg:hidden pt-3 border-t border-gray-200 flex flex-col gap-2">
                         <div className="flex items-center gap-2">
+                          {/* Short shortcuts */}
+                          <button
+                            onClick={handleSendExperience}
+                            className="px-2 py-1 bg-white/[0.01] hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-[9px] font-bold uppercase tracking-wider rounded-lg text-gray-500 hover:text-gray-900 cursor-pointer transition-all flex items-center gap-1 shrink-0"
+                          >
+                            <Share2 className="h-3 w-3 text-brand-cyan" /> Experience
+                          </button>
                           <button
                             onClick={handleSendPlan}
-                            className="px-2 py-1 bg-white/[0.01] hover:bg-white/5 border border-white/5 hover:border-white/10 text-[9px] font-bold uppercase tracking-wider rounded-lg text-zinc-400 hover:text-white cursor-pointer transition-all flex items-center gap-1 shrink-0"
+                            className="px-2 py-1 bg-white/[0.01] hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-[9px] font-bold uppercase tracking-wider rounded-lg text-gray-500 hover:text-gray-900 cursor-pointer transition-all flex items-center gap-1 shrink-0"
                           >
                             <Calendar className="h-3 w-3 text-brand-purple" /> Plan Trek
                           </button>
                         </div>
 
-                        <div className="flex items-center gap-2 bg-zinc-900 border border-white/5 p-1.5 rounded-xl w-full">
+                        <div className="flex items-center gap-2 bg-[#111] border border-[#333] p-1.5 rounded-2xl w-full shadow-inner">
                           <button
                             onClick={() => triggerToast("Simulating mic trigger...")}
-                            className="p-2 rounded-xl hover:bg-white/5 text-zinc-500 hover:text-zinc-300 cursor-pointer"
+                            className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 cursor-pointer"
                           >
                             <Mic className="h-4 w-4" />
                           </button>
@@ -1569,8 +1528,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                            placeholder={`Write message to ${activeFriend.name}...`}
-                            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-semibold px-2"
+                            placeholder="Write message to explorer..."
+                            className="bg-transparent border-none outline-none text-xs text-white placeholder-gray-500 w-full font-semibold px-2"
                           />
 
                           <button
@@ -1581,144 +1540,183 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                           </button>
                         </div>
                       </div>
-                    </div>
+
+                      {/* Desktop Floating/Fixed Chat Input Bar - Centered at bottom of Chat Column */}
+                      {activeFriend && (["all", "favorites", "partners", "online", "recent"].includes(selectedCategory)) && (
+                        <div className="hidden lg:flex absolute bottom-[-14px] left-0 lg:right-8 right-0 mx-auto z-40 w-[95%] max-w-[480px] transition-opacity duration-300 opacity-65 hover:opacity-100 focus-within:opacity-100 select-none">
+                          <div className="glass-panel border border-gray-300 p-2.5 rounded-2xl flex flex-col gap-1.5 shadow-[0_8px_30px_rgba(0,0,0,0.5)] backdrop-blur-xl bg-white/90 w-full">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={handleSendPlan}
+                                className="px-2 py-1 bg-white/[0.01] hover:bg-gray-100 border border-gray-200 hover:border-gray-300 text-[9px] font-bold uppercase tracking-wider rounded-lg text-gray-500 hover:text-gray-900 cursor-pointer transition-all flex items-center gap-1 shrink-0"
+                              >
+                                <Calendar className="h-3 w-3 text-brand-purple" /> Plan Trek
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-2 bg-[#111] border border-[#333] p-1.5 rounded-xl w-full shadow-inner">
+                              <button
+                                onClick={() => triggerToast("Simulating mic trigger...")}
+                                className="p-2 rounded-xl hover:bg-gray-100 text-gray-400 hover:text-gray-700 cursor-pointer"
+                              >
+                                <Mic className="h-4 w-4" />
+                              </button>
+
+                              <input
+                                type="text"
+                                value={chatInput}
+                                onChange={(e) => setChatInput(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                                placeholder={`Write message to ${activeFriend.name}...`}
+                                className="bg-transparent border-none outline-none text-xs text-white placeholder-gray-500 w-full font-semibold px-2"
+                              />
+
+                              <button
+                                onClick={handleSendMessage}
+                                className="p-2 bg-brand-cyan hover:bg-cyan-400 text-zinc-950 rounded-xl cursor-pointer transition-all flex items-center justify-center shrink-0 shadow-md shadow-brand-cyan/15"
+                              >
+                                <Send className="h-3.5 w-3.5 fill-current" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </div>
+                </div>
 
                 {/* 3. Sub-right Friend Inspector / Insights (Visible on mobile in inspector view) */}
                 <div className={`w-full lg:w-[260px] shrink-0 flex flex-col justify-between min-h-[380px] min-w-0 ${activeMobileView === "inspector" ? "flex" : "hidden lg:flex"
                   }`}>
                   {!activeFriend ? (
-                    <div className="flex flex-col items-center justify-center text-center p-6 border border-white/5 bg-white/[0.01] rounded-3xl h-full min-h-[380px] select-none">
-                      <div className="relative h-16 w-16 bg-white/[0.02] border border-white/5 rounded-full flex items-center justify-center text-zinc-500 mb-3">
-                        <Compass className="h-6 w-6 text-zinc-500" />
-                        <div className="absolute inset-0 rounded-full border border-dashed border-zinc-700 animate-[spin_20s_linear_infinite]" />
+                    <div className="flex flex-col items-center justify-center text-center p-6 border border-gray-200 bg-white shadow-sm rounded-3xl h-full min-h-[380px] select-none">
+                      <div className="relative h-16 w-16 bg-white/[0.02] border border-gray-200 rounded-full flex items-center justify-center text-gray-400 mb-3">
+                        <Compass className="h-6 w-6 text-gray-400" />
+                        <div className="absolute inset-0 rounded-full border border-dashed border-gray-300 animate-[spin_20s_linear_infinite]" />
                       </div>
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Profile Insights</h4>
-                      <p className="text-[9px] text-zinc-500 max-w-[180px] leading-relaxed mt-1">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Profile Insights</h4>
+                      <p className="text-[9px] text-gray-400 max-w-[180px] leading-relaxed mt-1">
                         Companion statistics, compatibility metrics, and passport details will populate once a friend is selected.
                       </p>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-4 text-left">
-                    <div className="pb-2 border-b border-white/5 flex items-center justify-between">
-                      <span className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Explorer Profile</span>
-                      <button
-                        onClick={() => setActiveMobileView("chat")}
-                        className="lg:hidden p-1 rounded-lg border border-white/10 text-zinc-400 hover:text-white"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-
-                    {/* Passport Card details */}
-                    <div className="bg-white/[0.01] border border-white/5 p-4 rounded-3xl space-y-3 relative overflow-hidden">
-                      <div className="absolute top-2 right-2 flex items-center gap-1 bg-brand-cyan/20 border border-brand-cyan/20 px-2 py-0.5 rounded-full font-mono text-[8px] font-bold text-brand-cyan">
-                        {activeFriend.compatibility}% match
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
-                          <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-12 w-12 text-[15px]" />
-                        </div>
-                        <div 
-                          onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
-                          className="cursor-pointer group/name"
+                      <div className="pb-2 border-b border-gray-200 flex items-center justify-between">
+                        <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Explorer Profile</span>
+                        <button
+                          onClick={() => setActiveMobileView("chat")}
+                          className="lg:hidden p-1 rounded-lg border border-gray-300 text-gray-500 hover:text-gray-900"
                         >
-                          <h4 className="text-xs font-bold text-white group-hover/name:text-brand-cyan transition-colors">{activeFriend.name}</h4>
-                          <span className="text-[9px] text-zinc-500 group-hover/name:text-brand-cyan/85 transition-colors">{activeFriend.username}</span>
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+
+                      {/* Passport Card details */}
+                      <div className="bg-white border border-gray-100 shadow-sm p-4 rounded-3xl space-y-3 relative overflow-hidden">
+                        <div className="absolute top-2 right-2 flex items-center gap-1 bg-brand-cyan/20 border border-brand-cyan/20 px-2 py-0.5 rounded-full font-mono text-[8px] font-bold text-brand-cyan">
+                          {activeFriend.compatibility}% match
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="cursor-pointer transition-transform hover:scale-105 active:scale-95" onClick={() => setZoomedAvatar({ url: activeFriend.avatar, name: activeFriend.name })}>
+                            <CompanionAvatar avatar={activeFriend.avatar} name={activeFriend.name} className="h-12 w-12 text-[15px]" />
+                          </div>
+                          <div
+                            onClick={() => router.push(`/profile/${activeFriend.username.replace(/^@/, "")}`)}
+                            className="cursor-pointer group/name"
+                          >
+                            <h4 className="text-xs font-bold text-gray-900 group-hover/name:text-brand-cyan transition-colors">{activeFriend.name}</h4>
+                            <span className="text-[9px] text-gray-400 group-hover/name:text-brand-cyan/85 transition-colors">{activeFriend.username}</span>
+                          </div>
+                        </div>
+                        <p className="text-[10px] text-gray-500 leading-normal">{activeFriend.bio}</p>
+
+                        <div className="flex flex-wrap gap-1">
+                          {activeFriend.tags.map(tag => (
+                            <span key={tag} className="text-[8px] font-semibold bg-gray-100 border border-gray-200 text-gray-500 px-2 py-0.5 rounded">
+                              {tag}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                      <p className="text-[10px] text-zinc-400 leading-normal">{activeFriend.bio}</p>
 
-                      <div className="flex flex-wrap gap-1">
-                        {activeFriend.tags.map(tag => (
-                          <span key={tag} className="text-[8px] font-semibold bg-white/5 border border-white/5 text-zinc-400 px-2 py-0.5 rounded">
-                            {tag}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Radar representation statistics */}
-                    <div className="space-y-2">
-                      <h4 className="text-[10px] font-black uppercase tracking-wider text-zinc-500">Compatibility breakdown</h4>
-                      <div className="space-y-2 bg-black/20 border border-white/5 p-3 rounded-2xl">
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[9px] font-bold">
-                            <span className="text-brand-cyan">Adventure Overlap</span>
-                            <span>{activeFriend.compatibility}%</span>
+                      {/* Radar representation statistics */}
+                      <div className="space-y-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-wider text-gray-400">Compatibility breakdown</h4>
+                        <div className="space-y-2 bg-white shadow-sm border border-gray-100 p-3 rounded-2xl">
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[9px] font-bold">
+                              <span className="text-brand-cyan">Adventure Overlap</span>
+                              <span>{activeFriend.compatibility}%</span>
+                            </div>
+                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-brand-cyan" style={{ width: `${activeFriend.compatibility}%` }} />
+                            </div>
                           </div>
-                          <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-brand-cyan" style={{ width: `${activeFriend.compatibility}%` }} />
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[9px] font-bold">
+                              <span className="text-brand-purple">Community Overlap</span>
+                              <span>{activeFriend.mutualCommunities * 15}%</span>
+                            </div>
+                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-brand-purple" style={{ width: `${activeFriend.mutualCommunities * 15}%` }} />
+                            </div>
                           </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[9px] font-bold">
-                            <span className="text-brand-purple">Community Overlap</span>
-                            <span>{activeFriend.mutualCommunities * 15}%</span>
-                          </div>
-                          <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-brand-purple" style={{ width: `${activeFriend.mutualCommunities * 15}%` }} />
-                          </div>
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex justify-between text-[9px] font-bold">
-                            <span className="text-brand-emerald">Experiences Shared</span>
-                            <span>{activeFriend.mutualExperiences * 12}%</span>
-                          </div>
-                          <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                            <div className="h-full bg-brand-emerald" style={{ width: `${activeFriend.mutualExperiences * 12}%` }} />
+                          <div className="space-y-1">
+                            <div className="flex justify-between text-[9px] font-bold">
+                              <span className="text-brand-emerald">Experiences Shared</span>
+                              <span>{activeFriend.mutualExperiences * 12}%</span>
+                            </div>
+                            <div className="h-1 bg-gray-100 rounded-full overflow-hidden">
+                              <div className="h-full bg-brand-emerald" style={{ width: `${activeFriend.mutualExperiences * 12}%` }} />
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Action shortcuts */}
-                    <div className="flex flex-col gap-1.5">
-                      <button
-                        onClick={() => triggerToast(`User reported.`)}
-                        className="w-full py-1.5 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/10 text-rose-400 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <Flag className="h-3 w-3" /> Report Explorer
-                      </button>
-                      <button
-                        onClick={async () => {
-                          try {
-                            if (activeFriend.isFavorite) {
-                              await removeFavoriteMutation.mutateAsync(activeFriend.id);
-                            } else {
-                              await addFavoriteMutation.mutateAsync(activeFriend.id);
+                      {/* Action shortcuts */}
+                      <div className="flex flex-col gap-1.5">
+                        <button
+                          onClick={() => triggerToast(`User reported.`)}
+                          className="w-full py-1.5 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm text-rose-500 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <Flag className="h-3 w-3" /> Report Explorer
+                        </button>
+                        <button
+                          onClick={async () => {
+                            try {
+                              if (activeFriend.isFavorite) {
+                                await removeFavoriteMutation.mutateAsync(activeFriend.id);
+                              } else {
+                                await addFavoriteMutation.mutateAsync(activeFriend.id);
+                              }
+                            } catch (err: any) {
+                              triggerToast(err?.response?.data?.message || "Failed to update favorite status.");
                             }
-                          } catch (err: any) {
-                            triggerToast(err?.response?.data?.message || "Failed to update favorite status.");
-                          }
-                        }}
-                        className="w-full py-1.5 bg-white/[0.01] hover:bg-white/[0.03] border border-white/5 text-zinc-400 hover:text-white text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <Heart className={`h-3 w-3 ${activeFriend.isFavorite ? "fill-brand-purple text-brand-purple" : ""}`} /> {activeFriend.isFavorite ? "Unfavorite" : "Favorite"}
-                      </button>
-                      <button
-                        onClick={async () => {
-                          const isBlocked = blockedUsers.some(u => u.id === activeFriend.id);
-                          if (isBlocked) {
-                            triggerToast(`${activeFriend.name} is already blocked.`);
-                            return;
-                          }
-                          try {
-                            await blockMutation.mutateAsync({ targetUsername: activeFriend.username.replace('@', ''), reason: "Blocked from inspector" });
-                            triggerToast(`${activeFriend.name} has been blocked.`);
-                          } catch (err: any) {
-                            triggerToast(err?.response?.data?.message || "Failed to block user.");
-                          }
-                        }}
-                        className="w-full py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
-                      >
-                        <ShieldAlert className="h-3 w-3" /> Block Explorer
-                      </button>
+                          }}
+                          className="w-full py-1.5 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm text-gray-600 hover:text-gray-900 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <Heart className={`h-3 w-3 ${activeFriend.isFavorite ? "fill-brand-purple text-brand-purple" : ""}`} /> {activeFriend.isFavorite ? "Unfavorite" : "Favorite"}
+                        </button>
+                        <button
+                          onClick={async () => {
+                            const isBlocked = blockedUsers.some(u => u.id === activeFriend.id);
+                            if (isBlocked) {
+                              triggerToast(`${activeFriend.name} is already blocked.`);
+                              return;
+                            }
+                            try {
+                              await blockMutation.mutateAsync({ targetUsername: activeFriend.username.replace('@', ''), reason: "Blocked from inspector" });
+                              triggerToast(`${activeFriend.name} has been blocked.`);
+                            } catch (err: any) {
+                              triggerToast(err?.response?.data?.message || "Failed to block user.");
+                            }
+                          }}
+                          className="w-full py-1.5 bg-white hover:bg-gray-50 border border-gray-200 shadow-sm text-rose-500 hover:text-rose-600 text-[9px] font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                        >
+                          <ShieldAlert className="h-3 w-3" /> Block Explorer
+                        </button>
+                      </div>
                     </div>
-                  </div>
                   )}
                 </div>
 
@@ -1738,8 +1736,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
                   {/* Incoming Requests */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
                         Incoming Requests ({incomingRequests.length})
                       </h3>
                       {totalIncomingPages > 1 && (
@@ -1747,17 +1745,17 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                           <button
                             onClick={() => setIncomingPage(p => Math.max(1, p - 1))}
                             disabled={incomingPage === 1}
-                            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center"
                           >
                             <ChevronLeft className="h-3 w-3" />
                           </button>
-                          <span className="text-[9px] font-mono text-zinc-500 font-bold px-1">
+                          <span className="text-[9px] font-mono text-gray-400 font-bold px-1">
                             {incomingPage} / {totalIncomingPages}
                           </span>
                           <button
                             onClick={() => setIncomingPage(p => Math.min(totalIncomingPages, p + 1))}
                             disabled={incomingPage === totalIncomingPages}
-                            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center"
                           >
                             <ChevronRight className="h-3 w-3" />
                           </button>
@@ -1768,15 +1766,15 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fadeIn_0.3s_ease]">
                         {paginatedIncoming.map(req => (
                           <div key={req.id} className="bg-gradient-to-r from-emerald-950/45 to-teal-950/20 border border-emerald-500/10 hover:border-emerald-500/20 p-4 rounded-3xl flex items-center justify-between gap-4 transition-all duration-300">
-                            <div 
+                            <div
                               className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => router.push(`/profile/${req.username.replace('@', '')}`)}
                             >
                               <CompanionAvatar avatar={req.avatar} name={req.name} className="h-10 w-10 text-[13px] shrink-0" />
                               <div className="min-w-0">
-                                <h4 className="text-xs font-bold text-white truncate">{req.name}</h4>
-                                <p className="text-[9px] text-zinc-400 mt-0.5">{req.compatibility}% match • {req.username}</p>
-                                <p className="text-[9px] text-zinc-500 truncate mt-1">{req.bio}</p>
+                                <h4 className="text-xs font-bold text-gray-900 truncate">{req.name}</h4>
+                                <p className="text-[9px] text-gray-500 mt-0.5">{req.compatibility}% match • {req.username}</p>
+                                <p className="text-[9px] text-gray-400 truncate mt-1">{req.bio}</p>
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5 shrink-0">
@@ -1789,7 +1787,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                               </button>
                               <button
                                 onClick={() => handleDeclineRequest(req.id, req.name)}
-                                className="p-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl cursor-pointer hover:bg-rose-500 hover:text-white transition-all"
+                                className="p-1.5 bg-rose-500/20 text-rose-400 border border-rose-500/20 rounded-xl cursor-pointer hover:bg-rose-500 hover:text-gray-900 transition-all"
                                 title="Decline"
                               >
                                 <X className="h-4 w-4" />
@@ -1799,7 +1797,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-6 text-zinc-500 text-xs bg-black/10 border border-white/5 rounded-2xl">
+                      <div className="text-center py-6 text-gray-400 text-xs bg-black/10 border border-gray-200 rounded-2xl">
                         No incoming friend requests.
                       </div>
                     )}
@@ -1807,8 +1805,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
                   {/* Outgoing Requests */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                      <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400">
+                    <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                      <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
                         Outgoing Requests ({outgoingRequests.length})
                       </h3>
                       {totalOutgoingPages > 1 && (
@@ -1816,17 +1814,17 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                           <button
                             onClick={() => setOutgoingPage(p => Math.max(1, p - 1))}
                             disabled={outgoingPage === 1}
-                            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center"
                           >
                             <ChevronLeft className="h-3 w-3" />
                           </button>
-                          <span className="text-[9px] font-mono text-zinc-500 font-bold px-1">
+                          <span className="text-[9px] font-mono text-gray-400 font-bold px-1">
                             {outgoingPage} / {totalOutgoingPages}
                           </span>
                           <button
                             onClick={() => setOutgoingPage(p => Math.min(totalOutgoingPages, p + 1))}
                             disabled={outgoingPage === totalOutgoingPages}
-                            className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                            className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center"
                           >
                             <ChevronRight className="h-3 w-3" />
                           </button>
@@ -1837,25 +1835,25 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fadeIn_0.3s_ease]">
                         {paginatedOutgoing.map(req => (
                           <div key={req.id} className="bg-gradient-to-r from-indigo-950/45 to-blue-950/20 border border-indigo-500/10 hover:border-indigo-500/20 p-4 rounded-3xl flex items-center justify-between gap-4 transition-all duration-300">
-                            <div 
+                            <div
                               className="flex items-center gap-3 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
                               onClick={() => router.push(`/profile/${req.username.replace('@', '')}`)}
                             >
                               <CompanionAvatar avatar={req.avatar} name={req.name} className="h-10 w-10 text-[13px] shrink-0" />
                               <div className="min-w-0">
-                                <h4 className="text-xs font-bold text-white truncate">{req.name}</h4>
-                                <p className="text-[9px] text-zinc-400 mt-0.5">{req.compatibility}% match • {req.username}</p>
-                                <p className="text-[9px] text-zinc-500 truncate mt-1">{req.bio}</p>
+                                <h4 className="text-xs font-bold text-gray-900 truncate">{req.name}</h4>
+                                <p className="text-[9px] text-gray-500 mt-0.5">{req.compatibility}% match • {req.username}</p>
+                                <p className="text-[9px] text-gray-400 truncate mt-1">{req.bio}</p>
                               </div>
                             </div>
-                            <span className="text-[8px] uppercase tracking-wider font-extrabold bg-zinc-900 border border-white/10 text-zinc-500 px-2.5 py-1 rounded-full shrink-0">
+                            <span className="text-[8px] uppercase tracking-wider font-extrabold bg-gray-50 border border-gray-300 text-gray-400 px-2.5 py-1 rounded-full shrink-0">
                               Waiting
                             </span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-6 text-zinc-500 text-xs bg-black/10 border border-white/5 rounded-2xl">
+                      <div className="text-center py-6 text-gray-400 text-xs bg-black/10 border border-gray-200 rounded-2xl">
                         No outgoing friend requests pending.
                       </div>
                     )}
@@ -1871,8 +1869,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
 
               return (
                 <div ref={blockedViewRef} className="space-y-4 flex-1 w-full text-left overflow-y-auto no-scrollbar">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400">
+                  <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                    <h3 className="text-xs font-black uppercase tracking-wider text-gray-500">
                       Privacy Center & Block List ({blockedUsers.length})
                     </h3>
                     {totalBlockedPages > 1 && (
@@ -1880,18 +1878,18 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                         <button
                           onClick={() => setBlockedPage(p => Math.max(1, p - 1))}
                           disabled={blockedPage === 1}
-                          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                          className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center"
                           title="Previous Page"
                         >
                           <ChevronLeft className="h-3 w-3" />
                         </button>
-                        <span className="text-[9px] font-mono text-zinc-500 font-bold px-1">
+                        <span className="text-[9px] font-mono text-gray-400 font-bold px-1">
                           {blockedPage} / {totalBlockedPages}
                         </span>
                         <button
                           onClick={() => setBlockedPage(p => Math.min(totalBlockedPages, p + 1))}
                           disabled={blockedPage === totalBlockedPages}
-                          className="p-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-400 hover:text-white disabled:opacity-30 disabled:hover:bg-white/5 transition-all cursor-pointer flex items-center justify-center"
+                          className="p-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 border border-gray-300 text-gray-500 hover:text-gray-900 disabled:opacity-30 disabled:hover:bg-gray-100 transition-all cursor-pointer flex items-center justify-center"
                           title="Next Page"
                         >
                           <ChevronRight className="h-3 w-3" />
@@ -1899,20 +1897,20 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       </div>
                     )}
                   </div>
-                  
-                  <p className="text-[10px] text-zinc-500 leading-relaxed max-w-xl">
+
+                  <p className="text-[10px] text-gray-400 leading-relaxed max-w-xl">
                     Manage blocked, muted, or restricted accounts. Blocked users cannot message you, join campfires you host, or match your coordinates on maps.
                   </p>
 
                   {blockedUsers.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                       {paginatedBlocked.map(user => (
-                        <div key={user.id} className="bg-white/[0.01] border border-white/5 p-4 rounded-3xl flex items-center justify-between gap-4">
+                        <div key={user.id} className="bg-white/[0.01] border border-gray-200 p-4 rounded-3xl flex items-center justify-between gap-4">
                           <div className="flex items-center gap-3 min-w-0">
                             <CompanionAvatar avatar={user.avatar} name={user.name} className="h-10 w-10 text-[13px] shrink-0" />
                             <div className="min-w-0">
-                              <h4 className="text-xs font-bold text-white truncate">{user.name}</h4>
-                              <p className="text-[9px] text-zinc-500 mt-0.5">{user.blockedAt}</p>
+                              <h4 className="text-xs font-bold text-gray-900 truncate">{user.name}</h4>
+                              <p className="text-[9px] text-gray-400 mt-0.5">{user.blockedAt}</p>
                               <p className="text-[9px] text-rose-400 font-semibold truncate mt-1">Reason: {user.reason}</p>
                             </div>
                           </div>
@@ -1926,7 +1924,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-12 text-zinc-500 text-xs bg-black/10 border border-white/5 rounded-2xl">
+                    <div className="text-center py-12 text-gray-400 text-xs bg-black/10 border border-gray-200 rounded-2xl">
                       No blocked accounts found.
                     </div>
                   )}
@@ -1937,17 +1935,17 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
             {/* VIEW D: FRIEND DISCOVERY */}
             {selectedCategory === "suggested" && (
               <div ref={suggestedViewRef} className="space-y-4 flex-1 w-full text-left overflow-y-auto no-scrollbar">
-                <h3 className="text-xs font-black uppercase tracking-wider text-zinc-400 border-b border-white/5 pb-2">
+                <h3 className="text-xs font-black uppercase tracking-wider text-gray-500 border-b border-gray-200 pb-2">
                   AI Explorer Discovery
                 </h3>
-                <p className="text-[10px] text-zinc-500 leading-relaxed max-w-xl">
+                <p className="text-[10px] text-gray-400 leading-relaxed max-w-xl">
                   Suggested travel companions nearby who share your adventure DNA, quest completions, and community networks.
                 </p>
 
                 {suggestedExplorers.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-4">
                     {suggestedExplorers.map(explorer => (
-                      <div key={explorer.id} className="bg-white/[0.01] hover:bg-white/[0.02] border border-white/5 p-4 rounded-3xl flex flex-col justify-between gap-4 transition-all">
+                      <div key={explorer.id} className="bg-white/[0.01] hover:bg-white/[0.02] border border-gray-200 p-4 rounded-3xl flex flex-col justify-between gap-4 transition-all">
                         <div className="space-y-3">
                           <div className="flex items-center justify-between gap-2">
                             <CompanionAvatar avatar={explorer.avatar} name={explorer.name} className="h-10 w-10 text-[13px]" />
@@ -1956,10 +1954,10 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                             </span>
                           </div>
                           <div>
-                            <h4 className="text-xs font-bold text-white">{explorer.name}</h4>
-                            <span className="text-[9px] text-zinc-500">{explorer.username} • {explorer.sharedDNA}</span>
+                            <h4 className="text-xs font-bold text-gray-900">{explorer.name}</h4>
+                            <span className="text-[9px] text-gray-400">{explorer.username} • {explorer.sharedDNA}</span>
                           </div>
-                          <p className="text-[10px] text-zinc-400 leading-relaxed">
+                          <p className="text-[10px] text-gray-500 leading-relaxed">
                             <Sparkles className="h-3 w-3 text-brand-amber inline mr-1" /> {explorer.reason}
                           </p>
                         </div>
@@ -1974,7 +1972,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-12 text-zinc-500 text-xs bg-black/10 border border-white/5 rounded-2xl">
+                  <div className="text-center py-12 text-gray-400 text-xs bg-black/10 border border-gray-200 rounded-2xl">
                     No suggestions found at this coordinate.
                   </div>
                 )}
@@ -1990,30 +1988,30 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         {showInviteModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm select-none">
             <div className="absolute inset-0 cursor-default" onClick={() => setShowInviteModal(false)} />
-            
+
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="glass-panel border border-white/10 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-zinc-950/95 overflow-hidden flex flex-col max-h-[85vh]"
+              className="glass-panel border border-gray-300 rounded-3xl p-6 max-w-md w-full relative z-10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] bg-white/95 overflow-hidden flex flex-col max-h-[85vh]"
             >
               <div className="absolute inset-0 bg-white/[0.01] pointer-events-none" />
-              
-              <div className="flex items-center justify-between pb-4 border-b border-white/5 mb-4 shrink-0">
+
+              <div className="flex items-center justify-between pb-4 border-b border-gray-200 mb-4 shrink-0">
                 <div className="flex items-center gap-2">
                   <Flame className="h-5 w-5 text-brand-cyan animate-pulse" />
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">Invite to Campfire</h3>
+                  <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider">Invite to Campfire</h3>
                 </div>
                 <button
                   onClick={() => setShowInviteModal(false)}
-                  className="p-1.5 rounded-xl border border-white/10 text-zinc-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                  className="p-1.5 rounded-xl border border-gray-300 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all cursor-pointer"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
-              <p className="text-[10px] text-zinc-400 mb-4 leading-normal shrink-0 text-left">
-                Select an active campfire to invite <strong className="text-zinc-200">{activeFriend?.name || ""}</strong>. They will receive an interactive card in the chat to join directly.
+              <p className="text-[10px] text-gray-500 mb-4 leading-normal shrink-0 text-left">
+                Select an active campfire to invite <strong className="text-gray-900">{activeFriend?.name || ""}</strong>. They will receive an interactive card in the chat to join directly.
               </p>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar" data-lenis-prevent>
@@ -2021,7 +2019,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                   campfireList.map((campfire) => (
                     <div
                       key={campfire.id}
-                      className="bg-white/[0.01] border border-white/5 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-white/10 hover:bg-white/[0.02] transition-all"
+                      className="bg-white/[0.01] border border-gray-200 p-3 rounded-2xl flex items-center justify-between gap-3 hover:border-gray-300 hover:bg-white/[0.02] transition-all"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <CompanionAvatar avatar={campfire.hostAvatar} name={campfire.hostName} className="h-9 w-9 text-xs" />
@@ -2029,8 +2027,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                           <span className="text-[8px] uppercase tracking-wider font-extrabold bg-brand-cyan/20 border border-brand-cyan/20 text-brand-cyan px-1.5 py-0.2 rounded font-black shrink-0">
                             {campfire.category}
                           </span>
-                          <h4 className="text-xs font-bold text-white truncate mt-1">{campfire.title}</h4>
-                          <p className="text-[8px] text-zinc-500 truncate mt-0.5">Host: {campfire.hostName}</p>
+                          <h4 className="text-xs font-bold text-gray-900 truncate mt-1">{campfire.title}</h4>
+                          <p className="text-[8px] text-gray-400 truncate mt-0.5">Host: {campfire.hostName}</p>
                         </div>
                       </div>
                       <button
@@ -2042,7 +2040,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
                     </div>
                   ))
                 ) : (
-                  <div className="text-center py-8 text-zinc-500 text-xs border border-dashed border-white/10 rounded-2xl">
+                  <div className="text-center py-8 text-gray-400 text-xs border border-dashed border-gray-300 rounded-2xl">
                     No campfires active. Start one in the campfire directory!
                   </div>
                 )}
@@ -2057,16 +2055,16 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
         {zoomedAvatar && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm select-none">
             <div className="absolute inset-0 cursor-zoom-out" onClick={() => setZoomedAvatar(null)} />
-            
+
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="relative z-10 flex flex-col items-center gap-4 bg-zinc-900/90 border border-white/10 p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl backdrop-blur-lg"
+              className="relative z-10 flex flex-col items-center gap-4 bg-gray-50/90 border border-gray-300 p-6 rounded-3xl max-w-sm w-full mx-4 shadow-2xl backdrop-blur-lg"
             >
               <button
                 onClick={() => setZoomedAvatar(null)}
-                className="absolute top-3 right-3 p-1.5 rounded-full bg-white/5 border border-white/10 text-zinc-400 hover:text-white hover:bg-white/10 transition-all cursor-pointer"
+                className="absolute top-3 right-3 p-1.5 rounded-full bg-gray-100 border border-gray-300 text-gray-500 hover:text-gray-900 hover:bg-gray-200 transition-all cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2078,8 +2076,8 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
               />
 
               <div className="text-center">
-                <h4 className="text-sm font-black text-white">{zoomedAvatar.name}</h4>
-                <p className="text-[10px] text-zinc-400 mt-1">Explorer Passport Photo</p>
+                <h4 className="text-sm font-black text-gray-900">{zoomedAvatar.name}</h4>
+                <p className="text-[10px] text-gray-500 mt-1">Explorer Passport Photo</p>
               </div>
             </motion.div>
           </div>
@@ -2093,7 +2091,7 @@ export default function FriendsPage({ activeChatId }: FriendsPageProps = {}) {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-6 right-6 z-50 bg-zinc-900/95 backdrop-blur-xl border border-brand-cyan/30 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-white text-xs font-bold"
+            className="fixed bottom-6 right-6 z-50 bg-gray-50/95 backdrop-blur-xl border border-brand-cyan/30 px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 text-gray-900 text-xs font-bold"
           >
             <div className="w-2.5 h-2.5 rounded-full bg-brand-cyan animate-pulse shadow-[0_0_10px_rgba(34,211,238,0.8)]" />
             <span>{toastMessage}</span>

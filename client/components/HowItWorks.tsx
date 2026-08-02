@@ -30,20 +30,20 @@ export default function HowItWorks() {
   ];
 
   return (
-    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" id="how-it-works">
+    <section className="relative py-10 lg:py-24 px-6 md:px-12 bg-transparent max-w-[1440px] mx-auto w-full" id="how-it-works">
       <div className="absolute top-[40%] left-[20%] w-72 h-72 rounded-full bg-brand-purple/5 blur-[120px] pointer-events-none" />
 
       <div className="w-full max-w-4xl mx-auto text-center flex flex-col items-center mb-16">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-indigo/10 border border-brand-indigo/20 mb-4">
           <Flame className="h-4 w-4 text-brand-indigo" />
-          <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+          <span className="text-xs font-semibold text-brand-indigo uppercase tracking-wider">
             Operational Blueprint
           </span>
         </div>
-        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-white mb-4">
+        <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight text-gray-900 mb-4">
           How Wandercall Works
         </h2>
-        <p className="text-zinc-400 text-sm md:text-base max-w-xl leading-relaxed">
+        <p className="text-gray-600 text-sm md:text-base max-w-xl leading-relaxed">
           We strip away screens to help you accumulate memories. Here is how we transition you from scroll to action:
         </p>
       </div>
@@ -62,23 +62,23 @@ export default function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-50px" }}
               transition={{ duration: 0.5, delay: index * 0.15 }}
-              className="p-6 rounded-3xl glass-panel border-white/5 flex flex-col items-center text-center relative z-10 hover:bg-white/[0.01] hover:border-white/10 group transition-all"
+              className="p-6 rounded-3xl bg-white border border-gray-100 shadow-sm flex flex-col items-center text-center relative z-10 hover:bg-gray-50 hover:shadow-md hover:border-gray-200 group transition-all"
             >
               {/* Step number badge */}
-              <span className="text-[10px] font-black font-mono tracking-widest text-zinc-600 bg-white/5 px-3 py-1 rounded-full mb-6 border border-white/5 uppercase">
+              <span className="text-[10px] font-black font-mono tracking-widest text-gray-500 bg-gray-100 px-3 py-1 rounded-full mb-6 border border-gray-200 uppercase">
                 Step {step.step}
               </span>
 
               {/* Step Icon */}
-              <div className="h-16 w-16 rounded-2xl bg-zinc-900 border border-white/10 flex items-center justify-center text-zinc-400 group-hover:scale-105 group-hover:border-brand-purple/20 transition-all mb-6 relative">
+              <div className="h-16 w-16 rounded-2xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-500 group-hover:scale-105 group-hover:border-brand-purple/40 transition-all mb-6 relative">
                 <Icon className={`h-7 w-7 transition-colors ${step.glow}`} />
               </div>
 
               {/* Details */}
-              <h3 className="text-lg font-bold text-white mb-3">
+              <h3 className="text-lg font-bold text-gray-900 mb-3">
                 {step.title}
               </h3>
-              <p className="text-xs text-zinc-400 leading-relaxed max-w-xs">
+              <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
                 {step.description}
               </p>
             </motion.div>

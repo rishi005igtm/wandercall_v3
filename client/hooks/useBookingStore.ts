@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { StepId, Slot, TravelerData, ExperienceData } from "@/types/booking";
+import { StepId, Slot, ExperienceData } from "@/types/booking";
 
 export function useBookingStore(experience: ExperienceData) {
   const [currentStep, setCurrentStep] = useState<StepId>(1);
@@ -14,12 +14,6 @@ export function useBookingStore(experience: ExperienceData) {
   const [adultsCount, setAdultsCount] = useState<number>(1);
   const [childrenCount, setChildrenCount] = useState<number>(0);
   const [isPrivateGroup, setIsPrivateGroup] = useState<boolean>(false);
-  const [travelersDetails, setTravelersDetails] = useState<TravelerData[]>([
-    { name: "", age: "", phone: "", emergencyContact: "" }
-  ]);
-
-  // Addon Selection States
-  const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
 
   // Coupon Selection States
   const [couponCode, setCouponCode] = useState<string>("");
@@ -31,21 +25,7 @@ export function useBookingStore(experience: ExperienceData) {
   const [paymentStep, setPaymentStep] = useState<"idle" | "handshake" | "gateway" | "success">("idle");
   const [selectedPaymentGateway, setSelectedPaymentGateway] = useState<string>("upi");
 
-  // Keep travelers details array synced in length with adultsCount + childrenCount
   const totalTravelers = adultsCount + childrenCount;
-
-  useEffect(() => {
-    setTravelersDetails((prev) => {
-      if (prev.length === totalTravelers) return prev;
-      if (prev.length < totalTravelers) {
-        const added = Array.from({ length: totalTravelers - prev.length }, () => ({
-          name: "", age: "", phone: "", emergencyContact: ""
-        }));
-        return [...prev, ...added];
-      }
-      return prev.slice(0, totalTravelers);
-    });
-  }, [totalTravelers]);
 
   // Reset selected slot when date changes
   useEffect(() => {
@@ -55,40 +35,12 @@ export function useBookingStore(experience: ExperienceData) {
   // Validation Rules
   const canGoToStep2 = selectedDate !== "" && selectedSlot !== null;
 
-  const canGoToStep3 = useMemo(() => {
-    if (!canGoToStep2) return false;
-    if (travelersDetails.length === 0) return false;
-    const lead = travelersDetails[0];
-    return !!(lead && lead.name.trim() && lead.age.trim() && lead.phone.trim() && lead.emergencyContact.trim());
-  }, [canGoToStep2, travelersDetails]);
+  const canGoToStep3 = canGoToStep2;
 
   const isFormValid = canGoToStep3;
 
-  // Addons toggle handler
-  const handleToggleAddon = (id: string) => {
-    setSelectedAddons((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
   // Pricing calculations
   const baseSubtotal = totalTravelers * experience.price;
-  
-  const addonRates: Record<string, number> = {
-    drone: 1500,
-    photos: 800,
-    meals: 400,
-    transport: 1200,
-    insurance: 300,
-    certificate: 200,
-    gopro: 1000,
-    locker: 150,
-  };
-
-  const addonsTotal = useMemo(() => {
-    return selectedAddons.reduce((sum, id) => sum + (addonRates[id] || 0), 0);
-  }, [selectedAddons]);
-
   const privateGroupFee = isPrivateGroup ? 1500 : 0;
   const groupDiscount = totalTravelers >= 4 ? Math.round(baseSubtotal * 0.1) : 0;
 
@@ -101,7 +53,7 @@ export function useBookingStore(experience: ExperienceData) {
     return 0;
   }, [appliedCoupon, baseSubtotal]);
 
-  const taxableSubtotal = Math.max(0, baseSubtotal + addonsTotal + privateGroupFee - groupDiscount - couponDiscount);
+  const taxableSubtotal = Math.max(0, baseSubtotal + privateGroupFee - groupDiscount - couponDiscount);
   const taxes = Math.round(taxableSubtotal * 0.18);
   const grandTotal = taxableSubtotal + taxes;
 
@@ -119,10 +71,8 @@ export function useBookingStore(experience: ExperienceData) {
     totalTravelers,
     isPrivateGroup,
     setIsPrivateGroup,
-    travelersDetails,
-    setTravelersDetails,
-    selectedAddons,
-    handleToggleAddon,
+
+
     couponCode,
     setCouponCode,
     appliedCoupon,
@@ -139,7 +89,7 @@ export function useBookingStore(experience: ExperienceData) {
     canGoToStep3,
     isFormValid,
     baseSubtotal,
-    addonsTotal,
+
     privateGroupFee,
     groupDiscount,
     couponDiscount,

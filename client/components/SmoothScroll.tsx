@@ -35,8 +35,8 @@ function SmoothScrollChild({ children }: SmoothScrollProps) {
           const hasOverflowX = overflowX === 'auto' || overflowX === 'scroll';
 
           if (hasOverflowY || hasOverflowX) {
-            const isScrollableY = hasOverflowY && element.scrollHeight > element.clientHeight;
-            const isScrollableX = hasOverflowX && element.scrollWidth > element.clientWidth;
+            const isScrollableY = hasOverflowY && element.scrollHeight > element.clientHeight + 1;
+            const isScrollableX = hasOverflowX && element.scrollWidth > element.clientWidth + 1;
 
             if (isScrollableY) {
               if (!element.hasAttribute('data-lenis-prevent')) {

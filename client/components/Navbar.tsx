@@ -132,15 +132,17 @@ export default function Navbar({
 
   const showBottomNav = (pathname === "/" || pathname === "/experiences" || pathname.startsWith("/feed")) && pathname !== "/feed/create-post";
 
+  const isDarkBgContext = pathname === "/" && !isScrolled;
+
   return (
     <>
       <motion.nav
         initial={false}
         animate={{
           y: isVisible ? 0 : -100,
-          backgroundColor: isScrolled ? "rgba(11, 11, 11, 0.85)" : "rgba(11, 11, 11, 0)",
-          backdropFilter: isScrolled ? "blur(8px)" : "blur(0px)",
-          boxShadow: isScrolled ? "0 10px 30px -10px rgba(0, 0, 0, 0.5)" : "0 0 0px rgba(0,0,0,0)",
+          backgroundColor: isScrolled ? "rgba(255, 255, 255, 0.9)" : "rgba(255, 255, 255, 0)",
+          backdropFilter: isScrolled ? "blur(16px)" : "blur(0px)",
+          boxShadow: isScrolled ? "0 4px 20px -2px rgba(0, 0, 0, 0.05)" : "0 0 0px rgba(0,0,0,0)",
         }}
         transition={{ duration: 0.3, ease: "easeInOut" }}
         className="fixed top-0 left-0 right-0 z-50 px-6 md:px-12 py-4 border-none"
@@ -157,7 +159,7 @@ export default function Navbar({
                     router.back();
                   }
                 }}
-                className="lg:hidden p-2 -ml-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="lg:hidden p-2 -ml-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-5 w-5" />
@@ -168,7 +170,7 @@ export default function Navbar({
                 <Globe className="h-5 w-5 text-white animate-pulse" />
                 <div className="absolute inset-0 rounded-lg bg-gradient-to-tr from-brand-indigo to-brand-purple blur-md opacity-50 group-hover:opacity-100 transition-opacity duration-300" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white font-sans bg-clip-text">
+              <span className={`text-xl font-bold tracking-tight font-sans bg-clip-text transition-colors ${isDarkBgContext ? "text-white" : "text-gray-900"}`}>
                 Wandercall
               </span>
             </Link>
@@ -184,8 +186,10 @@ export default function Navbar({
                   href={getHref(link.href)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     isActive(link.href)
-                      ? "text-brand-cyan bg-white/10"
-                      : "text-zinc-400 hover:text-white hover:bg-white/5"
+                      ? "text-brand-indigo bg-white font-bold"
+                      : isDarkBgContext
+                      ? "text-white/90 hover:text-white hover:bg-white/10"
+                      : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                   }`}
                 >
                   <Icon className="h-4 w-4" />
@@ -200,17 +204,17 @@ export default function Navbar({
             {/* Search Toggle */}
             <button suppressHydrationWarning
               onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors hidden lg:inline-flex"
+              className={`p-2 rounded-full transition-colors hidden lg:inline-flex ${isDarkBgContext ? "text-white hover:bg-white/10" : "hover:bg-gray-100 text-gray-500 hover:text-gray-900"}`}
               aria-label="Search"
             >
               <Search className="h-5 w-5" />
             </button>
 
             {/* Become Host */}
-            {!isAuthenticated && (
+            {mounted && !isAuthenticated && (
               <a
                 href="#host"
-                className="hidden sm:inline-block text-xs font-semibold uppercase tracking-wider text-brand-cyan hover:text-white transition-colors"
+                className={`hidden sm:inline-block text-xs font-semibold uppercase tracking-wider transition-colors ${isDarkBgContext ? "text-brand-cyan hover:text-white" : "text-brand-indigo hover:text-brand-purple"}`}
               >
                 Become Host
               </a>
@@ -218,11 +222,11 @@ export default function Navbar({
 
             {/* Right Header Controls (Auth & Guest Dropdown) */}
             <div className="flex items-center gap-3">
-                {isAuthenticated && (
+                {mounted && isAuthenticated && (
                   <>
                     {/* Notification Bell */}
                     <Link href="/profile/settings" suppressHydrationWarning
-                      className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-zinc-300 hover:text-white transition-all cursor-pointer"
+                      className={`relative p-2 rounded-full border transition-all cursor-pointer ${isDarkBgContext ? "bg-white/10 border-white/20 text-white hover:bg-white/20" : "bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-600 hover:text-gray-900"}`}
                       aria-label="Notifications"
                     >
                       <Bell className="h-4 w-4" />
@@ -248,7 +252,7 @@ export default function Navbar({
                   ) : (
                     <button suppressHydrationWarning
                       onClick={() => setProfileMenuOpen(!profileMenuOpen)}
-                      className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-zinc-900 border border-white/10 hover:border-brand-purple/40 transition-all cursor-pointer"
+                      className="flex items-center gap-2 p-1 pl-1.5 pr-2 rounded-full bg-white border border-gray-200 shadow-sm hover:border-brand-purple/40 transition-all cursor-pointer"
                     >
                       <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center text-xs font-bold text-white shadow-md overflow-hidden">
                         {isAuthenticated ? (
@@ -272,11 +276,11 @@ export default function Navbar({
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute right-0 mt-3 w-64 bg-zinc-950/95 border border-white/10 rounded-3xl p-3 shadow-2xl backdrop-blur-2xl z-50 flex flex-col gap-1 text-left select-none"
+                        className="absolute right-0 mt-3 w-64 bg-white border border-gray-100 rounded-3xl p-3 shadow-xl backdrop-blur-2xl z-50 flex flex-col gap-1 text-left select-none"
                       >
                         {/* User Header */}
-                        <div className="p-3 bg-white/[0.02] border border-white/5 rounded-2xl mb-1">
-                          <h4 className="text-xs font-black text-white truncate">
+                        <div className="p-3 bg-gray-50 border border-gray-100 rounded-2xl mb-1">
+                          <h4 className="text-xs font-black text-gray-900 truncate">
                             {isAuthenticated ? (currentUser?.displayName || "Explorer") : "Guest Explorer"}
                           </h4>
                           <span className="text-[9px] font-mono text-brand-cyan block mt-0.5">
@@ -288,7 +292,7 @@ export default function Navbar({
                         <Link
                           href="/feed"
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <Radio className="h-4 w-4 text-brand-indigo" />
                           <span>Feed</span>
@@ -297,7 +301,7 @@ export default function Navbar({
                         <Link
                           href="/experiences"
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <Calendar className="h-4 w-4 text-brand-cyan" />
                           <span>Experiences</span>
@@ -306,7 +310,7 @@ export default function Navbar({
                         <Link
                           href={isAuthenticated ? "/profile/friends" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <MessageSquare className="h-4 w-4 text-brand-cyan" />
                           <span>Friends & Chats</span>
@@ -315,7 +319,7 @@ export default function Navbar({
                         <Link
                           href={isAuthenticated ? "/profile" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <User className="h-4 w-4 text-brand-purple" />
                           <span>My Explorer Profile</span>
@@ -324,7 +328,7 @@ export default function Navbar({
                         <Link
                           href={isAuthenticated ? "/profile/bookings" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <Bookmark className="h-4 w-4 text-amber-400" />
                           <span>Bookings & Trips</span>
@@ -333,7 +337,7 @@ export default function Navbar({
                         <Link
                           href={isAuthenticated ? "/profile/wishlist" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <Heart className="h-4 w-4 text-rose-400" />
                           <span>Wishlist & Saved</span>
@@ -342,7 +346,7 @@ export default function Navbar({
                         <Link
                           href={isAuthenticated ? "/profile/settings" : "/login"}
                           onClick={() => setProfileMenuOpen(false)}
-                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-zinc-300 hover:text-white hover:bg-white/5 transition-all"
+                          className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-all"
                         >
                           <Settings className="h-4 w-4 text-zinc-400" />
                           <span>System Settings</span>
@@ -379,7 +383,7 @@ export default function Navbar({
             {showFilterButton && (
               <button suppressHydrationWarning
                 onClick={onFilterToggle}
-                className="lg:hidden p-2 rounded-full hover:bg-white/5 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="lg:hidden p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
                 aria-label="Filter"
               >
                 <SlidersHorizontal className="h-5 w-5" />
@@ -395,19 +399,19 @@ export default function Navbar({
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="absolute left-0 right-0 top-full bg-brand-bg/95 backdrop-blur-md border-b border-white/5 py-4 px-6 md:px-12 flex justify-center"
+              className="absolute left-0 right-0 top-full bg-white/95 backdrop-blur-md border-b border-gray-200 py-4 px-6 md:px-12 flex justify-center shadow-lg"
             >
               <div className="w-full max-w-2xl relative">
                 <input suppressHydrationWarning
                   type="text"
                   placeholder="Search adventures, hosts, campfire topics..."
                   autoFocus
-                  className="w-full bg-white/5 border border-white/10 rounded-full py-3 pl-12 pr-6 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-brand-cyan focus:ring-1 focus:ring-brand-cyan transition-all"
+                  className="w-full bg-gray-50 border border-gray-200 rounded-full py-3 pl-12 pr-6 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-indigo focus:ring-1 focus:ring-brand-indigo transition-all shadow-sm"
                 />
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <button suppressHydrationWarning
                   onClick={() => setSearchOpen(false)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white text-xs font-semibold"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-900 text-xs font-semibold"
                 >
                   ESC
                 </button>
@@ -425,13 +429,13 @@ export default function Navbar({
             animate={{ y: 0 }}
             exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="lg:hidden fixed bottom-4 left-4 right-4 z-50 bg-white backdrop-blur-xl border border-black/5 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden"
+            className="lg:hidden fixed bottom-4 left-4 right-4 z-50 bg-[#111] backdrop-blur-xl border border-white/10 shadow-2xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden"
           >
-            <Link href="/" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <Link href="/" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname === '/' ? 'text-black' : 'text-zinc-400 hover:text-white'}`}>
               {pathname === '/' && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
-                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  className="absolute inset-0 bg-white rounded-xl z-0"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
@@ -439,11 +443,11 @@ export default function Navbar({
               <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
             </Link>
 
-            <Link href="/profile/friends/search" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <Link href="/profile/friends/search" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/profile/friends/search') ? 'text-black' : 'text-zinc-400 hover:text-white'}`}>
               {pathname.startsWith('/profile/friends/search') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
-                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  className="absolute inset-0 bg-white rounded-xl z-0"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
@@ -452,16 +456,16 @@ export default function Navbar({
             </Link>
 
             <div className="flex-1 flex justify-center relative z-50">
-              <Link href="/experiences" suppressHydrationWarning className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-black scale-105' : ''}`}>
+              <Link href="/experiences" suppressHydrationWarning className={`h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-[#111] cursor-pointer hover:scale-105 transition-all duration-300 ${pathname.startsWith('/experiences') ? 'ring-2 ring-white/50 scale-105' : ''}`}>
                 <Compass className="h-5 w-5 text-white" />
               </Link>
             </div>
 
-            <Link href="/feed" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-white' : 'text-zinc-800 hover:text-black'}`}>
+            <Link href="/feed" suppressHydrationWarning className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${pathname.startsWith('/feed') ? 'text-black' : 'text-zinc-400 hover:text-white'}`}>
               {pathname.startsWith('/feed') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
-                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  className="absolute inset-0 bg-white rounded-xl z-0"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}
@@ -472,13 +476,13 @@ export default function Navbar({
             <Link suppressHydrationWarning
               href={isAuthenticated ? "/profile/friends" : "/login"}
               className={`relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 ${
-                pathname.startsWith("/profile/friends") ? "text-white" : "text-zinc-800 hover:text-black"
+                pathname.startsWith("/profile/friends") ? "text-black" : "text-zinc-400 hover:text-white"
               }`}
             >
               {pathname.startsWith('/profile/friends') && (
                 <motion.div
                   layoutId="navbar-mobile-pill"
-                  className="absolute inset-0 bg-black border border-black rounded-xl z-0"
+                  className="absolute inset-0 bg-white rounded-xl z-0"
                   transition={{ type: "spring", stiffness: 380, damping: 30 }}
                 />
               )}

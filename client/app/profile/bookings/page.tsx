@@ -450,10 +450,10 @@ export default function BookingsPage() {
   };
 
   return (
-    <div className="w-full px-3 md:px-12 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-5 overflow-y-visible relative text-white">
+    <div className="w-full px-3 md:px-6 lg:px-8 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-5 overflow-y-visible relative text-gray-900">
 
       {/* STATUS FILTERS TABS ROW */}
-      <div className="w-full border-b border-white/5 pb-2 shrink-0">
+      <div className="w-full border-b border-gray-200 pb-2 shrink-0">
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-1" style={{ WebkitOverflowScrolling: "touch" }}>
           {filterTabs.map((tab) => {
             const isActive = activeTab === tab;
@@ -464,11 +464,11 @@ export default function BookingsPage() {
                   setActiveTab(tab);
                   setVisibleCount(9);
                 }}
-                className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap`}
+                className={`px-5 py-2.5 rounded-full text-[11px] font-black uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap shadow-sm hover:brightness-105`}
                 style={{
-                  background: isActive ? "rgba(6, 182, 212, 0.15)" : "rgba(255, 255, 255, 0.02)",
-                  border: isActive ? "1px solid rgba(6, 182, 212, 0.3)" : "1px solid rgba(255, 255, 255, 0.05)",
-                  color: isActive ? "#06b6d4" : "#a1a1aa"
+                  background: isActive ? "linear-gradient(to right, #4f46e5, #06b6d4)" : "#ffffff",
+                  border: isActive ? "1px solid transparent" : "1px solid #e5e7eb",
+                  color: isActive ? "#ffffff" : "#6b7280"
                 }}
               >
                 {tab}
@@ -481,7 +481,7 @@ export default function BookingsPage() {
       {/* BOOKINGS GRID */}
       <section className="w-full relative min-h-[260px]">
         {processedBookings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full items-stretch justify-items-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full items-stretch justify-items-center">
             {processedBookings.slice(0, visibleCount).map((b) => {
               const isCardMenuOpen = activeCardMenuId === b.id;
               const isHovered = hoveredCardId === b.id;
@@ -522,14 +522,11 @@ export default function BookingsPage() {
                   transition={{ duration: 0.3 }}
                   onMouseEnter={() => setHoveredCardId(b.id)}
                   onMouseLeave={() => setHoveredCardId(null)}
-                  className={`bg-white/[0.01] border rounded-2xl overflow-hidden group hover:border-white/10 hover:-translate-y-1 transition-all duration-300 w-full flex flex-col justify-between relative shadow-sm hover:shadow ${b.status === "Upcoming" || b.status === "Confirmed"
-                      ? "border-white/10 bg-white/[0.02]"
-                      : "border-white/5"
-                    }`}
-                  style={{ height: '340px', position: 'relative', maxWidth: '480px', margin: '0 auto' }}
+                  className="bg-white border border-gray-200 rounded-2xl overflow-hidden group hover:border-gray-300 hover:-translate-y-1 transition-all duration-300 w-full flex flex-col justify-between relative shadow-sm hover:shadow-md min-w-0"
+                  style={{ height: '340px', position: 'relative', maxWidth: '100%', margin: '0 auto' }}
                 >
-                  {/* Card Cover Image (120px height, i.e. 35.3% of 340px) */}
-                  <div style={{ height: '120px', position: 'relative', overflow: 'hidden' }} className="w-full shrink-0">
+                  {/* Card Cover Image */}
+                  <div style={{ height: '180px', position: 'relative', overflow: 'hidden' }} className="w-full shrink-0">
                     <img
                       src={b.image}
                       alt={b.experienceName}
@@ -551,13 +548,9 @@ export default function BookingsPage() {
                       }}
                     />
 
-                    {/* Left overlay: Booking Status badge */}
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-20">
                       <span className={`text-[7.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border ${statusStyles.bg}`}>
                         {b.status}
-                      </span>
-                      <span className="text-[7.5px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md bg-black/60 border border-white/5 text-zinc-400 backdrop-blur-md">
-                        {b.ticketStatus}
                       </span>
                     </div>
 
@@ -578,73 +571,49 @@ export default function BookingsPage() {
                           justifyContent: 'center',
                           padding: '5px',
                           borderRadius: '8px',
-                          backgroundColor: 'rgba(0, 0, 0, 0.75)',
-                          border: '1px solid rgba(255, 255, 255, 0.1)',
-                          color: '#a1a1aa',
+                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          border: '1px solid rgba(0, 0, 0, 0.05)',
+                          color: '#6b7280',
                           backdropFilter: 'blur(8px)',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                         }}
-                        className="hover:text-white hover:bg-zinc-900 transition-colors relative"
+                        className="hover:text-gray-900 hover:bg-gray-50 transition-colors relative"
                         aria-label="Download Ticket"
                       >
                         <Download className="h-3.5 w-3.5" />
                       </button>
                     </div>
 
-                    {/* Quick Ticket Preview Hover Overlay (Desktop only) */}
-                    <AnimatePresence>
-                      {isHovered && b.status !== "Cancelled" && (
-                        <motion.div
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
-                          className="absolute inset-0 bg-zinc-950/90 z-20 flex items-center justify-center p-3 text-left backdrop-blur-sm transition-all hidden md:flex"
-                        >
-                          <div className="flex items-center gap-3 w-full">
-                            <div className="h-16 w-16 bg-white p-1 rounded-lg shrink-0 flex items-center justify-center">
-                              <QrCode className="h-full w-full text-zinc-950" />
-                            </div>
-                            <div className="flex flex-col min-w-0">
-                              <span className="text-[7px] font-mono font-bold uppercase tracking-wider text-zinc-500">ID: {b.bookingId}</span>
-                              <span className="text-[10px] font-black text-white truncate">{b.experienceName}</span>
-                              <span className="text-[8px] font-semibold text-zinc-400 mt-0.5">Show QR code at base camp check-in.</span>
-                              <span className="text-[8px] font-black text-brand-cyan uppercase tracking-widest mt-1">Ticket Active</span>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+
                   </div>
 
-                  {/* Card Content Wrapper (Exactly 220px height, i.e. 64.7% of 340px) */}
+                  {/* Card Content Wrapper */}
                   <div
-                    style={{ height: '220px' }}
+                    style={{ height: '160px' }}
                     className="p-3.5 flex flex-col justify-between overflow-hidden shrink-0 text-left"
                   >
 
                     {/* Top Content Row */}
                     <div className="flex flex-col gap-0.5">
-                      {/* Name & Compatibility Score */}
+                      {/* Name */}
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-xs font-black text-white leading-tight line-clamp-1 group-hover:text-brand-cyan transition-colors flex-1">
+                        <h3 className="text-xs font-black text-gray-900 leading-tight line-clamp-1 group-hover:text-brand-cyan transition-colors flex-1">
                           {b.experienceName}
                         </h3>
-                        <span className="text-[8px] font-mono font-bold text-zinc-500 shrink-0">
-                          {b.compatibilityScore}% Compatibility
-                        </span>
                       </div>
 
                       {/* Location text */}
-                      <div className="text-[9px] text-zinc-400 font-semibold truncate flex items-center gap-1 mt-0.5">
+                      <div className="text-[9px] text-gray-500 font-semibold truncate flex items-center gap-1 mt-0.5">
                         <MapPin className="h-3 w-3 text-brand-cyan shrink-0" />
                         <span>{b.location}</span>
                       </div>
 
                       {/* Schedule Panel: Date, Countdown & Sync */}
-                      <div className="flex items-center justify-between bg-white/[0.02] border border-white/5 px-2.5 py-1.5 rounded-xl mt-2">
+                      <div className="flex items-center justify-between bg-gray-50 border border-gray-100 px-2.5 py-1.5 rounded-xl mt-2">
                         <div className="flex flex-col">
-                          <span className="text-[7.5px] font-bold text-zinc-500 uppercase tracking-wider">Date & Time</span>
-                          <span className="text-[9px] font-black text-zinc-200 mt-0.5">
+                          <span className="text-[7.5px] font-bold text-gray-500 uppercase tracking-wider">Date & Time</span>
+                          <span className="text-[9px] font-black text-gray-900 mt-0.5">
                             {b.date} • {b.time}
                           </span>
                         </div>
@@ -658,7 +627,7 @@ export default function BookingsPage() {
                             {countdownText}
                           </span>
                           {b.calendarSynced && (
-                            <span className="p-1 rounded-md bg-zinc-900 border border-white/10 text-brand-emerald flex items-center justify-center shrink-0" title="Calendar Synced">
+                            <span className="p-1 rounded-md bg-white border border-gray-200 text-brand-emerald flex items-center justify-center shrink-0 shadow-sm" title="Calendar Synced">
                               <CheckCircle2 className="h-3 w-3" />
                             </span>
                           )}
@@ -666,70 +635,14 @@ export default function BookingsPage() {
                       </div>
                     </div>
 
-                    {/* Middle Section: AI Insight or Weather Tip */}
-                    <div className="flex items-start gap-1.5 border-t border-b border-white/5 py-2 my-1">
-                      <div className="h-4.5 w-4.5 rounded bg-brand-purple/10 border border-brand-purple/20 text-brand-purple flex items-center justify-center shrink-0 mt-0.5">
-                        <Sparkles className="h-2.5 w-2.5" />
-                      </div>
-                      <div className="flex flex-col min-w-0">
-                        <p className="text-[8.5px] font-semibold text-zinc-300 leading-snug line-clamp-1">
-                          {b.aiInsight}
-                        </p>
-                        <span className="text-[7.5px] font-medium text-zinc-500 flex items-center gap-1 mt-0.5">
-                          <CloudSun className="h-2.5 w-2.5 text-brand-cyan shrink-0" />
-                          Weather: {b.weatherForecast}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Bottom row: Attendees & Checklist state */}
-                    <div className="flex items-center justify-between">
-                      {/* Left: Friends Avatars List */}
-                      <div className="flex items-center gap-2">
-                        {b.friends.length > 0 ? (
-                          <div className="flex items-center -space-x-1.5">
-                            {b.friends.map((f, i) => (
-                              <div
-                                key={i}
-                                className="h-5 w-5 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple p-0.5 border border-zinc-950 flex items-center justify-center text-[7px] font-black text-white shrink-0 shadow-sm"
-                                title={`${f.name} - Compatibility: ${f.compatibility}%`}
-                              >
-                                {f.avatar}
-                              </div>
-                            ))}
-                            <span className="text-[7.5px] font-mono text-zinc-500 ml-1.5 select-none shrink-0">
-                              +{b.attendeesCount} Going
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-[7.5px] font-bold text-zinc-500">
-                            <User className="h-3.5 w-3.5 text-zinc-600" />
-                            <span>Solo Adventure</span>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Right: Readiness check checklist */}
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[7.5px] font-mono font-bold text-zinc-500">
-                          Ready: {b.checklistCompleted}/{b.checklistTotal}
-                        </span>
-                        <div className="w-12 h-1 bg-white/5 rounded-full overflow-hidden shrink-0">
-                          <div
-                            className="h-full bg-gradient-to-r from-brand-indigo to-brand-purple"
-                            style={{ width: `${(b.checklistCompleted / b.checklistTotal) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
 
                     {/* CTA Area (View details and direct view ticket) */}
-                    <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-auto shrink-0">
+                    <div className="flex items-center gap-2 pt-2 border-t border-gray-100 mt-auto shrink-0">
                       <button
                         onClick={() => triggerToast(`Preview Ticket QR for: ${b.experienceName} (ID: ${b.bookingId})`)}
                         disabled={b.status === "Cancelled"}
-                        className={`h-9 rounded-xl text-white font-black text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 flex-1 cursor-pointer ${b.status === "Cancelled"
-                            ? "bg-zinc-800 border border-white/5 text-zinc-600 cursor-not-allowed"
+                        className={`h-9 rounded-xl text-white font-black text-[9px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 flex-1 cursor-pointer shadow-sm ${b.status === "Cancelled"
+                            ? "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
                             : "bg-gradient-to-r from-brand-indigo to-brand-purple hover:brightness-110 active:scale-98"
                           }`}
                       >
@@ -739,10 +652,10 @@ export default function BookingsPage() {
                       <button
                         onClick={() => handleCancelBooking(b.id)}
                         disabled={b.status === "Cancelled" || b.status === "Completed"}
-                        className={`h-9 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all flex-1 cursor-pointer flex items-center justify-center gap-1 ${
+                        className={`h-9 rounded-xl font-black text-[9px] uppercase tracking-wider transition-all flex-1 cursor-pointer flex items-center justify-center gap-1 shadow-sm ${
                           b.status === "Cancelled" || b.status === "Completed"
-                            ? "bg-zinc-800/40 border border-white/5 text-zinc-600 cursor-not-allowed"
-                            : "bg-rose-500/10 border border-rose-500/20 text-rose-500 hover:bg-rose-500/20 hover:border-rose-500/30 active:scale-98"
+                            ? "bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-white border border-rose-200 text-rose-500 hover:bg-rose-50 active:scale-98"
                         }`}
                       >
                         <span>Cancel Booking</span>
@@ -756,18 +669,18 @@ export default function BookingsPage() {
           </div>
         ) : (
           /* Empty State Dashboard Card */
-          <div className="flex flex-col items-center justify-center text-center p-6 border border-white/5 bg-white/[0.01] rounded-3xl max-w-sm mx-auto my-12 shadow-md shrink-0">
-            <div className="h-10 w-10 rounded-2xl bg-zinc-950 border border-white/5 flex items-center justify-center text-zinc-500 mb-3">
+          <div className="flex flex-col items-center justify-center text-center p-6 border border-gray-200 bg-white rounded-3xl max-w-sm mx-auto my-12 shadow-sm shrink-0">
+            <div className="h-10 w-10 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 mb-3">
               <Compass className="h-5 w-5" />
             </div>
-            <h3 className="text-xs font-black text-white uppercase tracking-wider">No adventures found</h3>
-            <p className="text-[11px] text-zinc-400 font-medium leading-relaxed mt-1 px-4">
+            <h3 className="text-xs font-black text-gray-900 uppercase tracking-wider">No adventures found</h3>
+            <p className="text-[11px] text-gray-500 font-medium leading-relaxed mt-1 px-4">
               You haven't booked any experiences in this category yet. Start mapping your next journey!
             </p>
             <div className="flex items-center gap-2.5 mt-4 w-full justify-center">
               <button
                 onClick={() => router.push("/feed")}
-                className="h-8 px-4 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-[9px] font-black uppercase tracking-wider text-white hover:brightness-110 transition-all cursor-pointer"
+                className="h-8 px-4 rounded-xl bg-gradient-to-r from-brand-indigo to-brand-purple text-[9px] font-black uppercase tracking-wider text-white hover:brightness-110 transition-all cursor-pointer shadow-sm"
               >
                 Discover Adventures
               </button>
@@ -777,7 +690,7 @@ export default function BookingsPage() {
                   setSearchQuery("");
                   setVisibleCount(8);
                 }}
-                className="h-8 px-4 rounded-xl bg-zinc-900 border border-white/5 hover:bg-zinc-800 text-[9px] font-bold uppercase tracking-wider text-white transition-all cursor-pointer"
+                className="h-8 px-4 rounded-xl bg-white border border-gray-200 hover:bg-gray-50 text-[9px] font-bold uppercase tracking-wider text-gray-700 transition-all cursor-pointer shadow-sm"
               >
                 Reset Filter
               </button>
@@ -790,23 +703,19 @@ export default function BookingsPage() {
       {processedBookings.length > visibleCount && (
         <div ref={loaderRef} className="py-6 w-full flex flex-col items-center justify-center shrink-0">
           {isLoadingMore && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full items-stretch justify-items-center">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full items-stretch justify-items-center">
               {[1, 2, 3].map((i) => (
-                <div key={i} style={{ height: '340px', position: 'relative', maxWidth: '480px', margin: '0 auto' }} className="w-full bg-white/[0.01] border border-white/5 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-between animate-pulse">
-                  <div className="h-[38%] bg-zinc-900/60 rounded-xl w-full shrink-0" />
-                  <div className="h-[62%] flex flex-col justify-between pt-3">
+                <div key={i} style={{ height: '340px', position: 'relative', maxWidth: '100%', margin: '0 auto' }} className="w-full bg-white border border-gray-200 rounded-2xl overflow-hidden p-3.5 flex flex-col justify-between animate-pulse shadow-sm min-w-0">
+                  <div className="h-[180px] bg-gray-100 rounded-xl w-full shrink-0" />
+                  <div className="h-[160px] flex flex-col justify-between pt-3">
                     <div className="flex flex-col gap-2">
-                      <div className="h-3.5 bg-zinc-900 rounded-md w-3/4" />
-                      <div className="h-3 bg-zinc-900 rounded-md w-1/2" />
+                      <div className="h-3.5 bg-gray-100 rounded-md w-3/4" />
+                      <div className="h-3 bg-gray-100 rounded-md w-1/2" />
                     </div>
-                    <div className="h-8 bg-zinc-900/40 rounded-xl w-full" />
-                    <div className="flex justify-between items-center">
-                      <div className="h-5 bg-zinc-900 rounded-full w-12" />
-                      <div className="h-3 bg-zinc-900 rounded-md w-16" />
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
-                      <div className="h-8 bg-zinc-900 rounded-xl flex-1" />
+                    <div className="h-10 bg-gray-100 rounded-md w-full my-2" />
+                    <div className="flex gap-2 border-t border-gray-100 pt-2 mt-auto shrink-0">
+                      <div className="h-9 bg-gray-100 rounded-xl flex-1" />
+                      <div className="h-9 bg-gray-100 rounded-xl flex-1" />
                     </div>
                   </div>
                 </div>

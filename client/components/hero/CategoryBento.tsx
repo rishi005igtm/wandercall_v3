@@ -19,8 +19,8 @@ export default function CategoryBento() {
   return (
     <>
       <div className="w-full mb-3 px-4 lg:px-0 lg:mb-5 flex items-center justify-between">
-        <h2 className="text-xs md:text-sm font-bold tracking-widest text-zinc-300 uppercase flex items-center gap-2">
-          <Sparkles className="h-3.5 w-3.5 text-brand-cyan" />
+        <h2 className="text-xs md:text-sm font-bold tracking-widest text-gray-500 uppercase flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-brand-indigo" />
           Discover & Book Real-World Experiences
         </h2>
 
@@ -29,14 +29,14 @@ export default function CategoryBento() {
           <div className="hidden lg:flex items-center gap-2">
             <button suppressHydrationWarning
               onClick={handlePrev}
-              className="h-8 w-8 rounded-full border border-white/10 glass-panel flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all"
+              className="h-8 w-8 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-900 hover:bg-gray-50 shadow-sm active:scale-95 transition-all"
               aria-label="Previous categories"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
             <button suppressHydrationWarning
               onClick={handleNext}
-              className="h-8 w-8 rounded-full border border-white/10 glass-panel flex items-center justify-center text-white hover:bg-white/10 active:scale-95 transition-all"
+              className="h-8 w-8 rounded-full border border-gray-200 bg-white flex items-center justify-center text-gray-900 hover:bg-gray-50 shadow-sm active:scale-95 transition-all"
               aria-label="Next categories"
             >
               <ChevronRight className="h-4 w-4" />
@@ -50,9 +50,9 @@ export default function CategoryBento() {
           {HERO_CATEGORIES.map((cat, i) => {
             const Icon = cat.icon;
             return (
-              <motion.button
+              <motion.button suppressHydrationWarning
                 key={cat.id}
-                className={`relative overflow-hidden flex items-center gap-2.5 px-5 py-3 rounded-full border border-white/10 glass-panel hover:bg-white/10 active:scale-95 transition-all whitespace-nowrap`}
+                className={`relative overflow-hidden flex items-center gap-2.5 px-5 py-3 rounded-full border border-gray-100 bg-white shadow-sm hover:shadow-md active:scale-95 transition-all whitespace-nowrap`}
               >
                 {/* Background Image */}
                 <div className="absolute inset-0 z-0">
@@ -86,7 +86,7 @@ export default function CategoryBento() {
                 key={cat.id}
                 layoutId={`cat-${cat.id}`}
                 className={`
-                  relative cursor-pointer group glass-panel rounded-2xl overflow-hidden border border-white/10 shine-card flex flex-col justify-between
+                  relative cursor-pointer group rounded-2xl overflow-hidden border border-gray-100 bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between
                   ${isLarge ? "col-span-2 h-[105px] p-3.5" : "col-span-1 h-[105px] p-3"}
                 `}
                 whileHover={{ scale: 1.02 }}
@@ -109,9 +109,9 @@ export default function CategoryBento() {
                     <motion.div 
                       initial={{ opacity: 0, scale: 0.8 }}
                       whileHover={{ opacity: 1, scale: 1 }}
-                      className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-all duration-300"
+                      className="h-6 w-6 rounded-full bg-white flex items-center justify-center shadow-md opacity-0 group-hover:opacity-100 transition-all duration-300"
                     >
-                      <ChevronRight className="h-3 w-3 text-white" />
+                      <ChevronRight className="h-3 w-3 text-gray-900" />
                     </motion.div>
                   )}
                 </div>

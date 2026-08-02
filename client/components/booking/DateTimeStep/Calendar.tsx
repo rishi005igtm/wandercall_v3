@@ -103,15 +103,15 @@ export default function Calendar({
 
   const getStatusStyles = (day: DayData, isSelected: boolean) => {
     if (day.isPast || day.status === "unavailable") {
-      return "text-zinc-700 bg-white/[0.01] border-white/[0.03] cursor-not-allowed";
+      return "text-gray-400 bg-white border-gray-200 cursor-not-allowed";
     }
 
     if (isSelected) {
-      return "text-zinc-950 font-black bg-gradient-to-r from-brand-cyan to-brand-purple border-transparent shadow-lg shadow-brand-cyan/20 cursor-pointer";
+      return "text-white font-black bg-gradient-to-r from-brand-cyan to-brand-purple border-transparent shadow-lg shadow-brand-cyan/20 cursor-pointer";
     }
 
     if (!isMonthSelectable) {
-      return "text-zinc-500 bg-white/[0.02] border-white/5 cursor-not-allowed opacity-40";
+      return "text-gray-500 bg-gray-50 border-gray-200 cursor-not-allowed opacity-40";
     }
 
     let effectiveStatus = day.status;
@@ -121,23 +121,23 @@ export default function Calendar({
 
     switch (effectiveStatus) {
       case "fully-booked":
-        return "text-red-500/80 bg-red-950/10 border-red-500/20 hover:border-red-500/40 cursor-not-allowed";
+        return "text-red-500 bg-red-50 border-red-500/20 hover:border-red-500/40 cursor-not-allowed";
       case "few-left":
-        return "text-amber-500 bg-amber-950/10 border-amber-500/20 hover:border-amber-500/45 cursor-pointer";
+        return "text-amber-500 bg-amber-50 border-amber-500/20 hover:border-amber-500/45 cursor-pointer";
       case "available":
       default:
-        return "text-emerald-400 bg-emerald-950/10 border-emerald-500/20 hover:border-emerald-500/45 cursor-pointer";
+        return "text-emerald-400 bg-emerald-50 border-emerald-500/20 hover:border-emerald-500/45 cursor-pointer";
     }
   };
 
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   return (
-    <div className="glass-panel p-4 sm:p-6 rounded-3xl border border-white/5 flex flex-col gap-5 text-left relative overflow-visible bg-zinc-900/10 backdrop-blur-md w-full lg:max-w-[440px] shadow-xl">
+    <div className="glass-panel p-4 sm:p-6 rounded-3xl border border-gray-200 flex flex-col gap-5 text-left relative overflow-visible bg-white backdrop-blur-md w-full lg:max-w-[440px] shadow-xl">
       <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center gap-3">
         <div className="flex items-center gap-2 select-none shrink-0">
-          <CalendarIcon className="h-4.5 w-4.5 text-brand-cyan shrink-0" />
-          <h3 className="text-xs font-mono font-bold text-zinc-400 uppercase tracking-widest whitespace-nowrap">Select Date</h3>
+          <CalendarIcon className="h-4.5 w-4.5 text-cyan-600 shrink-0" />
+          <h3 className="text-xs font-mono font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">Select Date</h3>
         </div>
         
         {/* Month navigation */}
@@ -146,12 +146,12 @@ export default function Calendar({
             type="button"
             disabled={currentMonthView === 0}
             onClick={() => setCurrentMonthView((prev) => prev - 1)}
-            className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center justify-center border border-white/5 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="h-7 w-7 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 text-gray-900 flex items-center justify-center border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
           
-          <span className="text-[10px] font-black text-white uppercase tracking-wider bg-white/5 px-3.5 py-1.5 rounded-full border border-white/5 font-mono select-none whitespace-nowrap min-w-[90px] text-center">
+          <span className="text-[10px] font-black text-gray-900 uppercase tracking-wider bg-gray-100 text-gray-900 px-3.5 py-1.5 rounded-full border border-gray-200 font-mono select-none whitespace-nowrap min-w-[90px] text-center">
             {monthData[currentMonthView].name}
           </span>
 
@@ -159,7 +159,7 @@ export default function Calendar({
             type="button"
             disabled={currentMonthView === 2}
             onClick={() => setCurrentMonthView((prev) => prev + 1)}
-            className="h-7 w-7 rounded-lg bg-white/5 hover:bg-white/10 text-white flex items-center justify-center border border-white/5 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+            className="h-7 w-7 rounded-lg bg-gray-100 text-gray-900 hover:bg-gray-200 text-gray-900 flex items-center justify-center border border-gray-200 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
@@ -168,7 +168,7 @@ export default function Calendar({
 
       {/* Days Grid */}
       <div className="relative">
-        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-wider select-none">
+        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-[10px] font-mono font-bold text-gray-500 uppercase tracking-wider select-none">
           {weekdays.map((d) => (
             <div key={d}>{d}</div>
           ))}
@@ -197,7 +197,7 @@ export default function Calendar({
 
                 {isMonthSelectable && !day.isPast && day.status !== "unavailable" && (
                   <span className={`text-[7px] sm:text-[8px] mt-1 font-mono font-black tracking-tighter leading-none ${
-                    isSelected ? "text-zinc-950" :
+                    isSelected ? "text-white" :
                     day.status === "fully-booked" ? "text-red-500" :
                     day.status === "few-left" ? "text-amber-500" :
                     day.status === "today" ? (day.slotsLeft <= 3 ? "text-amber-500" : "text-emerald-400") : "text-emerald-400"
@@ -216,9 +216,9 @@ export default function Calendar({
       </div>
 
       {/* Provider Operating Days Banner */}
-      <div className="bg-white/[0.02] border border-white/5 px-3 py-2 rounded-xl flex items-center gap-2 text-[10px] font-mono text-zinc-400 select-none">
-        <Info className="h-3.5 w-3.5 text-brand-cyan shrink-0" />
-        <span>Experience operates on: <strong className="text-white">{operatingDays.join(", ")}</strong></span>
+      <div className="bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl flex items-center gap-2 text-[10px] font-mono text-gray-500 select-none">
+        <Info className="h-3.5 w-3.5 text-cyan-600 shrink-0" />
+        <span>Experience operates on: <strong className="text-gray-900">{operatingDays.join(", ")}</strong></span>
       </div>
 
       <AvailabilityLegend />

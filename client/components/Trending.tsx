@@ -163,7 +163,7 @@ export default function Trending() {
   // Wishlist local state tracking
   const [wishlist, setWishlist] = useState<string[]>([]);
   const toggleWishlist = (id: string) => {
-    setWishlist((prev) => 
+    setWishlist((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
@@ -179,19 +179,19 @@ export default function Trending() {
   };
 
   return (
-    <section 
-      className="relative py-10 lg:py-24 px-6 md:px-12 bg-brand-bg max-w-[1440px] mx-auto w-full" 
+    <section
+      className="relative py-10 lg:py-24 px-6 md:px-12 bg-transparent max-w-[1440px] mx-auto w-full"
       id="experiences"
     >
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
         <div className="text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 mb-4">
-            <Flame className="h-4 w-4 text-brand-cyan" />
-            <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-indigo/10 border border-brand-indigo/20 mb-4">
+            <Flame className="h-4 w-4 text-brand-indigo" />
+            <span className="text-xs font-semibold text-brand-indigo uppercase tracking-wider">
               Highly Demanded Memories
             </span>
           </div>
-          <h2 className="text-2xl md:text-5xl font-extrabold tracking-tight text-white">
+          <h2 className="text-2xl md:text-5xl font-extrabold tracking-tight text-gray-900">
             Trending Adventures
           </h2>
         </div>
@@ -199,111 +199,108 @@ export default function Trending() {
 
       {/* Grid Layout (Fixed 8 Items, Responsive Rows) */}
       <div className="w-full grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-        {isLoading 
+        {isLoading
           ? Array.from({ length: 8 }).map((_, i) => <TrendingSkeletonCard key={i} />)
           : experiences.map((exp) => {
-          const isWishlisted = wishlist.includes(exp.id);
-          return (
-            <motion.div
-              key={exp.id}
-              className={`min-h-[220px] sm:min-h-[380px] rounded-2xl sm:rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden group/card transition-all duration-300 shine-card ${exp.glow}`}
-              whileHover={{ y: -6 }}
-            >
-              {/* Thumbnail Zone */}
-              <div className="h-32 sm:h-44 w-full relative overflow-hidden bg-zinc-950 shrink-0">
-                <img src={exp.image} alt={exp.title} className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
-
-                {/* Header overlay */}
-                <div className="absolute top-2 sm:top-3.5 left-2 sm:left-3.5 right-2 sm:right-3.5 flex justify-end sm:justify-between items-center z-10">
-                  <span className="hidden sm:inline-block text-[9px] font-bold text-white bg-black/60 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-white/5">
-                    {exp.category}
-                  </span>
-                  <div className="flex items-center gap-1.5 sm:gap-2">
-                    <div className="flex items-center gap-1 bg-black/65 px-1.5 sm:px-2 py-0.5 rounded-full backdrop-blur-md text-[8px] sm:text-[9px] font-bold text-brand-amber border border-white/5 h-6 sm:h-7">
-                      <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-brand-amber text-brand-amber" />
-                      {exp.rating}
-                    </div>
-                    <button suppressHydrationWarning
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleWishlist(exp.id);
-                      }}
-                      className={`h-6 w-6 sm:h-7 sm:w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md ${
-                        isWishlisted
-                          ? "bg-brand-indigo border-brand-indigo text-white scale-110 shadow-lg shadow-brand-indigo/30"
-                          : "bg-black/60 border-white/5 text-white hover:bg-white hover:text-black"
-                      }`}
-                    >
-                      <Heart className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${isWishlisted ? "fill-white" : ""}`} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Metadata Card Area */}
-              <div className="p-3 sm:p-5 flex flex-col justify-between flex-1 text-left">
-                <div>
-                  <h3 className="text-[11px] sm:text-sm font-black text-white leading-snug group-hover/card:text-brand-cyan transition-colors line-clamp-2 sm:line-clamp-1 uppercase tracking-tight">
-                    {exp.title}
-                  </h3>
-                  <div className="hidden sm:flex items-center gap-1 text-[10px] font-semibold text-zinc-400 mt-1.5 mb-3">
-                    <MapPin className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
-                    <span className="truncate">{exp.location}</span>
-                  </div>
-                  <p className="hidden sm:block text-[11px] text-zinc-500 leading-relaxed font-medium line-clamp-2">
-                    {exp.description}
-                  </p>
-                </div>
-
-                {/* Detail Metrics - Desktop */}
-                <div className="hidden sm:flex items-center justify-between pt-4 border-t border-white/5 mt-5">
-                  <div className="flex items-center gap-2">
-                    <span className="flex items-center gap-1 text-[10px] font-bold text-zinc-500 font-mono">
-                      <Clock className="h-3.5 w-3.5" />
-                      {exp.duration}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border ${getDifficultyStyles(exp.difficulty)}`}>
-                      {exp.difficulty}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] font-black uppercase tracking-wider text-zinc-600 block leading-none">Starts At</span>
-                    <span className="text-xs font-black text-brand-cyan mt-1 block">₹{exp.price.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-
-                {/* View Experience CTA - Desktop */}
-                <Link
-                  href={`/experiences/${exp.slug}`}
-                  className="hidden sm:flex mt-4 w-full h-9 rounded-xl bg-white/5 hover:bg-white text-zinc-400 hover:text-zinc-950 border border-white/5 hover:border-white text-[10px] font-black uppercase tracking-widest transition-all duration-300 items-center justify-center gap-1.5 active:scale-98 shadow-md shrink-0"
+            const isWishlisted = wishlist.includes(exp.id);
+            return (
+              <Link key={exp.id} href={`/experiences/${exp.slug}`} className="block">
+                <motion.div
+                  className={`min-h-[220px] sm:min-h-[380px] rounded-2xl sm:rounded-3xl bg-white border border-gray-100 flex flex-col justify-between overflow-hidden group/card transition-all duration-300 shine-card ${exp.glow} sm:hover:-translate-y-1.5`}
                 >
-                  <Compass className="h-3.5 w-3.5 text-brand-cyan" /> View Experience
-                </Link>
+                  {/* Thumbnail Zone */}
+                  <div className="h-32 sm:h-44 w-full relative overflow-hidden bg-zinc-950 shrink-0">
+                    <img src={exp.image} alt={exp.title} className="w-full h-full object-cover sm:group-hover/card:scale-105 transition-transform duration-700" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent pointer-events-none" />
 
-                {/* Mobile Only: Minimal Metrics & CTA */}
-                <div className="flex sm:hidden items-center justify-between pt-2 mt-auto">
-                  <div className="text-left">
-                    <span className="text-[8px] font-black uppercase tracking-wider text-zinc-500 block leading-none">Starts At</span>
-                    <span className="text-[11px] font-black text-brand-cyan mt-0.5 block">₹{exp.price.toLocaleString("en-IN")}</span>
+                    {/* Header overlay */}
+                    <div className="absolute top-2 sm:top-3.5 left-2 sm:left-3.5 right-2 sm:right-3.5 flex justify-end sm:justify-between items-center z-10">
+                      <span className="hidden sm:inline-block text-[9px] font-bold text-gray-900 bg-white/90 px-2 py-0.5 rounded-full backdrop-blur-md uppercase tracking-wider border border-gray-200 shadow-sm">
+                        {exp.category}
+                      </span>
+                      <div className="flex items-center gap-1.5 sm:gap-2">
+                        <div className="flex items-center gap-1 bg-white/90 px-1.5 sm:px-2 py-0.5 rounded-full backdrop-blur-md text-[8px] sm:text-[9px] font-bold text-brand-amber border border-gray-200 shadow-sm h-6 sm:h-7">
+                          <Star className="h-2.5 w-2.5 sm:h-3 sm:w-3 fill-brand-amber text-brand-amber" />
+                          {exp.rating}
+                        </div>
+                        <button suppressHydrationWarning
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            toggleWishlist(exp.id);
+                          }}
+                          className={`h-6 w-6 sm:h-7 sm:w-7 rounded-full flex items-center justify-center border transition-all cursor-pointer backdrop-blur-md shadow-sm ${isWishlisted
+                              ? "bg-rose-500 border-rose-500 text-white scale-110 shadow-lg shadow-rose-500/30"
+                              : "bg-white/90 border-gray-200 text-gray-500 hover:bg-white hover:text-rose-500"
+                            }`}
+                        >
+                          <Heart className={`h-3 w-3 sm:h-3.5 sm:w-3.5 ${isWishlisted ? "fill-white" : ""}`} />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <Link
-                    href={`/experiences/${exp.slug}`}
-                    className="h-6 w-6 rounded-full bg-white/10 flex items-center justify-center border border-white/5 active:scale-95"
-                  >
-                    <ArrowRight className="h-3 w-3 text-white" />
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          );
-        })}
+
+                  {/* Metadata Card Area */}
+                  <div className="p-3 sm:p-5 flex flex-col justify-between flex-1 text-left">
+                    <div>
+                      <h3 className="text-[11px] sm:text-sm font-black text-gray-900 leading-snug sm:group-hover/card:text-brand-indigo transition-colors line-clamp-2 sm:line-clamp-1 uppercase tracking-tight">
+                        {exp.title}
+                      </h3>
+                      <div className="hidden sm:flex items-center gap-1 text-[10px] font-semibold text-gray-500 mt-1.5 mb-3">
+                        <MapPin className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                        <span className="truncate">{exp.location}</span>
+                      </div>
+                      <p className="hidden sm:block text-[11px] text-gray-600 leading-relaxed font-medium line-clamp-2">
+                        {exp.description}
+                      </p>
+                    </div>
+
+                    {/* Detail Metrics - Desktop */}
+                    <div className="hidden sm:flex items-center justify-between pt-4 border-t border-gray-100 mt-5">
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1 text-[10px] font-bold text-gray-500 font-mono">
+                          <Clock className="h-3.5 w-3.5" />
+                          {exp.duration}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border ${getDifficultyStyles(exp.difficulty)}`}>
+                          {exp.difficulty}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[9px] font-black uppercase tracking-wider text-gray-500 block leading-none">Starts At</span>
+                        <span className="text-xs font-black text-gray-900 mt-1 block">₹{exp.price.toLocaleString("en-IN")}</span>
+                      </div>
+                    </div>
+
+                    {/* View Experience CTA - Desktop */}
+                    <div
+                      className="hidden sm:flex mt-4 w-full h-9 rounded-xl bg-[#222] sm:group-hover/card:bg-brand-indigo text-white border border-[#222] sm:group-hover/card:border-brand-indigo text-[10px] font-black uppercase tracking-widest transition-all duration-300 items-center justify-center gap-1.5 active:scale-98 shadow-sm shrink-0"
+                    >
+                      <Compass className="h-3.5 w-3.5 text-white" /> View Experience
+                    </div>
+
+                    <div className="flex sm:hidden items-center justify-between pt-2 mt-auto">
+                      <div className="text-left">
+                        <span className="text-[8px] font-black uppercase tracking-wider text-gray-500 block leading-none">Starts At</span>
+                        <span className="text-[11px] font-black text-brand-indigo mt-0.5 block">₹{exp.price.toLocaleString("en-IN")}</span>
+                      </div>
+                      <div
+                        className="h-6 w-6 rounded-full bg-brand-indigo flex items-center justify-center border border-brand-indigo shadow-sm"
+                      >
+                        <ArrowRight className="h-3 w-3 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </Link>
+            );
+          })}
       </div>
 
       {/* Explore More Button */}
       <div className="flex justify-center mt-10 sm:mt-12 w-full">
-        <Link href="/experiences" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white/5 border border-white/10 hover:bg-white/10 text-white hover:border-white/20 transition-all active:scale-[0.98]">
-          <Compass className="h-4 w-4 text-brand-cyan animate-pulse" />
+        <Link href="/experiences" className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-xs font-bold uppercase tracking-wider bg-white border border-gray-200 hover:bg-gray-50 text-gray-900 hover:border-gray-300 transition-all active:scale-[0.98] shadow-sm">
+          <Compass className="h-4 w-4 text-brand-indigo animate-pulse" />
           Explore More
         </Link>
       </div>
@@ -313,14 +310,14 @@ export default function Trending() {
 
 function TrendingSkeletonCard() {
   return (
-    <div className="min-h-[380px] rounded-3xl glass-panel border-white/5 flex flex-col justify-between overflow-hidden bg-zinc-900/50 animate-pulse">
+    <div className="min-h-[380px] rounded-3xl bg-white border border-gray-100 flex flex-col justify-between overflow-hidden shadow-sm animate-pulse">
       {/* Thumbnail Zone */}
-      <div className="h-44 w-full relative bg-white/5 border-b border-white/5 shrink-0">
+      <div className="h-44 w-full relative bg-gray-100 border-b border-gray-100 shrink-0">
         <div className="absolute top-3.5 left-3.5 right-3.5 flex justify-between items-center z-10">
-          <div className="h-4 w-20 bg-white/10 rounded-full" />
+          <div className="h-4 w-20 bg-gray-200 rounded-full" />
           <div className="flex items-center gap-2">
-            <div className="h-7 w-12 bg-white/10 rounded-full" />
-            <div className="h-7 w-7 bg-white/10 rounded-full" />
+            <div className="h-7 w-12 bg-gray-200 rounded-full" />
+            <div className="h-7 w-7 bg-gray-200 rounded-full" />
           </div>
         </div>
       </div>
@@ -328,31 +325,31 @@ function TrendingSkeletonCard() {
       {/* Metadata Card Area */}
       <div className="p-5 flex flex-col justify-between flex-1 text-left">
         <div>
-          <div className="h-5 w-3/4 bg-white/10 rounded-md mb-2" />
+          <div className="h-5 w-3/4 bg-gray-200 rounded-md mb-2" />
           <div className="flex items-center gap-1 mt-1.5 mb-3">
-            <div className="h-3.5 w-3.5 bg-white/10 rounded-sm shrink-0" />
-            <div className="h-3 w-1/2 bg-white/10 rounded-sm" />
+            <div className="h-3.5 w-3.5 bg-gray-200 rounded-sm shrink-0" />
+            <div className="h-3 w-1/2 bg-gray-200 rounded-sm" />
           </div>
           <div className="space-y-1.5">
-            <div className="h-2.5 w-full bg-white/10 rounded-sm" />
-            <div className="h-2.5 w-5/6 bg-white/10 rounded-sm" />
+            <div className="h-2.5 w-full bg-gray-200 rounded-sm" />
+            <div className="h-2.5 w-5/6 bg-gray-200 rounded-sm" />
           </div>
         </div>
 
         {/* Detail Metrics */}
-        <div className="flex items-center justify-between pt-4 border-t border-white/5 mt-5">
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100 mt-5">
           <div className="flex items-center gap-2">
-            <div className="h-4 w-16 bg-white/10 rounded-full" />
-            <div className="h-4 w-14 bg-white/10 rounded-full" />
+            <div className="h-4 w-16 bg-gray-200 rounded-full" />
+            <div className="h-4 w-14 bg-gray-200 rounded-full" />
           </div>
           <div className="flex flex-col items-end gap-1">
-            <div className="h-2 w-10 bg-white/10 rounded-sm" />
-            <div className="h-3 w-14 bg-white/10 rounded-sm" />
+            <div className="h-2 w-10 bg-gray-200 rounded-sm" />
+            <div className="h-3 w-14 bg-gray-200 rounded-sm" />
           </div>
         </div>
 
         {/* View Experience CTA */}
-        <div className="mt-4 w-full h-9 rounded-xl bg-white/10 shrink-0" />
+        <div className="mt-4 w-full h-9 rounded-xl bg-gray-100 shrink-0" />
       </div>
     </div>
   );

@@ -10,23 +10,18 @@ import { useBookingStore } from "@/hooks/useBookingStore";
 import { ExperienceData } from "@/types/booking";
 
 // Modular Components
-import BookingStepper from "@/components/booking/BookingStepper";
 import BookingSummary from "@/components/booking/BookingSummary";
-import NavigationFooter from "@/components/booking/NavigationFooter";
 
 // Step 1: Date & Time Module
 import Calendar from "@/components/booking/DateTimeStep/Calendar";
 import TimeSlotModal from "@/components/booking/DateTimeStep/TimeSlotModal";
 import DateDetailsPanel from "@/components/booking/DateTimeStep/DateDetailsPanel";
 
-// Step 2: Explorer Module
 import ExplorerCounter from "@/components/booking/ExplorerStep/ExplorerCounter";
-import TravelerForm from "@/components/booking/ExplorerStep/TravelerForm";
-import AddonSelector from "@/components/booking/ExplorerStep/AddonSelector";
 
 // Step 3: Payment Module
 import CashfreeSection from "@/components/booking/PaymentStep/CashfreeSection";
-import CancellationCard from "@/components/booking/PaymentStep/CancellationCard";
+
 
 // Compact Database catalog
 const EXPERIENCES_CATALOG: Record<string, ExperienceData> = {
@@ -142,26 +137,68 @@ export default function BookingPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-brand-bg text-white overflow-x-hidden font-sans">
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 md:px-8 pt-8 pb-36 sm:pb-28">
-        {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 mb-4">
-          <Link
-            href={`/experiences/${experienceSlug}`}
-            className="flex items-center gap-1.5 text-xs font-mono font-bold text-zinc-500 hover:text-white uppercase transition-colors select-none"
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to experience details
-          </Link>
+    <div className="flex flex-col min-h-screen bg-mesh-premium overflow-x-hidden font-sans relative">
+      
+      {/* Sticky Header Bar replacing Stepper and Footer */}
+      <header className="fixed top-0 left-0 right-0 z-50 w-full bg-white backdrop-blur-xl border-b border-gray-200 h-16 flex items-center justify-between px-4 md:px-8 shrink-0">
+        <div className="flex-1 flex justify-start">
+          {store.currentStep === 1 ? (
+            <Link
+              href={`/experiences/${experienceSlug}`}
+              className="flex items-center gap-1.5 text-xs font-mono font-bold text-gray-500 hover:text-gray-900 uppercase transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Cancel
+            </Link>
+          ) : (
+            <button
+              onClick={() => store.setCurrentStep((store.currentStep - 1) as 1 | 2 | 3)}
+              className="flex items-center gap-1.5 text-xs font-mono font-bold text-gray-500 hover:text-gray-900 uppercase transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" /> Back
+            </button>
+          )}
         </div>
+        
+        <div className="hidden sm:flex flex-1 justify-center text-[10px] font-black uppercase tracking-widest text-gray-400">
+          <span className={store.currentStep === 1 ? "text-gray-900" : ""}>Date</span>
+          <span className="mx-2 opacity-50">-</span>
+          <span className={store.currentStep === 2 ? "text-gray-900" : ""}>Explorers</span>
+          <span className="mx-2 opacity-50">-</span>
+          <span className={store.currentStep === 3 ? "text-gray-900" : ""}>Payment</span>
+        </div>
+        
+        <div className="flex-1 flex justify-end">
+          {store.currentStep === 1 && (
+            <button
+              disabled={!store.canGoToStep2}
+              onClick={() => store.setCurrentStep(2)}
+              className="h-9 px-5 rounded-full bg-brand-cyan text-zinc-950 font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue
+            </button>
+          )}
+          {store.currentStep === 2 && (
+            <button
+              disabled={!store.canGoToStep3}
+              onClick={() => store.setCurrentStep(3)}
+              className="h-9 px-5 rounded-full bg-brand-cyan text-zinc-950 font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Continue
+            </button>
+          )}
+          {store.currentStep === 3 && (
+            <button
+              disabled={!store.isFormValid || store.isSubmitting}
+              onClick={handleProceedPayment}
+              className="h-9 px-5 rounded-full bg-gradient-to-r from-brand-indigo to-brand-purple text-white font-bold text-xs uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-lg shadow-brand-indigo/20"
+            >
+              {store.isSubmitting ? "Processing..." : `Pay ₹${store.grandTotal.toLocaleString("en-IN")}`}
+            </button>
+          )}
+        </div>
+      </header>
 
-        {/* State-Aware Stepper Header */}
-        <BookingStepper
-          currentStep={store.currentStep}
-          onStepClick={(step) => store.setCurrentStep(step)}
-          canGoToStep2={store.canGoToStep2}
-          canGoToStep3={store.canGoToStep3}
-        />
-
+      <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 md:px-8 pt-24 pb-12">
         {/* Dynamic Step View & Sticky Summary Container */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
@@ -212,14 +249,6 @@ export default function BookingPage() {
                     setIsPrivateGroup={store.setIsPrivateGroup}
                     maxSlots={store.selectedSlot?.remainingSeats || 10}
                   />
-                  <TravelerForm
-                    travelersDetails={store.travelersDetails}
-                    setTravelersDetails={store.setTravelersDetails}
-                  />
-                  <AddonSelector
-                    selectedAddons={store.selectedAddons}
-                    onToggleAddon={store.handleToggleAddon}
-                  />
                 </motion.div>
               )}
 
@@ -242,11 +271,11 @@ export default function BookingPage() {
                     selectedDate={store.selectedDate}
                     selectedSlot={store.selectedSlot}
                     totalTravelers={store.totalTravelers}
-                    travelersDetails={store.travelersDetails}
+
                     grandTotal={store.grandTotal}
                     onSimulateSuccess={handleSimulatePaymentSuccess}
                   />
-                  <CancellationCard />
+
                 </motion.div>
               )}
             </AnimatePresence>
@@ -261,7 +290,6 @@ export default function BookingPage() {
                 adultsCount={store.adultsCount}
                 childrenCount={store.childrenCount}
                 isPrivateGroup={store.isPrivateGroup}
-                selectedAddons={store.selectedAddons}
                 couponCode={store.couponCode}
                 setCouponCode={store.setCouponCode}
                 appliedCoupon={store.appliedCoupon}
@@ -269,7 +297,6 @@ export default function BookingPage() {
                 couponError={store.couponError}
                 setCouponError={store.setCouponError}
                 baseSubtotal={store.baseSubtotal}
-                addonsTotal={store.addonsTotal}
                 privateGroupFee={store.privateGroupFee}
                 groupDiscount={store.groupDiscount}
                 couponDiscount={store.couponDiscount}
@@ -278,17 +305,6 @@ export default function BookingPage() {
               />
             </div>
 
-            {/* Step Navigation Footer Controls */}
-            <NavigationFooter
-              currentStep={store.currentStep}
-              setCurrentStep={store.setCurrentStep}
-              canGoToStep2={store.canGoToStep2}
-              canGoToStep3={store.canGoToStep3}
-              isFormValid={store.isFormValid}
-              isSubmitting={store.isSubmitting}
-              grandTotal={store.grandTotal}
-              onProceedPayment={handleProceedPayment}
-            />
           </div>
 
           {/* Right Column Sticky Booking Summary */}
@@ -301,7 +317,6 @@ export default function BookingPage() {
               adultsCount={store.adultsCount}
               childrenCount={store.childrenCount}
               isPrivateGroup={store.isPrivateGroup}
-              selectedAddons={store.selectedAddons}
               couponCode={store.couponCode}
               setCouponCode={store.setCouponCode}
               appliedCoupon={store.appliedCoupon}
@@ -309,7 +324,6 @@ export default function BookingPage() {
               couponError={store.couponError}
               setCouponError={store.setCouponError}
               baseSubtotal={store.baseSubtotal}
-              addonsTotal={store.addonsTotal}
               privateGroupFee={store.privateGroupFee}
               groupDiscount={store.groupDiscount}
               couponDiscount={store.couponDiscount}

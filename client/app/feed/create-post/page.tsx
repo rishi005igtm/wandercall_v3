@@ -417,14 +417,14 @@ export default function CreatePostPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-black text-white selection:bg-brand-cyan/30 font-sans relative">
+    <div className="flex flex-col min-h-screen bg-mesh-premium text-gray-900 selection:bg-brand-cyan/30 font-sans relative">
       <Navbar />
 
       {/* Loading Overlay Spinner during Upload */}
       {createPostMutation.isPending && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center gap-4 z-[200]">
           <Loader2 className="h-10 w-10 text-brand-cyan animate-spin" />
-          <p className="text-sm font-mono text-zinc-500 uppercase tracking-widest animate-pulse">
+          <p className="text-sm font-mono text-gray-500 uppercase tracking-widest animate-pulse">
             Synchronizing adventure node...
           </p>
         </div>
@@ -437,7 +437,7 @@ export default function CreatePostPage() {
             initial={{ opacity: 0, y: -50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            className="fixed top-24 left-1/2 -translate-x-1/2 z-[150] w-[calc(100%-2rem)] max-w-sm sm:w-auto px-5 py-2.5 bg-zinc-900 border border-brand-cyan/20 rounded-full text-xs font-mono font-bold text-brand-cyan flex items-center justify-center gap-2 shadow-2xl backdrop-blur-md text-center"
+            className="fixed top-24 left-1/2 -translate-x-1/2 z-[150] w-[calc(100%-2rem)] max-w-sm sm:w-auto px-5 py-2.5 bg-white border-gray-200 border border-brand-cyan/20 rounded-full text-xs font-mono font-bold text-brand-cyan flex items-center justify-center gap-2 shadow-2xl backdrop-blur-md text-center"
           >
             <span className="h-2 w-2 rounded-full bg-brand-cyan animate-pulse shrink-0" />
             <span>{toastMessage}</span>
@@ -446,10 +446,10 @@ export default function CreatePostPage() {
       </AnimatePresence>
 
       <main className="flex-1 w-full flex flex-col pt-24 pb-4 md:pb-6 items-center px-4 overflow-hidden">
-        <div className="w-full max-w-[1280px] h-full flex flex-col overflow-hidden bg-zinc-950/20 border border-white/5 rounded-3xl backdrop-blur-2xl">
+        <div className="w-full max-w-[1280px] h-full flex flex-col overflow-hidden bg-white shadow-sm border border-gray-200 rounded-3xl backdrop-blur-2xl">
           
           {/* TOP ACTION HEADER */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-white/5 shrink-0 bg-zinc-950/40">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0 bg-white">
             <button 
               onClick={() => {
                 if (activeTab === "story") {
@@ -460,17 +460,17 @@ export default function CreatePostPage() {
                   router.push("/feed");
                 }
               }}
-              className="h-8 w-8 rounded-lg bg-white/5 border border-white/5 hover:bg-white/10 text-zinc-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              className="h-8 w-8 rounded-lg bg-gray-100 border border-gray-200 hover:bg-gray-200 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-colors cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
             </button>
 
             <div className="hidden md:block flex-1 ml-3 text-left">
-              <h1 className="text-sm md:text-base font-black text-white uppercase tracking-wider flex items-center gap-1.5">
+              <h1 className="text-sm md:text-base font-black text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
                 <Compass className="h-4.5 w-4.5 text-brand-cyan animate-pulse" />
                 Synchronize Coordinates
               </h1>
-              <p className="text-[10px] text-zinc-500 font-mono mt-0.5">Publish your live adventure logs into the global explorer dashboard</p>
+              <p className="text-[10px] text-gray-500 font-mono mt-0.5">Publish your live adventure logs into the global explorer dashboard</p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -516,7 +516,7 @@ export default function CreatePostPage() {
           )}
 
           {/* MOBILE TABS HEADER */}
-          <div className="flex md:hidden border-b border-white/5 bg-zinc-950/20 shrink-0">
+          <div className="flex md:hidden border-b border-gray-200 bg-gray-50/20 shrink-0">
             {(["media", "details", "story"] as const).map(tab => (
               <button
                 key={tab}
@@ -524,7 +524,7 @@ export default function CreatePostPage() {
                 className={`flex-1 py-3 text-[10px] font-black uppercase tracking-wider border-b-2 transition-all ${
                   activeTab === tab 
                     ? "border-brand-cyan text-brand-cyan bg-brand-cyan/[0.02]" 
-                    : "border-transparent text-zinc-500"
+                    : "border-transparent text-gray-500"
                 }`}
               >
                 {tab}
@@ -536,13 +536,13 @@ export default function CreatePostPage() {
           <div className="flex-1 flex flex-col md:flex-row overflow-hidden w-full items-stretch">
             
             {/* LEFT AREA: WORKSPACE & MEDIA */}
-            <div className={`flex-1 md:w-[60%] md:flex flex-col border-r border-white/5 overflow-y-auto no-scrollbar p-6 gap-5 text-left ${
+            <div className={`flex-1 md:w-[60%] md:flex flex-col border-r border-gray-200 overflow-y-auto no-scrollbar p-6 gap-5 text-left ${
               activeTab === "media" ? "flex" : "hidden"
             }`}>
               
               {/* Image upload area */}
               <div className="flex flex-col gap-2 shrink-0">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Image Gallery (Upto 4 Images)</span>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Image Gallery (Upto 4 Images)</span>
                 
                 <input 
                   type="file" 
@@ -555,23 +555,23 @@ export default function CreatePostPage() {
 
                 <div 
                   onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-white/10 hover:border-brand-cyan/30 bg-white/[0.01] hover:bg-white/[0.02] rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all min-h-[140px]"
+                  className="border-2 border-dashed border-gray-200 hover:border-brand-cyan/30 bg-white hover:bg-gray-50 rounded-2xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all min-h-[140px]"
                 >
                   <div className="h-10 w-10 rounded-xl bg-brand-cyan/10 border border-brand-cyan/15 flex items-center justify-center text-brand-cyan">
                     <Plus className="h-5 w-5" />
                   </div>
-                  <span className="text-[10px] font-bold text-zinc-400">Drag snapshots here or browse files</span>
-                  <span className="text-[8px] font-mono text-zinc-600">Supports PNG, JPG, WEBP (No video allowed)</span>
+                  <span className="text-[10px] font-bold text-gray-500">Drag snapshots here or browse files</span>
+                  <span className="text-[8px] font-mono text-gray-400">Supports PNG, JPG, WEBP (No video allowed)</span>
                 </div>
 
                 {mediaItems.length > 0 && (
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     {mediaItems.map((img) => (
-                      <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group bg-zinc-900">
+                      <div key={img.id} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group bg-white border-gray-200">
                         <img src={img.remoteUrl || img.localUrl} alt="Attached Preview" className={`w-full h-full object-cover ${img.status !== 'uploaded' ? 'opacity-50' : ''}`} />
                         {img.status === 'uploading' && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/40">
-                            <span className="text-[10px] font-bold text-white">{img.progress}%</span>
+                            <span className="text-[10px] font-bold text-gray-900">{img.progress}%</span>
                             <div className="w-3/4 h-1 bg-white/20 rounded-full mt-1 overflow-hidden">
                               <div className="h-full bg-brand-cyan transition-all duration-300" style={{ width: `${img.progress}%` }} />
                             </div>
@@ -579,13 +579,13 @@ export default function CreatePostPage() {
                         )}
                         {img.status === 'failed' && (
                           <div className="absolute inset-0 flex flex-col items-center justify-center bg-rose-500/40">
-                            <span className="text-[10px] font-bold text-white uppercase">Failed</span>
+                            <span className="text-[10px] font-bold text-gray-900 uppercase">Failed</span>
                           </div>
                         )}
                         <button
                           type="button"
                           onClick={() => removeImage(img.id)}
-                          className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-zinc-950/80 border border-white/10 text-zinc-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors z-10"
+                          className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-gray-50/80 border border-gray-200 text-gray-500 hover:text-white flex items-center justify-center cursor-pointer transition-colors z-10"
                         >
                           <X className="h-3 w-3" />
                         </button>
@@ -596,9 +596,9 @@ export default function CreatePostPage() {
               </div>
 
               {/* Voice panel */}
-              <div className="flex flex-col gap-3 p-4 bg-white/[0.02] border border-white/5 rounded-2xl shrink-0">
+              <div className="flex flex-col gap-3 p-4 bg-gray-50 border border-gray-200 rounded-2xl shrink-0">
                 <div className="flex justify-between items-center">
-                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Audio coordinates (Max 1 file)</span>
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Audio coordinates (Max 1 file)</span>
                   {audioItem && (
                     <button
                       onClick={removeAudio}
@@ -622,14 +622,14 @@ export default function CreatePostPage() {
                     <button
                       type="button"
                       onClick={startRecording}
-                      className="flex-1 h-10 rounded-xl border border-white/5 bg-brand-cyan/5 hover:bg-brand-cyan/10 text-[10px] font-black uppercase tracking-wider text-brand-cyan flex items-center justify-center gap-2 cursor-pointer transition-all"
+                      className="flex-1 h-10 rounded-xl border border-gray-200 bg-brand-cyan/5 hover:bg-brand-cyan/10 text-[10px] font-black uppercase tracking-wider text-brand-cyan flex items-center justify-center gap-2 cursor-pointer transition-all"
                     >
                       <Mic className="h-4 w-4 shrink-0" /> Record Mic
                     </button>
                     <button
                       type="button"
                       onClick={() => audioInputRef.current?.click()}
-                      className="flex-1 h-10 rounded-xl border border-white/5 bg-white/[0.01] hover:bg-white/[0.03] text-[10px] font-black uppercase tracking-wider text-zinc-400 hover:text-white flex items-center justify-center gap-2 cursor-pointer transition-all"
+                      className="flex-1 h-10 rounded-xl border border-gray-200 bg-white hover:bg-white/[0.03] text-[10px] font-black uppercase tracking-wider text-gray-500 hover:text-white flex items-center justify-center gap-2 cursor-pointer transition-all"
                     >
                       <Upload className="h-4 w-4 shrink-0" /> Upload File
                     </button>
@@ -665,7 +665,7 @@ export default function CreatePostPage() {
                 )}
 
                 {audioItem && (
-                  <div className="flex items-center gap-3 bg-zinc-950/40 border border-white/5 p-3 rounded-xl relative overflow-hidden">
+                  <div className="flex items-center gap-3 bg-gray-50/40 border border-gray-200 p-3 rounded-xl relative overflow-hidden">
                     {audioItem.status === 'uploading' && (
                        <div className="absolute bottom-0 left-0 h-0.5 bg-brand-cyan transition-all duration-300" style={{ width: `${audioItem.progress}%` }} />
                     )}
@@ -673,20 +673,20 @@ export default function CreatePostPage() {
                       <Volume2 className="h-4 w-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-bold text-zinc-300 truncate block">{audioItem.name} {audioItem.status === 'uploading' ? `(${audioItem.progress}%)` : ''}</span>
-                      <span className="text-[9px] font-mono text-zinc-500 block">Duration: 0:{audioItem.duration && audioItem.duration < 10 ? `0${audioItem.duration}` : audioItem.duration}</span>
+                      <span className="text-[10px] font-bold text-gray-700 truncate block">{audioItem.name} {audioItem.status === 'uploading' ? `(${audioItem.progress}%)` : ''}</span>
+                      <span className="text-[9px] font-mono text-gray-500 block">Duration: 0:{audioItem.duration && audioItem.duration < 10 ? `0${audioItem.duration}` : audioItem.duration}</span>
                     </div>
                   </div>
                 )}
               </div>
 
               <div className="flex flex-col gap-2 shrink-0 md:hidden">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Shortcut Presets</span>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Shortcut Presets</span>
                 <button
                   type="button"
                   disabled={!isMediaValid}
                   onClick={() => handleTabClick("details")}
-                  className="w-full h-10 rounded-xl bg-white/[0.02] border border-white/5 text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-white disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-1.5 cursor-pointer"
+                  className="w-full h-10 rounded-xl bg-gray-50 border border-gray-200 text-[10px] font-bold uppercase tracking-wider text-gray-500 hover:text-white disabled:opacity-40 disabled:pointer-events-none flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   Configure details metadata <ChevronRight className="h-4 w-4" />
                 </button>
@@ -694,13 +694,13 @@ export default function CreatePostPage() {
             </div>
 
             {/* MIDDLE AREA: METADATA & SIDEBAR */}
-            <div className={`flex-1 md:w-[40%] md:flex flex-col overflow-y-auto no-scrollbar p-6 gap-5 text-left bg-zinc-950/15 ${
+            <div className={`flex-1 md:w-[40%] md:flex flex-col overflow-y-auto no-scrollbar p-6 gap-5 text-left bg-gray-50/15 ${
               activeTab === "details" ? "flex" : "hidden md:flex"
             }`}>
 
               {/* Post Type Selector */}
               <div className="flex flex-col gap-2 shrink-0">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Adventure Category</span>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Adventure Category</span>
                 <div className="grid grid-cols-2 gap-2">
                   {categories.map(cat => {
                     const CatIcon = cat.icon;
@@ -713,7 +713,7 @@ export default function CreatePostPage() {
                         className={`h-11 px-3 rounded-xl border flex items-center gap-2.5 transition-all text-left cursor-pointer ${
                           isActive 
                             ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan font-bold" 
-                            : "bg-white/[0.01] border-white/5 text-zinc-400 hover:text-white"
+                            : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                       >
                         <CatIcon className="h-4 w-4 shrink-0" />
@@ -726,20 +726,20 @@ export default function CreatePostPage() {
 
               {/* Title Input */}
               <div className="flex flex-col gap-1.5 shrink-0">
-                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Adventure Title</label>
+                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Adventure Title</label>
                 <input
                   type="text"
                   required
                   value={postTitle}
                   onChange={(e) => setPostTitle(e.target.value)}
                   placeholder="e.g. Scaling the Triund Glacier"
-                  className="h-10 px-3.5 rounded-xl bg-zinc-950/40 border border-white/10 text-xs text-white placeholder-zinc-600 focus:border-brand-cyan focus:outline-none transition-colors font-semibold"
+                  className="h-10 px-3.5 rounded-xl bg-white shadow-sm border border-gray-200 text-xs text-gray-900 placeholder-gray-400 focus:border-brand-cyan focus:outline-none transition-colors font-semibold"
                 />
               </div>
 
               {/* Geoapify Location Search */}
               <div className="flex flex-col gap-1.5 shrink-0">
-                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Coordinate Location</label>
+                <label className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Coordinate Location</label>
                 <LocationSearch
                   onSelect={setPostLocation}
                   selectedLocation={postLocation}
@@ -750,7 +750,7 @@ export default function CreatePostPage() {
 
               {/* Visibility Controls */}
               <div className="flex flex-col gap-2 shrink-0">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Visibility Setting</span>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Visibility Setting</span>
                 <div className="flex gap-2">
                   {([
                     { id: "Public", icon: Globe, label: "Public" },
@@ -767,7 +767,7 @@ export default function CreatePostPage() {
                         className={`flex-1 h-9 rounded-xl border flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                           isActive 
                             ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan font-bold" 
-                            : "bg-white/[0.01] border-white/5 text-zinc-400 hover:text-white"
+                            : "bg-white border-gray-200 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                         }`}
                       >
                         <Icon className="h-3.5 w-3.5" />
@@ -797,13 +797,13 @@ export default function CreatePostPage() {
               
               {/* Story Description input */}
               <div className="flex flex-col gap-2 flex-1 min-h-[220px] md:min-h-0 flex-grow">
-                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500">Adventure Story details</span>
+                <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500">Adventure Story details</span>
                 <textarea
                   required
                   value={postText}
                   onChange={(e) => setPostText(e.target.value)}
                   placeholder="Share details of your trail experience, paths navigated, campsites, homestay reviews, or guides (Min 50 chars)..."
-                  className="flex-1 w-full p-4 rounded-2xl bg-zinc-950/40 border border-white/10 text-xs text-white placeholder-zinc-600 focus:border-brand-cyan focus:outline-none transition-colors font-semibold resize-none min-h-[160px]"
+                  className="flex-1 w-full p-4 rounded-2xl bg-white shadow-sm border border-gray-200 text-xs text-gray-900 placeholder-gray-400 focus:border-brand-cyan focus:outline-none transition-colors font-semibold resize-none min-h-[160px]"
                 />
               </div>
 

@@ -95,7 +95,7 @@ export default function TimeSlotModal({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 100, scale: 0.95 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="relative z-10 w-full max-w-lg glass-panel bg-zinc-950/95 border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
+          className="relative z-10 w-full max-w-lg bg-zinc-950 border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto"
         >
           {/* Header */}
           <div className="flex justify-between items-center border-b border-white/5 pb-4">

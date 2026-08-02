@@ -3,8 +3,8 @@
 import React from "react";
 import Navbar from "../components/Navbar";
 import Hero from "../components/Hero";
+import TrendingCategories from "../components/TrendingCategories";
 import Trending from "../components/Trending";
-
 
 import UpcomingEvents from "../components/UpcomingEvents";
 import HowItWorks from "../components/HowItWorks";
@@ -21,21 +21,21 @@ export default function Home() {
   const { data: currentUser } = useCurrentUserQuery(isAuthenticated);
 
   return (
-    <div className="flex flex-col min-h-screen bg-brand-bg text-white overflow-x-hidden font-sans">
+    <div className="flex flex-col min-h-screen bg-mesh-premium text-gray-900 overflow-x-hidden font-sans">
       {/* Section 1: Floating Premium Navbar */}
       <Navbar />
 
       <main className="flex-1 w-full flex flex-col items-center">
         {/* Section 2: Immersive Hero Section */}
-        <Hero />
+        <div className="w-full">
+           <Hero />
+        </div>
 
-        {/* Section 4: Experience Categories (Removed) */}
+        {/* Section 3: Trending Categories (Below Hero) */}
+        <TrendingCategories />
 
-        {/* Section 5: Trending Experiences */}
+        {/* Section 4: Top Experiences (Previously Trending) */}
         <Trending />
-
-
-        {/* Section 8: Campfire Communities (Removed) */}
 
 
         {/* Section 11: Upcoming Events */}

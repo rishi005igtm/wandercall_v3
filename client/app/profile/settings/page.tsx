@@ -302,27 +302,27 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 pb-24 text-white flex flex-col gap-6 select-none font-sans overflow-x-hidden">
+    <div className="flex-1 w-full max-w-7xl mx-auto px-4 md:px-8 py-6 pb-24 text-gray-900 flex flex-col gap-6 select-none font-sans overflow-x-hidden">
       
       {/* ==========================================
           SETTINGS SEARCH & TOP COMMAND HEADER
           ========================================== */}
       <div className="flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap">
         <div className="text-left">
-          <h1 className="text-xl font-black uppercase tracking-wider text-white">System Settings</h1>
-          <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-widest mt-1">Explorer Digital Identity Control</p>
+          <h1 className="text-xl font-black uppercase tracking-wider text-gray-900">System Settings</h1>
+          <p className="text-[10px] uppercase font-bold text-gray-500 tracking-widest mt-1">Explorer Digital Identity Control</p>
         </div>
-        <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-white/5 rounded-2xl w-full sm:max-w-[320px] shadow-inner focus-within:border-brand-cyan/20 transition-all">
-          <Search className="h-4 w-4 text-zinc-500" />
+        <div className="flex items-center gap-2.5 px-4 py-2.5 bg-white border border-gray-200 rounded-2xl w-full sm:max-w-[380px] shadow-sm focus-within:border-brand-cyan/40 focus-within:shadow-md transition-all">
+          <Search className="h-4.5 w-4.5 text-gray-400" />
           <input
             type="text"
             placeholder="Search system settings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs text-white placeholder-zinc-500 w-full font-bold"
+            className="bg-transparent border-none outline-none text-sm text-gray-900 placeholder-gray-400 w-full font-bold"
           />
           {searchQuery && (
-            <button onClick={() => setSearchQuery("")} className="text-zinc-500 hover:text-white">
+            <button onClick={() => setSearchQuery("")} className="text-gray-500 hover:text-gray-900">
               <X className="h-3 w-3" />
             </button>
           )}
@@ -332,7 +332,7 @@ export default function SettingsPage() {
       {/* ==========================================
           1. SETTINGS COMMAND CENTER STATUS STRIP
           ========================================== */}
-      <div className="bg-zinc-950/40 border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-6 overflow-x-auto no-scrollbar shrink-0 select-none">
+      <div className="bg-gray-50 shadow-sm border border-gray-200 rounded-2xl p-4 flex items-center justify-between gap-6 overflow-x-auto no-scrollbar shrink-0 select-none">
         <div className="flex items-center gap-8 min-w-max">
           
           <div className="flex items-center gap-3">
@@ -340,47 +340,47 @@ export default function SettingsPage() {
               <CheckCircle2 className="h-4.5 w-4.5" />
             </div>
             <div className="text-left">
-              <span className="text-[9px] uppercase font-black text-zinc-500 tracking-wider block">Account Health</span>
-              <span className="text-xs font-bold text-zinc-200">Excellent Status</span>
+              <span className="text-[9px] uppercase font-black text-gray-500 tracking-wider block">Account Health</span>
+              <span className="text-xs font-bold text-gray-900">Excellent Status</span>
             </div>
           </div>
 
-          <div className="h-8 w-px bg-white/5" />
+          <div className="h-8 w-px bg-gray-50" />
 
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-brand-cyan/10 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan animate-pulse">
               <Shield className="h-4.5 w-4.5 fill-brand-cyan/10" />
             </div>
             <div className="text-left">
-              <span className="text-[9px] uppercase font-black text-zinc-500 tracking-wider block">Security Score</span>
+              <span className="text-[9px] uppercase font-black text-gray-500 tracking-wider block">Security Score</span>
               <span className="text-xs font-bold text-brand-cyan">92/100 Shielded</span>
             </div>
           </div>
 
-          <div className="h-8 w-px bg-white/5" />
+          <div className="h-8 w-px bg-gray-50" />
 
           <div className="flex items-center gap-3">
             <div className="relative h-8 w-8 rounded-full bg-brand-purple/10 border border-brand-purple/20 flex items-center justify-center text-brand-purple">
               <svg className="w-6 h-6 transform -rotate-90">
-                <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.05)" strokeWidth="2" fill="transparent" />
+                <circle cx="12" cy="12" r="9" stroke="#e5e7eb" strokeWidth="2" fill="transparent" />
                 <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="transparent" strokeDasharray="56" strokeDashoffset="8.4" />
               </svg>
             </div>
             <div className="text-left">
-              <span className="text-[9px] uppercase font-black text-zinc-500 tracking-wider block">Profile Completeness</span>
-              <span className="text-xs font-bold text-zinc-200">85% Complete</span>
+              <span className="text-[9px] uppercase font-black text-gray-500 tracking-wider block">Profile Completeness</span>
+              <span className="text-xs font-bold text-gray-900">85% Complete</span>
             </div>
           </div>
 
-          <div className="h-8 w-px bg-white/5" />
+          <div className="h-8 w-px bg-gray-50" />
 
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-brand-amber/10 border border-brand-amber/20 flex items-center justify-center text-brand-amber">
               <Radio className="h-4.5 w-4.5" />
             </div>
             <div className="text-left">
-              <span className="text-[9px] uppercase font-black text-zinc-500 tracking-wider block">Integrations</span>
-              <span className="text-xs font-bold text-zinc-200">4 Accounts Linked</span>
+              <span className="text-[9px] uppercase font-black text-gray-500 tracking-wider block">Integrations</span>
+              <span className="text-xs font-bold text-gray-900">4 Accounts Linked</span>
             </div>
           </div>
 
@@ -393,8 +393,8 @@ export default function SettingsPage() {
       <div className="flex-1 flex flex-col lg:flex-row gap-6 items-start">
         
         {/* LEFT DESKTOP NAVIGATION SIDEBAR */}
-        <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-zinc-950/20 border border-white/5 rounded-3xl p-3 space-y-1">
-          <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500 px-3 py-2 text-left">Navigation Workspace</span>
+        <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-white shadow-sm border border-gray-200 rounded-3xl p-3 space-y-1">
+          <span className="text-[9px] font-black uppercase tracking-widest text-gray-500 px-3 py-2 text-left">Navigation Workspace</span>
           
           {filteredNavItems.map(item => {
             const Icon = item.icon;
@@ -406,15 +406,15 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(item.id)}
                 className={`flex items-center justify-between p-3 rounded-2xl text-left border transition-all cursor-pointer ${
                   isActive 
-                    ? "bg-white/[0.03] border-brand-cyan/20 text-brand-cyan shadow-lg shadow-brand-cyan/5" 
-                    : "bg-transparent border-transparent text-zinc-400 hover:bg-white/[0.01] hover:text-zinc-200"
+                    ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan shadow-lg shadow-brand-cyan/5" 
+                    : "bg-transparent border-transparent text-gray-500 hover:bg-gray-50 hover:text-brand-cyan"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className={`h-4.5 w-4.5 ${isActive ? "text-brand-cyan" : "text-zinc-500"}`} />
+                  <Icon className={`h-4.5 w-4.5 ${isActive ? "text-brand-cyan" : "text-gray-500"}`} />
                   <div>
                     <span className="text-xs font-extrabold block leading-tight">{item.label}</span>
-                    <span className="text-[8.5px] text-zinc-500 block leading-tight mt-0.5">{item.sub}</span>
+                    <span className="text-[8.5px] text-gray-500 block leading-tight mt-0.5">{item.sub}</span>
                   </div>
                 </div>
               </button>
@@ -434,28 +434,28 @@ export default function SettingsPage() {
               <Power className="h-4.5 w-4.5 text-rose-500" />
               <div>
                 <span className="text-xs font-extrabold block text-rose-400 leading-tight">Sign Out Node</span>
-                <span className="text-[8.5px] text-zinc-500 block leading-tight mt-0.5">Disconnect session</span>
+                <span className="text-[8.5px] text-gray-500 block leading-tight mt-0.5">Disconnect session</span>
               </div>
             </button>
           </div>
         </aside>
 
         {/* RIGHT DYNAMIC SETTINGS FORM PANEL */}
-        <main className="flex-1 w-full bg-zinc-950/20 border border-white/5 rounded-3xl p-4 md:p-8 flex flex-col justify-between min-h-[550px]">
+        <main className="flex-1 w-full bg-white shadow-sm border border-gray-200 rounded-3xl p-4 md:p-8 flex flex-col justify-between min-h-[550px]">
           <div>
             
             {/* Mobile Category Trigger Header */}
-            <div className="lg:hidden flex items-center justify-between border-b border-white/5 pb-4 mb-6">
+            <div className="lg:hidden flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
               <div className="flex items-center gap-2.5">
                 <activeNavItem.icon className="h-5 w-5 text-brand-cyan" />
                 <div className="text-left">
-                  <h3 className="text-sm font-extrabold text-white">{activeNavItem.label}</h3>
-                  <span className="text-[9px] text-zinc-500 block">{activeNavItem.sub}</span>
+                  <h3 className="text-sm font-extrabold text-gray-900">{activeNavItem.label}</h3>
+                  <span className="text-[9px] text-gray-500 block">{activeNavItem.sub}</span>
                 </div>
               </div>
               <button
                 onClick={() => setMobileMenuOpen(true)}
-                className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-xl text-xs font-bold text-zinc-300 flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 flex items-center gap-1.5"
               >
                 <span>Switch Tab</span>
                 <ChevronRight className="h-3.5 w-3.5" />
@@ -475,19 +475,19 @@ export default function SettingsPage() {
                 {/* EXPLORER IDENTITY */}
                 {activeTab === "profile" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3">
+                    <div className="border-b border-gray-200 pb-3">
                       <h3 className="text-sm font-black uppercase tracking-wider text-brand-purple">Explorer Identity</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1">Configure your public-facing explorer credentials and identity card</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Configure your public-facing explorer credentials and identity card</p>
                     </div>
 
-                    <div className="flex flex-col md:flex-row gap-6 items-center border-b border-white/5 pb-6">
+                    <div className="flex flex-col md:flex-row gap-6 items-center border-b border-gray-200 pb-6">
                       <div className="relative h-24 w-24 flex items-center justify-center shrink-0">
                         <div className="absolute inset-0 rounded-full bg-brand-purple/5 filter blur-lg animate-pulse" />
                         <svg className="w-full h-full transform -rotate-90">
-                          <circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,0.03)" strokeWidth="4" fill="transparent" />
+                          <circle cx="48" cy="48" r="42" stroke="#e5e7eb" strokeWidth="4" fill="transparent" />
                           <circle cx="48" cy="48" r="42" stroke="#8b5cf6" strokeWidth="4" fill="transparent" strokeDasharray="264" strokeDashoffset="39.6" strokeLinecap="round" />
                         </svg>
-                        <div className="absolute inset-2 bg-zinc-950 rounded-full border border-white/10 flex items-center justify-center text-2xl font-black text-white select-none overflow-hidden">
+                        <div className="absolute inset-2 bg-white rounded-full border border-gray-200 flex items-center justify-center text-2xl font-black text-gray-900 select-none overflow-hidden">
                           {userProfile?.avatarUrl ? (
                             <img src={userProfile.avatarUrl} alt={displayName} className="h-full w-full object-cover" />
                           ) : (
@@ -499,7 +499,7 @@ export default function SettingsPage() {
                       <div className="flex-1 space-y-2 text-center md:text-left">
                         <div className="flex items-center justify-between flex-wrap gap-2 justify-center md:justify-start">
                           <div>
-                            <h4 className="text-xs font-extrabold text-white">{displayName}</h4>
+                            <h4 className="text-xs font-extrabold text-gray-900">{displayName}</h4>
                             <span className="text-[9px] text-brand-purple font-mono uppercase font-black">Explorer Level 1</span>
                           </div>
                           <input 
@@ -512,13 +512,13 @@ export default function SettingsPage() {
                           <button 
                             onClick={() => settingsAvatarInputRef.current?.click()} 
                             disabled={uploadAvatarMutation.isPending}
-                            className="px-3 py-1.5 bg-brand-purple/10 hover:bg-brand-purple text-brand-purple hover:text-white border border-brand-purple/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                            className="px-3 py-1.5 bg-brand-purple/10 hover:bg-brand-purple text-brand-purple hover:text-gray-900 border border-brand-purple/20 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
                           >
-                            {uploadAvatarMutation.isPending && <Loader2 className="h-3 w-3 animate-spin text-brand-purple hover:text-white" />}
+                            {uploadAvatarMutation.isPending && <Loader2 className="h-3 w-3 animate-spin text-brand-purple hover:text-gray-900" />}
                             <span>Upload</span>
                           </button>
                         </div>
-                        <p className="text-[9px] leading-relaxed text-zinc-400 font-bold uppercase tracking-wide">
+                        <p className="text-[9px] leading-relaxed text-gray-500 font-bold uppercase tracking-wide">
                           Your profile card is active. Customize bio and location coordinates.
                         </p>
                       </div>
@@ -527,58 +527,58 @@ export default function SettingsPage() {
                     {/* Inputs */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Display Name</label>
+                        <label className="text-[9px] uppercase font-black text-gray-500 tracking-wider">Display Name</label>
                         <input
                           type="text"
                           value={displayName}
                           onChange={(e) => setDisplayName(e.target.value)}
-                          className="w-full px-3 py-2 bg-zinc-900/50 border border-white/5 rounded-xl text-xs text-white outline-none focus:border-brand-purple/30 font-bold"
+                          className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 rounded-xl text-xs text-gray-900 outline-none focus:border-brand-purple/30 font-bold"
                         />
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Username Handle</label>
-                          <span className="text-[8px] font-mono text-zinc-500 flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Read-Only</span>
+                          <label className="text-[9px] uppercase font-black text-gray-500 tracking-wider">Username Handle</label>
+                          <span className="text-[8px] font-mono text-gray-500 flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Read-Only</span>
                         </div>
                         <input
                           type="text"
                           value={username}
                           disabled
                           readOnly
-                          className="w-full px-3 py-2 bg-zinc-950/40 border border-white/5 rounded-xl text-xs text-zinc-400 font-bold outline-none cursor-not-allowed select-none opacity-70"
+                          className="w-full px-3 py-2 bg-gray-50 shadow-sm border border-gray-200 rounded-xl text-xs text-gray-500 font-bold outline-none cursor-not-allowed select-none opacity-70"
                         />
                       </div>
                       <div className="space-y-1.5 sm:col-span-2">
-                        <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Adventure Bio</label>
+                        <label className="text-[9px] uppercase font-black text-gray-500 tracking-wider">Adventure Bio</label>
                         <textarea
                           rows={3}
                           value={bio}
                           placeholder="Tell explorers about your journey..."
                           onChange={(e) => setBio(e.target.value)}
-                          className="w-full px-3 py-2 bg-zinc-900/50 border border-white/5 rounded-xl text-xs text-white outline-none focus:border-brand-purple/30 font-semibold resize-none leading-relaxed"
+                          className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 rounded-xl text-xs text-gray-900 outline-none focus:border-brand-purple/30 font-semibold resize-none leading-relaxed"
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Default Location</label>
+                        <label className="text-[9px] uppercase font-black text-gray-500 tracking-wider">Default Location</label>
                         <input
                           type="text"
                           value={location}
                           placeholder="e.g. Surat, India"
                           onChange={(e) => setLocation(e.target.value)}
-                          className="w-full px-3 py-2 bg-zinc-900/50 border border-white/5 rounded-xl text-xs text-white outline-none focus:border-brand-purple/30 font-bold"
+                          className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 rounded-xl text-xs text-gray-900 outline-none focus:border-brand-purple/30 font-bold"
                         />
                       </div>
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
-                          <label className="text-[9px] uppercase font-black text-zinc-500 tracking-wider">Travel Portfolio URL</label>
-                          <span className="text-[8px] font-mono text-zinc-500 flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Read-Only</span>
+                          <label className="text-[9px] uppercase font-black text-gray-500 tracking-wider">Travel Portfolio URL</label>
+                          <span className="text-[8px] font-mono text-gray-500 flex items-center gap-1"><Lock className="h-2.5 w-2.5" /> Read-Only</span>
                         </div>
                         <input
                           type="text"
                           value={website}
                           disabled
                           readOnly
-                          className="w-full px-3 py-2 bg-zinc-950/40 border border-white/5 rounded-xl text-xs text-zinc-400 font-bold outline-none cursor-not-allowed select-none opacity-70"
+                          className="w-full px-3 py-2 bg-gray-50 shadow-sm border border-gray-200 rounded-xl text-xs text-gray-500 font-bold outline-none cursor-not-allowed select-none opacity-70"
                         />
                       </div>
                     </div>
@@ -588,25 +588,25 @@ export default function SettingsPage() {
                 {/* ACCOUNT SETTINGS */}
                 {activeTab === "account" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3">
+                    <div className="border-b border-gray-200 pb-3">
                       <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Account Control</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1">Manage email coordinates, subscription states, and login identifiers</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Manage email coordinates, subscription states, and login identifiers</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Identifiers</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Identifiers</h4>
                         <div className="space-y-3">
                           <div>
-                            <span className="text-[8px] uppercase font-black text-zinc-500 tracking-wider block mb-1">Primary Email</span>
-                            <div className="flex items-center justify-between p-2.5 bg-zinc-950/20 border border-white/5 rounded-xl text-xs font-bold">
+                            <span className="text-[8px] uppercase font-black text-gray-500 tracking-wider block mb-1">Primary Email</span>
+                            <div className="flex items-center justify-between p-2.5 bg-white shadow-sm border border-gray-200 rounded-xl text-xs font-bold">
                               <span>{authEmail}</span>
                               <span className="text-[8.5px] font-black uppercase text-brand-emerald">Verified</span>
                             </div>
                           </div>
                           <div>
-                            <span className="text-[8px] uppercase font-black text-zinc-500 tracking-wider block mb-1">Phone Coordinate</span>
-                            <div className="flex items-center justify-between p-2.5 bg-zinc-950/20 border border-white/5 rounded-xl text-xs font-bold text-zinc-400">
+                            <span className="text-[8px] uppercase font-black text-gray-500 tracking-wider block mb-1">Phone Coordinate</span>
+                            <div className="flex items-center justify-between p-2.5 bg-white shadow-sm border border-gray-200 rounded-xl text-xs font-bold text-gray-500">
                               <span>Not set</span>
                               <button onClick={() => triggerToast("Phone update workflow active.")} className="text-[8.5px] font-black uppercase text-brand-cyan hover:underline cursor-pointer">Modify</button>
                             </div>
@@ -615,16 +615,16 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Wandercall Tier</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Wandercall Tier</h4>
                         <div className="bg-gradient-to-r from-brand-indigo/15 to-brand-purple/15 border border-brand-purple/20 p-4 rounded-2xl relative overflow-hidden">
-                          <h5 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                          <h5 className="text-xs font-black uppercase tracking-wider text-gray-900 flex items-center gap-1.5">
                             <Sparkles className="h-4 w-4 text-brand-cyan animate-pulse" />
                             Standard Explorer Tier
                           </h5>
-                          <p className="text-[9px] text-zinc-400 font-semibold leading-relaxed mt-1">
+                          <p className="text-[9px] text-gray-500 font-semibold leading-relaxed mt-1">
                             Base tier active. Free explorer tools initialized across server clusters.
                           </p>
-                          <div className="mt-3 flex items-center justify-between text-[9px] font-mono text-zinc-500 font-bold">
+                          <div className="mt-3 flex items-center justify-between text-[9px] font-mono text-gray-500 font-bold">
                             <span>Status: Inactive / Free</span>
                             <span>$0</span>
                           </div>
@@ -632,12 +632,12 @@ export default function SettingsPage() {
                       </div>
                     </div>
 
-                    <div className="bg-zinc-950/10 border border-white/5 p-4 rounded-2xl space-y-2">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Node Credentials</h4>
-                      <div className="flex flex-wrap gap-4 text-[9px] font-mono text-zinc-400 font-bold uppercase tracking-wider mt-2">
-                        <div>Account ID: <span className="text-white">{username.replace(/^@/, '')}</span></div>
+                    <div className="bg-gray-100 border border-gray-200 p-4 rounded-2xl space-y-2">
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Node Credentials</h4>
+                      <div className="flex flex-wrap gap-4 text-[9px] font-mono text-gray-500 font-bold uppercase tracking-wider mt-2">
+                        <div>Account ID: <span className="text-gray-900">{username.replace(/^@/, '')}</span></div>
                         <div className="hidden sm:block">•</div>
-                        <div>Passport Issued: <span className="text-white">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'June 10, 2024'}</span></div>
+                        <div>Passport Issued: <span className="text-gray-900">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'June 10, 2024'}</span></div>
                       </div>
                     </div>
                   </div>
@@ -646,10 +646,10 @@ export default function SettingsPage() {
                 {/* PLAN MANAGEMENT */}
                 {activeTab === "plans" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3 flex justify-between items-center flex-wrap gap-2">
+                    <div className="border-b border-gray-200 pb-3 flex justify-between items-center flex-wrap gap-2">
                       <div>
                         <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Plan Management</h3>
-                        <p className="text-[10px] text-zinc-400 mt-1">Optimize your explorer tier, review billing history, and manage payment configurations</p>
+                        <p className="text-[10px] text-gray-500 mt-1">Optimize your explorer tier, review billing history, and manage payment configurations</p>
                       </div>
                       <div className="bg-brand-purple/10 border border-brand-purple/20 px-3 py-1 rounded-full text-[10px] font-black text-brand-purple uppercase tracking-wider flex items-center gap-1.5">
                         <Sparkles className="h-3.5 w-3.5" /> Free Tier Active
@@ -658,16 +658,16 @@ export default function SettingsPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Billing Cycle</h4>
-                        <div className="flex items-center justify-between p-3 bg-zinc-950/20 border border-white/5 rounded-2xl">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Billing Cycle</h4>
+                        <div className="flex items-center justify-between p-3 bg-white shadow-sm border border-gray-200 rounded-2xl">
                           <div>
-                            <span className="text-xs font-bold text-white block">Billing Interval</span>
+                            <span className="text-xs font-bold text-gray-900 block">Billing Interval</span>
                             <span className="text-[8.5px] text-brand-cyan font-mono font-bold uppercase tracking-wider mt-0.5 block">Standard Monthly</span>
                           </div>
-                          <div className="flex bg-zinc-900 border border-white/5 p-1 rounded-xl">
+                          <div className="flex bg-zinc-900 border border-gray-200 p-1 rounded-xl">
                             <button
                               onClick={() => { setBillingCycle("monthly"); triggerToast("Switched to monthly view."); }}
-                              className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${billingCycle === "monthly" ? "bg-white/5 text-white" : "text-zinc-500"}`}
+                              className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all ${billingCycle === "monthly" ? "bg-gray-50 text-gray-900" : "text-gray-500"}`}
                             >
                               Monthly
                             </button>
@@ -676,28 +676,28 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Payment Configuration</h4>
-                        <div className="relative h-44 w-full bg-gradient-to-br from-zinc-800 to-zinc-950 border border-white/10 rounded-2xl p-5 flex flex-col justify-between overflow-hidden shadow-2xl group">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Payment Configuration</h4>
+                        <div className="relative h-44 w-full bg-gradient-to-br from-zinc-800 to-zinc-950 border border-gray-200 rounded-2xl p-5 flex flex-col justify-between overflow-hidden shadow-2xl group">
                           <div className="flex justify-between items-start z-10">
                             <div className="flex flex-col gap-1 text-left">
                               <span className="text-[9px] uppercase font-black tracking-widest text-brand-cyan">Wandercall Passport</span>
-                              <span className="text-[7.5px] text-zinc-500 font-mono">Secured Access</span>
+                              <span className="text-[7.5px] text-gray-500 font-mono">Secured Access</span>
                             </div>
-                            <div className="h-6 w-9 rounded-md bg-zinc-900 border border-white/5 flex items-center justify-center font-bold text-[8px] tracking-wide text-zinc-400">
+                            <div className="h-6 w-9 rounded-md bg-zinc-900 border border-gray-200 flex items-center justify-center font-bold text-[8px] tracking-wide text-gray-500">
                               VISA
                             </div>
                           </div>
-                          <div className="text-left text-lg font-mono font-bold tracking-widest text-zinc-100 py-1.5 z-10 shrink-0">
+                          <div className="text-left text-lg font-mono font-bold tracking-widest text-gray-900 py-1.5 z-10 shrink-0">
                             {paymentCard?.number || "•••• •••• •••• 8843"}
                           </div>
                           <div className="flex justify-between items-end z-10">
                             <div className="text-left">
-                              <span className="text-[6.5px] font-mono text-zinc-500 block uppercase">Cardholder Name</span>
-                              <span className="text-[10px] font-extrabold uppercase text-white truncate max-w-[150px] block mt-0.5">{paymentCard?.name || "EXPLORER"}</span>
+                              <span className="text-[6.5px] font-mono text-gray-500 block uppercase">Cardholder Name</span>
+                              <span className="text-[10px] font-extrabold uppercase text-gray-900 truncate max-w-[150px] block mt-0.5">{paymentCard?.name || "EXPLORER"}</span>
                             </div>
                             <div className="text-right">
-                              <span className="text-[6.5px] font-mono text-zinc-500 block uppercase">Expires</span>
-                              <span className="text-[10px] font-extrabold text-white block mt-0.5">{paymentCard?.expiry || "08/29"}</span>
+                              <span className="text-[6.5px] font-mono text-gray-500 block uppercase">Expires</span>
+                              <span className="text-[10px] font-extrabold text-gray-900 block mt-0.5">{paymentCard?.expiry || "08/29"}</span>
                             </div>
                           </div>
                         </div>
@@ -705,13 +705,13 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-3 text-left">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Subscription Tiers</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Subscription Tiers</h4>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
-                        <div className={`relative bg-zinc-950/20 border rounded-3xl p-5 flex flex-col justify-between transition-all ${selectedTier === "free" ? "border-brand-cyan/40 bg-zinc-900/10" : "border-white/5"}`}>
+                        <div className={`relative bg-white shadow-sm border rounded-3xl p-5 flex flex-col justify-between transition-all ${selectedTier === "free" ? "border-brand-cyan/40 bg-zinc-900/10" : "border-gray-200"}`}>
                           <div>
-                            <span className="text-[8px] font-black uppercase tracking-widest text-zinc-500 font-mono">Free Tier</span>
-                            <h5 className="text-sm font-extrabold text-white mt-1">Explorer Base</h5>
-                            <div className="mt-4 flex items-baseline gap-1 text-white">
+                            <span className="text-[8px] font-black uppercase tracking-widest text-gray-500 font-mono">Free Tier</span>
+                            <h5 className="text-sm font-extrabold text-gray-900 mt-1">Explorer Base</h5>
+                            <div className="mt-4 flex items-baseline gap-1 text-gray-900">
                               <span className="text-2xl font-black">$0</span>
                             </div>
                           </div>
@@ -730,21 +730,21 @@ export default function SettingsPage() {
                 {/* SECURITY CENTER */}
                 {activeTab === "security" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3 flex items-center justify-between flex-wrap gap-2">
+                    <div className="border-b border-gray-200 pb-3 flex items-center justify-between flex-wrap gap-2">
                       <div>
                         <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Security Hub</h3>
-                        <p className="text-[10px] text-zinc-400 mt-1">Secure your travel credentials, active logins, and security shields</p>
+                        <p className="text-[10px] text-gray-500 mt-1">Secure your travel credentials, active logins, and security shields</p>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Authenticator Controls</h4>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Authenticator Controls</h4>
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between p-3 bg-zinc-950/20 border border-white/5 rounded-2xl">
+                          <div className="flex items-center justify-between p-3 bg-white shadow-sm border border-gray-200 rounded-2xl">
                             <div>
-                              <h5 className="text-xs font-bold text-white">Two-Factor Auth (2FA)</h5>
-                              <p className="text-[8.5px] text-zinc-500 mt-0.5">Protects account security</p>
+                              <h5 className="text-xs font-bold text-gray-900">Two-Factor Auth (2FA)</h5>
+                              <p className="text-[8.5px] text-gray-500 mt-0.5">Protects account security</p>
                             </div>
                             <button 
                               onClick={() => {
@@ -752,7 +752,7 @@ export default function SettingsPage() {
                                 triggerToast(`2FA set to ${!is2faEnabled ? "Enabled" : "Disabled"}.`);
                               }}
                               className={`px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded-xl transition-all cursor-pointer border ${
-                                is2faEnabled ? "bg-brand-cyan/15 border-brand-cyan/20 text-brand-cyan" : "bg-white/5 border-white/10 text-zinc-400"
+                                is2faEnabled ? "bg-brand-cyan/15 border-brand-cyan/20 text-brand-cyan" : "bg-gray-50 border-gray-200 text-gray-500"
                               }`}
                             >
                               {is2faEnabled ? "Enabled" : "Disabled"}
@@ -763,8 +763,8 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-white/5 pb-2">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Active Client Lobbies ({displaySessions.length})</h4>
+                      <div className="flex items-center justify-between flex-wrap gap-2 border-b border-gray-200 pb-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">Active Client Lobbies ({displaySessions.length})</h4>
                         {displaySessions.length > 1 && (
                           <div className="flex items-center gap-2">
                             <button
@@ -782,20 +782,20 @@ export default function SettingsPage() {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {displaySessions.map((sess: SessionDisplayItem) => (
                           <div key={sess.id} className={`p-4 rounded-2xl flex flex-col justify-between gap-3 text-left border transition-all ${
-                            sess.isCurrent ? "bg-brand-cyan/5 border-brand-cyan/30" : "bg-zinc-950/20 border-white/5"
+                            sess.isCurrent ? "bg-brand-cyan/5 border-brand-cyan/30" : "bg-white shadow-sm border-gray-200"
                           }`}>
                             <div>
                               <div className="flex items-center justify-between gap-2">
-                                <h5 className="text-[11px] font-extrabold text-white truncate">{sess.deviceInfo}</h5>
+                                <h5 className="text-[11px] font-extrabold text-gray-900 truncate">{sess.deviceInfo}</h5>
                                 {sess.isCurrent ? (
                                   <span className="px-2 py-0.5 bg-emerald-500/10 border border-emerald-500/30 text-[8px] font-black text-emerald-400 rounded-full flex items-center gap-1 shrink-0">
                                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Current Device
                                   </span>
                                 ) : (
-                                  <span className="text-[8px] font-mono text-zinc-500 uppercase">Secondary</span>
+                                  <span className="text-[8px] font-mono text-gray-500 uppercase">Secondary</span>
                                 )}
                               </div>
-                              <p className="text-[9px] text-zinc-400 mt-1.5 font-mono">IP: {sess.ipAddress}</p>
+                              <p className="text-[9px] text-gray-500 mt-1.5 font-mono">IP: {sess.ipAddress}</p>
                             </div>
                             {!sess.isCurrent && (
                               <button 
@@ -818,13 +818,13 @@ export default function SettingsPage() {
                 {/* PRIVACY CONTROL CENTER */}
                 {activeTab === "privacy" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3">
+                    <div className="border-b border-gray-200 pb-3">
                       <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Privacy Matrix</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1">Configure visibility criteria and node settings</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Configure visibility criteria and node settings</p>
                     </div>
 
-                    <div className="bg-zinc-950/20 border border-white/5 rounded-2xl overflow-hidden">
-                      <div className="grid grid-cols-12 bg-white/[0.01] border-b border-white/5 p-3 text-[9px] font-black uppercase tracking-widest text-zinc-500">
+                    <div className="bg-white shadow-sm border border-gray-200 rounded-2xl overflow-hidden">
+                      <div className="grid grid-cols-12 bg-gray-50 border-b border-gray-200 p-3 text-[9px] font-black uppercase tracking-widest text-gray-500">
                         <div className="col-span-5 text-left">Visibility Node</div>
                         <div className="col-span-7 grid grid-cols-4 gap-2 text-center">
                           <span>Public</span>
@@ -842,7 +842,7 @@ export default function SettingsPage() {
                           return (
                             <div key={key} className="grid grid-cols-12 p-3 text-xs items-center">
                               <div className="col-span-5 text-left">
-                                <span className="font-extrabold text-zinc-200 block text-[11px]">{label}</span>
+                                <span className="font-extrabold text-gray-900 block text-[11px]">{label}</span>
                               </div>
                               <div className="col-span-7 grid grid-cols-4 gap-2 justify-items-center">
                                 {(["public", "friends", "private", "custom"] as const).map(option => (
@@ -850,7 +850,7 @@ export default function SettingsPage() {
                                     key={option}
                                     onClick={() => setPrivacyMatrix(prev => ({ ...prev, [key]: option }))}
                                     className={`h-4 w-4 rounded-full flex items-center justify-center border transition-all cursor-pointer ${
-                                      val === option ? "border-brand-cyan bg-brand-cyan/20" : "border-white/10 hover:border-white/20"
+                                      val === option ? "border-brand-cyan bg-brand-cyan/20" : "border-gray-300 bg-white hover:border-gray-400 shadow-sm"
                                     }`}
                                   >
                                     {val === option && <div className="h-1.5 w-1.5 rounded-full bg-brand-cyan" />}
@@ -868,9 +868,9 @@ export default function SettingsPage() {
                 {/* NOTIFICATION CONTROL CENTER */}
                 {activeTab === "notifications" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3">
+                    <div className="border-b border-gray-200 pb-3">
                       <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Notification Desk</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1">Manage explorer prompts and group alerts</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Manage explorer prompts and group alerts</p>
                     </div>
 
                     <div className="space-y-2">
@@ -881,12 +881,12 @@ export default function SettingsPage() {
                         return (
                           <div 
                             key={key} 
-                            className="flex items-center justify-between p-2.5 bg-zinc-950/15 border border-white/5 rounded-xl cursor-pointer hover:bg-white/[0.01]"
+                            className="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50"
                             onClick={() => setNotifications(prev => ({ ...prev, [key]: !val }))}
                           >
-                            <span className="text-xs font-bold text-zinc-300">{label} Alerts</span>
+                            <span className="text-xs font-bold text-gray-700">{label} Alerts</span>
                             <div className={`w-8 h-4.5 rounded-full p-0.5 transition-colors duration-205 flex items-center ${val ? "bg-brand-cyan" : "bg-zinc-800"}`}>
-                              <div className={`bg-zinc-950 w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-205 ${val ? "translate-x-3.5" : "translate-x-0"}`} />
+                              <div className={`bg-white w-3.5 h-3.5 rounded-full shadow-md transform transition-transform duration-205 ${val ? "translate-x-3.5" : "translate-x-0"}`} />
                             </div>
                           </div>
                         );
@@ -898,15 +898,15 @@ export default function SettingsPage() {
                 {/* ADVENTURE PREFERENCES */}
                 {activeTab === "adventure" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3">
+                    <div className="border-b border-gray-200 pb-3">
                       <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Adventure Preferences</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1">Configure Travel Radius bounds, budgets, levels, and adventure tags</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Configure Travel Radius bounds, budgets, levels, and adventure tags</p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-zinc-400">
+                          <div className="flex justify-between text-[10px] font-black uppercase tracking-wider text-gray-500">
                             <span>Max Travel Radius</span>
                             <span className="text-brand-cyan">{travelRadius} km</span>
                           </div>
@@ -917,18 +917,18 @@ export default function SettingsPage() {
                             step="10"
                             value={travelRadius}
                             onChange={(e) => setTravelRadius(Number(e.target.value))}
-                            className="w-full accent-brand-cyan bg-white/5 h-1.5 rounded-full outline-none"
+                            className="w-full accent-brand-cyan bg-gray-50 h-1.5 rounded-full outline-none"
                           />
                         </div>
                       </div>
 
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <span className="text-[9px] uppercase font-black text-zinc-500 tracking-wider block">Intensity Mode</span>
+                          <span className="text-[9px] uppercase font-black text-gray-500 tracking-wider block">Intensity Mode</span>
                           <select 
                             value={difficulty} 
                             onChange={(e) => setDifficulty(e.target.value as any)}
-                            className="w-full px-3 py-2 bg-zinc-900 border border-white/5 rounded-xl text-xs text-white outline-none font-bold"
+                            className="w-full px-3 py-2 bg-white shadow-sm border border-gray-200 rounded-xl text-xs text-gray-900 outline-none font-bold"
                           >
                             <option value="Easy">Easy</option>
                             <option value="Medium">Medium</option>
@@ -940,7 +940,7 @@ export default function SettingsPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 border-b border-white/5 pb-1">Adventure Interests</h4>
+                      <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 border-b border-gray-200 pb-1">Adventure Interests</h4>
                       <div className="flex flex-wrap gap-2">
                         {ADVENTURE_CATEGORIES_LIST.map(tag => {
                           const isSelected = selectedTags.includes(tag);
@@ -949,7 +949,7 @@ export default function SettingsPage() {
                               key={tag}
                               onClick={() => toggleTagSelection(tag)}
                               className={`px-3 py-1.5 text-[9px] font-black uppercase tracking-wider rounded-xl border transition-all cursor-pointer ${
-                                isSelected ? "bg-brand-cyan/20 border-brand-cyan/40 text-brand-cyan" : "bg-transparent border-white/5 text-zinc-400"
+                                isSelected ? "bg-brand-cyan/20 border-brand-cyan/40 text-brand-cyan" : "bg-transparent border-gray-200 text-gray-500"
                               }`}
                             >
                               {tag}
@@ -964,9 +964,9 @@ export default function SettingsPage() {
                 {/* CONNECTED ACCOUNTS */}
                 {activeTab === "integrations" && (
                   <div className="space-y-6 text-left">
-                    <div className="border-b border-white/5 pb-3">
+                    <div className="border-b border-gray-200 pb-3">
                       <h3 className="text-sm font-black uppercase tracking-wider text-brand-cyan">Connected Networks</h3>
-                      <p className="text-[10px] text-zinc-400 mt-1">Manage API authorization links</p>
+                      <p className="text-[10px] text-gray-500 mt-1">Manage API authorization links</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -975,10 +975,10 @@ export default function SettingsPage() {
                         const label = key.toUpperCase();
                         
                         return (
-                          <div key={key} className="bg-zinc-950/20 border border-white/5 p-4 rounded-3xl flex items-center justify-between gap-4">
+                          <div key={key} className="bg-white shadow-sm border border-gray-200 p-4 rounded-3xl flex items-center justify-between gap-4">
                             <div className="min-w-0">
-                              <span className="text-xs font-black text-white">{label}</span>
-                              <span className="text-[9px] text-zinc-500 block truncate mt-0.5">
+                              <span className="text-xs font-black text-gray-900">{label}</span>
+                              <span className="text-[9px] text-gray-500 block truncate mt-0.5">
                                 {data.connected ? "Authorized" : "Disconnected"}
                               </span>
                             </div>
@@ -1001,8 +1001,8 @@ export default function SettingsPage() {
             </AnimatePresence>
           </div>
           
-          <div className="pt-4 border-t border-white/5 flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap mt-6">
-            <span className="text-[9px] font-mono text-zinc-500 font-bold uppercase tracking-wider">
+          <div className="pt-4 border-t border-gray-200 flex items-center justify-between gap-4 shrink-0 flex-wrap sm:flex-nowrap mt-6">
+            <span className="text-[9px] font-mono text-gray-500 font-bold uppercase tracking-wider">
               Selected: {activeNavItem.label} • System synced
             </span>
             <button 
@@ -1057,7 +1057,7 @@ export default function SettingsPage() {
                   triggerToast("Failed to save configuration settings.");
                 }
               }}
-              className="px-4 py-2 bg-brand-cyan text-zinc-950 text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-cyan-400 transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center gap-1.5 disabled:opacity-50"
+              className="px-4 py-2 bg-brand-cyan text-gray-50 text-[10px] font-black uppercase tracking-wider rounded-xl hover:bg-cyan-400 transition-all cursor-pointer shadow-md shadow-brand-cyan/10 flex items-center gap-1.5 disabled:opacity-50"
             >
               {(updateProfileMutation.isPending || updateSettingsMutation.isPending || updatePlanMutation.isPending) && (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -1086,13 +1086,13 @@ export default function SettingsPage() {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="relative w-full max-w-lg bg-zinc-950 border-t border-white/10 rounded-t-3xl p-5 flex flex-col gap-4 z-10 max-h-[80vh] overflow-y-auto"
+              className="relative w-full max-w-lg bg-white border-t border-gray-200 rounded-t-3xl p-5 flex flex-col gap-4 z-10 max-h-[80vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                <span className="text-xs font-black uppercase tracking-widest text-zinc-400">Settings Workspace</span>
+              <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+                <span className="text-xs font-black uppercase tracking-widest text-gray-500">Settings Workspace</span>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-1 rounded-lg border border-white/10 text-zinc-500 hover:text-white"
+                  className="p-1 rounded-lg border border-gray-200 text-gray-500 hover:text-gray-900"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -1111,14 +1111,14 @@ export default function SettingsPage() {
                         setMobileMenuOpen(false);
                       }}
                       className={`flex items-center justify-between p-3 rounded-2xl text-left border ${
-                        isActive ? "bg-white/[0.03] border-brand-cyan/20 text-brand-cyan" : "bg-white/[0.01] border-white/5 text-zinc-400"
+                        isActive ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan" : "bg-white border-gray-200 text-gray-500"
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <Icon className="h-4.5 w-4.5" />
                         <div>
                           <span className="text-[11px] font-extrabold block">{item.label}</span>
-                          <span className="text-[8px] text-zinc-500 block">{item.sub}</span>
+                          <span className="text-[8px] text-gray-500 block">{item.sub}</span>
                         </div>
                       </div>
                     </button>
@@ -1137,12 +1137,12 @@ export default function SettingsPage() {
             initial={{ opacity: 0, y: 50, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.95 }}
-            className="fixed bottom-24 md:bottom-8 right-6 z-50 glass-panel border-brand-cyan/20 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 bg-zinc-950/90 backdrop-blur-xl"
+            className="fixed bottom-24 md:bottom-8 right-6 z-50 glass-panel border-brand-cyan/20 px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 bg-white/90 backdrop-blur-xl"
           >
             <div className="h-6 w-6 rounded-lg bg-brand-cyan/15 border border-brand-cyan/20 flex items-center justify-center text-brand-cyan">
               <Sparkles className="h-3.5 w-3.5 animate-pulse" />
             </div>
-            <p className="text-xs font-semibold text-zinc-300">
+            <p className="text-xs font-semibold text-gray-700">
               {showToast}
             </p>
           </motion.div>

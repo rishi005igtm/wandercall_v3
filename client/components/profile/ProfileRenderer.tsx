@@ -67,7 +67,7 @@ interface CompanionAvatarProps {
 
 function CompanionAvatar({ avatar, name, className = "h-8 w-8 text-xs" }: CompanionAvatarProps) {
   return (
-    <div className={`rounded-full bg-zinc-900 flex items-center justify-center font-black text-white overflow-hidden shrink-0 select-none ${className}`}>
+    <div className={`rounded-full bg-gray-100 flex items-center justify-center font-black text-gray-900 border border-gray-200 overflow-hidden shrink-0 select-none ${className}`}>
       {avatar ? (
         <img src={avatar} alt={name} className="h-full w-full object-cover" />
       ) : (
@@ -375,12 +375,12 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
-      className="px-3 md:px-12 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-6 md:gap-10 overflow-y-visible"
+      className="px-3 md:px-12 py-4 md:py-8 max-w-[1400px] mx-auto flex flex-col gap-6 md:gap-10 overflow-y-visible bg-mesh-premium text-gray-900 min-h-[calc(100vh-4rem)] w-full"
     >
       {/* SECTION 1: PROFILE COVER & HERO CARD */}
       <motion.section variants={itemVariants} className="w-full relative flex flex-col">
         {/* Cover Photo */}
-        <div className="w-full h-[220px] md:h-[320px] rounded-3xl overflow-hidden relative border border-white/10 shadow-2xl group/cover flex items-center justify-center select-none bg-zinc-950">
+        <div className="w-full h-[220px] md:h-[320px] rounded-3xl overflow-hidden relative border border-gray-200 shadow-xl group/cover flex items-center justify-center select-none bg-gray-50">
           {profile.coverImageUrl ? (
             <img 
               src={profile.coverImageUrl} 
@@ -388,24 +388,24 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               className="w-full h-full object-cover opacity-85"
             />
           ) : (
-            <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-zinc-950">
-              <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-              <div className="absolute -top-24 left-1/4 w-96 h-96 bg-brand-indigo/20 rounded-full blur-[100px] pointer-events-none animate-pulse" />
-              <div className="absolute -bottom-24 right-1/4 w-96 h-96 bg-brand-purple/20 rounded-full blur-[100px] pointer-events-none" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-cyan/15 rounded-full blur-[80px] pointer-events-none" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-white via-gray-50 to-gray-100">
+              <div className="absolute inset-0 bg-[linear-gradient(to_right,#00000008_1px,transparent_1px),linear-gradient(to_bottom,#00000008_1px,transparent_1px)] bg-[size:32px_32px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+              <div className="absolute -top-24 left-1/4 w-96 h-96 bg-brand-indigo/10 rounded-full blur-[100px] pointer-events-none animate-pulse" />
+              <div className="absolute -bottom-24 right-1/4 w-96 h-96 bg-brand-purple/10 rounded-full blur-[100px] pointer-events-none" />
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-brand-cyan/10 rounded-full blur-[80px] pointer-events-none" />
               <div className="relative z-10 flex flex-col items-center gap-2 px-6 text-center -mt-6 md:-mt-8">
-                <div className="px-3.5 py-1 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md flex items-center gap-2 shadow-inner">
+                <div className="px-3.5 py-1 rounded-full bg-white/80 border border-gray-200 backdrop-blur-md flex items-center gap-2 shadow-sm">
                   <Sparkles className="h-3 w-3 text-brand-cyan animate-pulse" />
-                  <span className="text-[9px] font-black uppercase tracking-widest text-zinc-300 font-mono">Verified Explorer Passport</span>
+                  <span className="text-[9px] font-black uppercase tracking-widest text-gray-700 font-mono">Verified Explorer Passport</span>
                 </div>
-                <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-b from-white via-zinc-100 to-zinc-400 bg-clip-text text-transparent drop-shadow-sm uppercase">
+                <h2 className="text-3xl md:text-5xl lg:text-6xl font-black tracking-tight bg-gradient-to-b from-gray-900 via-gray-700 to-gray-500 bg-clip-text text-transparent drop-shadow-sm uppercase">
                   {profile.displayName}
                 </h2>
               </div>
             </div>
           )}
 
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-black/30 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-black/5 pointer-events-none" />
 
           {isOwner && (
             <>
@@ -419,7 +419,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               <button suppressHydrationWarning
                 onClick={handleCoverClick} 
                 disabled={uploadCoverMutation.isPending}
-                className="absolute top-4 right-4 p-2.5 rounded-full bg-zinc-950/80 border border-white/10 hover:bg-zinc-900 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-md shadow-xl z-20 group disabled:opacity-50" 
+                className="absolute top-4 right-4 p-2.5 rounded-full bg-white/90 border border-gray-200 hover:bg-white text-gray-700 hover:text-gray-900 transition-all cursor-pointer backdrop-blur-md shadow-md z-20 group disabled:opacity-50" 
                 aria-label="Change cover photo"
               >
                 {uploadCoverMutation.isPending ? (
@@ -436,14 +436,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
         <div className="flex flex-col lg:flex-row justify-between items-center lg:items-end px-3 md:px-8 -mt-16 md:-mt-20 z-10 gap-6 w-full text-center lg:text-left">
           {/* Avatar & Identifiers */}
           <div className="flex flex-col lg:flex-row items-center lg:items-end gap-5 w-full lg:w-auto">
-            <div className="h-28 w-28 md:h-36 md:w-36 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple p-1 border-4 border-zinc-950 shadow-2xl relative group/avatar">
+            <div className="h-28 w-28 md:h-36 md:w-36 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple p-1 border-4 border-white shadow-xl relative group/avatar">
               <div 
                 onClick={() => {
                   if (profile.avatarUrl) {
                     setZoomedAvatar({ url: profile.avatarUrl, name: profile.displayName });
                   }
                 }}
-                className="h-full w-full rounded-full bg-zinc-900 flex items-center justify-center text-3xl md:text-4xl font-black text-white overflow-hidden cursor-pointer"
+                className="h-full w-full rounded-full bg-gray-100 flex items-center justify-center text-3xl md:text-4xl font-black text-gray-900 overflow-hidden cursor-pointer"
               >
                 {profile.avatarUrl ? (
                   <img src={profile.avatarUrl} alt={profile.displayName} className="h-full w-full object-cover" />
@@ -467,7 +467,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                       handleAvatarClick();
                     }} 
                     disabled={uploadAvatarMutation.isPending}
-                    className="absolute bottom-0 left-0 p-2 rounded-full bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all cursor-pointer backdrop-blur-sm shadow-lg z-20 group disabled:opacity-50" 
+                    className="absolute bottom-0 left-0 p-2 rounded-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 hover:text-gray-900 transition-all cursor-pointer backdrop-blur-sm shadow-md z-20 group disabled:opacity-50" 
                     aria-label="Change avatar photo"
                   >
                     {uploadAvatarMutation.isPending ? (
@@ -482,41 +482,41 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
             
             <div className="text-center lg:text-left w-full lg:w-auto">
               <div className="flex items-center justify-center lg:justify-start gap-2">
-                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white">{profile.displayName}</h1>
+                <h1 className="text-2xl md:text-3xl font-black tracking-tight text-gray-900">{profile.displayName}</h1>
                 <span className="h-5 w-5 bg-brand-cyan/10 border border-brand-cyan/20 text-brand-cyan rounded-full flex items-center justify-center text-[10px] font-bold">
                   <Check className="h-3 w-3" />
                 </span>
               </div>
               
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-1 text-xs font-mono text-zinc-400">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-1 text-xs font-mono text-gray-500">
                 <span>@{profile.username}</span>
-                <span className="text-zinc-600 font-sans">•</span>
+                <span className="text-gray-300 font-sans">•</span>
                 <div className="flex gap-2">
                   <span 
                     onClick={() => {
                       setConnectionsActiveTab("followers");
                       setShowConnectionsModal(true);
                     }}
-                    className="hover:text-white transition-colors cursor-pointer select-none"
+                    className="hover:text-gray-900 transition-colors cursor-pointer select-none"
                   >
-                    <strong className="text-zinc-200 font-sans font-black">{followersCount}</strong> Followers
+                    <strong className="text-gray-900 font-sans font-black">{followersCount}</strong> Followers
                   </span>
-                  <span className="text-zinc-600 font-sans">•</span>
+                  <span className="text-gray-300 font-sans">•</span>
                   <span 
                     onClick={() => {
                       setConnectionsActiveTab("following");
                       setShowConnectionsModal(true);
                     }}
-                    className="hover:text-white transition-colors cursor-pointer select-none"
+                    className="hover:text-gray-900 transition-colors cursor-pointer select-none"
                   >
-                    <strong className="text-zinc-200 font-sans font-black">{followingCount}</strong> Following
+                    <strong className="text-gray-900 font-sans font-black">{followingCount}</strong> Following
                   </span>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-3 text-xs text-zinc-400 font-semibold">
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mt-3 text-xs text-gray-500 font-semibold">
                 <span className="flex items-center gap-1.5"><MapPin className="h-3.5 w-3.5 text-brand-cyan" /> {profile.locationFormatted || "Location pending"}</span>
-                <span className="h-1 w-1 rounded-full bg-white/10 hidden sm:inline" />
+                <span className="h-1 w-1 rounded-full bg-gray-200 hidden sm:inline" />
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5 text-brand-purple" /> 
                   Joined {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : "Recently"}
@@ -531,13 +531,13 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               <>
                 <button suppressHydrationWarning
                   onClick={() => router.push("/profile/settings")}
-                  className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none"
+                  className="h-10 px-5 rounded-xl border border-gray-200 bg-white text-xs font-bold uppercase tracking-wider text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-sm transition-all cursor-pointer flex-1 sm:flex-none"
                 >
                   Edit Profile
                 </button>
                 <button suppressHydrationWarning
                   onClick={handleShareProfile}
-                  className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0" 
+                  className="h-10 w-10 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-sm flex items-center justify-center transition-all cursor-pointer shrink-0" 
                   aria-label="Share profile"
                 >
                   <Share2 className="h-4 w-4" />
@@ -552,14 +552,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                 />
                 <button suppressHydrationWarning
                   onClick={handleMessageClick}
-                  className="h-10 px-5 rounded-xl border border-white/5 bg-white/[0.02] text-xs font-bold uppercase tracking-wider text-zinc-300 hover:text-white hover:bg-white/5 transition-all cursor-pointer flex-1 sm:flex-none flex items-center justify-center gap-1.5"
+                  className="h-10 px-5 rounded-xl border border-gray-200 bg-white text-xs font-bold uppercase tracking-wider text-gray-700 hover:text-gray-900 hover:bg-gray-50 shadow-sm transition-all cursor-pointer flex-1 sm:flex-none flex items-center justify-center gap-1.5"
                 >
                   <MessageCircle className="h-3.5 w-3.5 text-brand-cyan" />
                   Message
                 </button>
                 <button suppressHydrationWarning
                   onClick={handleShareProfile}
-                  className="h-10 w-10 rounded-xl border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 flex items-center justify-center transition-all cursor-pointer shrink-0" 
+                  className="h-10 w-10 rounded-xl border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50 shadow-sm flex items-center justify-center transition-all cursor-pointer shrink-0" 
                   aria-label="Share profile"
                 >
                   <Share2 className="h-4 w-4" />
@@ -572,7 +572,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
       {/* SECTION 2: ADVENTURE DNA & SUMMARY */}
       <motion.section variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full items-stretch">
-        <div className="lg:col-span-4 bg-white/[0.01] border border-white/12 p-6 rounded-3xl flex items-center justify-center shadow-xl">
+        <div className="lg:col-span-4 bg-white/80 backdrop-blur-sm border border-gray-200 p-6 rounded-3xl flex items-center justify-center shadow-lg">
           <div className="relative w-[300px] h-[300px] flex-shrink-0">
             <svg width="300" height="300" className="relative z-10">
               {bgGrids.map((gridVal, gridIdx) => {
@@ -584,7 +584,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   <polygon
                     key={gridIdx}
                     points={guidePoints}
-                    className="stroke-white/5 stroke-1 fill-none"
+                    className="stroke-gray-200 stroke-1 fill-none"
                   />
                 );
               })}
@@ -598,7 +598,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                     y1={cy}
                     x2={x}
                     y2={y}
-                    className="stroke-white/5 stroke-[1px]"
+                    className="stroke-gray-200 stroke-[1px]"
                   />
                 );
               })}
@@ -629,7 +629,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                       x={pos.x}
                       y={pos.y}
                       className={`text-[8px] font-mono font-bold uppercase tracking-wider transition-colors duration-200 text-center ${
-                        isHovered ? "fill-brand-cyan font-black" : "fill-zinc-500"
+                        isHovered ? "fill-brand-cyan font-black" : "fill-gray-500"
                       }`}
                       textAnchor="middle"
                       alignmentBaseline="middle"
@@ -645,36 +645,36 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
         </div>
 
         {/* Explorer Stats Card */}
-        <div className="lg:col-span-8 bg-white/[0.01] border border-white/12 p-6 rounded-3xl shadow-lg flex flex-col gap-5 text-left">
+        <div className="lg:col-span-8 bg-white/80 backdrop-blur-sm border border-gray-200 p-6 rounded-3xl shadow-lg flex flex-col gap-5 text-left">
           <div className="flex flex-col gap-4">
-            <h3 className="text-sm font-black text-white uppercase tracking-wider mb-4 flex items-center gap-2">
+            <h3 className="text-sm font-black text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <Award className="h-4 w-4 text-brand-cyan" />
               Explorer Stats
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/12">
-                <span className="text-[9px] uppercase tracking-wider text-zinc-500 block">Reputation Score</span>
-                <span className="text-2xl font-black text-white">{profile.reputationScore ?? 0}</span>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Reputation Score</span>
+                <span className="text-2xl font-black text-gray-900">{profile.reputationScore ?? 0}</span>
               </div>
-              <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/12">
-                <span className="text-[9px] uppercase tracking-wider text-zinc-500 block">Level reached</span>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Level reached</span>
                 <span className="text-2xl font-black text-brand-purple">Lv. {profile.level ?? 1}</span>
               </div>
-              <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/12">
-                <span className="text-[9px] uppercase tracking-wider text-zinc-500 block">Adventures Done</span>
-                <span className="text-xl font-black text-white">{profile.adventuresCompleted ?? 0}</span>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Adventures Done</span>
+                <span className="text-xl font-black text-gray-900">{profile.adventuresCompleted ?? 0}</span>
               </div>
-              <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/12">
-                <span className="text-[9px] uppercase tracking-wider text-zinc-500 block">Communities Joined</span>
-                <span className="text-xl font-black text-white">{profile.communitiesJoined ?? 0}</span>
+              <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <span className="text-[9px] uppercase tracking-wider text-gray-500 block">Communities Joined</span>
+                <span className="text-xl font-black text-gray-900">{profile.communitiesJoined ?? 0}</span>
               </div>
             </div>
           </div>
 
           {/* Highlighted Bio Section - auto stretches on desktop, normal content height on mobile */}
-          <div className="lg:flex-1 min-h-[90px] bg-white/[0.02] hover:bg-white/[0.03] border border-white/10 hover:border-brand-purple/20 p-4 rounded-2xl flex flex-col justify-start gap-2 transition-all duration-300 shadow-inner">
-            <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500 bg-white/5 w-fit px-2 py-0.5 rounded">Explorer Bio</span>
-            <p className="text-xs text-zinc-300 font-semibold leading-relaxed">
+          <div className="lg:flex-1 min-h-[90px] bg-gray-50 hover:bg-white border border-gray-200 hover:border-brand-purple/20 p-4 rounded-2xl flex flex-col justify-start gap-2 transition-all duration-300 shadow-sm">
+            <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-gray-500 bg-gray-200/50 w-fit px-2 py-0.5 rounded">Explorer Bio</span>
+            <p className="text-xs text-gray-700 font-semibold leading-relaxed">
               {profile.bio || "No bio added yet."}
             </p>
           </div>
@@ -683,17 +683,17 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
       {/* SECTION 3: MEMORIES */}
       <motion.section variants={itemVariants} className="w-full">
-        <div className="bg-white/[0.01] border border-white/12 p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-xl text-left w-full">
+        <div className="bg-white/80 border border-gray-200 p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-lg text-left w-full">
           <div className="flex justify-between items-center w-full">
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-1">Memories</h2>
-              <p className="text-xs text-zinc-400 font-medium">Shared passport snapshots and adventure journals.</p>
+              <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight mb-1">Memories</h2>
+              <p className="text-xs text-gray-500 font-medium">Shared passport snapshots and adventure journals.</p>
             </div>
             
             {/* More Button */}
             <button suppressHydrationWarning
               onClick={() => router.push(`/profile/memories/${profile.username}`)}
-              className="h-9 px-4 rounded-xl border border-white/12 bg-white/[0.02] hover:bg-white/5 text-xs font-bold uppercase tracking-wider text-brand-cyan hover:text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-md shrink-0"
+              className="h-9 px-4 rounded-xl border border-gray-200 bg-white hover:bg-gray-50 text-xs font-bold uppercase tracking-wider text-brand-cyan hover:text-brand-cyan/80 flex items-center gap-1.5 transition-all cursor-pointer shadow-sm shrink-0"
             >
               <span>More</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -702,7 +702,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
             {memoriesList.map((item) => (
-              <div key={item.id} className="bg-white/[0.02] border border-white/12 rounded-2xl overflow-hidden hover:border-white/20 transition-all flex flex-col h-full text-left">
+              <div key={item.id} className="bg-white border border-gray-200 rounded-2xl overflow-hidden hover:border-brand-purple/20 transition-all flex flex-col h-full text-left shadow-sm hover:shadow-md">
                 <div className="w-full h-36 overflow-hidden relative">
                   <img src={item.image} alt={item.title} className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
                   <span className="absolute top-2.5 left-2.5 text-[8.5px] font-bold text-zinc-950 bg-brand-cyan border border-brand-cyan/20 px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-md">{item.tag}</span>
@@ -710,11 +710,11 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                 
                 <div className="p-3.5 flex-1 flex flex-col justify-between gap-3 text-left">
                   <div>
-                    <h3 className="text-xs font-black text-white truncate">{item.title}</h3>
-                    <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed mt-1 block line-clamp-2">{item.text}</p>
+                    <h3 className="text-xs font-black text-gray-900 truncate">{item.title}</h3>
+                    <p className="text-[10px] text-gray-500 font-semibold leading-relaxed mt-1 block line-clamp-2">{item.text}</p>
                   </div>
 
-                  <div className="border-t border-white/5 pt-2 flex items-center justify-between text-zinc-500">
+                  <div className="border-t border-gray-100 pt-2 flex items-center justify-between text-gray-400">
                     <span className="text-[8.5px] font-bold truncate flex items-center gap-1"><MapPin className="h-3 w-3 text-brand-purple" /> {item.location}</span>
                     <div className="flex items-center gap-2 ml-2 shrink-0">
                       <button suppressHydrationWarning onClick={() => handleLikeMemory(item.id, item.liked)} className={`hover:text-rose-500 transition-colors p-1 cursor-pointer ${item.liked ? "text-rose-500" : ""}`} aria-label="Like memory">
@@ -734,24 +734,24 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
 
       {/* SECTION 4: JOURNEY TIMELINE */}
       <motion.section variants={itemVariants} className="w-full">
-        <div className="bg-white/[0.01] border border-white/12 p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-xl text-left w-full">
+        <div className="bg-white/80 border border-gray-200 p-6 md:p-8 rounded-3xl flex flex-col gap-6 shadow-lg text-left w-full">
           <div className="flex justify-between items-start md:items-center">
             <div>
-              <h2 className="text-xl md:text-2xl font-black text-white tracking-tight mb-1">Journey</h2>
-              <p className="text-xs text-zinc-400 font-medium leading-relaxed">Completed treks, accomplishments, and milestones.</p>
+              <h2 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight mb-1">Journey</h2>
+              <p className="text-xs text-gray-500 font-medium leading-relaxed">Completed treks, accomplishments, and milestones.</p>
             </div>
             <div className="flex items-center gap-2 shrink-0 ml-4">
               <button suppressHydrationWarning
                 onClick={() => setJourneyIndex(prev => Math.max(0, prev - 1))}
                 disabled={journeyIndex === 0}
-                className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+                className="h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button suppressHydrationWarning
                 onClick={() => setJourneyIndex(prev => Math.min(Math.ceil(timelineJourney.length / 2) - 1, prev + 1))}
                 disabled={journeyIndex >= Math.ceil(timelineJourney.length / 2) - 1}
-                className="h-8 w-8 rounded-lg border border-white/5 bg-white/[0.02] text-zinc-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer"
+                className="h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-500 hover:text-gray-900 hover:bg-gray-50 disabled:opacity-30 disabled:pointer-events-none flex items-center justify-center transition-all cursor-pointer shadow-sm"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
@@ -763,14 +763,14 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="relative pl-6 sm:pl-8 border-l border-white/5 space-y-8 mt-4 py-2"
+            className="relative pl-6 sm:pl-8 border-l border-gray-200 space-y-8 mt-4 py-2"
           >
             {timelineJourney.slice(journeyIndex * 2, journeyIndex * 2 + 2).map((node, i) => {
               const isAdventure = node.type === "adventure";
               const isCampfire = node.type === "campfire";
               return (
                 <div key={i} className="relative group text-left">
-                  <div className={`absolute -left-[31px] sm:-left-[39px] top-1.5 h-[10px] w-[10px] sm:h-3 sm:w-3 rounded-full border bg-zinc-950 transition-all duration-300 group-hover:scale-125 ${
+                  <div className={`absolute -left-[31px] sm:-left-[39px] top-1.5 h-[10px] w-[10px] sm:h-3 sm:w-3 rounded-full border bg-white transition-all duration-300 group-hover:scale-125 ${
                     isAdventure 
                       ? "border-brand-cyan group-hover:bg-brand-cyan shadow-[0_0_10px_rgba(6,182,212,0.4)]" 
                       : isCampfire 
@@ -778,12 +778,12 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                         : "border-brand-purple group-hover:bg-brand-purple shadow-[0_0_10px_rgba(168,85,247,0.4)]"
                   }`} />
                   
-                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-500 block mb-0.5">{node.date}</span>
-                  <h3 className="text-xs font-black text-white group-hover:text-brand-cyan transition-colors">{node.title}</h3>
-                  <p className="text-[10px] text-zinc-400 font-semibold leading-relaxed mt-1">{node.details}</p>
+                  <span className="text-[9px] font-mono font-bold uppercase tracking-wider text-gray-500 block mb-0.5">{node.date}</span>
+                  <h3 className="text-xs font-black text-gray-900 group-hover:text-brand-cyan transition-colors">{node.title}</h3>
+                  <p className="text-[10px] text-gray-600 font-semibold leading-relaxed mt-1">{node.details}</p>
                   
                   <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="text-[8.5px] font-bold text-zinc-300 bg-white/5 border border-white/10 px-2 py-0.5 rounded uppercase tracking-wider">{node.meta}</span>
+                    <span className="text-[8.5px] font-bold text-gray-700 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded uppercase tracking-wider">{node.meta}</span>
                     <span className="text-[8.5px] font-black text-brand-purple bg-brand-purple/10 border border-brand-purple/20 px-2 py-0.5 rounded tracking-widest">{node.xp}</span>
                   </div>
                 </div>
@@ -801,18 +801,18 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-zinc-950 border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
+              className="bg-white border border-gray-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl relative"
             >
               {/* Close Button */}
               <button suppressHydrationWarning
                 onClick={() => setShowConnectionsModal(false)}
-                className="absolute top-4 right-4 p-1.5 rounded-xl bg-zinc-900 border border-white/10 hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-1.5 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
 
               {/* Tabs Switcher */}
-              <div className="flex border-b border-white/5 p-2 gap-2 mt-10">
+              <div className="flex border-b border-gray-100 p-2 gap-2 mt-10">
                 <button suppressHydrationWarning
                   onClick={() => {
                     setConnectionsActiveTab("followers");
@@ -821,7 +821,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   className={`flex-1 py-2 text-center text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer border ${
                     connectionsActiveTab === "followers"
                       ? "bg-brand-cyan/10 border-brand-cyan/20 text-brand-cyan"
-                      : "bg-transparent border-transparent text-zinc-500 hover:text-zinc-300"
+                      : "bg-transparent border-transparent text-gray-500 hover:text-gray-900"
                   }`}
                 >
                   Followers ({followersCount})
@@ -834,7 +834,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                   className={`flex-1 py-2 text-center text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer border ${
                     connectionsActiveTab === "following"
                       ? "bg-brand-purple/10 border-brand-purple/20 text-brand-purple"
-                      : "bg-transparent border-transparent text-zinc-500 hover:text-zinc-300"
+                      : "bg-transparent border-transparent text-gray-500 hover:text-gray-900"
                   }`}
                 >
                   Following ({followingCount})
@@ -842,18 +842,18 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               </div>
 
               {/* Search input */}
-              <div className="px-4 py-2 border-b border-white/5 flex items-center bg-white/[0.01]">
+              <div className="px-4 py-2 border-b border-gray-100 flex items-center bg-gray-50/50">
                 <input suppressHydrationWarning
                   type="text"
                   placeholder={`Search ${connectionsActiveTab}...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-zinc-900/60 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-brand-cyan/30 transition-colors"
+                  className="w-full bg-white border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-900 placeholder-gray-400 focus:outline-none focus:border-brand-cyan/50 transition-colors shadow-sm"
                 />
                 {searchQuery && (
                   <button suppressHydrationWarning
                     onClick={() => setSearchQuery("")}
-                    className="text-zinc-500 hover:text-zinc-300 transition-colors text-[10px] ml-2 font-bold uppercase shrink-0"
+                    className="text-gray-500 hover:text-gray-900 transition-colors text-[10px] ml-2 font-bold uppercase shrink-0"
                   >
                     Clear
                   </button>
@@ -865,7 +865,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                 {isLoadingList ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="h-5 w-5 text-brand-cyan animate-spin" />
-                    <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">Loading passport graph...</span>
+                    <span className="text-[10px] font-mono text-gray-500 uppercase tracking-wider">Loading passport graph...</span>
                   </div>
                 ) : (
                   <>
@@ -877,29 +877,29 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                           setSearchQuery("");
                           router.push(`/profile/${connection.username}`);
                         }}
-                        className="group bg-white/[0.02] border border-white/5 hover:border-white/15 p-3 rounded-2xl flex items-center justify-between gap-3 hover:bg-white/[0.04] transition-all cursor-pointer transform hover:-translate-y-0.5 duration-200"
+                        className="group bg-gray-50 border border-gray-100 hover:border-gray-300 hover:shadow-md p-3 rounded-2xl flex items-center justify-between gap-3 hover:bg-white transition-all cursor-pointer transform hover:-translate-y-0.5 duration-200"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <CompanionAvatar
                             avatar={connection.avatarUrl}
                             name={connection.displayName}
-                            className="h-10 w-10 text-sm border-2 border-white/10 group-hover:border-white/20 transition-all shadow-md"
+                            className="h-10 w-10 text-sm border-2 border-gray-200 group-hover:border-gray-300 transition-all shadow-sm"
                           />
                           <div className="min-w-0 text-left">
-                            <h4 className="text-xs font-black text-white group-hover:text-brand-cyan transition-colors truncate">
+                            <h4 className="text-xs font-black text-gray-900 group-hover:text-brand-cyan transition-colors truncate">
                               {connection.displayName}
                             </h4>
-                            <p className="text-[10px] text-zinc-400 font-mono truncate">
+                            <p className="text-[10px] text-gray-500 font-mono truncate">
                               @{connection.username}
                             </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
-                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold text-gray-600 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
                             <Sparkles className="h-2.5 w-2.5 text-brand-purple" /> {calculateCompatibility(connection.username)}%
                           </span>
-                          <ArrowRight className="h-3.5 w-3.5 text-zinc-500 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                          <ArrowRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-gray-900 group-hover:translate-x-0.5 transition-all" />
                         </div>
                       </div>
                     ))}
@@ -908,10 +908,10 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                       <button suppressHydrationWarning
                         onClick={() => fetchNextPage()}
                         disabled={isFetchingNext}
-                        className="w-full py-2.5 rounded-xl border border-white/5 hover:border-white/10 bg-white/[0.02] hover:bg-white/[0.04] text-[10px] font-bold uppercase tracking-wider text-zinc-400 hover:text-white transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                        className="w-full py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 text-[10px] font-bold uppercase tracking-wider text-gray-600 hover:text-gray-900 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-sm"
                       >
                         {isFetchingNext ? (
-                          <Loader2 className="h-3.5 w-3.5 text-zinc-400 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 text-gray-500 animate-spin" />
                         ) : (
                           "Load More Connections"
                         )}
@@ -919,7 +919,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
                     )}
 
                     {itemsList.length === 0 && (
-                      <div className="text-center py-12 text-zinc-500 text-xs font-medium">
+                      <div className="text-center py-12 text-gray-500 text-xs font-medium">
                         No connections found.
                       </div>
                     )}
@@ -942,7 +942,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative max-w-md w-full aspect-square rounded-full overflow-hidden border-4 border-white/10 shadow-2xl"
+              className="relative max-w-md w-full aspect-square rounded-full overflow-hidden border-4 border-white shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <img 
@@ -952,7 +952,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
               />
               <button suppressHydrationWarning
                 onClick={() => setZoomedAvatar(null)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-zinc-950/80 border border-white/10 text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                className="absolute top-4 right-4 p-2 rounded-full bg-white/90 border border-gray-200 text-gray-700 hover:text-gray-900 transition-colors cursor-pointer"
                 aria-label="Close zoomed view"
               >
                 <X className="h-5 w-5" />
@@ -969,7 +969,7 @@ export default function ProfileRenderer({ profile }: ProfileRendererProps) {
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 50 }}
-            className="fixed bottom-6 right-6 px-5 py-3 rounded-2xl bg-zinc-900 border border-white/10 shadow-2xl flex items-center gap-3 z-50 text-xs text-white font-semibold text-left"
+            className="fixed bottom-6 right-6 px-5 py-3 rounded-2xl bg-white border border-gray-200 shadow-xl flex items-center gap-3 z-50 text-xs text-gray-900 font-semibold text-left"
           >
             <Sparkles className="h-4 w-4 text-brand-cyan animate-pulse shrink-0" />
             <span>{showToast}</span>
