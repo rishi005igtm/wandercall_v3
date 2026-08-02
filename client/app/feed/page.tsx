@@ -208,6 +208,7 @@ export default function ImmersiveFeedPage() {
       images: post.images || [],
       likes: post.likeCount || 0,
       commentsCount: post.commentCount || 0,
+      saves: post.saveCount || 0,
       hasLiked: post.hasLiked || false,
       hasSaved: post.hasSaved || false,
       timestamp: formatRelativeTime(post.publishedAt || post.createdAt),
@@ -348,19 +349,19 @@ export default function ImmersiveFeedPage() {
       <div className="w-full md:w-[60%] lg:w-[65%] h-full flex flex-col relative">
         
         {/* Fixed Top Controls Area */}
-        <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-white/80 via-white/40 to-transparent pointer-events-none md:pointer-events-auto">
+        <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none md:pointer-events-auto">
           <div className="flex justify-between items-center w-full pointer-events-auto">
             <div className="flex items-center gap-3">
               <button 
                 onClick={() => setShowMobileFilters(!showMobileFilters)}
-                className="md:hidden h-10 w-10 bg-white/60 border border-gray-200 rounded-xl flex items-center justify-center backdrop-blur-md transition-all hover:bg-white text-gray-500 hover:text-brand-indigo shadow-lg cursor-pointer"
+                className="md:hidden h-10 w-10 bg-white relative z-50 border border-gray-200 rounded-xl flex items-center justify-center backdrop-blur-md transition-all text-gray-900 hover:text-brand-indigo shadow-lg cursor-pointer"
               >
                 <Filter className="h-5 w-5" />
               </button>
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-gray-900 text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-black transition-transform hover:scale-105 shadow-xl shadow-black/5">
+              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-white text-gray-900 text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-gray-100 transition-transform hover:scale-105 shadow-xl shadow-black/5">
                 <Plus className="h-4 w-4" /> Create
               </Link>
             </div>
@@ -579,20 +580,21 @@ export default function ImmersiveFeedPage() {
                           <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
                             <Heart className={`h-6 w-6 ${post.hasLiked ? "fill-brand-cyan text-brand-cyan" : "text-white"}`} />
                           </div>
-                          <span className="text-[10px] font-bold drop-shadow-md">{post.likes}</span>
+                          <span className="text-[10px] font-bold drop-shadow-md text-white">{post.likes}</span>
                         </button>
                         
                         <button onClick={() => setShowMobileComments(true)} className="group flex flex-col items-center gap-1">
                           <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
                             <MessageSquare className="h-6 w-6 text-white" />
                           </div>
-                          <span className="text-[10px] font-bold drop-shadow-md">{post.commentsCount}</span>
+                          <span className="text-[10px] font-bold drop-shadow-md text-white">{post.commentsCount}</span>
                         </button>
 
                         <button onClick={() => handleSave(post.id)} className="group flex flex-col items-center gap-1">
                           <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
                             <Bookmark className={`h-6 w-6 ${post.hasSaved ? "fill-white text-white" : "text-white"}`} />
                           </div>
+                          <span className="text-[10px] font-bold drop-shadow-md text-white">{post.saves}</span>
                         </button>
                       </div>
                     </div>
@@ -781,7 +783,7 @@ export default function ImmersiveFeedPage() {
         )}
       </AnimatePresence>
       {/* Global Mobile Floating Bottom Action Row */}
-      <div className="md:hidden fixed bottom-4 left-4 right-4 z-[90] bg-white/90 backdrop-blur-xl border border-gray-200 shadow-xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden">
+      <div className="md:hidden fixed bottom-4 left-4 right-4 z-[90] bg-black/95 backdrop-blur-xl border border-white/10 shadow-xl rounded-2xl h-14 p-1 px-2 flex items-center justify-between overflow-hidden">
         <Link href="/" className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-gray-400 hover:text-brand-indigo">
           <Home className="h-4 w-4 z-10" />
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Home</span>
