@@ -83,7 +83,7 @@ const ImmersiveMediaViewer = ({ images, onImageClick }: { images: string[], onIm
       : "object-contain md:object-cover";
 
   return (
-    <div className="relative w-full h-[100dvh] md:h-[75vh] md:rounded-[32px] rounded-none overflow-hidden bg-black md:border md:border-white/10 border-none group shadow-2xl flex items-center justify-center">
+    <div className="relative w-full h-[100dvh] md:h-[75vh] md:rounded-[32px] rounded-none overflow-hidden bg-black md:border md:border-gray-200 border-none group shadow-2xl md:shadow-none flex items-center justify-center">
       <AnimatePresence mode="wait">
         <motion.div
           key={activeIdx}
@@ -129,6 +129,120 @@ const ImmersiveMediaViewer = ({ images, onImageClick }: { images: string[], onIm
     </div>
   );
 };
+
+// ==========================================
+// MEMOIZED FEED POST CARD
+// ==========================================
+const FeedPostCard = React.memo(({
+  post,
+  isPredictiveTrigger,
+  observePost,
+  predictivePrefetchRef,
+  handleLike,
+  handleSave,
+  setShowMobileComments,
+  setStoryModalContent
+}: any) => {
+  return (
+    <div 
+      data-post-id={post.id}
+      ref={(node) => {
+        observePost(node);
+        if (isPredictiveTrigger) predictivePrefetchRef(node);
+      }}
+      className="w-full h-[100dvh] md:h-full snap-start snap-always flex flex-col justify-end md:justify-center p-0 md:p-8 lg:p-12 relative"
+      style={{ contentVisibility: 'auto', containIntrinsicSize: '100vh' }}
+    >
+      {/* Desktop: Centered Premium Card */}
+      {/* Mobile: Full Screen Edge-to-Edge Immersion */}
+      <div className="w-full h-full md:h-auto max-w-2xl mx-auto flex flex-col justify-end md:justify-start relative group transform-gpu">
+        
+        <div className="absolute inset-0 md:relative md:inset-auto w-full h-full md:h-auto z-0 md:z-10">
+          <ImmersiveMediaViewer images={post.images.length ? post.images : ["https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop"]} />
+        </div>
+
+        {/* Overlaid Information */}
+        <div className="relative z-20 p-4 md:p-6 md:absolute md:bottom-0 md:left-0 md:right-0 pb-24 md:pb-6 flex flex-col gap-4">
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-full border border-white/20 overflow-hidden bg-black/50 backdrop-blur-sm">
+              {post.user.avatarUrl ? (
+                <img src={post.user.avatarUrl} alt={post.user.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gradient-to-tr from-brand-indigo to-brand-purple">{post.user.name.charAt(0)}</div>
+              )}
+            </div>
+            <div className="flex flex-col">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-black text-white">{post.user.name}</span>
+                  {post.user.verified && <Check className="h-3.5 w-3.5 text-brand-cyan bg-brand-cyan/20 rounded-full p-0.5" />}
+                </div>
+                <button className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-[9px] font-bold uppercase tracking-wider transition-colors">
+                  Follow
+                </button>
+              </div>
+              <span className="text-[10px] text-zinc-300 font-semibold">{post.timestamp} • {post.location}</span>
+            </div>
+          </div>
+
+          <div className="pr-16 md:pr-0">
+            <h2 className="text-xl md:text-2xl font-black text-white drop-shadow-lg leading-tight mb-2">{post.title}</h2>
+            <div className="relative">
+              <p className="text-xs md:text-sm text-zinc-200 drop-shadow-md font-medium leading-relaxed max-w-xl">
+                {post.content && post.content.length > 60 
+                  ? post.content.substring(0, 60) + "..." 
+                  : post.content}
+                {post.content && post.content.length > 60 && (
+                  <button 
+                    onClick={() => setStoryModalContent({ title: post.title, content: post.content || "" })}
+                    className="text-[10px] md:text-xs font-bold text-brand-cyan uppercase tracking-wider ml-2 hover:text-white transition-colors drop-shadow-md"
+                  >
+                    More
+                  </button>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Data Chips */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-black uppercase text-brand-cyan tracking-wider flex items-center gap-1.5 shadow-lg">
+              <MapPin className="h-3 w-3" /> 2.4k km
+            </span>
+            <span className="px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-black uppercase text-brand-purple tracking-wider flex items-center gap-1.5 shadow-lg">
+              <Flame className="h-3 w-3" /> Hard
+            </span>
+          </div>
+
+          {/* Mobile Only Quick Actions */}
+          <div className="absolute right-4 bottom-28 md:hidden flex flex-col gap-4 items-center z-30">
+            <button onClick={() => handleLike(post.id, post.hasLiked)} className="group flex flex-col items-center gap-1">
+              <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
+                <Heart className={`h-6 w-6 ${post.hasLiked ? "fill-brand-cyan text-brand-cyan" : "text-white"}`} />
+              </div>
+              <span className="text-[10px] font-bold drop-shadow-md text-white">{post.likes}</span>
+            </button>
+            
+            <button onClick={() => setShowMobileComments(true)} className="group flex flex-col items-center gap-1">
+              <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
+                <MessageSquare className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-[10px] font-bold drop-shadow-md text-white">{post.commentsCount}</span>
+            </button>
+
+            <button onClick={() => handleSave(post.id, post.hasSaved)} className="group flex flex-col items-center gap-1">
+              <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
+                <Bookmark className={`h-6 w-6 ${post.hasSaved ? "fill-white text-white" : "text-white"}`} />
+              </div>
+              <span className="text-[10px] font-bold drop-shadow-md text-white">{post.saves}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+FeedPostCard.displayName = "FeedPostCard";
 
 // ==========================================
 // MAIN PAGE
@@ -273,16 +387,16 @@ export default function ImmersiveFeedPage() {
   const postComments = commentsData?.comments || [];
   const [commentInput, setCommentInput] = useState("");
 
-  const handleLike = (postId: string) => {
+  const handleLike = useCallback((postId: string, hasLiked: boolean) => {
     if (!isAuthenticated) return triggerToast("Log in to like posts");
-    likeMutation.mutate({ postId, alreadyLiked: false });
-  };
+    likeMutation.mutate({ postId, alreadyLiked: hasLiked });
+  }, [isAuthenticated, likeMutation]);
 
-  const handleSave = (postId: string) => {
+  const handleSave = useCallback((postId: string, hasSaved: boolean) => {
     if (!isAuthenticated) return triggerToast("Log in to save posts");
-    saveMutation.mutate({ postId, alreadySaved: false });
-    triggerToast("Saved to collection");
-  };
+    saveMutation.mutate({ postId, alreadySaved: hasSaved });
+    triggerToast(hasSaved ? "Removed from collection" : "Saved to collection");
+  }, [isAuthenticated, saveMutation]);
 
   const handleAddComment = () => {
     if (!commentInput.trim() || !activePostId) return;
@@ -349,7 +463,7 @@ export default function ImmersiveFeedPage() {
       <div className="w-full md:w-[60%] lg:w-[65%] h-full flex flex-col relative">
         
         {/* Fixed Top Controls Area */}
-        <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent pointer-events-none md:pointer-events-auto">
+        <div className="absolute md:relative top-0 left-0 right-0 p-4 md:p-6 flex flex-col gap-4 z-40 bg-gradient-to-b from-black/80 via-black/40 to-transparent md:bg-none pointer-events-none md:pointer-events-auto">
           <div className="flex justify-between items-center w-full pointer-events-auto">
             <div className="flex items-center gap-3">
               <button 
@@ -361,7 +475,7 @@ export default function ImmersiveFeedPage() {
             </div>
 
             <div className="flex items-center gap-3">
-              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-white text-gray-900 text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-gray-100 transition-transform hover:scale-105 shadow-xl shadow-black/5">
+              <Link href="/feed/create-post" className="h-10 px-4 rounded-full bg-white md:bg-[#111] text-gray-900 md:text-white text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-gray-100 md:hover:bg-[#222] transition-transform hover:scale-105 shadow-xl md:shadow-none shadow-black/5">
                 <Plus className="h-4 w-4" /> Create
               </Link>
             </div>
@@ -504,102 +618,17 @@ export default function ImmersiveFeedPage() {
               {feedPosts.map((post, index) => {
                 const isPredictiveTrigger = feedPosts.length >= 5 && index === feedPosts.length - 3;
                 return (
-                  <div 
+                  <FeedPostCard 
                     key={post.id}
-                    data-post-id={post.id}
-                    ref={(node) => {
-                      observePost(node);
-                      if (isPredictiveTrigger) predictivePrefetchRef(node);
-                    }}
-                    className="w-full h-[100dvh] md:h-full snap-start snap-always flex flex-col justify-end md:justify-center p-0 md:p-8 lg:p-12 relative"
-                  >
-                  {/* Desktop: Centered Premium Card */}
-                  {/* Mobile: Full Screen Edge-to-Edge Immersion */}
-                  <div className="w-full h-full md:h-auto max-w-2xl mx-auto flex flex-col justify-end md:justify-start relative group">
-                    
-                    <div className="absolute inset-0 md:relative md:inset-auto w-full h-full md:h-auto z-0 md:z-10">
-                      <ImmersiveMediaViewer images={post.images.length ? post.images : ["https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?q=80&w=2021&auto=format&fit=crop"]} />
-                    </div>
-
-                    {/* Overlaid Information */}
-                    <div className="relative z-20 p-4 md:p-6 md:absolute md:bottom-0 md:left-0 md:right-0 pb-24 md:pb-6 flex flex-col gap-4">
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full border border-white/20 overflow-hidden bg-black/50 backdrop-blur-sm">
-                          {post.user.avatarUrl ? (
-                            <img src={post.user.avatarUrl} alt={post.user.name} className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-xs font-bold bg-gradient-to-tr from-brand-indigo to-brand-purple">{post.user.name.charAt(0)}</div>
-                          )}
-                        </div>
-                        <div className="flex flex-col">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center gap-1">
-                              <span className="text-sm font-black text-white">{post.user.name}</span>
-                              {post.user.verified && <Check className="h-3.5 w-3.5 text-brand-cyan bg-brand-cyan/20 rounded-full p-0.5" />}
-                            </div>
-                            <button className="px-3 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/10 text-[9px] font-bold uppercase tracking-wider transition-colors">
-                              Follow
-                            </button>
-                          </div>
-                          <span className="text-[10px] text-zinc-300 font-semibold">{post.timestamp} • {post.location}</span>
-                        </div>
-                      </div>
-
-                      <div className="pr-16 md:pr-0">
-                        <h2 className="text-xl md:text-2xl font-black text-white drop-shadow-lg leading-tight mb-2">{post.title}</h2>
-                        <div className="relative">
-                          <p className="text-xs md:text-sm text-zinc-200 drop-shadow-md font-medium leading-relaxed max-w-xl">
-                            {post.content && post.content.length > 60 
-                              ? post.content.substring(0, 60) + "..." 
-                              : post.content}
-                            {post.content && post.content.length > 60 && (
-                              <button 
-                                onClick={() => setStoryModalContent({ title: post.title, content: post.content || "" })}
-                                className="text-[10px] md:text-xs font-bold text-brand-cyan uppercase tracking-wider ml-2 hover:text-white transition-colors drop-shadow-md"
-                              >
-                                More
-                              </button>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Data Chips */}
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-black uppercase text-brand-cyan tracking-wider flex items-center gap-1.5 shadow-lg">
-                          <MapPin className="h-3 w-3" /> 2.4k km
-                        </span>
-                        <span className="px-2.5 py-1 rounded-lg bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-black uppercase text-brand-purple tracking-wider flex items-center gap-1.5 shadow-lg">
-                          <Flame className="h-3 w-3" /> Hard
-                        </span>
-                      </div>
-
-                      {/* Mobile Only Quick Actions */}
-                      <div className="absolute right-4 bottom-28 md:hidden flex flex-col gap-4 items-center z-30">
-                        <button onClick={() => handleLike(post.id)} className="group flex flex-col items-center gap-1">
-                          <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
-                            <Heart className={`h-6 w-6 ${post.hasLiked ? "fill-brand-cyan text-brand-cyan" : "text-white"}`} />
-                          </div>
-                          <span className="text-[10px] font-bold drop-shadow-md text-white">{post.likes}</span>
-                        </button>
-                        
-                        <button onClick={() => setShowMobileComments(true)} className="group flex flex-col items-center gap-1">
-                          <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
-                            <MessageSquare className="h-6 w-6 text-white" />
-                          </div>
-                          <span className="text-[10px] font-bold drop-shadow-md text-white">{post.commentsCount}</span>
-                        </button>
-
-                        <button onClick={() => handleSave(post.id)} className="group flex flex-col items-center gap-1">
-                          <div className="h-12 w-12 rounded-full bg-black/40 backdrop-blur-md border border-white/10 flex items-center justify-center transition-colors">
-                            <Bookmark className={`h-6 w-6 ${post.hasSaved ? "fill-white text-white" : "text-white"}`} />
-                          </div>
-                          <span className="text-[10px] font-bold drop-shadow-md text-white">{post.saves}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                    post={post}
+                    isPredictiveTrigger={isPredictiveTrigger}
+                    observePost={observePost}
+                    predictivePrefetchRef={predictivePrefetchRef}
+                    handleLike={handleLike}
+                    handleSave={handleSave}
+                    setShowMobileComments={setShowMobileComments}
+                    setStoryModalContent={setStoryModalContent}
+                  />
                 );
               })}
               
@@ -626,13 +655,13 @@ export default function ImmersiveFeedPage() {
                   <Sparkles className="h-4 w-4 text-brand-indigo" /> Experience Context
                 </h3>
                 <div className="flex gap-4 mt-4">
-                  <button onClick={() => handleLike(activePost.id)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasLiked ? "text-brand-indigo" : "text-gray-500 hover:text-brand-indigo"}`}>
+                  <button onClick={() => handleLike(activePost.id, activePost.hasLiked || false)} className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasLiked ? "text-brand-indigo" : "text-gray-500 hover:text-brand-indigo"}`}>
                     <Heart className={`h-4 w-4 ${activePost.hasLiked ? "fill-brand-indigo" : ""}`} /> {activePost.likes} Likes
                   </button>
                   <button className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-500 hover:text-brand-indigo transition-colors">
                     <Share2 className="h-4 w-4" /> Share
                   </button>
-                  <button onClick={() => handleSave(activePost.id)} className={`ml-auto flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasSaved ? "text-gray-900" : "text-gray-500 hover:text-brand-indigo"}`}>
+                  <button onClick={() => handleSave(activePost.id, activePost.hasSaved || false)} className={`ml-auto flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider transition-colors ${activePost.hasSaved ? "text-gray-900" : "text-gray-500 hover:text-brand-indigo"}`}>
                     <Bookmark className={`h-4 w-4 ${activePost.hasSaved ? "fill-gray-900" : ""}`} /> Save
                   </button>
                 </div>
@@ -795,7 +824,7 @@ export default function ImmersiveFeedPage() {
         </Link>
 
         <div className="flex-1 flex justify-center relative z-50">
-          <Link href="/experiences" className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-[0_4px_15px_rgba(79,70,229,0.3)] border-2 border-white cursor-pointer hover:scale-105 transition-all duration-300">
+          <Link href="/experiences" className="h-11 w-11 rounded-full bg-gradient-to-tr from-brand-indigo to-brand-purple flex items-center justify-center shadow-lg border-2 border-black cursor-pointer hover:scale-105 transition-all duration-300">
             <Compass className="h-5 w-5 text-white" />
           </Link>
         </div>
@@ -806,7 +835,7 @@ export default function ImmersiveFeedPage() {
           <span className="text-[7.5px] font-extrabold uppercase tracking-wider mt-0.5 z-10">Feed</span>
         </Link>
 
-        <Link
+        <Link suppressHydrationWarning
           href={isAuthenticated ? "/profile/friends" : "/login"}
           className="relative flex flex-col items-center justify-center py-1 px-2 rounded-xl transition-all cursor-pointer group flex-1 text-gray-400 hover:text-brand-indigo"
         >
