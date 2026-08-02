@@ -22,7 +22,7 @@ import {
   useUserFeedQuery, 
   useLikePostMutation, 
   useSavePostMutation, 
-  useCommentsQuery, 
+  useCommentsInfiniteQuery, 
   useCommentMutation 
 } from "@/hooks/api/useFeed";
 
@@ -56,13 +56,14 @@ export default function UserMemoriesPage() {
   const [newCommentText, setNewCommentText] = useState("");
 
   // TanStack comments query for active post
-  const { data: commentsResponse, isLoading: isCommentsLoading } = useCommentsQuery(
+  const { data: commentsResponse, isLoading: isCommentsLoading } = useCommentsInfiniteQuery(
     activeCommentMemory?.id || "",
     Boolean(activeCommentMemory)
   );
 
   const activeComments = useMemo(() => {
-    return commentsResponse?.comments || [];
+    if (!commentsResponse) return [];
+    return commentsResponse.pages.flatMap((page: any) => page.items || []);
   }, [commentsResponse]);
 
   // Actions
