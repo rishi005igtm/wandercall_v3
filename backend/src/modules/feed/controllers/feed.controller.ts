@@ -195,9 +195,14 @@ export class FeedController {
    * Retrieve comments of a post
    */
   @Get('posts/:id/comments')
-  async getComments(@Param('id') id: string) {
-    const comments = await this.postService.getComments(id);
-    return { success: true, comments };
+  async getComments(
+    @Param('id') id: string,
+    @Query('cursor') cursor?: string,
+    @Query('limit') limitStr?: string,
+  ) {
+    const limit = limitStr ? parseInt(limitStr, 10) : 10;
+    const result = await this.postService.getComments(id, cursor, limit);
+    return { success: true, ...result };
   }
 
   /**

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
+import { Repository, In, LessThan } from 'typeorm';
 import { PostSaveEntity } from '../entities/post-save.entity';
 import { PostCommentEntity } from '../entities/post-comment.entity';
 import { UserInterestEntity } from '../entities/user-interest.entity';
@@ -76,10 +76,19 @@ export class InteractionRepository {
     return this.commentRepo.save(comment);
   }
 
-  async getComments(postId: string): Promise<PostCommentEntity[]> {
+  async getComments(
+    postId: string,
+    cursor?: string,
+    limit: number = 10,
+  ): Promise<PostCommentEntity[]> {
+    const where: any = { postId };
+    if (cursor) {
+      where.createdAt = LessThan(new Date(cursor));
+    }
     return this.commentRepo.find({
-      where: { postId },
+      where,
       order: { createdAt: 'DESC' },
+      take: limit + 1, // Fetch one extra to determine if there's a next page
     });
   }
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { UserProfileEntity } from '../entities/user-profile.entity';
 import { UserSettingsEntity } from '../entities/user-settings.entity';
 import { UserPlanEntity } from '../entities/user-plan.entity';
@@ -18,6 +18,11 @@ export class UserRepository {
 
   async findByUserId(userId: string): Promise<UserProfileEntity | null> {
     return this.profileRepo.findOne({ where: { userId } });
+  }
+
+  async findByUserIds(userIds: string[]): Promise<UserProfileEntity[]> {
+    if (!userIds || userIds.length === 0) return [];
+    return this.profileRepo.find({ where: { userId: In(userIds) } });
   }
 
   async findByUsername(username: string): Promise<UserProfileEntity | null> {

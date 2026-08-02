@@ -13,7 +13,7 @@ import {
 
 import {
   useFeedInfiniteQuery,
-  useCommentsQuery,
+  useCommentsInfiniteQuery,
   useCommentMutation,
   useLikePostMutation,
   useSavePostMutation,
@@ -380,11 +380,21 @@ export default function ImmersiveFeedPage() {
   const activePost = useMemo(() => feedPosts.find(p => p.id === activePostId), [feedPosts, activePostId]);
 
   // Unified Query for Right Panel Data
-  const { data: commentsData, isLoading: isContextLoading } = useCommentsQuery(
+  const { 
+    data: commentsData, 
+    isLoading: isContextLoading,
+    fetchNextPage: fetchNextCommentsPage,
+    hasNextPage: hasNextCommentsPage,
+    isFetchingNextPage: isFetchingNextCommentsPage 
+  } = useCommentsInfiniteQuery(
     activePostId || "", 
     Boolean(activePostId)
   );
-  const postComments = commentsData?.comments || [];
+
+  const postComments = useMemo(() => {
+    if (!commentsData) return [];
+    return commentsData.pages.flatMap(page => page.items || []);
+  }, [commentsData]);
   const [commentInput, setCommentInput] = useState("");
 
   const handleLike = useCallback((postId: string, hasLiked: boolean) => {
@@ -424,6 +434,25 @@ export default function ImmersiveFeedPage() {
       predictiveObserver.current.observe(node);
     }
   }, [isLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
+
+  // Comments Infinite Scroll Trigger
+  const commentsObserver = useRef<IntersectionObserver | null>(null);
+  const commentsObserverRef = useCallback((node: HTMLDivElement | null) => {
+    if (isContextLoading || isFetchingNextCommentsPage || !hasNextCommentsPage) return;
+    
+    if (commentsObserver.current) {
+      commentsObserver.current.disconnect();
+    }
+
+    if (node) {
+      commentsObserver.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasNextCommentsPage && !isFetchingNextCommentsPage) {
+          fetchNextCommentsPage();
+        }
+      });
+      commentsObserver.current.observe(node);
+    }
+  }, [isContextLoading, isFetchingNextCommentsPage, hasNextCommentsPage, fetchNextCommentsPage]);
 
   // Handle locking body scroll
   useEffect(() => {
@@ -700,8 +729,8 @@ export default function ImmersiveFeedPage() {
                   
                   {postComments.length > 0 ? (
                     <div className="space-y-3">
-                      {postComments.map((comm: any) => (
-                        <div key={comm.id} className="flex gap-3">
+                      {postComments.map((comm: any, index: number) => (
+                        <div key={comm.id} className="flex gap-3" ref={index === postComments.length - 1 ? commentsObserverRef : null}>
                           <div className="h-8 w-8 rounded-full bg-gray-200 text-gray-900 shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold">
                             {comm.user.avatarUrl ? <img src={comm.user.avatarUrl} className="w-full h-full object-cover" /> : comm.user.displayName.charAt(0)}
                           </div>
@@ -714,6 +743,11 @@ export default function ImmersiveFeedPage() {
                           </div>
                         </div>
                       ))}
+                      {isFetchingNextCommentsPage && (
+                        <div className="flex justify-center py-4">
+                          <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="py-8 text-center flex flex-col items-center justify-center gap-2">
@@ -777,8 +811,8 @@ export default function ImmersiveFeedPage() {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                {postComments.map((comm: any) => (
-                  <div key={comm.id} className="flex gap-3">
+                {postComments.map((comm: any, index: number) => (
+                  <div key={comm.id} className="flex gap-3" ref={index === postComments.length - 1 ? commentsObserverRef : null}>
                     <div className="h-8 w-8 rounded-full bg-gray-200 shrink-0 overflow-hidden flex items-center justify-center text-[10px] font-bold text-gray-900">
                       {comm.user.avatarUrl ? <img src={comm.user.avatarUrl} className="w-full h-full object-cover" /> : comm.user.displayName.charAt(0)}
                     </div>
@@ -791,6 +825,11 @@ export default function ImmersiveFeedPage() {
                     </div>
                   </div>
                 ))}
+                {isFetchingNextCommentsPage && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                  </div>
+                )}
               </div>
 
               <div className="p-4 border-t border-gray-200 bg-white">

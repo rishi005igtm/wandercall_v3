@@ -368,7 +368,7 @@ export class PostService {
     userId: string,
     postId: string,
     content: string,
-  ): Promise<PostCommentEntity> {
+  ): Promise<any> {
     const post = await this.postRepository.findById(postId);
     if (!post) {
       throw new NotFoundException(`Post with ID ${postId} not found.`);
@@ -397,29 +397,49 @@ export class PostService {
       post.category,
     );
 
-    return saved;
+    const profile = await this.userRepository.findByUserId(userId);
+
+    return {
+      id: saved.id,
+      content: saved.content,
+      createdAt: saved.createdAt,
+      user: {
+        id: userId,
+        username: profile?.username || 'unknown',
+        displayName: profile?.displayName || 'Wanderer',
+        avatarUrl: profile?.avatarUrl || null,
+      }
+    };
   }
 
   /**
    * Get comments with stitched user profile details.
    */
-  async getComments(postId: string): Promise<any[]> {
-    const comments = await this.interactionRepository.getComments(postId);
-    const authorIds = [...new Set(comments.map((c) => c.userId))];
+  async getComments(postId: string, cursor?: string, limit: number = 10): Promise<{ items: any[], nextCursor: string | null }> {
+    const rawComments = await this.interactionRepository.getComments(postId, cursor, limit);
+    
+    let hasMore = false;
+    let commentsToProcess = rawComments;
+    if (rawComments.length > limit) {
+      hasMore = true;
+      commentsToProcess = rawComments.slice(0, limit);
+    }
+
+    const authorIds = [...new Set(commentsToProcess.map((c) => c.userId))];
 
     const profilesMap = new Map<string, any>();
-    for (const id of authorIds) {
-      const profile = await this.userRepository.findByUserId(id);
-      if (profile) {
-        profilesMap.set(id, {
+    if (authorIds.length > 0) {
+      const profiles = await this.userRepository.findByUserIds(authorIds);
+      profiles.forEach((profile) => {
+        profilesMap.set(profile.userId, {
           username: profile.username,
           displayName: profile.displayName,
           avatarUrl: profile.avatarUrl,
         });
-      }
+      });
     }
 
-    return comments.map((c) => {
+    const items = commentsToProcess.map((c) => {
       const profile = profilesMap.get(c.userId) || {
         username: 'unknown',
         displayName: 'Wanderer',
@@ -435,6 +455,10 @@ export class PostService {
         },
       };
     });
+
+    const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].createdAt.toISOString() : null;
+
+    return { items, nextCursor };
   }
 
   /**

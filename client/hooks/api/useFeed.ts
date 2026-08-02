@@ -22,10 +22,12 @@ export function useUserFeedQuery(username: string, category?: string, enabled = 
   });
 }
 
-export function useCommentsQuery(postId: string, enabled = true) {
-  return useQuery({
+export function useCommentsInfiniteQuery(postId: string, enabled = true) {
+  return useInfiniteQuery({
     queryKey: QUERY_KEYS.FEED.COMMENTS(postId),
-    queryFn: () => feedService.getComments(postId),
+    queryFn: ({ pageParam }) => feedService.getComments(postId, pageParam),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: Boolean(postId) && enabled,
     staleTime: 5 * 1000,
   });
@@ -203,8 +205,24 @@ export function useCommentMutation() {
     mutationFn: ({ postId, content }: { postId: string; content: string }) =>
       feedService.addComment(postId, content),
     onSuccess: (data, variables) => {
-      // Invalidate comments of this post
-      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.FEED.COMMENTS(variables.postId) });
+      // Optimistically inject the new comment at the top of the local comments cache
+      queryClient.setQueriesData(
+        { queryKey: QUERY_KEYS.FEED.COMMENTS(variables.postId) },
+        (oldData: any) => {
+          if (!oldData || !oldData.pages) return oldData;
+          const newPages = [...oldData.pages];
+          if (newPages[0] && newPages[0].items) {
+            newPages[0] = {
+              ...newPages[0],
+              items: [data.comment, ...newPages[0].items],
+            };
+          }
+          return {
+            ...oldData,
+            pages: newPages,
+          };
+        }
+      );
       
       // Optimistically update comment count instead of invalidating to prevent feed reshuffling
       queryClient.setQueriesData({ queryKey: ['feed'] }, (oldData: any) => {

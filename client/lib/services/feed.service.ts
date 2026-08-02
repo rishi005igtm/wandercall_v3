@@ -131,8 +131,10 @@ export const feedService = {
     return data;
   },
 
-  async getComments(postId: string): Promise<{ success: boolean; comments: PostComment[] }> {
-    const { data } = await httpClient.get<{ success: boolean; comments: PostComment[] }>(`/feed/posts/${postId}/comments`);
+  async getComments(postId: string, cursor?: string, limit: number = 10): Promise<{ success: boolean; items: PostComment[], nextCursor: string | null }> {
+    const params: any = { limit };
+    if (cursor) params.cursor = cursor;
+    const { data } = await httpClient.get<{ success: boolean; items: PostComment[], nextCursor: string | null }>(`/feed/posts/${postId}/comments`, { params });
     return data;
   },
 
