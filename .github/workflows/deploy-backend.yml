@@ -46,7 +46,7 @@ jobs:
     env:
       DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest
       DOCKER_IMAGE_SHA: ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:${{ github.sha }}
-      DEPLOY_DIR: ~/deployments/wandercall_v3/backend
+      DEPLOY_DIR: /home/ubuntu/deployments/wandercall_v3/backend
 
     steps:
       # ── 1. Checkout ──────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ jobs:
             echo "==> Image: $DOCKER_IMAGE"
             echo "==> Directory: $DEPLOY_DIR"
 
-            cd $DEPLOY_DIR
+            cd "$DEPLOY_DIR"
 
             echo "==> Pulling latest image from Docker Hub"
             docker pull "$DOCKER_IMAGE"
