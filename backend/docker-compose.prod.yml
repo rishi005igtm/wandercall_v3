@@ -1,69 +1,62 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# Wandercall Backend — Production Override
-# Usage: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-# All secrets must be injected via environment or Docker Secrets — never in image.
+# Wandercall Backend — Production Compose (EC2 / Docker Hub)
+#
+# PURPOSE: Production deployment on EC2.
+#          Pulls pre-built image from Docker Hub.
+#          Connects to Azure PostgreSQL and Upstash Redis — NO local services.
+#
+# USAGE (manual):
+#   docker compose -f docker-compose.prod.yml up -d
+#
+# USAGE (GitHub Actions — automated):
+#   Triggered automatically on push to main branch.
+#   GitHub Actions builds the image, pushes to Docker Hub,
+#   then SSHs into EC2 and runs this file.
+#
+# REQUIREMENTS:
+#   - .env file must exist on EC2 at the same directory as this file.
+#   - .env must contain all required variables (see .env.example).
+#   - DB_HOST must point to Azure PostgreSQL host.
+#   - REDIS_URL must point to Upstash Redis URL (rediss://...).
+#   - DOCKER_IMAGE must be set, e.g.: yourdockerhubuser/wandercall-backend:latest
+#
+# NEVER run docker-compose.yml (dev file) on EC2.
 # ═══════════════════════════════════════════════════════════════════════════════
-version: "3.9"
 
 services:
   api:
-    # In production, always use a pre-built tagged image — never rebuild here.
-    # Build the image in CI/CD and push to ECR, then set TAG= when deploying.
-    image: wandercall-backend:${TAG:?TAG is required for production deployment}
+    # Pull the pre-built image from Docker Hub.
+    # Set DOCKER_IMAGE in your EC2 .env or pass it as an environment variable.
+    # Example: DOCKER_IMAGE=yourdockerhubuser/wandercall-backend:latest
+    image: ${DOCKER_IMAGE:?DOCKER_IMAGE is required. Set it in .env or export it before running.}
     restart: always
-    deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        delay: 30s
-        failure_action: rollback
-        order: start-first           # Zero-downtime rolling update
-      rollback_config:
-        parallelism: 1
-        delay: 10s
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 512M
-        reservations:
-          cpus: "0.25"
-          memory: 256M
+    # No depends_on — there are no local services to wait for.
+    # Azure Postgres and Upstash Redis are always-on external services.
+    env_file:
+      - .env
+    # These environment keys are intentionally NOT set here.
+    # DB_HOST, REDIS_URL, and all secrets come exclusively from .env.
+    # This ensures the image is reusable and environment-agnostic.
     environment:
       NODE_ENV: production
-      DB_HOST: postgres
-      REDIS_HOST: redis
     ports:
       - "${PORT:-5000}:5000"
+    networks:
+      - wandercall-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     logging:
       driver: "json-file"
       options:
         max-size: "20m"
         max-file: "5"
 
-  postgres:
-    # Harden: no exposed port in production — only accessible within wandercall-net
-    environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD required}
-    command: >
-      postgres
-      -c max_connections=100
-      -c shared_buffers=256MB
-      -c effective_cache_size=768MB
-      -c maintenance_work_mem=64MB
-      -c checkpoint_completion_target=0.9
-      -c wal_buffers=16MB
-      -c default_statistics_target=100
-      -c random_page_cost=1.1
-    deploy:
-      resources:
-        limits:
-          cpus: "1.0"
-          memory: 512M
-
-  redis:
-    # Harden: no exposed port in production — only accessible within wandercall-net
-    deploy:
-      resources:
-        limits:
-          cpus: "0.5"
-          memory: 256M
+# ── Networks ──────────────────────────────────────────────────────────────────
+# No volumes needed — no local database or Redis.
+networks:
+  wandercall-net:
+    driver: bridge

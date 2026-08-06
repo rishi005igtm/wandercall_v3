@@ -1,0 +1,117 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wandercall Backend — GitHub Actions CI/CD
+#
+# TRIGGER: Push to main branch
+#
+# PIPELINE:
+#   1. Build Docker image from Dockerfile
+#   2. Push image to Docker Hub with :latest and :<git-sha> tags
+#   3. SSH into EC2
+#   4. Pull new image on EC2
+#   5. Restart container using docker-compose.prod.yml
+#
+# REQUIRED GITHUB SECRETS (set in repo Settings → Secrets → Actions):
+#   DOCKERHUB_USERNAME     — your Docker Hub username
+#   DOCKERHUB_TOKEN        — Docker Hub access token (not password)
+#   EC2_HOST               — EC2 public IP or hostname
+#   EC2_USER               — EC2 SSH user (e.g. ubuntu)
+#   EC2_SSH_KEY            — EC2 private key (full PEM content, including headers)
+#
+# REQUIRED ON EC2:
+#   - Docker and Docker Compose v2 installed
+#   - .env file at ~/deployments/wandercall_v3/backend/.env
+#   - docker-compose.prod.yml at ~/deployments/wandercall_v3/backend/
+#   - DOCKER_IMAGE set in .env as: yourdockerhubuser/wandercall-backend:latest
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Deploy Backend to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/deploy-backend.yml"
+
+jobs:
+  build-and-deploy:
+    name: Build → Push → Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── Step 1: Checkout source ──────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── Step 2: Set up Docker Buildx (enables BuildKit cache) ───────────────
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # ── Step 3: Log in to Docker Hub ────────────────────────────────────────
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # ── Step 4: Build and push image ────────────────────────────────────────
+      # Tags the image with both :latest and the short git SHA for rollback.
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          target: production
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:${{ github.sha }}
+          # BuildKit layer cache — dramatically speeds up repeated builds
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # ── Step 5: Deploy to EC2 ───────────────────────────────────────────────
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            DEPLOY_DIR=~/deployments/wandercall_v3/backend
+
+            echo "==> Navigating to deployment directory"
+            cd $DEPLOY_DIR
+
+            echo "==> Pulling latest image from Docker Hub"
+            docker pull ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest
+
+            echo "==> Stopping existing container (if running)"
+            docker compose -f docker-compose.prod.yml down --remove-orphans || true
+
+            echo "==> Starting new container"
+            DOCKER_IMAGE=${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest \
+              docker compose -f docker-compose.prod.yml up -d
+
+            echo "==> Waiting for health check (60s)"
+            sleep 60
+
+            echo "==> Container status"
+            docker compose -f docker-compose.prod.yml ps
+
+            echo "==> Recent logs"
+            docker compose -f docker-compose.prod.yml logs --tail=50 api
+
+            echo "==> Deployment complete"
+
+      # ── Step 6: Verify deployment ────────────────────────────────────────────
+      - name: Verify health endpoint
+        run: |
+          echo "Waiting 30s for app to stabilize..."
+          sleep 30
+          curl --fail --retry 5 --retry-delay 10 \
+            http://${{ secrets.EC2_HOST }}:5000/api/v1/health || \
+            echo "Health check failed — check EC2 logs"

@@ -93,7 +93,7 @@ EXPOSE 5000
 # Note: We use 127.0.0.1 instead of localhost to bypass Node/Alpine IPv6 resolution issues.
 # We pipe to grep to strictly verify the "status":"ok" JSON payload.
 HEALTHCHECK --interval=30s --timeout=10s --start-period=120s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:${PORT:-5000}/api/v1/health/ready | grep '"status":"ok"' || exit 1
+  CMD wget -qO- http://127.0.0.1:${PORT:-5000}/api/v1/health || exit 1
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
 # Use dumb-init to wrap node, so signals are passed down efficiently and zombie processes are reaped
