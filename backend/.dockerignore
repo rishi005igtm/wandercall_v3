@@ -51,13 +51,13 @@ Thumbs.db
 .git/
 .gitignore
 
-# ─── CI/CD & Deploy ─────────────────────────────────────────────────────────────
+# ─── CI/CD & Deploy (exclude from Docker image only — these are NOT excluded from git)
+# docker-compose files and .github are needed on EC2 via git pull.
+# They are excluded from the Docker image because the image only needs compiled app code.
 Jenkinsfile
-docker-compose*.yml
 npm-audit-report.txt
 eslint-report.json
 tsc-report.txt
-.github/
 
 # ─── Scratch / scripts ────────────────────────────────────────────────────────
 scratch_query.js

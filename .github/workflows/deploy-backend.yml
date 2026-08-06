@@ -1,31 +1,12 @@
-# ═══════════════════════════════════════════════════════════════════════════════
-# Wandercall Backend — GitHub Actions CI/CD
-#
-# TRIGGER: Push to main branch
-#
-# PIPELINE:
-#   1. Build Docker image from Dockerfile
-#   2. Push image to Docker Hub with :latest and :<git-sha> tags
-#   3. SSH into EC2
-#   4. Pull new image on EC2
-#   5. Restart container using docker-compose.prod.yml
-#
-# REQUIRED GITHUB SECRETS (set in repo Settings → Secrets → Actions):
-#   DOCKERHUB_USERNAME     — your Docker Hub username
-#   DOCKERHUB_TOKEN        — Docker Hub access token (not password)
-#   EC2_HOST               — EC2 public IP or hostname
-#   EC2_USER               — EC2 SSH user (e.g. ubuntu)
-#   EC2_SSH_KEY            — EC2 private key (full PEM content, including headers)
-#
-# REQUIRED ON EC2:
-#   - Docker and Docker Compose v2 installed
-#   - .env file at ~/deployments/wandercall_v3/backend/.env
-#   - docker-compose.prod.yml at ~/deployments/wandercall_v3/backend/
-#   - DOCKER_IMAGE set in .env as: yourdockerhubuser/wandercall-backend:latest
-# ═══════════════════════════════════════════════════════════════════════════════
-
 name: Deploy Backend to EC2
 
+# ─────────────────────────────────────────────────────────────────────────────
+# TRIGGERS
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. Push to main — only when backend source or this workflow file changes.
+#    Path filter prevents unnecessary deploys from client-only commits.
+# 2. workflow_dispatch — manual trigger from GitHub UI for debugging / hotfixes.
+# ─────────────────────────────────────────────────────────────────────────────
 on:
   push:
     branches:
@@ -33,90 +14,145 @@ on:
     paths:
       - "backend/**"
       - ".github/workflows/deploy-backend.yml"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Reason for manual deploy"
+        required: false
+        default: "Manual trigger"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# REQUIRED GITHUB SECRETS
+# Set these in: repo → Settings → Secrets and variables → Actions → New secret
+#
+#   DOCKERHUB_USERNAME   — Docker Hub username (e.g. anmol8733)
+#   DOCKERHUB_TOKEN      — Docker Hub access token (NOT your password)
+#                          Create at: hub.docker.com → Account Settings → Security
+#   EC2_HOST             — EC2 public IP (e.g. 3.110.123.196)
+#   EC2_USER             — SSH user (ubuntu for Ubuntu AMIs)
+#   EC2_SSH_KEY          — Full PEM private key content including:
+#                          -----BEGIN RSA PRIVATE KEY-----
+#                          ...
+#                          -----END RSA PRIVATE KEY-----
+# ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
   build-and-deploy:
     name: Build → Push → Deploy
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    # ── Job-level env: available to ALL steps and to envs: in ssh-action ──────
+    env:
+      DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest
+      DOCKER_IMAGE_SHA: ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:${{ github.sha }}
+      DEPLOY_DIR: ~/deployments/wandercall_v3/backend
 
     steps:
-      # ── Step 1: Checkout source ──────────────────────────────────────────────
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── Step 2: Set up Docker Buildx (enables BuildKit cache) ───────────────
+      # ── 2. Docker Buildx (enables BuildKit layer cache) ──────────────────────
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      # ── Step 3: Log in to Docker Hub ────────────────────────────────────────
+      # ── 3. Docker Hub login ──────────────────────────────────────────────────
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # ── Step 4: Build and push image ────────────────────────────────────────
-      # Tags the image with both :latest and the short git SHA for rollback.
+      # ── 4. Build and push ────────────────────────────────────────────────────
+      # Produces two tags:
+      #   :latest      — always points to the newest build
+      #   :<git-sha>   — immutable tag for rollback
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ./backend
           file: ./backend/Dockerfile
           target: production
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:${{ github.sha }}
-          # BuildKit layer cache — dramatically speeds up repeated builds
+            ${{ env.DOCKER_IMAGE }}
+            ${{ env.DOCKER_IMAGE_SHA }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ── Step 5: Deploy to EC2 ───────────────────────────────────────────────
+      # ── 5. Deploy to EC2 ─────────────────────────────────────────────────────
+      # IMPORTANT: envs: reads from the JOB-LEVEL env block above, not step env.
+      # The variable name listed in envs: must exactly match the job env key.
       - name: Deploy to EC2
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
-          # Pass the image name as an env var directly into the SSH session.
-          # This avoids any dependency on DOCKER_IMAGE being in the .env file.
-          envs: DOCKER_IMAGE
+          envs: DOCKER_IMAGE,DEPLOY_DIR
+          command_timeout: 10m
           script: |
             set -e
 
-            export DOCKER_IMAGE="$DOCKER_IMAGE"
-            DEPLOY_DIR=~/deployments/wandercall_v3/backend
+            echo "==> Deploy triggered by: ${{ github.actor }} @ ${{ github.sha }}"
+            echo "==> Image: $DOCKER_IMAGE"
+            echo "==> Directory: $DEPLOY_DIR"
 
-            echo "==> Navigating to deployment directory"
             cd $DEPLOY_DIR
 
-            echo "==> Pulling latest image: $DOCKER_IMAGE"
+            echo "==> Pulling latest image from Docker Hub"
             docker pull "$DOCKER_IMAGE"
 
-            echo "==> Stopping existing containers"
+            echo "==> Stopping existing containers (ignore errors if none running)"
             docker compose -f docker-compose.prod.yml down --remove-orphans || true
 
             echo "==> Starting new container"
             docker compose -f docker-compose.prod.yml up -d
 
-            echo "==> Waiting 90s for app to initialize"
-            sleep 90
+            echo "==> Waiting for app to become healthy (max 120s)"
+            for i in $(seq 1 24); do
+              STATUS=$(docker inspect --format='{{.State.Health.Status}}' backend-api-1 2>/dev/null || echo "unknown")
+              echo "  Health check attempt $i/24: $STATUS"
+              if [ "$STATUS" = "healthy" ]; then
+                echo "==> Container is healthy"
+                break
+              fi
+              if [ $i -eq 24 ]; then
+                echo "==> Container did not become healthy in 120s"
+                docker compose -f docker-compose.prod.yml logs --tail=50 api
+                exit 1
+              fi
+              sleep 5
+            done
 
-            echo "==> Container status"
+            echo "==> Final container status"
             docker compose -f docker-compose.prod.yml ps
 
-            echo "==> Recent logs"
-            docker compose -f docker-compose.prod.yml logs --tail=50 api
+            echo "==> Last 30 log lines"
+            docker compose -f docker-compose.prod.yml logs --tail=30 api
 
             echo "==> Deployment complete"
-        env:
-          DOCKER_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/wandercall-backend:latest
 
-      # ── Step 6: Verify deployment ────────────────────────────────────────────
-      - name: Verify health endpoint
+      # ── 6. Verify health endpoint from GitHub runner ─────────────────────────
+      # NOTE: This only works if EC2 security group allows inbound TCP 5000
+      # from 0.0.0.0/0. If not, this step will fail — that is expected and safe
+      # to ignore. The real health check is done inside EC2 in step 5.
+      - name: Verify health endpoint (external)
+        continue-on-error: true
         run: |
-          echo "Waiting 30s for app to stabilize..."
-          sleep 30
-          curl --fail --retry 5 --retry-delay 10 \
-            http://${{ secrets.EC2_HOST }}:5000/api/v1/health || \
-            echo "Health check failed — check EC2 logs"
+          echo "==> Probing http://${{ secrets.EC2_HOST }}:5000/api/v1/health"
+          for i in 1 2 3 4 5; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --connect-timeout 10 --max-time 15 \
+              "http://${{ secrets.EC2_HOST }}:5000/api/v1/health" || echo "000")
+            echo "  Attempt $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "==> Health check passed"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "==> External health check could not reach the endpoint."
+          echo "    This is expected if EC2 port 5000 is not open to the internet."
+          echo "    The container health was already verified on EC2 in step 5."
