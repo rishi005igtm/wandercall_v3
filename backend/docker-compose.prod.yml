@@ -25,10 +25,12 @@
 
 services:
   api:
-    # Pull the pre-built image from Docker Hub.
-    # Set DOCKER_IMAGE in your EC2 .env or pass it as an environment variable.
-    # Example: DOCKER_IMAGE=yourdockerhubuser/wandercall-backend:latest
-    image: ${DOCKER_IMAGE:?DOCKER_IMAGE is required. Set it in .env or export it before running.}
+    # Image is set via the DOCKER_IMAGE environment variable.
+    # GitHub Actions exports it directly into the SSH session.
+    # For manual runs on EC2, either:
+    #   export DOCKER_IMAGE=anmol8733/wandercall-backend:latest && docker compose -f docker-compose.prod.yml up -d
+    #   OR add DOCKER_IMAGE=anmol8733/wandercall-backend:latest to your .env file.
+    image: ${DOCKER_IMAGE:-anmol8733/wandercall-backend:latest}
     restart: always
     # No depends_on — there are no local services to wait for.
     # Azure Postgres and Upstash Redis are always-on external services.

@@ -24,7 +24,15 @@ import campfireConfig from './campfire/campfire.config';
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      // Never set ignoreEnvFile based on NODE_ENV.
+      // In Docker/K8s, Docker Compose / Kubernetes already injects all variables
+      // into process.env before Node starts — NestJS ConfigModule reads process.env
+      // regardless. Setting ignoreEnvFile=true only prevents reading the .env FILE,
+      // but Docker Compose's env_file directive already did that job.
+      // Leaving this as false means: in local dev, .env is read from disk.
+      // In Docker prod, .env is not present in the image (excluded by .dockerignore),
+      // so ConfigModule simply finds no file and moves on — no harm done.
+      ignoreEnvFile: false,
       envFilePath: ['.env.local', '.env'],
       load: [
         appConfig,

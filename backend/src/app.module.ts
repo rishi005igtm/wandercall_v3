@@ -44,16 +44,28 @@ import { HealthModule } from './health/health.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
+        const host = configService.get<string>('database.host');
+        const port = configService.get<number>('database.port', 5432);
+        const username = configService.get<string>('database.username');
+        const password = configService.get<string>('database.password');
+        const database = configService.get<string>('database.name');
+
+        // Fail fast: these are required. If missing, the error is clear immediately
+        // instead of a cryptic ECONNREFUSED to 127.0.0.1.
+        if (!host) throw new Error('DB_HOST is not set. Check your .env file.');
+        if (!username) throw new Error('DB_USERNAME is not set. Check your .env file.');
+        if (!database) throw new Error('DB_NAME is not set. Check your .env file.');
+
         const isSsl =
           configService.get<string>('DB_SSL') === 'true' ||
           configService.get<boolean>('database.ssl') === true;
         const options: TypeOrmModuleOptions = {
           type: 'postgres',
-          host: configService.get<string>('database.host', 'localhost'),
-          port: configService.get<number>('database.port', 5432),
-          username: configService.get<string>('database.username', 'postgres'),
-          password: configService.get<string>('database.password'),
-          database: configService.get<string>('database.name', 'postgres'),
+          host,
+          port,
+          username,
+          password,
+          database,
           entities: [
             UserAuthEntity,
             UserSessionEntity,
